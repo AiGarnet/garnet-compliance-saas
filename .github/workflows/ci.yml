@@ -14,17 +14,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Use Node.js 18
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
 
       - name: Install Frontend Dependencies
-        run: cd frontend && npm ci
+        working-directory: ./frontend
+        run: npm ci
 
       - name: Install Backend Dependencies
-        run: cd backend && npm ci
+        working-directory: ./backend
+        run: npm ci
 
       - name: Success Message
         run: echo "✅ CI completed successfully for both frontend and backend!"
