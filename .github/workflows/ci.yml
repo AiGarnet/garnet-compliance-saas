@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Use Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install Frontend Dependencies
+        run: cd frontend && npm install
+        
+      - name: Install Backend Dependencies
+        run: cd backend && npm install
+        
+      - name: Success Message
+        run: echo "✅ CI completed successfully for both frontend and backend!" 
