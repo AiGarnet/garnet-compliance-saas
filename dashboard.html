@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garnet AI - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .progress-bar {
+            height: 6px;
+            border-radius: 3px;
+            background-color: #f3f4f6;
+        }
+        .progress-value {
+            height: 6px;
+            border-radius: 3px;
+            background-color: #7e3af2;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            .mobile-nav {
+                display: flex;
+            }
+        }
+        @media (min-width: 769px) {
+            .sidebar {
+                display: block;
+            }
+            .mobile-nav {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar - Desktop -->
+        <div class="sidebar w-64 bg-white border-r border-gray-200 h-full fixed">
+            <div class="p-6">
+                <div class="flex items-center mb-8">
+                    <div class="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center mr-3">
+                        <span class="text-white text-lg font-bold">G</span>
+                    </div>
+                    <h1 class="text-xl font-semibold text-gray-800">Garnet AI</h1>
+                </div>
+                
+                <nav class="space-y-1">
+                    <a href="#" class="flex items-center px-4 py-3 text-red-600 bg-red-50 rounded-md font-medium">
+                        <i class="fas fa-tachometer-alt mr-3 w-5 text-center"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-md font-medium">
+                        <i class="fas fa-shield-alt mr-3 w-5 text-center"></i>
+                        <span>Compliance</span>
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-md font-medium">
+                        <i class="fas fa-clipboard-list mr-3 w-5 text-center"></i>
+                        <span>Questionnaires</span>
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-md font-medium">
+                        <i class="fas fa-lock mr-3 w-5 text-center"></i>
+                        <span>Trust Portal</span>
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-md font-medium">
+                        <i class="fas fa-credit-card mr-3 w-5 text-center"></i>
+                        <span>Billing</span>
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-md font-medium">
+                        <i class="fas fa-cog mr-3 w-5 text-center"></i>
+                        <span>Settings</span>
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-md font-medium">
+                        <i class="fas fa-users mr-3 w-5 text-center"></i>
+                        <span>Team</span>
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-md font-medium">
+                        <i class="fas fa-question-circle mr-3 w-5 text-center"></i>
+                        <span>Help</span>
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="absolute bottom-0 w-full p-6">
+                <div class="flex items-center">
+                    <img src="https://randomuser.me/api/portraits/women/42.jpg" class="w-10 h-10 rounded-full mr-3" alt="User avatar">
+                    <div>
+                        <p class="text-sm font-medium text-gray-800">Sarah Anderson</p>
+                        <p class="text-xs text-gray-500">Security Lead</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Navigation -->
+        <div class="mobile-nav fixed top-0 w-full bg-white border-b border-gray-200 z-10">
+            <div class="flex items-center justify-between px-4 py-3">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center mr-3">
+                        <span class="text-white text-lg font-bold">G</span>
+                    </div>
+                    <h1 class="text-xl font-semibold text-gray-800">Garnet AI</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="text-gray-600">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <button class="text-gray-600">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <img src="https://randomuser.me/api/portraits/women/42.jpg" class="w-8 h-8 rounded-full" alt="User avatar">
+                    <button class="text-gray-600">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 ml-64 p-8 mobile:ml-0 mt-0 mobile:mt-14 overflow-auto">
+            <!-- Page heading -->
+            <div class="mb-8">
+                <h1 class="text-2xl font-semibold text-gray-800">Welcome back, Sarah</h1>
+                <p class="text-gray-600">Here's an overview of your compliance status</p>
+            </div>
+            
+            <!-- Stat Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Card 1: Compliance Progress -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-sm font-semibold text-gray-600">Compliance Progress</h2>
+                        <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                            <i class="fas fa-chart-pie text-purple-600"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-semibold text-gray-800 mb-2">78%</p>
+                    <div class="progress-bar mt-2 mb-1">
+                        <div class="progress-value" style="width: 78%"></div>
+                    </div>
+                    <p class="text-xs text-gray-500">+12% from last month</p>
+                </div>
+                
+                <!-- Card 2: Questionnaires -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-sm font-semibold text-gray-600">Questionnaires In Progress</h2>
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <i class="fas fa-clipboard-list text-blue-600"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-semibold text-gray-800 mb-2">5</p>
+                    <p class="text-xs text-gray-500">2 due this week</p>
+                </div>
+                
+                <!-- Card 3: High-Risk Vendors -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-sm font-semibold text-gray-600">High-Risk Vendors</h2>
+                        <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                            <i class="fas fa-exclamation-triangle text-red-600"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-semibold text-gray-800 mb-2">3</p>
+                    <p class="text-xs text-red-500">Requires immediate review</p>
+                </div>
+                
+                <!-- Card 4: Trust Portal Views -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-sm font-semibold text-gray-600">Trust Portal Views</h2>
+                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                            <i class="fas fa-eye text-green-600"></i>
+                        </div>
+                    </div>
+                    <p class="text-3xl font-semibold text-gray-800 mb-2">127</p>
+                    <p class="text-xs text-gray-500">+24% from last week</p>
+                </div>
+            </div>
+            
+            <!-- Two Column Layout for Tasks and Activity -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Pending Tasks -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-semibold text-gray-800">Pending Tasks</h2>
+                        <a href="#" class="text-sm text-red-600 font-medium">View All</a>
+                    </div>
+                    
+                    <ul class="space-y-4">
+                        <li class="border-b border-gray-100 pb-4">
+                            <div class="flex justify-between mb-2">
+                                <span class="font-medium text-gray-800">Complete SOC 2 gap assessment</span>
+                                <span class="bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full">High</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500">Assigned to you</span>
+                                <span class="text-gray-600">Due in 2 days</span>
+                            </div>
+                        </li>
+                        
+                        <li class="border-b border-gray-100 pb-4">
+                            <div class="flex justify-between mb-2">
+                                <span class="font-medium text-gray-800">Update vendor risk assessments</span>
+                                <span class="bg-yellow-100 text-yellow-600 text-xs px-2 py-1 rounded-full">Medium</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500">Assigned to you</span>
+                                <span class="text-gray-600">Due in 5 days</span>
+                            </div>
+                        </li>
+                        
+                        <li class="border-b border-gray-100 pb-4">
+                            <div class="flex justify-between mb-2">
+                                <span class="font-medium text-gray-800">Conduct security awareness training</span>
+                                <span class="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full">Low</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500">Assigned to you</span>
+                                <span class="text-gray-600">Due in 1 week</span>
+                            </div>
+                        </li>
+                        
+                        <li>
+                            <div class="flex justify-between mb-2">
+                                <span class="font-medium text-gray-800">Review privacy policy updates</span>
+                                <span class="bg-yellow-100 text-yellow-600 text-xs px-2 py-1 rounded-full">Medium</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-500">Assigned to you</span>
+                                <span class="text-gray-600">Due in 3 days</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Recent Activity -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-lg font-semibold text-gray-800">Recent Activity</h2>
+                        <a href="#" class="text-sm text-red-600 font-medium">View All</a>
+                    </div>
+                    
+                    <ul class="space-y-4">
+                        <li class="border-b border-gray-100 pb-4">
+                            <div class="flex items-start">
+                                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 flex-shrink-0">
+                                    <i class="fas fa-file-alt text-blue-600 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">
+                                        <span class="font-semibold">Michael Rodriguez</span> uploaded a new evidence document for ISO 27001
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-1">Today, 10:45 AM</p>
+                                </div>
+                            </div>
+                        </li>
+                        
+                        <li class="border-b border-gray-100 pb-4">
+                            <div class="flex items-start">
+                                <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-3 flex-shrink-0">
+                                    <i class="fas fa-check text-green-600 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">
+                                        <span class="font-semibold">You</span> completed the GDPR compliance assessment
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-1">Yesterday, 3:20 PM</p>
+                                </div>
+                            </div>
+                        </li>
+                        
+                        <li class="border-b border-gray-100 pb-4">
+                            <div class="flex items-start">
+                                <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center mr-3 flex-shrink-0">
+                                    <i class="fas fa-clipboard-list text-purple-600 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">
+                                        <span class="font-semibold">Jennifer Wilson</span> created a new vendor questionnaire
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-1">Yesterday, 11:35 AM</p>
+                                </div>
+                            </div>
+                        </li>
+                        
+                        <li class="border-b border-gray-100 pb-4">
+                            <div class="flex items-start">
+                                <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center mr-3 flex-shrink-0">
+                                    <i class="fas fa-exclamation-circle text-red-600 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">
+                                        <span class="font-semibold">System</span> flagged a high-risk vendor: CloudSecure Inc.
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-1">Apr 12, 2:15 PM</p>
+                                </div>
+                            </div>
+                        </li>
+                        
+                        <li>
+                            <div class="flex items-start">
+                                <div class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center mr-3 flex-shrink-0">
+                                    <i class="fas fa-eye text-yellow-600 text-xs"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">
+                                        <span class="font-semibold">Alex Thompson</span> viewed your trust portal details
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-1">Apr 11, 9:30 AM</p>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

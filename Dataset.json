@@ -1,0 +1,2660 @@
+[
+    {
+        "name": "OECD Privacy Guidelines",
+        "type": "Standard",
+        "description": "Non-binding principles by OECD for personal data protection including collection limitation, data quality, purpose specification, use limitation, and security safeguards. Originally issued in 1980 and updated in 2013. Influenced many national laws.",
+        "jurisdiction": "OECD Member Countries",
+        "domains": [
+            "Personal Data Protection"
+        ],
+        "region": "Global"
+    },
+    {
+        "name": "Council of Europe Convention 108+",
+        "type": "Treaty",
+        "description": "The first binding international treaty on data privacy. It sets principles for data protection and requires signatory countries to enact privacy legislation. Open to global participation beyond Council of Europe members.",
+        "jurisdiction": "Council of Europe and other signatories",
+        "domains": [
+            "Personal Data Protection"
+        ],
+        "region": "Europe / Global"
+    },
+    {
+        "name": "United Nations Human Rights",
+        "type": "Norms",
+        "description": "Privacy is recognized as a human right under international law (UDHR Art. 12, ICCPR Art. 17), establishing an international norm for data protection.",
+        "jurisdiction": "Global",
+        "domains": [
+            "Personal Data Protection"
+        ],
+        "region": ""
+    },
+    {
+        "name": "APEC Privacy Framework & Cross-Border Privacy Rules (CBPR)",
+        "type": "Standard",
+        "description": "A voluntary framework developed by APEC to facilitate cross-border data flows while protecting personal information. Includes mechanisms like CBPR for certifying business compliance. Adopted by 21 member economies including the US, Canada, Japan, and Singapore.",
+        "jurisdiction": "APEC Member Economies",
+        "domains": [
+            "Personal Data Protection"
+        ],
+        "region": "Asia-Pacific"
+    },
+    {
+        "name": "California Consumer Privacy Act (CCPA) / California Privacy Rights Act (CPRA)",
+        "type": "Law",
+        "description": "A state law granting California residents rights over personal data, including rights to notice, access, deletion, and opt-out of sale. Imposes transparency and security obligations on businesses handling Californians' data. CCPA effective 2020, amended and expanded by CPRA effective 2023.",
+        "jurisdiction": "United States - California",
+        "domains": [
+            "Personal Data Protection"
+        ],
+        "region": "North America"
+    },
+    {
+        "name": "Health Insurance Portability and Accountability Act (HIPAA)",
+        "type": "Law",
+        "description": "A federal law enacted in 1996 with Privacy and Security Rules to protect individuals’ medical records and other personal health information. Applies to healthcare providers, insurers, and their business associates.",
+        "jurisdiction": "United States",
+        "domains": [
+            "Health Data Protection"
+        ],
+        "region": "North America"
+    },
+    {
+        "name": "Gramm-Leach-Bliley Act (GLBA)",
+        "type": "Law",
+        "description": "A U.S. federal law enacted in 1999 that requires financial institutions to explain their information-sharing practices and to safeguard sensitive data. Mandates privacy notices and secure handling of consumers' financial information.",
+        "jurisdiction": "United States",
+        "domains": [
+            "Financial Data Protection"
+        ],
+        "region": "North America"
+    },
+    {
+        "name": "Children’s Online Privacy Protection Act (COPPA)",
+        "type": "Law",
+        "description": "A federal law that protects the personal information of children under 13 online. Requires parental consent for data collection and imposes security and data minimization requirements on child-directed websites and services.",
+        "jurisdiction": "United States",
+        "domains": [
+            "Children’s Data Protection"
+        ],
+        "region": "North America"
+    },
+    {
+        "name": "U.S. State Privacy Laws",
+        "type": "Law",
+        "description": "Various state-level privacy laws (e.g., Virginia CDPA, Colorado Privacy Act) modeled after California’s CCPA/CPRA. These laws provide rights to residents over personal data and impose compliance obligations on businesses operating in those states.",
+        "jurisdiction": "United States - Multiple States",
+        "domains": [
+            "Personal Data Protection"
+        ],
+        "region": "North America"
+    },
+    {
+        "name": "General Data Protection Regulation (GDPR)",
+        "type": "Regulation",
+        "description": "An EU-wide regulation enacted in 2018 to protect personal data of individuals. It enforces requirements such as lawful bases for processing, explicit consent, data subject rights, and breach notifications. Non-compliance can result in fines up to 4% of global annual turnover. Applies extraterritorially to any organization processing EU residents' data.",
+        "jurisdiction": "European Union",
+        "domains": [
+            "Personal Data Protection"
+        ],
+        "region": "Europe"
+    },
+    {
+        "name": "ePrivacy Directive",
+        "type": "Directive",
+        "description": "An EU directive from 2002 governing privacy in electronic communications, including cookies, email marketing, and metadata. Requires user consent for tracking technologies and ensures the confidentiality of communications. Scheduled to be replaced by the proposed ePrivacy Regulation.",
+        "jurisdiction": "European Union",
+        "domains": [
+            "Electronic Communications Privacy"
+        ],
+        "region": "Europe"
+    },
+    {
+        "name": "EU-U.S. Data Privacy Framework",
+        "type": "Agreement",
+        "description": "A 2023 transatlantic agreement allowing data transfers from the EU to certified U.S. organizations, recognizing U.S. safeguards as adequate under the GDPR. Replaces the invalidated Privacy Shield and allows participating companies to self-certify adherence to EU privacy principles.",
+        "jurisdiction": "European Union, United States",
+        "domains": [
+            "International Data Transfers"
+        ],
+        "region": "Europe, North America"
+    },
+    {
+        "name": "UK GDPR & Data Protection Act 2018",
+        "type": "Regulation",
+        "description": "Post-Brexit UK data protection regime mirroring the EU GDPR with UK-specific amendments. It ensures continuity of GDPR principles, such as lawfulness, transparency, and data subject rights, with enforcement by the Information Commissioner’s Office (ICO). Non-compliance can result in substantial fines.",
+        "jurisdiction": "United Kingdom",
+        "domains": [
+            "Personal Data Protection"
+        ],
+        "region": "Europe"
+    },
+    {
+        "name": "Privacy and Electronic Communications Regulations (PECR)",
+        "type": "Regulation",
+        "description": "UK regulations similar to the EU ePrivacy Directive, governing the use of cookies, direct marketing, and consent requirements for electronic communications.",
+        "jurisdiction": "United Kingdom",
+        "domains": [
+            "Electronic Communications Privacy"
+        ],
+        "region": "Europe"
+    },
+    {
+        "name": "Personal Information Protection and Electronic Documents Act (PIPEDA)",
+        "type": "Law",
+        "description": "A federal law enacted in 2000 regulating data privacy in the private sector across Canada (except in provinces with similar laws). PIPEDA mandates consent, limits collection, and grants individuals rights to access and correct their personal data.",
+        "jurisdiction": "Canada",
+        "domains": [
+            "Personal Data Protection"
+        ],
+        "region": "North America"
+    },
+    {
+        "name": "Provincial Privacy Laws",
+        "type": "Law",
+        "description": "Several provinces, such as Alberta, British Columbia, and Québec, have their own private-sector privacy acts (e.g., Alberta PIPA, B.C. PIPA, Québec’s Law 25), which largely align with PIPEDA/GDPR principles and apply instead of PIPEDA within those provinces.",
+        "jurisdiction": "Canada - Provincial",
+        "domains": [
+            "Personal Data Protection"
+        ],
+        "region": "North America"
+    },
+    {
+        "name": "Privacy Act (Canada)",
+        "type": "Law",
+        "description": "A federal law governing the personal data practices of Canadian government agencies in the public sector. Ensures citizens' right to access and correct their personal data held by federal government bodies.",
+        "jurisdiction": "Canada - Federal",
+        "domains": [
+            "Public Sector Data Protection"
+        ],
+        "region": "North America"
+    },
+    {
+        "name": "Personal Information Protection Law (PIPL)",
+        "type": "Law",
+        "description": "Enacted in 2021, China's comprehensive data protection law similar to the GDPR. Requires consent or legal basis for data processing, mandates security measures, imposes data localization for certain sensitive data, and regulates cross-border data transfers.",
+        "jurisdiction": "China",
+        "domains": ["Personal Data Protection"],
+        "region": "Asia"
+    },
+    {
+        "name": "Data Security Law (DSL)",
+        "type": "Law",
+        "description": "China’s 2021 law that categorizes data based on national security and economic importance. Imposes localization, risk monitoring, and security assessment requirements for cross-border transfers of important data.",
+        "jurisdiction": "China",
+        "domains": ["Data Security", "National Security"],
+        "region": "Asia"
+    },
+    {
+        "name": "Cybersecurity Law",
+        "type": "Law",
+        "description": "Enacted in 2017, this foundational Chinese law introduced requirements for data protection, cybersecurity, and data localization for Critical Information Infrastructure (CII) operators.",
+        "jurisdiction": "China",
+        "domains": ["Cybersecurity", "Data Localization"],
+        "region": "Asia"
+    },
+    {
+        "name": "Digital Personal Data Protection Act (DPDP Act)",
+        "type": "Law",
+        "description": "India's comprehensive privacy law enacted in 2023. Establishes consent-based processing, data subject rights, and rules for cross-border data transfers. Enforced by a Data Protection Board with penalties for violations.",
+        "jurisdiction": "India",
+        "domains": ["Personal Data Protection"],
+        "region": "Asia"
+    },
+    {
+        "name": "Information Technology Act & SPDI Rules",
+        "type": "Law",
+        "description": "Legacy Indian data protection regime under IT Act 2000 and 2011 SPDI Rules. Protected sensitive data (e.g. financial, health), requiring consent and security practices. Remains applicable until full DPDP Act rollout.",
+        "jurisdiction": "India",
+        "domains": ["Sensitive Data Protection"],
+        "region": "Asia"
+    },
+    {
+        "name": "Cert-In Rules",
+        "type": "Regulation",
+        "description": "2022 regulations from Indian CERT requiring breach reporting within 6 hours and log retention for certain entities. Strengthens operational data governance and cybersecurity oversight.",
+        "jurisdiction": "India",
+        "domains": ["Cybersecurity", "Incident Reporting"],
+        "region": "Asia"
+    },
+    {
+        "name": "Act on Protection of Personal Information (APPI)",
+        "type": "Law",
+        "description": "Japan’s main privacy law, amended in 2020. Applies to all businesses processing personal data. Requires purpose limitation, notice, data subject rights, and restricts cross-border transfers. Japan has EU adequacy since 2019.",
+        "jurisdiction": "Japan",
+        "domains": ["Personal Data Protection"],
+        "region": "Asia"
+    },
+    {
+        "name": "Personal Information Protection Act (PIPA)",
+        "type": "Law",
+        "description": "South Korea’s comprehensive privacy law (2011, amended 2020). Requires consent for data use, breach notification, and data minimization. Enforced by PIPC. Includes strict cross-border and localization rules. EU adequacy since 2021.",
+        "jurisdiction": "South Korea",
+        "domains": ["Personal Data Protection"],
+        "region": "Asia"
+    },
+    {
+        "name": "Personal Data Protection Act (PDPA)",
+        "type": "Law",
+        "description": "Singapore’s private-sector privacy law (2012, updated 2020). Requires consent or deemed consent, purpose notification, and security safeguards. Introduced breach notification and consent exceptions in latest updates.",
+        "jurisdiction": "Singapore",
+        "domains": ["Personal Data Protection"],
+        "region": "Asia"
+    },
+    {
+        "name": "Personal Data (Privacy) Ordinance (PDPO)",
+        "type": "Law",
+        "description": "Hong Kong’s foundational privacy law enacted in 1995. Sets out data protection principles and provides a complaints mechanism through the Privacy Commissioner.",
+        "jurisdiction": "Hong Kong",
+        "domains": ["Personal Data Protection"],
+        "region": "Asia"
+    },
+    {
+        "name": "Privacy Act",
+        "type": "Law",
+        "description": "Australia’s federal privacy law enacted in 1988, featuring the Australian Privacy Principles (APPs). Covers both public and private sectors. Currently under review for modernization (as of 2025).",
+        "jurisdiction": "Australia",
+        "domains": ["Personal Data Protection"],
+        "region": "Oceania"
+    },
+    {
+        "name": "Personal Data Protection Act (PDPA)",
+        "type": "Law",
+        "description": "Thailand’s 2022 privacy law modeled on the GDPR. Requires consent for data collection and grants rights to access, correction, and deletion.",
+        "jurisdiction": "Thailand",
+        "domains": ["Personal Data Protection"],
+        "region": "Asia"
+    },
+    {
+        "name": "Lei Geral de Proteção de Dados (LGPD)",
+        "type": "Law",
+        "description": "Brazil’s comprehensive data protection law (2018, effective 2020) inspired by GDPR. Applies to data processing in Brazil or involving Brazilian data subjects. Requires lawful basis, data subject rights, breach notification, and establishes the ANPD as regulator.",
+        "jurisdiction": "Brazil",
+        "domains": ["Personal Data Protection"],
+        "region": "Latin America"
+    },
+    {
+        "name": "Federal Law on Protection of Personal Data Held by Private Parties",
+        "type": "Law",
+        "description": "Mexico’s 2010 privacy law governing private-sector data practices. Requires consent for processing, provides ARCO rights, mandates privacy notices and security safeguards. Enforced by the INAI.",
+        "jurisdiction": "Mexico",
+        "domains": ["Personal Data Protection"],
+        "region": "Latin America"
+    },
+    {
+        "name": "Personal Data Protection Act (Law 25,326)",
+        "type": "Law",
+        "description": "Argentina’s data protection law enacted in 2000, one of the earliest GDPR-style laws. Requires consent, legitimate purpose, and grants rights to access, rectify, and delete data. Recognized by the EU as providing adequate protection.",
+        "jurisdiction": "Argentina",
+        "domains": ["Personal Data Protection"],
+        "region": "Latin America"
+    },
+    {
+        "name": "Regional Data Protection Laws",
+        "type": "Law",
+        "description": "Several Latin American countries including Chile, Colombia (Law 1581), Peru (Law 29733), and Uruguay have implemented or modernized privacy laws aligned with international standards. Chile and Uruguay have received EU adequacy decisions.",
+        "jurisdiction": "Latin America",
+        "domains": ["Personal Data Protection"],
+        "region": "Latin America"
+    },
+    {
+        "name": "Financial Action Task Force (FATF) Recommendations",
+        "type": "Standard",
+        "description": "FATF’s 40 Recommendations, along with 11 additional provisions on countering proliferation financing, form the global standard for AML/CFT compliance. They cover criminalization of money laundering, customer due diligence (CDD), Know Your Customer (KYC), monitoring of politically exposed persons, and international cooperation.",
+        "jurisdiction": "Global",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing"],
+        "region": ""
+    },
+    {
+        "name": "UN Conventions on AML/CFT",
+        "type": "Treaty",
+        "description": "Includes the UN Convention Against Illicit Traffic in Narcotic Drugs (1988), the UN Convention Against Transnational Organized Crime (2000), and the International Convention for the Suppression of the Financing of Terrorism (1999). These treaties require member states to criminalize money laundering and terrorism financing and underpin national AML/CFT laws.",
+        "jurisdiction": "Global",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing"],
+        "region": ""
+    },
+    {
+        "name": "Basel Committee on Banking Supervision Guidelines",
+        "type": "Standard",
+        "description": "Basel Committee guidelines provide principles for AML compliance in the banking sector, notably through the Customer Due Diligence for Banks paper. These are widely adopted by prudential regulators to assess financial institutions’ AML controls.",
+        "jurisdiction": "Global",
+        "domains": ["Anti-Money Laundering"],
+        "region": ""
+    },
+    {
+        "name": "Egmont Group",
+        "type": "Initiative",
+        "description": "An international network of Financial Intelligence Units (FIUs) aimed at enhancing cooperation and sharing of financial intelligence among member jurisdictions to combat money laundering and terrorist financing.",
+        "jurisdiction": "Global",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing"],
+        "region": ""
+    },
+    {
+        "name": "Bank Secrecy Act (BSA)",
+        "type": "Law",
+        "description": "The primary U.S. AML law (1970). Requires financial institutions to establish AML programs, maintain records, and report certain financial transactions. Key reports include Currency Transaction Reports (CTRs) for cash ≥ $10,000 and Suspicious Activity Reports (SARs) for unusual activity.",
+        "jurisdiction": "United States",
+        "domains": ["Anti-Money Laundering"],
+        "region": "North America"
+    },
+    {
+        "name": "USA PATRIOT Act",
+        "type": "Law",
+        "description": "Expanded the BSA after 9/11 to combat terrorist financing. Requires customer identification programs (CIP), KYC processes, and screening clients against government watchlists. Prohibits accounts with foreign shell banks and encourages information sharing.",
+        "jurisdiction": "United States",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing"],
+        "region": "North America"
+    },
+    {
+        "name": "Anti-Money Laundering Act of 2020 (AMLA)",
+        "type": "Law",
+        "description": "Part of the NDAA 2021, this law modernized U.S. AML frameworks. Introduced beneficial ownership reporting via the Corporate Transparency Act, strengthened penalties, expanded FinCEN’s powers, and created stronger whistleblower protections.",
+        "jurisdiction": "United States",
+        "domains": ["Anti-Money Laundering"],
+        "region": "North America"
+    },
+    {
+        "name": "FinCEN and OFAC Regulations",
+        "type": "Regulation",
+        "description": "FinCEN enforces AML rules under the BSA (e.g. the 2016 CDD Rule defining 'Beneficial Owner'). OFAC administers and enforces U.S. economic sanctions, requiring financial institutions to include sanctions screening in AML programs.",
+        "jurisdiction": "United States",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing"],
+        "region": "North America"
+    },
+    {
+        "name": "Industry-Specific AML Requirements",
+        "type": "Regulation",
+        "description": "U.S. AML rules apply across various sectors: banks, MSBs, casinos, brokers, insurers, fintechs, and crypto firms. These entities must implement AML programs tailored to their risk profile and comply with additional regulations such as Geographic Targeting Orders.",
+        "jurisdiction": "United States",
+        "domains": ["Anti-Money Laundering"],
+        "region": "North America"
+    },
+    {
+        "name": "EU Anti-Money Laundering Directives (AMLDs)",
+        "type": "Directive",
+        "description": "A series of directives harmonizing AML/CFT laws across EU member states. 4th AMLD (2015) introduced risk-based AML, gambling sector coverage, and UBO registries. 5th AMLD (2018) expanded scope to virtual currencies, prepaid cards, and required public UBO access. 6th AMLD (2021) defined 22 predicate offenses and introduced criminal liability for legal persons.",
+        "jurisdiction": "European Union",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing"],
+        "region": "Europe"
+    },
+    {
+        "name": "EU AML Regulations and AML Authority (AMLA)",
+        "type": "Regulation (Upcoming)",
+        "description": "The EU is shifting to a single AML rulebook and establishing a new AML Authority (AMLA) to directly supervise high-risk entities. Also includes obligations under the Funds Transfer Regulation, which enforces FATF's Travel Rule for originator/beneficiary information.",
+        "jurisdiction": "European Union",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing"],
+        "region": "Europe"
+    },
+    {
+        "name": "Member State AML Laws (e.g. Germany’s GwG, France’s CMF)",
+        "type": "Law",
+        "description": "Each EU member state transposes AMLDs into national legislation (e.g., Germany’s Geldwäschegesetz, France’s Code Monétaire et Financier). These laws implement and enforce the harmonized EU AML framework under the oversight of national FIUs and supervisors.",
+        "jurisdiction": "European Union (Member States)",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing"],
+        "region": "Europe"
+    },
+    {
+        "name": "Proceeds of Crime Act 2002 (POCA)",
+        "type": "Law",
+        "description": "Core UK legislation criminalizing money laundering, including offenses such as concealing, arranging, acquiring/using criminal property, and failing to report or tipping off. It also enables asset confiscation and underpins the Suspicious Activity Reports (SARs) regime.",
+        "jurisdiction": "United Kingdom",
+        "domains": ["Anti-Money Laundering"],
+        "region": "Europe"
+      },
+      {
+        "name": "Money Laundering, Terrorist Financing and Transfer of Funds (Information) Regulations 2017",
+        "type": "Regulation",
+        "description": "UK's transposition of the EU AML Directives, retained post-Brexit and updated in line with 5AMLD. Requires regulated entities to conduct customer due diligence, maintain records, and report suspicious activity. Covers cryptoasset businesses and requires beneficial ownership disclosures.",
+        "jurisdiction": "United Kingdom",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing"],
+        "region": "Europe"
+      },
+      {
+        "name": "Terrorism Act 2000",
+        "type": "Law",
+        "description": "Criminalizes the financing of terrorism and mandates reporting of knowledge or suspicion of terrorist financing. Supports the SAR regime for terror financing alongside POCA.",
+        "jurisdiction": "United Kingdom",
+        "domains": ["Counter-Terrorism Financing"],
+        "region": "Europe"
+      },
+      {
+        "name": "UK AML Supervisors and JMLIT",
+        "type": "Regulatory Framework",
+        "description": "UK’s AML oversight is provided by multiple supervisors (e.g., FCA, HMRC, Gambling Commission), with public-private collaboration facilitated by the Joint Money Laundering Intelligence Taskforce (JMLIT). Post-Brexit reforms include stronger UBO verification and potential 'failure to prevent' offenses.",
+        "jurisdiction": "United Kingdom",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing"],
+        "region": "Europe"
+      },
+      {
+        "name": "Proceeds of Crime (Money Laundering) and Terrorist Financing Act (PCMLTFA)",
+        "type": "Law",
+        "description": "Canada’s main AML/CFT legislation. It applies to a wide range of reporting entities, such as banks, money services businesses, casinos, and real estate firms. It mandates client identification, recordkeeping, large and suspicious transaction reporting, and anti-terrorist financing obligations.",
+        "jurisdiction": "Canada",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing"],
+        "region": "North America"
+      },
+      {
+        "name": "FINTRAC Regulations",
+        "type": "Regulation",
+        "description": "Regulatory rules under the PCMLTFA enforced by FINTRAC, Canada’s Financial Intelligence Unit. These regulations detail requirements around KYC, ongoing monitoring, and the submission of Suspicious Transaction Reports (STRs) within 30 days of detection.",
+        "jurisdiction": "Canada",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing"],
+        "region": "North America"
+      },
+      {
+        "name": "Criminal Code (Canada)",
+        "type": "Law",
+        "description": "Criminalizes money laundering and terrorist financing. It also enforces compliance with financial sanctions under other statutes such as the United Nations Act and the Special Economic Measures Act, which require screening against lists of designated individuals and entities.",
+        "jurisdiction": "Canada",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing", "Sanctions Compliance"],
+        "region": "North America"
+      },
+      {
+        "name": "Provincial Initiatives on AML",
+        "type": "Law/Policy",
+        "description": "Provincial governments have introduced additional anti-money laundering measures, especially in the real estate sector. For example, British Columbia has established a beneficial ownership property registry, and Ontario has rules requiring property owners to disclose true ownership.",
+        "jurisdiction": "Canada",
+        "domains": ["Anti-Money Laundering"],
+        "region": "North America"
+      },
+      {
+        "name": "Criminal Law of China (AML Provisions)",
+        "type": "Law",
+        "description": "Criminalizes money laundering under China's Criminal Law. AML regulations issued by the People’s Bank of China require banks to verify customer identity, monitor transactions, and report large or suspicious activities to the China AML Monitoring and Analysis Center.",
+        "jurisdiction": "China",
+        "domains": ["Anti-Money Laundering"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Anti-Money Laundering and Counter-Terrorist Financing Ordinance (AMLO)",
+        "type": "Law",
+        "description": "Hong Kong's core AML/CFT law covering banks, securities firms, and casinos. Requires customer due diligence, recordkeeping, and suspicious transaction reporting. Supervised by HKMA, SFC, and Insurance Authority.",
+        "jurisdiction": "Hong Kong",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Corruption, Drug Trafficking and Other Serious Crimes (Confiscation of Benefits) Act (CDSA)",
+        "type": "Law",
+        "description": "Singapore law criminalizing money laundering. Supported by MAS Notice 626 (for banks) and other notices for financial sectors requiring KYC, monitoring, screening, and STR filing. Payment Services Act (2019) extends AML obligations to fintech and crypto providers.",
+        "jurisdiction": "Singapore",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Act on Prevention of Transfer of Criminal Proceeds",
+        "type": "Law",
+        "description": "Japan's main AML law requiring identity verification and reporting of suspicious transactions. Updated to cover virtual currency exchanges. Reports go to Japan’s Financial Intelligence Unit.",
+        "jurisdiction": "Japan",
+        "domains": ["Anti-Money Laundering"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Prevention of Money Laundering Act (PMLA) 2002",
+        "type": "Law",
+        "description": "India’s central AML legislation. Imposes obligations on banks and financial intermediaries to submit CTRs and STRs. Regulated via RBI’s KYC Master Directions. Crypto exchanges were added as reporting entities in 2023.",
+        "jurisdiction": "India",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Anti-Money Laundering and Counter-Terrorism Financing Act 2006",
+        "type": "Law",
+        "description": "Australia’s AML/CFT framework requiring entities to register with AUSTRAC, conduct KYC, and report large or suspicious transactions. Ongoing reforms aim to expand coverage to lawyers and real estate agents.",
+        "jurisdiction": "Australia",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Various National AML Laws (South Korea, Malaysia, Indonesia, Thailand)",
+        "type": "Law",
+        "description": "Countries across Asia-Pacific have AML laws aligned with FATF standards. These require customer due diligence, suspicious transaction reporting, and include provisions to regulate cryptoassets. Many have national FIUs to enforce compliance.",
+        "jurisdiction": "Multiple (Asia-Pacific)",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorism Financing"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "United Nations Convention against Corruption (UNCAC)",
+        "type": "Treaty",
+        "description": "A 2003 UN treaty ratified by around 189 countries. It requires criminalization of domestic and foreign bribery, embezzlement, and money laundering. Also mandates preventive measures, asset recovery mechanisms, and international cooperation.",
+        "jurisdiction": "Global",
+        "domains": ["Anti-Bribery", "Anti-Corruption"],
+        "region": "International"
+      },
+      {
+        "name": "OECD Convention on Combating Bribery of Foreign Public Officials",
+        "type": "Treaty",
+        "description": "A 1997 legally binding treaty requiring 44 signatory countries to criminalize bribery of foreign public officials in international business. Includes provisions for accurate recordkeeping to prevent off-book bribery and has influenced national laws like the UK Bribery Act and U.S. FCPA amendments.",
+        "jurisdiction": "OECD Member States",
+        "domains": ["Anti-Bribery", "Anti-Corruption"],
+        "region": "International"
+      },
+      {
+        "name": "OECD Guidelines for Multinational Enterprises",
+        "type": "Standard",
+        "description": "Voluntary corporate responsibility standards urging multinational companies to avoid bribery and adopt internal compliance programs. Updated in 2011 with anti-bribery provisions, widely used in CSR frameworks.",
+        "jurisdiction": "OECD Member States (Voluntary for Multinationals)",
+        "domains": ["Anti-Bribery", "Corporate Compliance"],
+        "region": "International"
+      },
+      {
+        "name": "Inter-American Convention Against Corruption",
+        "type": "Treaty",
+        "description": "1996 regional treaty for OAS members, requiring signatories to adopt laws criminalizing bribery and implement preventive measures. Supports regional cooperation on corruption cases.",
+        "jurisdiction": "Organization of American States (OAS)",
+        "domains": ["Anti-Bribery", "Anti-Corruption"],
+        "region": "Americas"
+      },
+      {
+        "name": "African Union Convention on Preventing and Combating Corruption",
+        "type": "Treaty",
+        "description": "2003 AU treaty promoting national anti-bribery laws, codes of conduct, and institutional reforms across African nations. Focuses on domestic and public sector corruption and regional cooperation.",
+        "jurisdiction": "African Union Member States",
+        "domains": ["Anti-Bribery", "Anti-Corruption"],
+        "region": "Africa"
+      },
+      {
+        "name": "ISO 37001 Anti-Bribery Management Systems",
+        "type": "Standard",
+        "description": "An international standard (2016) for organizations to establish anti-bribery compliance programs, covering risk assessment, training, monitoring, due diligence, and whistleblower protections.",
+        "jurisdiction": "Global (Voluntary)",
+        "domains": ["Anti-Bribery", "Compliance Framework"],
+        "region": "International"
+      },
+      {
+        "name": "Transparency International Anti-Corruption Frameworks",
+        "type": "Standard",
+        "description": "Transparency International provides globally recognized guidance, indices, and frameworks for governments and organizations to assess and combat corruption, including benchmarking tools and integrity system diagnostics.",
+        "jurisdiction": "Global (Non-governmental)",
+        "domains": ["Anti-Corruption", "Policy Guidance"],
+        "region": "International"
+      },
+      {
+        "name": "Foreign Corrupt Practices Act (FCPA)",
+        "type": "Federal Law",
+        "description": "The FCPA (1977, amended in 1998) prohibits bribing foreign government officials to obtain or retain business. It includes anti-bribery provisions and accounting provisions requiring accurate books and internal controls to prevent bribery. Enforced by DOJ (criminal) and SEC (civil), with heavy fines and potential jail time. It has extraterritorial reach, applying to U.S. companies, citizens, foreign companies listed in the U.S., and foreign persons acting within U.S. jurisdiction.",
+        "jurisdiction": "United States (Extraterrestrial)",
+        "domains": ["Anti-Bribery", "Anti-Corruption"],
+        "region": "United States"
+      },
+      {
+        "name": "Travel Act",
+        "type": "Federal Law",
+        "description": "The Travel Act (1961) allows prosecutors to charge bribery involving interstate commerce (including commercial bribery) as a federal crime. Often invoked in conjunction with state law violations, particularly in private-sector or domestic bribery cases.",
+        "jurisdiction": "United States",
+        "domains": ["Anti-Bribery", "Commercial Bribery"],
+        "region": "United States"
+      },
+      {
+        "name": "Anti-Kickback Statutes",
+        "type": "Federal Law",
+        "description": "The Medicare/Medicaid Anti-Kickback Statute criminalizes paying kickbacks to induce referrals or purchases in federal healthcare programs. These laws aim to prevent fraud and abuse in the healthcare system, particularly in federally funded programs.",
+        "jurisdiction": "United States",
+        "domains": ["Anti-Bribery", "Anti-Corruption", "Healthcare"],
+        "region": "United States"
+      },
+      {
+        "name": "State Commercial Bribery Laws",
+        "type": "State Laws",
+        "description": "Most U.S. states have laws prohibiting commercial bribery, which involves offering bribes to private entities' agents or bribery of state or local public officials. These laws are enforced in conjunction with the FCPA, which primarily covers bribery of foreign officials.",
+        "jurisdiction": "United States (State-level)",
+        "domains": ["Anti-Bribery", "Commercial Bribery"],
+        "region": "United States"
+      },
+      {
+        "name": "UK Bribery Act 2010",
+        "type": "National Law",
+        "description": "The UK Bribery Act 2010 is a broad anti-corruption law that criminalizes bribing another person, being bribed, bribing foreign public officials, and the failure of a commercial organization to prevent bribery. The last offense means companies can be held liable if anyone associated with them (employee, agent, subsidiary) pays bribes on their behalf unless the company had adequate procedures in place to prevent bribery. The Act applies universally to any company or person with close ties to the UK, regardless of where the offense occurred. Penalties can include up to 10 years imprisonment and unlimited fines.",
+        "jurisdiction": "United Kingdom",
+        "domains": ["Anti-Bribery", "Anti-Corruption", "Corporate Compliance"],
+        "region": "United Kingdom"
+      },
+      {
+        "name": "Proceeds of Crime Act 2002 & Money Laundering Regulations",
+        "type": "National Law",
+        "description": "These laws come into play as bribery can generate 'proceeds' that, if concealed, violate money laundering regulations. Companies must report knowledge or suspicion of bribery proceeds or risk committing a POCA offense. The regulations are part of the broader effort to combat financial crime and prevent the laundering of illicit funds.",
+        "jurisdiction": "United Kingdom",
+        "domains": ["Anti-Bribery", "Money Laundering", "Financial Crime"],
+        "region": "United Kingdom"
+      },
+      {
+        "name": "UK Corporate Governance Code & Listing Rules",
+        "type": "Guideline/Standard",
+        "description": "While not laws, the UK Corporate Governance Code and Listing Rules set out expectations for companies listed on the London Stock Exchange. Companies are expected to have robust internal controls, including anti-bribery measures, and to report on principal risks, with corruption being a major risk area. These guidelines are vital for corporate transparency and compliance with anti-bribery standards.",
+        "jurisdiction": "United Kingdom",
+        "domains": ["Corporate Governance", "Anti-Bribery", "Risk Management"],
+        "region": "United Kingdom"
+      },
+      {
+        "name": "Sapin II Law (France, 2016)",
+        "type": "National Law",
+        "description": "France’s Sapin II Law mandates large companies to implement anti-corruption compliance programs. It also established the Agence Française Anticorruption to oversee compliance and enforcement. The law aims to enhance corporate transparency, prevent corruption, and hold companies accountable for bribery and corruption offenses.",
+        "jurisdiction": "France",
+        "domains": ["Anti-Corruption", "Corporate Compliance", "Transparency"],
+        "region": "European Union"
+      },
+      {
+        "name": "Criminal Code (Germany)",
+        "type": "National Law",
+        "description": "Germany's Criminal Code includes sections on bribery, with penalties for offering, giving, and accepting bribes. A Corporate Liability Act is also under development, aiming to hold companies accountable for failing to prevent bribery through their organizational structures. This law aligns with Germany's commitment to international anti-corruption standards.",
+        "jurisdiction": "Germany",
+        "domains": ["Anti-Corruption", "Corporate Liability", "Criminal Law"],
+        "region": "European Union"
+      },
+      {
+        "name": "Legislative Decree 231 (Italy)",
+        "type": "National Law",
+        "description": "Italy’s Legislative Decree 231 requires companies to adopt organizational models to prevent crimes, including bribery and corruption. It holds companies accountable for criminal offenses committed by employees or executives, providing an incentive for businesses to ensure strong anti-corruption controls.",
+        "jurisdiction": "Italy",
+        "domains": ["Anti-Corruption", "Corporate Compliance", "Criminal Liability"],
+        "region": "European Union"
+      },
+      {
+        "name": "EU Anti-Corruption Directives",
+        "type": "EU Legislation",
+        "description": "The EU has issued directives aimed at enhancing public procurement integrity, with specific measures to combat corruption in procurement processes. Additionally, an EU Anti-Corruption Report mechanism monitors member states' anti-corruption efforts. The EU has also introduced a directive on whistleblower protection (2019) to support those who report corruption and bribery.",
+        "jurisdiction": "European Union",
+        "domains": ["Anti-Corruption", "Public Procurement", "Whistleblower Protection"],
+        "region": "European Union"
+      },
+      {
+        "name": "Anti-Bribery Laws (Russia)",
+        "type": "National Law",
+        "description": "Russia has recently enhanced its anti-bribery laws, criminalizing both foreign official bribery and commercial bribery. It has introduced a corporate offense for companies failing to prevent bribery, with the potential for significant fines. These changes reflect Russia’s efforts to align with international anti-corruption standards.",
+        "jurisdiction": "Russia",
+        "domains": ["Anti-Corruption", "Corporate Liability", "Criminal Law"],
+        "region": "Eastern Europe"
+      },
+      {
+        "name": "Corruption of Foreign Public Officials Act (CFPOA)",
+        "type": "National Law",
+        "description": "Canada’s Corruption of Foreign Public Officials Act criminalizes the bribery of foreign public officials and the falsification of books to hide such bribery. It applies to Canadian citizens and companies anywhere in the world. The law was strengthened in 2013 and has seen increasing enforcement, with notable prosecutions for overseas bribery.",
+        "jurisdiction": "Canada",
+        "domains": ["Anti-Corruption", "Foreign Bribery", "Corporate Compliance"],
+        "region": "North America"
+      },
+      {
+        "name": "Criminal Code (Domestic Bribery)",
+        "type": "National Law",
+        "description": "The Canadian Criminal Code addresses offenses related to bribing public officials at the federal, provincial, and municipal levels, as well as frauds on the government and secret commissions (commercial bribery). The penalties for bribery of public officials can include imprisonment of up to 14 years.",
+        "jurisdiction": "Canada",
+        "domains": ["Anti-Corruption", "Domestic Bribery", "Criminal Law"],
+        "region": "North America"
+      },
+      {
+        "name": "Provincial Laws & Integrity Regime",
+        "type": "National Law/Provincial Law",
+        "description": "Various provinces in Canada have established public sector integrity laws and codes of conduct. Additionally, Canada's Integrity Regime allows for the debarment of companies convicted of corruption offenses from receiving federal contracts, ensuring that companies maintain high standards of integrity in public sector dealings.",
+        "jurisdiction": "Canada",
+        "domains": ["Anti-Corruption", "Public Sector Integrity", "Corporate Compliance"],
+        "region": "North America"
+      },
+      {
+        "name": "China Criminal Law",
+        "type": "National Law",
+        "description": "China's Criminal Law criminalizes giving and receiving bribes, including bribes to foreign officials (amended in 2011). The National Supervisory Commission oversees public sector corruption, and the Unfair Competition Law addresses commercial bribery. Although not a member of the OECD Convention, China cooperates with international anti-corruption standards under UNCAC.",
+        "jurisdiction": "China",
+        "domains": ["Anti-Corruption", "Bribery", "Public Sector Integrity"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Prevention of Corruption Act (India) 1988 (Amended 2018)",
+        "type": "National Law",
+        "description": "The Prevention of Corruption Act criminalizes bribery to public servants and, as of the 2018 amendment, makes offering bribes an offense as well. The 2018 amendment also introduced corporate liability, allowing penalties for companies if any associated person pays a bribe on the company’s behalf unless the company had adequate procedures in place. India does not yet have a specific foreign bribery law, but the PCA covers bribery of Indian public officials by anyone.",
+        "jurisdiction": "India",
+        "domains": ["Anti-Corruption", "Domestic Bribery", "Corporate Compliance"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Japan Criminal Code & Unfair Competition Prevention Act",
+        "type": "National Law",
+        "description": "Japan's Criminal Code covers bribery of domestic public officials, while the Unfair Competition Prevention Act criminalizes bribery of foreign public officials by Japanese companies. The law has been in effect since 1998 and aligns with the OECD Convention. Enforcement has historically been limited, but it has been improving in recent years.",
+        "jurisdiction": "Japan",
+        "domains": ["Anti-Corruption", "Bribery", "OECD Compliance"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Singapore Prevention of Corruption Act (PCA)",
+        "type": "National Law",
+        "description": "The Prevention of Corruption Act (PCA) is a robust law in Singapore covering both public and private sector bribery. The law presumes guilt for public servants with unexplained wealth, and the Corrupt Practices Investigation Bureau (CPIB) actively enforces both domestic and foreign bribery offenses.",
+        "jurisdiction": "Singapore",
+        "domains": ["Anti-Corruption", "Bribery", "Public Sector Integrity"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Australia Criminal Code Division 70",
+        "type": "National Law",
+        "description": "Australia's Criminal Code Division 70 criminalizes bribery of foreign public officials, in line with the OECD Convention. The law also covers domestic public bribery. Starting in 2024, Australia will introduce a new offense for corporations failing to prevent foreign bribery, along with a deferred prosecution agreement regime for companies.",
+        "jurisdiction": "Australia",
+        "domains": ["Anti-Corruption", "Foreign Bribery", "Corporate Compliance"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Other APAC Anti-Bribery Laws",
+        "type": "National Law",
+        "description": "Many Asia-Pacific countries have anti-bribery laws aligned with UNCAC. Notable examples include Malaysia's MACC Act, Indonesia's Anti-Corruption Law, and South Korea's Improper Solicitation and Graft Act (which limits the value of gifts to public officials). Hong Kong's ICAC and New Zealand's Serious Fraud Office actively enforce anti-bribery measures in both public and private sectors.",
+        "jurisdiction": "Multiple Countries",
+        "domains": ["Anti-Corruption", "Bribery", "Public Sector Integrity"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Brazil Clean Company Act (Law 12,846/2013)",
+        "type": "National Law",
+        "description": "The Clean Company Act imposes civil and administrative liability on companies for bribery, both domestic and foreign. Companies can be fined up to 20% of gross revenue and are incentivized to have compliance programs to qualify for leniency. This law complements Brazil's Penal Code, which criminalizes bribery of local officials. Brazil has been a party to the OECD Convention since 2000 and has pursued several high-profile cases like Operation Car Wash.",
+        "jurisdiction": "Brazil",
+        "domains": ["Anti-Corruption", "Corporate Liability", "Bribery", "OECD Compliance"],
+        "region": "Latin America"
+      },
+      {
+        "name": "Mexico General Law of Administrative Responsibilities (2016)",
+        "type": "National Law",
+        "description": "The General Law of Administrative Responsibilities, under Mexico’s National Anti-Corruption System, establishes corporate liability for bribery (both domestic and foreign) and other corrupt acts. Individuals can face criminal penalties under the Penal Code for bribery offenses.",
+        "jurisdiction": "Mexico",
+        "domains": ["Anti-Corruption", "Corporate Liability", "Bribery", "Criminal Penalties"],
+        "region": "Latin America"
+      },
+      {
+        "name": "Argentina Corporate Criminal Liability Law (2018)",
+        "type": "National Law",
+        "description": "Argentina's Corporate Criminal Liability Law criminalizes corruption offenses, including the bribery of domestic and foreign officials. Companies can receive mitigation credit if they have implemented compliance programs to prevent corruption.",
+        "jurisdiction": "Argentina",
+        "domains": ["Anti-Corruption", "Corporate Liability", "Bribery", "Compliance Programs"],
+        "region": "Latin America"
+      },
+      {
+        "name": "Colombia, Chile, Peru Corporate Liability for Foreign Bribery",
+        "type": "National Law",
+        "description": "Colombia, Chile, and Peru have introduced corporate liability for foreign bribery in line with their OECD commitments. Chile updated its anti-bribery laws in 2018 (Law 21.121), and Peru in 2016 (Legislative Decree 1352) to cover foreign bribery offenses.",
+        "jurisdiction": "Colombia, Chile, Peru",
+        "domains": ["Anti-Corruption", "Corporate Liability", "Foreign Bribery", "OECD Compliance"],
+        "region": "Latin America"
+      },
+      {
+        "name": "Overall Latin America Anti-Corruption Frameworks",
+        "type": "Regional Framework",
+        "description": "Across Latin America, countries are strengthening anti-corruption frameworks in response to major scandals and international treaties. Many countries have also passed whistleblower protection laws and established specialized anti-corruption prosecutors to enhance enforcement.",
+        "jurisdiction": "Latin America",
+        "domains": ["Anti-Corruption", "Whistleblower Protection", "Specialized Prosecution", "Regional Strengthening"],
+        "region": "Latin America"
+      },
+      {
+        "name": "FATF Recommendations 24 & 25",
+        "type": "International Standard",
+        "description": "FATF requires countries to ensure that competent authorities have access to accurate beneficial ownership information for companies (Recommendation 24) and trusts/legal arrangements (Recommendation 25). In 2022, FATF strengthened these standards, urging the creation of central registries or other mechanisms to obtain UBO information, thus driving national laws on corporate transparency.",
+        "jurisdiction": "International",
+        "domains": ["Corporate Transparency", "Beneficial Ownership", "Money Laundering Prevention", "Tax Evasion Prevention"],
+        "region": "Global"
+      },
+      {
+        "name": "G20 High-Level Principles on Beneficial Ownership Transparency (2014)",
+        "type": "International Commitment",
+        "description": "A commitment by G20 leaders to adopt measures for the transparency of companies and legal arrangements, inspired by FATF guidelines. These principles emphasize the need for beneficial ownership disclosure to prevent financial crimes like money laundering and corruption.",
+        "jurisdiction": "International",
+        "domains": ["Corporate Transparency", "Beneficial Ownership", "Financial Crime Prevention"],
+        "region": "Global"
+      },
+      {
+        "name": "OECD Common Reporting Standard (CRS)",
+        "type": "International Standard",
+        "description": "Primarily focused on tax information exchange, the OECD CRS also reveals the importance of knowing the true owners of bank accounts and legal entities. The CRS complements efforts to ensure corporate transparency and beneficial ownership disclosure.",
+        "jurisdiction": "International",
+        "domains": ["Tax Information Exchange", "Corporate Transparency", "Beneficial Ownership"],
+        "region": "Global"
+      },
+      {
+        "name": "Open Government Partnership & OpenOwnership",
+        "type": "Civil Society Initiative",
+        "description": "These multi-country initiatives promote public beneficial ownership registries. OpenOwnership’s Beneficial Ownership Data Standard provides a framework for publishing beneficial ownership data in a standardized, accessible format, aiding transparency efforts.",
+        "jurisdiction": "International",
+        "domains": ["Corporate Transparency", "Beneficial Ownership", "Public Access to Data"],
+        "region": "Global"
+      },
+      {
+        "name": "UN Convention Against Corruption (UNCAC)",
+        "type": "International Treaty",
+        "description": "The UN Convention Against Corruption encourages states to prevent the misuse of corporate entities for corruption, including through transparency about the identity of owners. While it doesn't explicitly require beneficial ownership registers, it forms part of broader preventive measures.",
+        "jurisdiction": "International",
+        "domains": ["Corruption Prevention", "Corporate Transparency", "Beneficial Ownership"],
+        "region": "Global"
+      },
+      {
+        "name": "Corporate Transparency Act (CTA) 2020",
+        "type": "Federal Law",
+        "description": "A landmark U.S. law enacted as part of the Anti-Money Laundering Act (AMLA) of 2020, which requires most corporations, LLCs, and similar entities to file beneficial ownership information with the Financial Crimes Enforcement Network (FinCEN) starting January 1, 2024. A 'beneficial owner' is defined as an individual who substantially controls the entity or owns 25% or more. The law aims to address the gap in the U.S. AML framework and bring the U.S. in line with global beneficial ownership transparency standards.",
+        "jurisdiction": "United States",
+        "domains": ["Corporate Transparency", "Beneficial Ownership", "Anti-Money Laundering"],
+        "region": "North America"
+      },
+      {
+        "name": "Customer Due Diligence (CDD) Rule",
+        "type": "Regulation",
+        "description": "A FinCEN regulation (2018) that requires banks to identify the beneficial owners of legal entity customers when opening accounts. Specifically, banks must identify owners holding 25% or more of the entity and a person with control over the entity. The CTA builds on this rule by centralizing beneficial ownership information at the incorporation stage, complementing banks' due diligence obligations.",
+        "jurisdiction": "United States",
+        "domains": ["Corporate Transparency", "Beneficial Ownership", "Due Diligence", "Bank Compliance"],
+        "region": "North America"
+      },
+      {
+        "name": "SEC Requirements",
+        "type": "Federal Regulation",
+        "description": "Publicly listed companies in the U.S. must disclose major shareholders (owning 5% or more) and any changes in their holdings through 13D/G filings. While not directly focused on illicit activity, this regulation promotes transparency of corporate control and shareholder structure, especially in capital markets.",
+        "jurisdiction": "United States",
+        "domains": ["Corporate Transparency", "Shareholder Disclosure", "Capital Markets"],
+        "region": "North America"
+      },
+      {
+        "name": "State Laws",
+        "type": "State Legislation",
+        "description": "While states handle incorporation, historically, they did not require beneficial ownership disclosure. Some states, like New York, have implemented their own disclosure requirements for certain transactions (e.g., LLC members in property purchases). The CTA creates a uniform federal standard for beneficial ownership disclosure, ensuring consistency across states.",
+        "jurisdiction": "United States",
+        "domains": ["Corporate Transparency", "Beneficial Ownership", "State Legislation"],
+        "region": "North America"
+      },
+      {
+        "name": "EU Anti-Money Laundering Directives (4AMLD, 5AMLD)",
+        "type": "Directive",
+        "description": "The EU's Anti-Money Laundering Directives (4AMLD and 5AMLD) require member states to establish central registers of beneficial owners for companies and trusts. Under 4AMLD (2015), these registers were initially accessible to authorities and those with a 'legitimate interest.' 5AMLD (2018) broadened this access by making company UBO registers public, with optional registration for access. However, a 2022 EU Court of Justice ruling invalidated full public access, limiting it to those with legitimate interest. Despite this, companies are still required to file their UBO information (usually any owner or controlling person with >25%) with a government registry, which must be kept up-to-date.",
+        "jurisdiction": "European Union",
+        "domains": ["Anti-Money Laundering", "Beneficial Ownership", "Corporate Transparency"],
+        "region": "Europe"
+      },
+      {
+        "name": "Significant Shareholder Disclosures",
+        "type": "Directive",
+        "description": "The EU’s Transparency Directive requires listed companies' investors to disclose holdings above certain thresholds (e.g., 5%, 10%, etc.) to the market. This regulation, separate from AML registers, also contributes to promoting transparency in ownership and shareholder structures, supporting broader corporate transparency efforts in the EU.",
+        "jurisdiction": "European Union",
+        "domains": ["Corporate Transparency", "Shareholder Disclosure", "Public Market"],
+        "region": "Europe"
+      },
+      {
+        "name": "Proposed EU AML Regulation",
+        "type": "Regulation (Proposed)",
+        "description": "The proposed EU AML Regulation aims to standardize beneficial ownership rules across EU member states. This could include lowering the thresholds for ownership disclosures and enhancing the interconnectivity of UBO registers to ensure more effective cross-border collaboration and transparency.",
+        "jurisdiction": "European Union",
+        "domains": ["Anti-Money Laundering", "Beneficial Ownership", "Corporate Transparency"],
+        "region": "Europe"
+      },
+      {
+        "name": "European Beneficial Ownership Registers",
+        "type": "National Legislation",
+        "description": "Many EU member states have established beneficial ownership registers for companies, with countries like Denmark, France, and the Netherlands having fully public UBO registries before the 2022 EU Court of Justice ruling. While full public access to these registers has been restricted, authorities can still easily access UBO information. These registers help ensure that beneficial ownership information is publicly available, promoting corporate transparency within the EU.",
+        "jurisdiction": "European Union",
+        "domains": ["Corporate Transparency", "Beneficial Ownership", "National Legislation"],
+        "region": "Europe"
+      },
+      {
+        "name": "People with Significant Control (PSC) Register",
+        "type": "Legislation",
+        "description": "Since 2016, UK companies (and LLPs) must report individuals who ultimately own or control more than 25% of shares or voting rights, or otherwise exercise significant control. This PSC information is publicly available via Companies House. The UK was a pioneer with a public beneficial ownership register. Upcoming reforms (via the Economic Crime and Corporate Transparency Bill) will strengthen verification of identities on the register.",
+        "jurisdiction": "United Kingdom",
+        "domains": ["Beneficial Ownership", "Corporate Transparency", "Public Registry"],
+        "region": "United Kingdom"
+      },
+      {
+        "name": "Register of Overseas Entities (ROE)",
+        "type": "Legislation",
+        "description": "Introduced in 2022, this requires overseas companies that own UK real estate to disclose their beneficial owners to Companies House. This measure was aimed at curbing dirty money in UK property. As of early 2023, many entities failed to meet the reporting deadline, and enforcement is underway.",
+        "jurisdiction": "United Kingdom",
+        "domains": ["Corporate Transparency", "Beneficial Ownership", "Real Estate", "International Compliance"],
+        "region": "United Kingdom"
+      },
+      {
+        "name": "Trust Registration Service (TRS)",
+        "type": "Legislation",
+        "description": "UK trusts (and some foreign trusts with UK assets) must register their beneficial owners (settlors, trustees, beneficiaries) with the HMRC Trust Register. While the register is not public, it is accessible to law enforcement and those with legitimate interest, supporting efforts to improve transparency in trust ownership.",
+        "jurisdiction": "United Kingdom",
+        "domains": ["Beneficial Ownership", "Trusts", "Corporate Transparency"],
+        "region": "United Kingdom"
+      },
+      {
+        "name": "Significant Shareholder Notifications",
+        "type": "Regulation",
+        "description": "Under UK Listing Rules, listed firms are required to announce shareholders crossing 3% ownership thresholds. While not directly an anti-money laundering measure, this regulation complements corporate transparency by promoting shareholder disclosure in publicly traded companies.",
+        "jurisdiction": "United Kingdom",
+        "domains": ["Corporate Transparency", "Shareholder Disclosure", "Public Market"],
+        "region": "United Kingdom"
+      },
+      {
+        "name": "Provincial Corporate Transparency",
+        "type": "Legislation",
+        "description": "Canada is moving toward beneficial ownership (BO) registers, but currently the system is fragmented. For instance, British Columbia and Quebec have established provincial beneficial owner registries for corporations. Ontario and other provinces are planning or have implemented partial measures.",
+        "jurisdiction": "Canada",
+        "domains": ["Beneficial Ownership", "Corporate Transparency", "Provincial Law"],
+        "region": "Canada"
+      },
+      {
+        "name": "Federal Beneficial Ownership Registry",
+        "type": "Legislation",
+        "description": "The Canadian federal government has committed to establishing a public beneficial ownership registry for federally incorporated companies by 2025. Legislation is currently in progress to support this initiative.",
+        "jurisdiction": "Canada",
+        "domains": ["Beneficial Ownership", "Corporate Transparency", "Federal Law"],
+        "region": "Canada"
+      },
+      {
+        "name": "PCMLTFA (Proceeds of Crime (Money Laundering) and Terrorist Financing Act)",
+        "type": "Legislation",
+        "description": "Under PCMLTFA, financial institutions are required to collect beneficial ownership information for clients that are entities. Although there wasn’t a central repository before, recent amendments have strengthened the verification and recording requirements for beneficial owners.",
+        "jurisdiction": "Canada",
+        "domains": ["Beneficial Ownership", "Anti-Money Laundering", "Financial Institutions"],
+        "region": "Canada"
+      },
+      {
+        "name": "Securities Law (Investor Disclosure)",
+        "type": "Regulation",
+        "description": "In line with U.S. practices, Canadian securities law mandates that investors acquiring 10% or more of a public company’s shares must publicly report their ownership. An early warning system is in place for acquisitions of 5% or more, promoting transparency of large shareholdings.",
+        "jurisdiction": "Canada",
+        "domains": ["Securities Law", "Shareholder Disclosure", "Corporate Transparency"],
+        "region": "Canada"
+      },
+      {
+        "name": "Singapore Register of Controllers",
+        "type": "Legislation",
+        "description": "Since 2017, Singapore requires companies to maintain a Register of Controllers, listing individuals or legal entities with significant interest or control, generally those with more than 25% ownership or control. This register is not public but must be provided to the government upon request. Similarly, Singapore trusts must keep records of beneficial owners.",
+        "jurisdiction": "Singapore",
+        "domains": ["Beneficial Ownership", "Corporate Transparency", "Company Law"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Hong Kong Significant Controllers Register",
+        "type": "Legislation",
+        "description": "Implemented in 2018, the Significant Controllers Register requires companies to identify and record individuals or entities with more than 25% of shares/votes or significant influence. The register is accessible to law enforcement.",
+        "jurisdiction": "Hong Kong",
+        "domains": ["Beneficial Ownership", "Corporate Transparency", "Company Law"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Australia Shareholder Disclosure & UBO Transparency",
+        "type": "Regulation",
+        "description": "Australia does not yet have a public beneficial ownership register for companies but has robust shareholder disclosure requirements for listed companies. Additionally, there are ongoing discussions and reviews for improving transparency for trusts and partnerships.",
+        "jurisdiction": "Australia",
+        "domains": ["Beneficial Ownership", "Corporate Transparency", "Company Law"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Offshore Financial Centers (Cayman, BVI, etc.) BO Registers",
+        "type": "Legislation",
+        "description": "In response to international pressure, many offshore financial centers, such as the Cayman Islands and British Virgin Islands, have introduced private beneficial ownership registers. These registers are accessible to authorities via information exchange mechanisms. For instance, the Cayman Islands now requires companies to file BO information with a competent authority, though it remains private unless a UK order comes into effect.",
+        "jurisdiction": "Offshore Financial Centers",
+        "domains": ["Beneficial Ownership", "Corporate Transparency", "Offshore Finance"],
+        "region": "Caribbean"
+      },
+      {
+        "name": "Global Trend of BO Transparency Reforms",
+        "type": "Trend",
+        "description": "Over 100 jurisdictions worldwide have committed to implementing beneficial ownership transparency reforms. Examples include Ukraine’s public UBO register, Dubai’s (UAE) 2020 regulations requiring companies to report UBOs, and Nigeria’s 2020 Companies and Allied Matters Act mandating BO disclosures. These reforms align with the FATF’s efforts to combat anonymous shell companies.",
+        "jurisdiction": "Global",
+        "domains": ["Beneficial Ownership", "Corporate Transparency", "Global Law"],
+        "region": "Global"
+      },
+      {
+        "name": "United Nations Security Council Sanctions",
+        "type": "Sanction",
+        "description": "Binding on all UN member states, the UNSC can impose sanctions through resolutions under Chapter VII of the UN Charter. Sanctions include asset freezes, travel bans, and arms embargoes against certain individuals, entities, or countries (e.g., North Korea, Iran, ISIS/Al-Qaida). These sanctions are enforced domestically by UN member states, and businesses are required to comply, including freezing assets of listed persons.",
+        "jurisdiction": "United Nations",
+        "domains": ["Sanctions", "Compliance", "International Law"],
+        "region": "Global"
+      },
+      {
+        "name": "European Union Sanctions",
+        "type": "Sanction",
+        "description": "The EU enacts all UN sanctions and also implements its own autonomous sanctions (e.g., asset freezes and embargoes against countries or entities like Russia, Syria, terrorism lists). EU persons and companies must comply directly with these regulations. The EU Consolidated Financial Sanctions list is maintained by the European Commission, with the UK post-Brexit maintaining a similar regime.",
+        "jurisdiction": "European Union",
+        "domains": ["Sanctions", "Compliance", "International Law"],
+        "region": "Europe"
+      },
+      {
+        "name": "Office of Foreign Assets Control (OFAC) Sanctions",
+        "type": "Sanction",
+        "description": "The U.S. Treasury Department’s OFAC administers multiple sanctions programs, including country-based programs (Cuba, Iran) and list-based programs (e.g., counter-terrorism, narcotics trafficking, cyber sanctions). The primary list is the Specially Designated Nationals (SDN) List, which includes individuals, companies, and even cryptocurrency addresses under sanction. U.S. persons are prohibited from transacting with SDNs, and non-U.S. companies can face secondary sanctions for certain dealings.",
+        "jurisdiction": "United States",
+        "domains": ["Sanctions", "Compliance", "International Law"],
+        "region": "North America"
+      },
+      {
+        "name": "Canada Sanctions",
+        "type": "Sanction",
+        "description": "Canada has its own sanctions lists, which largely align with the UN, U.S., and EU sanctions, under the Special Economic Measures Act and the United Nations Act. Canadian entities must comply with these lists.",
+        "jurisdiction": "Canada",
+        "domains": ["Sanctions", "Compliance", "International Law"],
+        "region": "North America"
+      },
+      {
+        "name": "Australia, Japan, Switzerland Sanctions",
+        "type": "Sanction",
+        "description": "Australia, Japan, and Switzerland maintain their own sanctions regimes, often in alignment with the UN, EU, and U.S. sanctions. These countries impose asset freezes, trade embargoes, and other restrictions.",
+        "jurisdiction": "Australia, Japan, Switzerland",
+        "domains": ["Sanctions", "Compliance", "International Law"],
+        "region": "Asia-Pacific, Europe"
+      },
+      {
+        "name": "China Counter-Sanctions Law",
+        "type": "Sanction",
+        "description": "In response to foreign sanctions, China introduced a counter-sanctions law and an ‘unreliable entities list’ in 2021, and a new anti-espionage law in 2023. These laws require Chinese companies to be cautious not to comply with foreign sanctions in ways that could trigger China's countermeasures.",
+        "jurisdiction": "China",
+        "domains": ["Sanctions", "Compliance", "International Law"],
+        "region": "Asia"
+      },
+      {
+        "name": "Global Magnitsky and Human Rights Sanctions",
+        "type": "Sanction",
+        "description": "The U.S., Canada, UK, and EU have regimes to sanction individuals involved in human rights violations or grand corruption, similar to the Global Magnitsky Act. These sanctions typically involve asset freezes and travel bans.",
+        "jurisdiction": "Global",
+        "domains": ["Sanctions", "Compliance", "Human Rights", "International Law"],
+        "region": "Global"
+      },
+      {
+        "name": "FATF Recommendation 12",
+        "type": "Standard",
+        "description": "FATF Recommendation 12 requires financial institutions to identify customers or beneficial owners who are Politically Exposed Persons (PEPs), including foreign PEPs such as senior officials, heads of state, judges, military leaders, and their immediate family and close associates. Institutions must apply enhanced due diligence (EDD), obtain senior management approval, establish the source of wealth/funds, and monitor the account closely.",
+        "jurisdiction": "Global",
+        "domains": ["Anti-Money Laundering", "Compliance", "Financial Institutions"],
+        "region": "Global"
+      },
+      {
+        "name": "EU AML Directives (4AMLD)",
+        "type": "Law",
+        "description": "The EU Anti-Money Laundering Directives, particularly the 4AMLD, incorporated FATF's PEP requirements into law. EU firms must screen customers against known PEP lists and apply enhanced due diligence (EDD) for foreign PEPs. Domestic PEPs are also subject to specific measures under this directive.",
+        "jurisdiction": "European Union",
+        "domains": ["Anti-Money Laundering", "Compliance", "Financial Institutions"],
+        "region": "Europe"
+      },
+      {
+        "name": "U.S. Regulation (BSA/Patriot Act)",
+        "type": "Law",
+        "description": "Under the U.S. Bank Secrecy Act (BSA) and the Patriot Act, U.S. financial institutions are expected to have risk-based procedures for PEPs, although the term 'PEP' isn’t explicitly in statute. The regulations require enhanced due diligence (EDD) for private banking accounts of non-U.S. persons with senior political positions (Section 312 of the Patriot Act). U.S. banks also treat domestic senior politicians as higher-risk.",
+        "jurisdiction": "United States",
+        "domains": ["Anti-Money Laundering", "Compliance", "Financial Institutions"],
+        "region": "North America"
+      },
+      {
+        "name": "PEP Lists",
+        "type": "Database",
+        "description": "Commercial databases compile global PEP lists, such as those from World-Check, Dow Jones, and Factiva. These databases are used by financial institutions to flag new account holders who are PEPs. While there is no single global public PEP list, some countries publish domestic PEP roles. Compliance programs use these lists to enhance monitoring and detect potential corruption.",
+        "jurisdiction": "Global",
+        "domains": ["Anti-Money Laundering", "Compliance", "Financial Institutions"],
+        "region": "Global"
+      },
+      {
+        "name": "Sanctions Overlap",
+        "type": "Guideline",
+        "description": "Sometimes, PEPs are also subject to sanctions, such as when an individual minister is on the OFAC Specially Designated Nationals (SDN) list for corruption. Screening tools often check both PEP status and sanctions lists to ensure compliance with both sets of regulations.",
+        "jurisdiction": "Global",
+        "domains": ["Sanctions", "Anti-Money Laundering", "Compliance"],
+        "region": "Global"
+      },
+      {
+        "name": "Transaction and Customer Screening",
+        "type": "Regulation",
+        "description": "Financial institutions and many companies are required to screen customer databases and transactions against sanctions lists (e.g., UN, OFAC, EU) in real-time or daily. If a match is found, the institution must freeze assets and report to authorities (e.g., OFAC blocking report or EU asset freeze notification). Sanctions screening is mandated by most jurisdictions' AML/CFT laws.",
+        "jurisdiction": "Global",
+        "domains": ["Sanctions Compliance", "Anti-Money Laundering", "Financial Institutions"],
+        "region": "Global"
+      },
+      {
+        "name": "Watchlists and Tools",
+        "type": "Guideline",
+        "description": "Institutions screen against multiple sanctions lists beyond the SDN list, including the BIS Denied Persons List for export violations, U.S. State Department Nonproliferation sanctions, and other countries' lists. Automated software is commonly used to flag potential matches, with manual review necessary to resolve false positives.",
+        "jurisdiction": "Global",
+        "domains": ["Sanctions Compliance", "Risk Management", "Financial Institutions"],
+        "region": "Global"
+      },
+      {
+        "name": "FATF High-Risk Jurisdictions Lists",
+        "type": "Standard",
+        "description": "FATF identifies countries with weak AML/CFT regimes via the 'Black List' and 'Gray List'. Financial institutions are required to apply enhanced due diligence (EDD) when doing business involving these jurisdictions. Regulators may further restrict dealings with blacklisted countries (e.g., North Korea, Iran). The EU also maintains a list of high-risk third countries triggering enhanced checks by EU banks.",
+        "jurisdiction": "Global",
+        "domains": ["Anti-Money Laundering", "Risk Management", "Compliance"],
+        "region": "Global"
+      },
+      {
+        "name": "Proliferation Financing and Export Controls",
+        "type": "Regulation",
+        "description": "UN Security Council sanctions lists include countries like North Korea and Iran for WMD proliferation. FATF Rec.7 requires screening for proliferation financing as well. Many countries require screening of trade transactions for proliferation red flags and to ensure that sanctioned parties are not involved.",
+        "jurisdiction": "Global",
+        "domains": ["Sanctions Compliance", "Anti-Money Laundering", "Export Controls"],
+        "region": "Global"
+      },
+      {
+        "name": "Ongoing Monitoring",
+        "type": "Guideline",
+        "description": "Sanctions lists are frequently updated, and firms must have procedures in place to update list data and rescreen existing customers periodically. Ongoing transaction monitoring is essential to detect potential indirect sanctions evasion (e.g., payments involving third parties controlled by sanctioned entities).",
+        "jurisdiction": "Global",
+        "domains": ["Sanctions Compliance", "Anti-Money Laundering", "Risk Management"],
+        "region": "Global"
+      },
+      {
+        "name": "Penalties",
+        "type": "Regulation",
+        "description": "Violating sanctions regulations can lead to significant penalties, including heavy fines and criminal charges. Global banks have faced billions of dollars in fines for sanctions breaches, often related to processing payments for sanctioned countries or entities. Sanctions compliance is one of the most strictly enforced aspects of corporate compliance.",
+        "jurisdiction": "Global",
+        "domains": ["Sanctions Compliance", "Risk Management", "Regulatory Penalties"],
+        "region": "Global"
+      },
+      {
+        "name": "Wassenaar Arrangement",
+        "type": "Multilateral Regime",
+        "description": "A 42-nation arrangement coordinating export controls on conventional arms and dual-use goods & technologies. Participating countries (US, EU states, Russia, Japan, etc.) maintain national control lists based on Wassenaar’s agreed lists (munitions list and dual-use list). While not legally binding internationally, members implement its guidelines in their laws, ensuring global consistency.",
+        "jurisdiction": "Global",
+        "domains": ["Export Controls", "National Security", "Trade Compliance"],
+        "region": "Global"
+      },
+      {
+        "name": "Missile Technology Control Regime (MTCR), Nuclear Suppliers Group (NSG), Australia Group (Chemical/Bio weapons)",
+        "type": "Multilateral Regime",
+        "description": "Multilateral regimes focused on controlling the export of items related to missiles, nuclear, and chemical/biological weapons. These regimes shape national export control lists and license policies, ensuring coordinated global compliance on sensitive items.",
+        "jurisdiction": "Global",
+        "domains": ["Export Controls", "National Security", "Arms Control"],
+        "region": "Global"
+      },
+      {
+        "name": "Arms Trade Treaty (ATT)",
+        "type": "Treaty",
+        "description": "A 2014 UN treaty regulating the international trade in conventional arms. Requires states to assess exports to ensure they won’t be used for genocide, terrorism, or other prohibited activities. Major exporters like the US, Russia, and China are not parties, but many other nations are signatories.",
+        "jurisdiction": "Global",
+        "domains": ["Arms Control", "Export Controls", "International Law"],
+        "region": "Global"
+      },
+      {
+        "name": "World Trade Organization (WTO) Rules",
+        "type": "Regulation",
+        "description": "The WTO prohibits quantitative restrictions on trade but allows exceptions for security (GATT Article XXI) and other reasons. WTO norms encourage free trade and non-discrimination, meaning export controls should be justified and targeted. Export controls must comply with WTO obligations or claim exceptions for security and other reasons.",
+        "jurisdiction": "Global",
+        "domains": ["Trade Compliance", "International Law", "Economic Policy"],
+        "region": "Global"
+      },
+      {
+        "name": "Free Trade Agreements (FTAs)",
+        "type": "Regulation",
+        "description": "Free Trade Agreements (e.g., USMCA, EU trade agreements, CPTPP, RCEP) often contain clauses on customs cooperation, trade facilitation, and data transfer. Compliance means utilizing trade agreement benefits legally and adhering to prohibited practices such as unwarranted data localization or customs duties on electronic transmissions.",
+        "jurisdiction": "Global",
+        "domains": ["Trade Compliance", "Customs", "International Law"],
+        "region": "Global"
+      },
+      {
+        "name": "Export Administration Regulations (EAR)",
+        "type": "Regulation",
+        "description": "Administered by the Bureau of Industry and Security (BIS) under the U.S. Department of Commerce. Controls 'dual-use' items (commercial items with potential military use) and sensitive military items. The EAR includes the Commerce Control List (CCL), which specifies export licensing requirements based on destination, end user, and end use. Companies must screen transactions for restricted end-uses (e.g., WMD proliferation) and denied parties (BIS maintains separate lists like the Entity List and Denied Persons List). Violations can lead to penalties and denial of export privileges.",
+        "jurisdiction": "United States",
+        "domains": ["Export Controls", "National Security", "Trade Compliance"],
+        "region": "U.S."
+      },
+      {
+        "name": "International Traffic in Arms Regulations (ITAR)",
+        "type": "Regulation",
+        "description": "Administered by the U.S. Department of State’s Directorate of Defense Trade Controls (DDTC). ITAR controls the export of defense articles and services listed on the U.S. Munitions List (USML). It requires licensing for the export of military goods, technology, and services, including re-export and retransfer controls. ITAR also prohibits exports to certain countries and individuals, and has extraterritorial reach, meaning non-U.S. entities must comply if handling ITAR-controlled items. Violations can lead to severe fines and criminal charges.",
+        "jurisdiction": "United States",
+        "domains": ["Export Controls", "National Security", "Arms Control"],
+        "region": "U.S."
+      },
+      {
+        "name": "Anti-Boycott Regulations",
+        "type": "Regulation",
+        "description": "Under the EAR, U.S. companies are prohibited from participating in unsanctioned foreign boycotts, particularly the Arab League boycott of Israel. Companies must report any boycott requests they receive. This aspect of trade compliance is particularly relevant for companies doing business in the Middle East.",
+        "jurisdiction": "United States",
+        "domains": ["Trade Compliance", "Economic Sanctions", "Human Rights"],
+        "region": "U.S."
+      },
+      {
+        "name": "Customs and Import Regulations",
+        "type": "Regulation",
+        "description": "Enforced by U.S. Customs and Border Protection (CBP). These regulations govern the proper classification, valuation, and country-of-origin marking of goods. Companies must ensure they do not import prohibited goods (e.g., products made with forced labor). Section 307 of the Tariff Act bans such imports, with enforcement via Withhold Release Orders. Companies must also comply with trade remedy measures like antidumping and countervailing duties, and preferential tariff rules under agreements like USMCA.",
+        "jurisdiction": "United States",
+        "domains": ["Customs", "Import Compliance", "Trade Compliance"],
+        "region": "U.S."
+      },
+      {
+        "name": "Sectoral Export Controls",
+        "type": "Regulation",
+        "description": "Certain industries have additional controls, such as the export of nuclear technology under the U.S. Department of Energy (DOE) and Nuclear Regulatory Commission (NRC) regulations (e.g., 10 CFR Part 810, Part 110), and defense services regulated under ITAR Technical Assistance Agreements.",
+        "jurisdiction": "United States",
+        "domains": ["Export Controls", "National Security", "Sectoral Compliance"],
+        "region": "U.S."
+      },
+      {
+        "name": "EU Dual-Use Regulation (Regulation (EU) 2021/821)",
+        "type": "Regulation",
+        "description": "Controls the export, transfer, brokering, and transit of dual-use items from the EU. It lists controlled items, which are aligned with multilateral regimes like Wassenaar and MTCR. Requires licenses for sensitive destinations or end uses. Introduced 'human security' controls, particularly for cyber-surveillance technology. Licenses are issued by individual member states under a common EU framework, with some general authorizations for less sensitive exports.",
+        "jurisdiction": "European Union",
+        "domains": ["Export Controls", "Dual-Use Items", "Cybersecurity"],
+        "region": "EU"
+      },
+      {
+        "name": "EU Military Items Control (Common Position 2008/944/CFSP)",
+        "type": "Regulation",
+        "description": "Controls arms exports from EU member states under national laws, guided by the Common Position 2008/944/CFSP. Sets criteria such as human rights, regional stability, and risk of diversion to unauthorized end users to evaluate export licenses for military goods. Many EU countries publish annual reports on arms exports.",
+        "jurisdiction": "European Union",
+        "domains": ["Export Controls", "Arms Control", "Human Rights"],
+        "region": "EU"
+      },
+      {
+        "name": "Brexit & UK Strategic Export Control Lists",
+        "type": "Regulation",
+        "description": "Following Brexit, the UK now operates under its own Export Control Order 2008 (updated), with strategic export control lists mirroring EU lists. The UK requires licenses similar to the EU system, but with the ability to diverge in sanctions and arms embargoes. Despite this, the UK remains aligned with the EU/US on key issues like sanctions against Russia.",
+        "jurisdiction": "United Kingdom",
+        "domains": ["Export Controls", "National Security", "Trade Compliance"],
+        "region": "UK"
+      },
+      {
+        "name": "Japan Export Controls (Foreign Exchange and Foreign Trade Act)",
+        "type": "Regulation",
+        "description": "Japan's export controls are governed by the Foreign Exchange and Foreign Trade Act, aligning with multilateral export control regimes and often introducing additional restrictions. Japanese companies are known for strict compliance with these regulations, with heavy penalties and potential loss of export privileges for violations, particularly regarding sensitive technologies and military goods.",
+        "jurisdiction": "Japan",
+        "domains": ["Export Controls", "Trade Compliance", "Technology Transfers"],
+        "region": "Japan"
+      },
+      {
+        "name": "Canada Export and Import Permits Act",
+        "type": "Regulation",
+        "description": "Canada's export controls are governed by the Export and Import Permits Act, which includes an export control list and area control list. These lists impose strict controls on exports to countries like North Korea. Violations can lead to severe penalties, including export privilege revocation.",
+        "jurisdiction": "Canada",
+        "domains": ["Export Controls", "Trade Compliance", "National Security"],
+        "region": "Canada"
+      },
+      {
+        "name": "Australia Customs Act and Defense Trade Controls Act",
+        "type": "Regulation",
+        "description": "Australia controls exports through the Customs Act and the Defense Trade Controls Act. These laws control not only goods but also services and the publication of sensitive technical information. The regulations ensure compliance with both domestic and international trade and national security standards.",
+        "jurisdiction": "Australia",
+        "domains": ["Export Controls", "Arms Control", "National Security"],
+        "region": "Australia"
+      },
+      {
+        "name": "India SCOMET List (Special Chemicals, Organisms, Materials, Equipment, and Technologies)",
+        "type": "Regulation",
+        "description": "India controls the export of dual-use goods under the SCOMET list as part of its Foreign Trade Policy. A license is required for the export of items listed on the SCOMET list, which covers a range of sensitive goods and technologies, including those related to chemicals, biological agents, and military applications.",
+        "jurisdiction": "India",
+        "domains": ["Export Controls", "National Security", "Trade Compliance"],
+        "region": "India"
+      },
+      {
+        "name": "China Export Control Law (2020)",
+        "type": "Regulation",
+        "description": "China's Export Control Law (2020) provides a unified framework for controlling the export of sensitive goods and technologies, including military and dual-use items. It includes provisions for national security concerns and allows for reciprocal actions based on international trade relations. China also has a list of controlled items and can prohibit exports if they pose a risk to national security.",
+        "jurisdiction": "China",
+        "domains": ["Export Controls", "National Security", "Technology Transfers"],
+        "region": "China"
+      },
+      {
+        "name": "GDPR Data Transfer Restrictions",
+        "type": "Regulation",
+        "description": "The GDPR (General Data Protection Regulation) Chapter V prohibits the transfer of personal data outside the European Economic Area (EEA) to countries lacking adequate data protection, unless an exception or safeguard is in place. Adequacy decisions (e.g., for Japan, Switzerland, UK, Israel, Canada commercial sector, etc.) allow free flow of data. Otherwise, Standard Contractual Clauses (SCCs), Binding Corporate Rules, or other approved mechanisms must be used. Schrems II (2020) invalidated the EU–US Privacy Shield, leading to SCCs being the main tool for transfers until the EU-US Data Privacy Framework in 2023.",
+        "jurisdiction": "European Union",
+        "domains": ["Data Transfers", "Privacy", "GDPR"],
+        "region": "EU"
+      },
+      {
+        "name": "Critical Data/Cloud (EU Cybersecurity Certification - EUCS)",
+        "type": "Regulation",
+        "description": "The EU proposed the Cybersecurity Certification (EUCS) that could include local presence requirements for cloud providers serving critical sectors. While not strict localization, the proposal aims to ensure that certain services like cloud storage for critical data have a sufficient presence within the EU. Additionally, sector-specific regulations (e.g., financial services) may require certain data to be accessible within the EU for regulatory supervision.",
+        "jurisdiction": "European Union",
+        "domains": ["Cloud", "Critical Data", "Cybersecurity", "Data Residency"],
+        "region": "EU"
+      },
+      {
+        "name": "Member State Laws on Localization",
+        "type": "Regulation",
+        "description": "Some EU member states have specific sectorial data localization requirements, such as Germany's telecom metadata retention laws and France's mandates for the local storage of health data. These regulations were often challenged under EU single market laws but reflect national concerns about sovereignty and security. Many such rules have been adjusted to conform with broader EU regulations while addressing localized needs.",
+        "jurisdiction": "European Union (Member States)",
+        "domains": ["Data Localization", "Sector-Specific Rules", "Sovereignty"],
+        "region": "EU"
+      },
+      {
+        "name": "Defense: ITAR-Controlled Data",
+        "type": "Regulation",
+        "description": "Under the International Traffic in Arms Regulations (ITAR), certain technical data must not be disclosed to foreign persons unless authorized. This effectively requires that ITAR-controlled data be stored or accessed only by U.S. persons within the U.S., or through the use of specific licenses or U.S.-based infrastructure (e.g., FedRAMP High cloud services).",
+        "jurisdiction": "United States",
+        "domains": ["ITAR", "Defense", "Data Residency", "Export Controls"],
+        "region": "US"
+      },
+      {
+        "name": "Government Data Storage (FedRAMP)",
+        "type": "Regulation",
+        "description": "Certain U.S. federal agencies mandate that government data be stored domestically or within certified cloud environments, such as those approved under FedRAMP (Federal Risk and Authorization Management Program). This ensures sensitive data is handled securely within designated parameters, often requiring U.S.-based data centers and personnel.",
+        "jurisdiction": "United States",
+        "domains": ["Government", "Cloud", "FedRAMP", "Data Residency"],
+        "region": "US"
+      },
+      {
+        "name": "Healthcare Data (HIPAA and State Laws)",
+        "type": "Regulation",
+        "description": "While the Health Insurance Portability and Accountability Act (HIPAA) does not explicitly require data localization, it mandates the safeguarding of health records. Some state-level laws, such as Texas HB 300, require that health records remain accessible within the state, which can affect how healthcare data is stored and managed across jurisdictions.",
+        "jurisdiction": "United States",
+        "domains": ["Healthcare", "HIPAA", "State Laws", "Data Access"],
+        "region": "US"
+      },
+      {
+        "name": "Tax Records (IRS Requirements)",
+        "type": "Regulation",
+        "description": "The Internal Revenue Service (IRS) requires certain tax-related records to be available in the U.S. upon request, but there is no strict prohibition on storing these records abroad. The records must be accessible for auditing and tax purposes as part of compliance with U.S. tax laws.",
+        "jurisdiction": "United States",
+        "domains": ["Tax", "IRS", "Data Access"],
+        "region": "US"
+      },
+      {
+        "name": "Cloud Act (2018)",
+        "type": "Law",
+        "description": "The Clarifying Lawful Overseas Use of Data Act (Cloud Act) clarifies that U.S. law enforcement can subpoena data stored overseas if it is held by a U.S. service provider. The Cloud Act also establishes a framework for bilateral agreements between the U.S. and other countries to facilitate law enforcement access to data, effectively extending U.S. jurisdictional reach to data stored abroad.",
+        "jurisdiction": "United States",
+        "domains": ["Cloud", "Law Enforcement", "Cross-Border Data", "Data Accessibility"],
+        "region": "US"
+      },
+      {
+        "name": "Anti-Localization Stance (WTO and Trade Agreements)",
+        "type": "Policy",
+        "description": "The U.S. opposes forced data localization in international trade negotiations, arguing that it restricts business and cybersecurity. U.S. trade agreements, such as the USMCA, prevent other countries from requiring data to be stored locally, provided that regulators have prompt access to the data (with some exceptions for specific industries like financial services). USMCA Article 19.12 is an example of this stance.",
+        "jurisdiction": "United States",
+        "domains": ["Trade Agreements", "Data Localization", "Global Trade"],
+        "region": "US"
+      },
+      {
+        "name": "China - Personal Information Protection Law (PIPL)",
+        "type": "Regulation",
+        "description": "The Personal Information Protection Law (PIPL) mandates that critical infrastructure operators and large data processors store personal data within China or undergo a security assessment before exporting it. Standard Contract Clauses or certifications can be used for less sensitive data exports, but multinational firms often need to localize Chinese customer data or obtain government clearance for transfers.",
+        "jurisdiction": "China",
+        "domains": ["Personal Data", "Data Localization", "Export Controls", "Data Residency"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "China - Data Security Law (DSL)",
+        "type": "Regulation",
+        "description": "The Data Security Law requires important data, which affects national security, economic development, and public interest, to be stored within China. Exporting this data requires approval. The definition of 'important data' varies by sector, adding complexity to compliance.",
+        "jurisdiction": "China",
+        "domains": ["Data Security", "Data Localization", "Critical Data", "National Security"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "China - Cybersecurity Law (2017)",
+        "type": "Regulation",
+        "description": "The 2017 Cybersecurity Law initiated restrictions on the transfer of critical information by operators of critical information infrastructure (CII). These operators are required to store data within China and undergo security assessments for certain data exports.",
+        "jurisdiction": "China",
+        "domains": ["Cybersecurity", "Data Localization", "Critical Infrastructure"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Russia - Personal Data Law (2015)",
+        "type": "Regulation",
+        "description": "Since 2015, Russia's Personal Data Law requires personal data of Russian citizens to be stored in Russia. While data transfers are allowed, the primary copy must remain in Russia, often requiring local storage and mirroring. Non-compliance has led to fines and service bans (e.g., LinkedIn).",
+        "jurisdiction": "Russia",
+        "domains": ["Personal Data", "Data Localization", "Export Controls"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "India - Data Protection Bill (DPDP Act 2023)",
+        "type": "Regulation",
+        "description": "The DPDP Act 2023 allows data transfers to whitelisted countries, moving away from strict localization requirements. However, India's financial sector has mandated transaction data storage within the country, impacting companies like Visa and MasterCard. Other sectors may see similar rules in future policies.",
+        "jurisdiction": "India",
+        "domains": ["Data Protection", "Data Localization", "Financial Data"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "India - RBI Payment Data Localization",
+        "type": "Regulation",
+        "description": "The Reserve Bank of India (RBI) directed payment companies (Visa, MasterCard, etc.) to store transaction data within India. This regulation is part of India's broader push to retain control over sensitive financial data and ensure local accessibility.",
+        "jurisdiction": "India",
+        "domains": ["Financial Data", "Data Localization", "Payment Data"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Indonesia - Data Localization (2019)",
+        "type": "Regulation",
+        "description": "Indonesia's 2019 update eased previous data localization laws. Now, only specific sectors like public services and banking are required to localize data, while the private sector can transfer data as long as regulatory access and security measures are in place.",
+        "jurisdiction": "Indonesia",
+        "domains": ["Data Localization", "Banking", "Public Sector", "Data Security"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Vietnam - Cybersecurity Law (2018)",
+        "type": "Regulation",
+        "description": "Vietnam's 2018 Cybersecurity Law requires foreign tech companies to store data on Vietnamese users within the country and establish a local presence. This applies to critical companies like social media, telecom, and e-commerce platforms, with a focus on personal data and user relationships.",
+        "jurisdiction": "Vietnam",
+        "domains": ["Cybersecurity", "Data Localization", "Critical Sectors"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "South Korea - Data Transfers (APPI)",
+        "type": "Regulation",
+        "description": "South Korea does not mandate localization for private data, but the Personal Information Protection Act (APPI) allows data transfers under consent or adequate safeguards. Only certain data, such as MyNumber identification info, requires local storage in South Korea.",
+        "jurisdiction": "South Korea",
+        "domains": ["Data Protection", "Data Transfers", "Personal Data"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Japan - APPI and Data Transfers",
+        "type": "Regulation",
+        "description": "Japan's Act on the Protection of Personal Information (APPI) facilitates data transfers with consent or adequate safeguards. It does not mandate data localization, except for certain sensitive information like MyNumber identification, which must be stored within Japan.",
+        "jurisdiction": "Japan",
+        "domains": ["Data Protection", "Data Transfers", "MyNumber Identification"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Australia - Critical Infrastructure Act (2022)",
+        "type": "Regulation",
+        "description": "Australia's 2022 Security of Critical Infrastructure Act could result in some localization requirements for industries deemed critical. This includes data residency requirements for sectors like energy, communications, and water, though no broad data localization law exists.",
+        "jurisdiction": "Australia",
+        "domains": ["Critical Infrastructure", "Data Residency", "Data Security"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "Middle East - Data Localization",
+        "type": "Regulation",
+        "description": "Countries like Saudi Arabia and the UAE have introduced localization requirements for government and sometimes banking data. Multinational companies operating in these regions may face local copy requirements for data in various sectors.",
+        "jurisdiction": "Middle East",
+        "domains": ["Data Localization", "Government Data", "Banking Data"],
+        "region": "Middle East"
+      },
+      {
+        "name": "Brazil - General Data Protection Law (LGPD)",
+        "type": "Regulation",
+        "description": "Brazil's General Data Protection Law (LGPD) does not mandate data localization. Transfers of personal data are allowed if the destination country has adequate protection or if standard contractual clauses (SCCs) are used. Brazil's Data Protection Authority (DPA) is formulating these clauses.",
+        "jurisdiction": "Brazil",
+        "domains": ["Data Protection", "Data Transfers", "Privacy Law"],
+        "region": "Latin America"
+      },
+      {
+        "name": "Argentina - Data Protection Law",
+        "type": "Regulation",
+        "description": "Argentina allows cross-border transfers of personal data if certain conditions are met, such as obtaining consent or ensuring adequate safeguards are in place. There is no broad mandate for data localization.",
+        "jurisdiction": "Argentina",
+        "domains": ["Data Protection", "Data Transfers", "Privacy Law"],
+        "region": "Latin America"
+      },
+      {
+        "name": "Chile - Data Protection Law (Draft Bill)",
+        "type": "Regulation (Draft)",
+        "description": "Chile's draft Data Protection Bill, as of 2025, proposes data exports only to countries that offer adequate protection, effectively adopting an EU-style approach. This would allow for transfers under specific conditions similar to GDPR's adequacy or consent mechanisms.",
+        "jurisdiction": "Chile",
+        "domains": ["Data Protection", "Data Localization", "Data Transfers"],
+        "region": "Latin America"
+      },
+      {
+        "name": "Colombia - Data Protection Law",
+        "type": "Regulation",
+        "description": "Colombia allows cross-border data transfers under conditions such as obtaining consent from data subjects or ensuring adequate safeguards. No strict data localization requirements are in place.",
+        "jurisdiction": "Colombia",
+        "domains": ["Data Protection", "Data Transfers", "Privacy Law"],
+        "region": "Latin America"
+      },
+      {
+        "name": "Mexico - Accounting Data Localization",
+        "type": "Regulation",
+        "description": "Mexico requires that original accounting records remain within the country for regulatory oversight, particularly in the financial sector. This is not a broad localization mandate for personal data, but a specific requirement for business data.",
+        "jurisdiction": "Mexico",
+        "domains": ["Financial Data", "Data Localization", "Regulatory Access"],
+        "region": "Latin America"
+      },
+      {
+        "name": "Latin America - Telecommunications and Financial Sectors",
+        "type": "Regulation",
+        "description": "Some Latin American regulators, particularly in telecommunications and financial sectors, require that customer data be accessible within the country for regulatory purposes. However, full-scale data localization is uncommon across the region.",
+        "jurisdiction": "Latin America",
+        "domains": ["Telecommunications", "Financial Data", "Regulatory Access"],
+        "region": "Latin America"
+      },
+      {
+        "name": "Cloud Providers & Localization",
+        "type": "Compliance Consideration",
+        "description": "Companies using cloud services need to ensure that their cloud providers offer region-specific data centers to comply with data localization laws. The compliance questionnaire should check whether vendors know where they store data and if they can accommodate localization requirements (e.g. EU-only hosting for EU personal data, China hosting for China operations).",
+        "jurisdiction": "Global",
+        "domains": ["Cloud Services", "Data Localization", "Data Transfers"],
+        "region": "Global"
+      },
+      {
+        "name": "Cross-Border Transfer Mechanisms",
+        "type": "Compliance Consideration",
+        "description": "Organizations must implement transfer mechanisms such as standard contractual clauses, intra-group agreements, or obtain consents for cross-border data transfers where necessary. After the Schrems II ruling, many companies perform Transfer Impact Assessments for EU to non-EU data flows to ensure compliance with GDPR and other privacy regulations.",
+        "jurisdiction": "Global",
+        "domains": ["Data Transfers", "Cross-Border Transfers", "GDPR Compliance"],
+        "region": "Global"
+      },
+      {
+        "name": "Localization vs. Backup",
+        "type": "Compliance Consideration",
+        "description": "Some data localization laws allow for data copies abroad if the primary data is stored in-country. For instance, Russia's law essentially requires data mirroring (keeping primary data locally and only necessary backups abroad). Compliance means designing data architecture that keeps required data in-country while handling only non-essential copies abroad.",
+        "jurisdiction": "Russia",
+        "domains": ["Data Localization", "Data Backup", "Data Architecture"],
+        "region": "Russia"
+      },
+      {
+        "name": "Penalties for Non-Compliance",
+        "type": "Compliance Consideration",
+        "description": "Non-compliance with data localization and cross-border transfer regulations can result in significant penalties. For example, Roskomnadzor in Russia can issue fines or block services, while China's CAC can impose heavy penalties or shut down services. Violating GDPR transfer rules can lead to fines of up to 4% of global turnover.",
+        "jurisdiction": "Russia, China, EU",
+        "domains": ["Penalties", "Compliance Enforcement", "GDPR Violations"],
+        "region": "Global"
+      },
+      {
+        "name": "Data Sovereignty in Contracts",
+        "type": "Compliance Consideration",
+        "description": "Many corporate and government RFPs now include clauses asking vendors whether data will remain within a specific country. Compliance-aware vendors should recognize these requirements and ensure they meet local data sovereignty laws, especially as part of the contracting process.",
+        "jurisdiction": "Global",
+        "domains": ["Data Sovereignty", "Contractual Compliance", "RFP Requirements"],
+        "region": "Global"
+      },
+      {
+        "name": "HIPAA (USA)",
+        "type": "Legal",
+        "description": "HIPAA regulates health data privacy and security. Covered entities such as hospitals, clinics, and insurers, as well as their business associates, must implement controls for protecting PHI (Protected Health Information). Compliance questionnaires for healthcare vendors often inquire about HIPAA training, policies, and whether the vendor will sign a Business Associate Agreement.",
+        "jurisdiction": "USA",
+        "domains": ["Health Data", "Privacy", "Security"],
+        "region": "USA"
+      },
+      {
+        "name": "HITECH Act (USA)",
+        "type": "Legal",
+        "description": "The HITECH Act strengthens HIPAA by mandating breach notifications and extending certain provisions to business associates. It also incentivizes the use of electronic health records and sets compliance standards for their security.",
+        "jurisdiction": "USA",
+        "domains": ["Health Data", "Electronic Records", "Breach Notifications"],
+        "region": "USA"
+      },
+      {
+        "name": "21 CFR Part 11 (USA FDA)",
+        "type": "Legal",
+        "description": "This regulation governs electronic records and signatures in the pharmaceutical and medical device sectors. It ensures that these records are trustworthy and equivalent to paper. Compliance requires validation, audit trails, and other security measures. Vendors providing software to pharma/medical device companies may need to comply with 21 CFR Part 11.",
+        "jurisdiction": "USA",
+        "domains": ["Pharma", "Medical Devices", "Electronic Records"],
+        "region": "USA"
+      },
+      {
+        "name": "GDPR (EU) – Health Data",
+        "type": "Legal",
+        "description": "Under GDPR, health data is considered a 'special category' requiring stricter consent or other legal justifications for processing. EU member states may also have additional laws regulating patient data, such as France’s Health Data Hosting certification.",
+        "jurisdiction": "EU",
+        "domains": ["Health Data", "Privacy", "GDPR"],
+        "region": "EU"
+      },
+      {
+        "name": "ICH GxP (International)",
+        "type": "Standard",
+        "description": "In the pharmaceutical industry, Good Clinical Practice (GCP), Good Laboratory Practice (GLP), and Good Manufacturing Practice (GMP) are critical standards that ensure the quality and integrity of clinical trials, laboratory work, and manufacturing. Vendors handling clinical trial data may be asked about compliance with 21 CFR 11 and GCP.",
+        "jurisdiction": "International",
+        "domains": ["Pharma", "Clinical Trials", "Manufacturing"],
+        "region": "Global"
+      },
+      {
+        "name": "WHO Guidelines & National Healthcare Laws",
+        "type": "Legal",
+        "description": "Various national healthcare laws, along with the World Health Organization (WHO) guidelines, govern patient confidentiality, telemedicine, and other healthcare practices. For example, in Singapore, patient data handling must comply with the Personal Data Protection Act (PDPA) and Ministry of Health (MOH) guidelines.",
+        "jurisdiction": "Global",
+        "domains": ["Health Data", "Patient Confidentiality", "Telemedicine"],
+        "region": "Global"
+      },
+      {
+        "name": "Sarbanes-Oxley Act (SOX)",
+        "type": "Legal",
+        "description": "The Sarbanes-Oxley Act (SOX) is a federal law that regulates corporate governance and financial reporting integrity for public companies. Section 404 requires management and auditors to attest to the effectiveness of internal controls over financial reporting. SOX is often categorized under finance compliance as it focuses on accounting controls, and vendors managing financial systems may need to follow SOX controls or frameworks like COSO.",
+        "jurisdiction": "USA",
+        "domains": ["Corporate Governance", "Financial Reporting", "Internal Controls"],
+        "region": "USA"
+      },
+      {
+        "name": "Gramm-Leach-Bliley Act (GLBA)",
+        "type": "Legal",
+        "description": "The Gramm-Leach-Bliley Act (GLBA) mandates financial institutions to establish a security program to protect customer data. Vendors working with banks are often required to comply with the GLBA Safeguards Rule, which ties into broader information security compliance, including frameworks like ISO and NIST.",
+        "jurisdiction": "USA",
+        "domains": ["Privacy", "Security", "Financial Institutions"],
+        "region": "USA"
+      },
+      {
+        "name": "Dodd-Frank Act & Consumer Finance",
+        "type": "Legal",
+        "description": "The Dodd-Frank Act, introduced after the 2008 financial crisis, created new compliance burdens for financial institutions, including the Volcker Rule (which limits proprietary trading) and CFPB regulations for consumer protection. Vendors in fintech or lending are often asked to comply with these regulations, such as ensuring that lending algorithms align with the Equal Credit Opportunity Act.",
+        "jurisdiction": "USA",
+        "domains": ["Financial Institutions", "Consumer Protection", "Financial Trading"],
+        "region": "USA"
+      },
+      {
+        "name": "Basel III",
+        "type": "Standard/Regulatory",
+        "description": "Basel III is an international regulatory framework issued by the Basel Committee on capital adequacy, liquidity, and risk management for banks. It is implemented via national regulations (e.g., Federal Reserve rules in the U.S., Capital Requirements Regulation/Directive in the EU). Third-party vendors providing risk modeling may need to support Basel III compliance by calculating risk-weighted assets.",
+        "jurisdiction": "Global",
+        "domains": ["Capital Adequacy", "Risk Management", "Liquidity"],
+        "region": "Global"
+      },
+      {
+        "name": "Solvency II",
+        "type": "Legal",
+        "description": "Solvency II is a regulatory framework for the insurance industry in the EU, focusing on capital requirements, risk management, and supervisory reporting for insurers. Vendors serving the insurance sector may need to comply with Solvency II standards for reporting and data handling.",
+        "jurisdiction": "EU",
+        "domains": ["Insurance", "Risk Management", "Capital Requirements"],
+        "region": "EU"
+      },
+      {
+        "name": "MiFID II / MiFIR",
+        "type": "Legal",
+        "description": "The Markets in Financial Instruments Directive II (MiFID II) and the corresponding MiFIR Regulation overhaul trading practices in the EU. They require transparency in pre- and post-trade reporting, investor protection, and controls on algorithmic trading. Tech vendors providing trading systems may need to ensure compliance with MiFID II requirements such as trade timestamping.",
+        "jurisdiction": "EU",
+        "domains": ["Trading", "Transparency", "Investor Protection"],
+        "region": "EU"
+      },
+      {
+        "name": "EMIR & Dodd-Frank Title VII",
+        "type": "Legal",
+        "description": "The European Market Infrastructure Regulation (EMIR) and Dodd-Frank Title VII impose requirements on the central clearing, trade reporting, and risk mitigation of over-the-counter (OTC) derivatives. Financial vendors dealing with swaps or derivatives processing may be asked about compliance with these regulations.",
+        "jurisdiction": "EU/USA",
+        "domains": ["Derivatives", "Clearing", "Trade Reporting"],
+        "region": "EU/USA"
+      },
+      {
+        "name": "Payment Card Industry Data Security Standard (PCI-DSS)",
+        "type": "Standard",
+        "description": "The Payment Card Industry Data Security Standard (PCI-DSS) is a set of requirements for any entity that stores, processes, or transmits credit card data. PCI-DSS enforces requirements such as maintaining firewalls, encrypting cardholder data, and regular testing. Compliance is enforced contractually through banks and card networks.",
+        "jurisdiction": "Global",
+        "domains": ["Payment Data", "Security", "Credit Card Processing"],
+        "region": "Global"
+      },
+      {
+        "name": "PSD2 & Open Banking",
+        "type": "Legal",
+        "description": "The Payment Services Directive 2 (PSD2) and Open Banking regulations in the EU require strong customer authentication for payments and mandate that banks open their APIs to third parties. Fintech vendors in the EU must comply with PSD2’s security and consent rules.",
+        "jurisdiction": "EU/UK",
+        "domains": ["Payments", "Open Banking", "Authentication"],
+        "region": "EU/UK"
+      },
+      {
+        "name": "SWIFT CSP",
+        "type": "Standard",
+        "description": "The Society for Worldwide Interbank Financial Telecommunication (SWIFT) has a Customer Security Programme (CSP) that requires all member banks to implement controls to prevent cyber fraud in payments. Although not a law, it is effectively required for banks in the SWIFT network.",
+        "jurisdiction": "Global",
+        "domains": ["Cybersecurity", "Payments", "Banking"],
+        "region": "Global"
+      },
+      {
+        "name": "FERPA (Family Educational Rights and Privacy Act)",
+        "type": "Legal",
+        "description": "The Family Educational Rights and Privacy Act (FERPA) protects the privacy of student education records at schools receiving federal funds. Schools must have written permission to release records, and students or parents have the right to access and correct records. Educational technology (EdTech) vendors often sign contracts agreeing to FERPA safeguards.",
+        "jurisdiction": "USA",
+        "domains": ["Student Privacy", "Education", "Data Access and Correction"],
+        "region": "USA"
+      },
+      {
+        "name": "COPPA (Children's Online Privacy Protection Act)",
+        "type": "Legal",
+        "description": "The Children's Online Privacy Protection Act (COPPA) applies to EdTech services targeting children under 13 years old (e.g., online learning platforms). It requires obtaining parental consent for the collection of personal information from children. COPPA safeguards are commonly included in contracts with EdTech vendors serving children.",
+        "jurisdiction": "USA",
+        "domains": ["Children's Privacy", "Parental Consent", "Data Protection"],
+        "region": "USA"
+      },
+      {
+        "name": "GDPR (EU) & Education",
+        "type": "Legal",
+        "description": "The General Data Protection Regulation (GDPR) applies to educational institutions as data controllers in the EU. While there is no specific EU law like FERPA, GDPR includes provisions for the protection of children’s data, with an age-of-consent for information society services typically set between 13-16 years old depending on the country.",
+        "jurisdiction": "EU",
+        "domains": ["Data Protection", "Children's Privacy", "Data Controllers"],
+        "region": "EU"
+      },
+      {
+        "name": "State Student Privacy Laws (USA)",
+        "type": "Legal",
+        "description": "Various U.S. states have passed additional student privacy laws, such as California's SOPIPA (Student Online Privacy Protection Act), which limits the use of student data by EdTech companies for purposes like advertising. Compliance questionnaires for educational SaaS platforms may inquire about adherence to these state-specific laws.",
+        "jurisdiction": "USA",
+        "domains": ["Student Privacy", "EdTech", "Advertising Restrictions"],
+        "region": "USA"
+      },
+      {
+        "name": "ISO 27018",
+        "type": "Standard",
+        "description": "ISO 27018 is a code of practice for protecting personal data in the cloud, particularly relevant for sectors like education handling personally identifiable information (PII). Though not specific to education, it is often adopted by EdTech providers to demonstrate privacy controls and safeguard student data in cloud environments.",
+        "jurisdiction": "Global",
+        "domains": ["Cloud Privacy", "Personal Data", "Security"],
+        "region": "Global"
+      },
+      {
+        "name": "FedRAMP (Federal Risk and Authorization Management Program)",
+        "type": "Standard/Requirement",
+        "description": "The Federal Risk and Authorization Management Program (FedRAMP) is a framework that cloud services must meet to be used by U.S. federal agencies. It includes impact levels (Low, Moderate, High) based on NIST 800-53 controls. Vendors selling cloud services to U.S. agencies must obtain FedRAMP Authorization to ensure compliance with federal security standards.",
+        "jurisdiction": "USA",
+        "domains": ["Cloud Security", "Government Agencies", "Federal Compliance"],
+        "region": "USA"
+      },
+      {
+        "name": "NIST SP 800-171 / CMMC (Cybersecurity Maturity Model Certification)",
+        "type": "Standard/Legal",
+        "description": "NIST SP 800-171 outlines security requirements for protecting Controlled Unclassified Information (CUI) in non-federal systems. It’s required by DFARS clause for defense contractors handling CUI. The Department of Defense (DoD) is implementing the Cybersecurity Maturity Model Certification (CMMC), which certifies contractors based on their adherence to NIST 800-171 and other practices. Compliance is mandatory for defense vendors, making it a common topic in the defense supply chain.",
+        "jurisdiction": "USA",
+        "domains": ["Cybersecurity", "Defense", "Compliance Certification"],
+        "region": "USA"
+      },
+      {
+        "name": "ITAR & EAR (International Traffic in Arms Regulations & Export Administration Regulations)",
+        "type": "Legal",
+        "description": "The International Traffic in Arms Regulations (ITAR) and the Export Administration Regulations (EAR) govern the export of defense-related technologies and goods from the U.S. These regulations require compliance with technology control plans and personnel security clearances when handling sensitive defense data or products. Vendors in the defense sector must comply with these export control laws.",
+        "jurisdiction": "USA",
+        "domains": ["Export Control", "Defense", "Technology Compliance"],
+        "region": "USA"
+      },
+      {
+        "name": "Government Contracting Compliance",
+        "type": "Legal",
+        "description": "U.S. government contracting regulations such as the False Claims Act, Procurement Integrity Act, and Anti-Kickback Act ensure that government contractors meet ethical standards and contractual obligations. These laws require contractors to refrain from misrepresenting contract requirements or engaging in illegal business practices. Compliance is often assessed in vendor questionnaires focused on ethics training for companies in the government supply chain.",
+        "jurisdiction": "USA",
+        "domains": ["Government Procurement", "Contract Compliance", "Ethics"],
+        "region": "USA"
+      },
+      {
+        "name": "National Security Reviews (e.g., CFIUS, NSI Act, FDI Screening)",
+        "type": "Legal",
+        "description": "National security reviews, such as the Committee on Foreign Investment in the United States (CFIUS) and similar frameworks like the UK's NSI Act and the EU's Foreign Direct Investment (FDI) screening, are designed to review foreign investments in sensitive technologies and industries. While these laws may not directly apply to vendors, they are important to consider in contexts involving sensitive technology or deals that may affect national security.",
+        "jurisdiction": "Global",
+        "domains": ["National Security", "Foreign Investment", "Sensitive Technology"],
+        "region": "Global"
+      },
+      {
+        "name": "NERC CIP (Critical Infrastructure Protection)",
+        "type": "Standard",
+        "description": "The NERC CIP standards are designed to ensure the cybersecurity of North America's electric utilities, particularly focusing on the protection of the power grid. Vendors supplying to the energy sector may need to align with NERC CIP requirements to demonstrate their commitment to safeguarding critical infrastructure.",
+        "jurisdiction": "USA",
+        "domains": ["Cybersecurity", "Energy", "Critical Infrastructure"],
+        "region": "USA"
+      },
+      {
+        "name": "EPA Regulations & Environmental Compliance",
+        "type": "Regulatory",
+        "description": "Factories and other industrial facilities in the U.S. must comply with the Environmental Protection Agency (EPA) regulations, which require environmental permits and adherence to safety standards. Compliance may also extend to Environmental, Social, and Governance (ESG) considerations, such as REACH (EU chemical regulation) or RoHS (restriction of hazardous substances in electronics) in the manufacturing sector.",
+        "jurisdiction": "USA, EU",
+        "domains": ["Environmental Compliance", "Health & Safety", "ESG"],
+        "region": "Global"
+      },
+      {
+        "name": "Industry-Specific ESG Standards",
+        "type": "Standard",
+        "description": "The Equator Principles and the IFC Performance Standards are key ESG frameworks in the finance and project development sectors. They ensure social and environmental risk management in project finance, helping companies and financiers assess the sustainability and impact of projects.",
+        "jurisdiction": "Global",
+        "domains": ["ESG", "Project Finance", "Environmental Risk Management"],
+        "region": "Global"
+      },
+      {
+        "name": "ISO/IEC 27001",
+        "type": "Standard",
+        "description": "ISO/IEC 27001 is an international standard for Information Security Management Systems (ISMS). Organizations can become certified to demonstrate a systematic approach to securing data, including risk assessments, controls, and incident response. Related standards include ISO 27017 (cloud security), ISO 27018 (privacy in the cloud), and ISO 27701 (privacy information management).",
+        "jurisdiction": "Global",
+        "domains": ["Information Security", "Risk Management", "Compliance"],
+        "region": "Global"
+      },
+      {
+        "name": "SOC 2 (System and Organization Controls)",
+        "type": "Standard",
+        "description": "SOC 2 is an audit standard for service organizations evaluating controls related to Security, Availability, Processing Integrity, Confidentiality, and Privacy. A SOC 2 Type II audit is often required in vendor due diligence, particularly for cloud and SaaS providers.",
+        "jurisdiction": "USA",
+        "domains": ["Cloud Security", "Service Organization Controls", "Privacy"],
+        "region": "USA"
+      },
+      {
+        "name": "NIST Cybersecurity Framework (CSF)",
+        "type": "Standard",
+        "description": "The NIST Cybersecurity Framework (CSF) is a voluntary framework for managing cybersecurity risk, structured around Identify, Protect, Detect, Respond, and Recover functions. It is widely adopted internationally as a best practice baseline, even if not mandated in all sectors.",
+        "jurisdiction": "USA",
+        "domains": ["Cybersecurity", "Risk Management", "Governance"],
+        "region": "Global"
+      },
+      {
+        "name": "Center for Internet Security (CIS) Controls",
+        "type": "Standard",
+        "description": "The CIS Controls are a prioritized list of 18 cybersecurity best practices, often used to harden systems. These controls are widely adopted by organizations to improve cybersecurity posture.",
+        "jurisdiction": "Global",
+        "domains": ["Cybersecurity", "System Hardening", "Risk Management"],
+        "region": "Global"
+      },
+      {
+        "name": "OWASP Top 10",
+        "type": "Best Practice",
+        "description": "The OWASP Top 10 is a list of the top 10 web application security risks, published by the Open Web Application Security Project. While not a compliance framework, it serves as a checklist for developers to avoid common vulnerabilities in web applications.",
+        "jurisdiction": "Global",
+        "domains": ["Web Security", "Application Security", "Development"],
+        "region": "Global"
+      },
+      {
+        "name": "CSA STAR / CAIQ",
+        "type": "Standard",
+        "description": "The Cloud Security Alliance (CSA) STAR certification is designed for cloud providers, and the Consensus Assessments Initiative Questionnaire (CAIQ) is a detailed survey mapping a provider’s security controls to CSA’s Cloud Controls Matrix. It is widely used in cloud security assessments.",
+        "jurisdiction": "Global",
+        "domains": ["Cloud Security", "Security Assessments", "Compliance"],
+        "region": "Global"
+      },
+      {
+        "name": "Shared Assessments SIG (Standardized Information Gathering)",
+        "type": "Best Practice",
+        "description": "The Shared Assessments SIG is a comprehensive third-party risk assessment questionnaire covering 18 risk domains, including information security, privacy, and business continuity. It is commonly used by organizations to assess the security and compliance of their vendors.",
+        "jurisdiction": "Global",
+        "domains": ["Third-Party Risk", "Information Security", "Privacy"],
+        "region": "Global"
+      },
+      {
+        "name": "ITIL / COBIT",
+        "type": "Framework",
+        "description": "ITIL (Information Technology Infrastructure Library) is a framework for IT service management, and COBIT (Control Objectives for Information and Related Technologies) is a framework for IT governance. Both are often referenced in compliance and IT process questionnaires.",
+        "jurisdiction": "Global",
+        "domains": ["IT Service Management", "IT Governance", "Compliance"],
+        "region": "Global"
+      },
+      {
+        "name": "BSI IT-Grundschutz",
+        "type": "Standard",
+        "description": "BSI IT-Grundschutz is a German national standard for information security. It is often used by organizations working with the German government and is similar to ISO 27001, focusing on risk management and protection of IT systems.",
+        "jurisdiction": "Germany",
+        "domains": ["Information Security", "Risk Management"],
+        "region": "Germany"
+      },
+      {
+        "name": "ISO 14001",
+        "type": "Standard",
+        "description": "ISO 14001 is an international standard for environmental management systems (EMS). It helps organizations improve their environmental performance by managing resources and reducing waste.",
+        "jurisdiction": "Global",
+        "domains": ["Environmental Management", "Sustainability", "ESG"],
+        "region": "Global"
+      },
+      {
+        "name": "ISO 45001",
+        "type": "Standard",
+        "description": "ISO 45001 is a global standard for occupational health and safety management systems. It provides a framework to improve employee safety, reduce workplace risks, and create better, safer working conditions.",
+        "jurisdiction": "Global",
+        "domains": ["Health and Safety", "ESG", "Workplace Risk Management"],
+        "region": "Global"
+      },
+      {
+        "name": "GHC Protocol",
+        "type": "Standard",
+        "description": "The GHG (Greenhouse Gas) Protocol provides a comprehensive global standard for measuring and managing greenhouse gas emissions. It is widely used by organizations for sustainability and climate impact reporting.",
+        "jurisdiction": "Global",
+        "domains": ["Sustainability", "Climate Reporting", "ESG"],
+        "region": "Global"
+      },
+      {
+        "name": "Trust and Transparency Initiatives",
+        "type": "Best Practice",
+        "description": "Many companies maintain Trust Centers or similar web portals where they publish certifications, policies, audit reports, and other compliance-related information to improve transparency with customers.",
+        "jurisdiction": "Global",
+        "domains": ["Transparency", "Compliance", "Best Practices"],
+        "region": "Global"
+      },
+      {
+        "name": "GDPR (General Data Protection Regulation)",
+        "type": "Regulation",
+        "description": "GDPR is a comprehensive regulation that standardizes data protection laws across the EU, giving individuals extensive rights over their personal data, including access, erasure, and portability. It enforces strict consent requirements, mandatory breach notifications, and potential fines of up to 4% of global revenue for violations. The regulation also has extraterritorial reach.",
+        "jurisdiction": "EU",
+        "domains": ["Data Protection", "Privacy", "Consent", "Breach Notification"],
+        "region": "EU"
+      },
+      {
+        "name": "UK GDPR & Data Protection Act 2018",
+        "type": "Regulation",
+        "description": "The UK's adaptation of GDPR principles following Brexit. It retains the same protections and requirements as EU GDPR but establishes the UK's independent data protection framework. It includes provisions for law enforcement and intelligence services data processing.",
+        "jurisdiction": "UK",
+        "domains": ["Data Protection", "Privacy", "Consent", "Breach Notification"],
+        "region": "UK"
+      },
+      {
+        "name": "PDPA (Personal Data Protection Act)",
+        "type": "Regulation",
+        "description": "The PDPA in Singapore governs the collection, use, disclosure, and care of personal data by organizations through a consent-based framework. It requires organizations to appoint Data Protection Officers and includes provisions for breach notifications and data portability.",
+        "jurisdiction": "Singapore",
+        "domains": ["Data Protection", "Privacy", "Consent", "Breach Notification"],
+        "region": "Asia"
+      },
+      {
+        "name": "PIPL (Personal Information Protection Law)",
+        "type": "Regulation",
+        "description": "PIPL is China's first comprehensive personal information protection law, enforcing strict rules on data processing activities, including localization requirements and mandatory security assessments for cross-border data transfers. Violations can result in severe penalties, including business suspension and personal liability for executives.",
+        "jurisdiction": "China",
+        "domains": ["Data Protection", "Privacy", "Consent", "Cross-Border Transfers"],
+        "region": "Asia"
+      },
+      {
+        "name": "DPDP Act (Digital Personal Data Protection Act)",
+        "type": "Regulation",
+        "description": "The DPDP Act in India is a newly enacted data protection law focusing on digital personal data. It introduces data fiduciary responsibilities, legitimate use requirements, and a Data Protection Board. The Act also includes provisions for cross-border data flows and penalties for violations.",
+        "jurisdiction": "India",
+        "domains": ["Data Protection", "Privacy", "Consent", "Cross-Border Transfers"],
+        "region": "Asia"
+      },
+      {
+        "name": "LGPD (Lei Geral de Proteção de Dados)",
+        "type": "Regulation",
+        "description": "LGPD is Brazil's General Data Protection Law, closely following GDPR’s model, with provisions for ten legal bases for data processing, data subject rights, and the appointment of Data Protection Officers. Violations may result in sanctions, including fines of up to 2% of Brazilian revenue.",
+        "jurisdiction": "Brazil",
+        "domains": ["Data Protection", "Privacy", "Consent", "Breach Notification"],
+        "region": "South America"
+      },
+      {
+        "name": "PDPO (Personal Data (Privacy) Ordinance)",
+        "type": "Regulation",
+        "description": "The PDPO is Hong Kong's privacy law that establishes six data protection principles. Recently, the law has been strengthened with anti-doxxing provisions. The Privacy Commissioner has enforcement powers for compliance and investigation.",
+        "jurisdiction": "Hong Kong",
+        "domains": ["Data Protection", "Privacy", "Consent", "Breach Notification"],
+        "region": "Asia"
+      },
+      {
+        "name": "Privacy Act (Australia)",
+        "type": "Regulation",
+        "description": "The Privacy Act in Australia is a foundational privacy law containing 13 Australian Privacy Principles. It governs the handling of personal information by government agencies and larger businesses. The law is enforced by the Office of the Australian Information Commissioner.",
+        "jurisdiction": "Australia",
+        "domains": ["Data Protection", "Privacy", "Consent", "Breach Notification"],
+        "region": "Australia"
+      },
+      {
+        "name": "Personal Information Protection Acts (Asia)",
+        "type": "Regulation",
+        "description": "Several Asian nations have strong privacy frameworks. For example, South Korea's PIPA is one of Asia’s strictest laws, Thailand’s PDPA is GDPR-like with extraterritorial application, and Japan’s APPI recently strengthened international transfer restrictions.",
+        "jurisdiction": "South Korea, Thailand, Japan",
+        "domains": ["Data Protection", "Privacy", "Consent", "Breach Notification"],
+        "region": "Asia"
+      },
+      {
+        "name": "FATF Recommendations",
+        "type": "Standard",
+        "description": "The Financial Action Task Force (FATF) Recommendations comprise 40 international standards that serve as the global benchmark for anti-money laundering (AML) and counter-terrorist financing (CFT) measures. These recommendations require countries to implement risk-based approaches, conduct enhanced customer due diligence, maintain transaction monitoring systems, and establish Financial Intelligence Units for suspicious transaction analysis.",
+        "jurisdiction": "Global",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorist Financing", "Financial Crime", "Customer Due Diligence"],
+        "region": "Global"
+      },
+      {
+        "name": "Bank Secrecy Act (BSA)",
+        "type": "Regulation",
+        "description": "The Bank Secrecy Act (BSA) is the cornerstone of U.S. anti-money laundering (AML) legislation. It requires financial institutions to implement robust AML compliance programs including customer identification procedures, transaction monitoring, and filing of Currency Transaction Reports for transactions exceeding $10,000. The USA PATRIOT Act complements the BSA with enhanced due diligence requirements.",
+        "jurisdiction": "USA",
+        "domains": ["Anti-Money Laundering", "Financial Institutions", "Customer Identification", "Suspicious Activity Reporting"],
+        "region": "USA"
+      },
+      {
+        "name": "EU Anti-Money Laundering Directives (4th, 5th, 6th)",
+        "type": "Regulation",
+        "description": "The EU Anti-Money Laundering Directives (4th, 5th, and 6th) strengthen AML controls across the European Union. The 4th Directive introduced risk assessments and beneficial ownership registers, the 5th extended regulations to virtual currencies and prepaid cards, and the 6th harmonized money laundering criminal offenses and established minimum imprisonment penalties.",
+        "jurisdiction": "EU",
+        "domains": ["Anti-Money Laundering", "Financial Institutions", "Transparency", "Beneficial Ownership"],
+        "region": "EU"
+      },
+      {
+        "name": "Proceeds of Crime Act (UK)",
+        "type": "Regulation",
+        "description": "The Proceeds of Crime Act (POCA) is a UK law that criminalizes money laundering activities such as concealing, arranging, and acquiring criminal property. It requires regulated sectors to report suspicious activity and grants authorities powers for civil recovery, cash seizure, and confiscation of criminal assets.",
+        "jurisdiction": "UK",
+        "domains": ["Anti-Money Laundering", "Suspicious Activity Reporting", "Financial Crime", "Asset Recovery"],
+        "region": "UK"
+      },
+      {
+        "name": "PCMLTFA (Proceeds of Crime (Money Laundering) and Terrorist Financing Act)",
+        "type": "Regulation",
+        "description": "The PCMLTFA establishes Canada's AML and CFT regime, requiring reporting entities to implement compliance programs, conduct customer identification, maintain records, and report suspicious and large cash transactions to FINTRAC. Recent amendments extend coverage to virtual currency exchanges and foreign money services businesses operating in Canada.",
+        "jurisdiction": "Canada",
+        "domains": ["Anti-Money Laundering", "Terrorist Financing", "Financial Institutions", "Customer Identification"],
+        "region": "Canada"
+      },
+      {
+        "name": "Regional AML Laws (Asia-Pacific)",
+        "type": "Regulation",
+        "description": "Major Asian and Pacific jurisdictions have developed comprehensive AML frameworks. These include China’s Anti-Money Laundering Law, Hong Kong’s AMLO, Singapore’s Corruption, Drug Trafficking and Other Serious Crimes Act, Japan’s Act on Prevention of Transfer of Criminal Proceeds, India’s Prevention of Money Laundering Act, and Australia’s AML/CTF Act with a risk-based approach.",
+        "jurisdiction": "China, Hong Kong, Singapore, Japan, India, Australia",
+        "domains": ["Anti-Money Laundering", "Counter-Terrorist Financing", "Customer Due Diligence", "Financial Intelligence"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "FCPA (Foreign Corrupt Practices Act)",
+        "type": "Regulation",
+        "description": "The FCPA prohibits payments to foreign government officials to obtain business advantages and mandates publicly-traded companies to maintain accurate books and records with effective internal accounting controls. Enforced by the DOJ and SEC with extraterritorial jurisdiction and penalties including criminal fines up to $2 million per violation for corporations, imprisonment for individuals, and disgorgement of profits.",
+        "jurisdiction": "USA",
+        "domains": ["Anti-Bribery", "Anti-Corruption", "Corporate Governance", "Foreign Officials"],
+        "region": "USA"
+      },
+      {
+        "name": "UK Bribery Act",
+        "type": "Regulation",
+        "description": "The UK Bribery Act is considered one of the world’s strictest anti-corruption laws. It creates offenses for bribing another person, receiving bribes, bribing foreign public officials, and failing to prevent bribery within organizations. It applies to both public and private sectors and imposes strict liability for organizations without adequate prevention procedures, with unlimited fines and up to 10 years imprisonment.",
+        "jurisdiction": "UK",
+        "domains": ["Anti-Bribery", "Anti-Corruption", "Corporate Liability", "Bribery Prevention"],
+        "region": "UK"
+      },
+      {
+        "name": "OECD Anti-Bribery Convention",
+        "type": "Treaty",
+        "description": "The OECD Anti-Bribery Convention requires signatory countries to criminalize bribery of foreign public officials in international business transactions. It includes mutual legal assistance, corporate liability, and peer review mechanisms to monitor effective implementation across countries.",
+        "jurisdiction": "Global",
+        "domains": ["Anti-Bribery", "International Business", "Foreign Officials", "Corporate Liability"],
+        "region": "Global"
+      },
+      {
+        "name": "UNCAC (United Nations Convention Against Corruption)",
+        "type": "Treaty",
+        "description": "The UNCAC is the only legally binding universal anti-corruption instrument with 189 parties. It establishes global standards for the prevention, criminalization, and cooperation against corruption. It covers public and private sector corruption and provides frameworks for asset recovery and international cooperation.",
+        "jurisdiction": "Global",
+        "domains": ["Anti-Corruption", "International Cooperation", "Asset Recovery", "Public & Private Sector"],
+        "region": "Global"
+      },
+      {
+        "name": "European National Laws",
+        "type": "Regulation",
+        "description": "European anti-corruption laws include France’s Sapin II, which requires corporate compliance programs with fines up to €1 million for companies, and Germany's Criminal Code, which criminalizes bribery and includes provisions for corporate liability and confiscation of proceeds.",
+        "jurisdiction": "France, Germany",
+        "domains": ["Anti-Corruption", "Corporate Compliance", "Bribery Prevention", "Corporate Liability"],
+        "region": "EU"
+      },
+      {
+        "name": "CFPOA (Corruption of Foreign Public Officials Act)",
+        "type": "Regulation",
+        "description": "The CFPOA criminalizes bribing foreign public officials in business transactions. Penalties include unlimited fines for corporations and up to 14 years imprisonment for individuals. Recent amendments removed facilitation payment exceptions and created a separate offense for failure to maintain accurate books and records.",
+        "jurisdiction": "Canada",
+        "domains": ["Anti-Bribery", "Anti-Corruption", "Corporate Governance", "Foreign Officials"],
+        "region": "Canada"
+      },
+      {
+        "name": "Asia-Pacific Anti-Corruption Laws",
+        "type": "Regulation",
+        "description": "Asia-Pacific jurisdictions have developed diverse anti-corruption frameworks. These include China’s Criminal Law, India’s Prevention of Corruption Act, Singapore’s Prevention of Corruption Act, Japan’s Unfair Competition Prevention Act, and South Korea’s Improper Solicitation and Graft Act, which criminalize bribery and corruption, with severe penalties and jurisdictional reach.",
+        "jurisdiction": "China, India, Singapore, Japan, South Korea",
+        "domains": ["Anti-Corruption", "Bribery Prevention", "Corporate Liability", "International Compliance"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "FATF Recommendations 24 & 25",
+        "type": "Standard",
+        "description": "FATF Recommendations 24 and 25 mandate that jurisdictions ensure transparency regarding the beneficial ownership of legal persons and arrangements. Countries must maintain accurate, timely information on beneficial ownership, accessible to competent authorities. The 2022 revisions require a multi-pronged approach including central registries, record maintenance by legal entities, and stronger verification mechanisms to combat shell companies.",
+        "jurisdiction": "Global",
+        "domains": ["Beneficial Ownership", "Transparency", "Anti-Money Laundering", "International Standards"],
+        "region": "Global"
+      },
+      {
+        "name": "Corporate Transparency Act (US)",
+        "type": "Regulation",
+        "description": "The Corporate Transparency Act, enacted in 2021, requires certain companies in the U.S. to report beneficial ownership information to FinCEN. This includes details on individuals who own 25% or more of equity interest or have substantial control. Non-compliance results in fines up to $10,000 and imprisonment up to two years for willful violations.",
+        "jurisdiction": "USA",
+        "domains": ["Beneficial Ownership", "Corporate Transparency", "Reporting Requirements"],
+        "region": "USA"
+      },
+      {
+        "name": "EU Anti-Money Laundering Directives",
+        "type": "Regulation",
+        "description": "The EU Anti-Money Laundering Directives progressively strengthened beneficial ownership transparency. The 4th AMLD introduced central registers; the 5th AMLD expanded public access to these registers and interconnected them across member states; and the 6th AMLD reinforced verification requirements for the 25% ownership threshold.",
+        "jurisdiction": "EU",
+        "domains": ["Beneficial Ownership", "Anti-Money Laundering", "Corporate Transparency", "Public Access"],
+        "region": "EU"
+      },
+      {
+        "name": "UK People with Significant Control Register",
+        "type": "Regulation",
+        "description": "The UK People with Significant Control Register requires companies to identify and report individuals with significant control to Companies House. Control is defined through ownership of more than 25% of shares/voting rights, or the power to influence directors. Non-compliance can result in criminal penalties.",
+        "jurisdiction": "UK",
+        "domains": ["Beneficial Ownership", "Corporate Transparency", "Ownership Control"],
+        "region": "UK"
+      },
+      {
+        "name": "Register of Overseas Entities (UK)",
+        "type": "Regulation",
+        "description": "The Register of Overseas Entities requires foreign companies owning UK property to declare their beneficial owners to Companies House. This initiative was established under the Economic Crime (Transparency and Enforcement) Act 2022. Non-compliance can lead to fines, imprisonment, and restrictions on property transactions.",
+        "jurisdiction": "UK",
+        "domains": ["Beneficial Ownership", "Property Transparency", "Foreign Ownership", "Economic Crime"],
+        "region": "UK"
+      },
+      {
+        "name": "Regional Ownership Transparency Laws",
+        "type": "Regulation",
+        "description": "Various jurisdictions in the Asia-Pacific and North America have implemented beneficial ownership transparency laws. These include Singapore's Register of Controllers, Hong Kong's Significant Controllers Register, Canada's CBCA amendments, and Australia's proposed beneficial ownership register. These frameworks enhance transparency regarding individuals with significant interest or control in corporate entities.",
+        "jurisdiction": "Singapore, Hong Kong, Canada, Australia",
+        "domains": ["Beneficial Ownership", "Corporate Transparency", "Reporting Requirements", "Ownership Control"],
+        "region": "Asia-Pacific, Canada, Australia"
+      },
+      {
+        "name": "UN Security Council Sanctions",
+        "type": "Sanctions Framework",
+        "description": "Global sanctions regime under Chapter VII of the UN Charter, binding on all 193 member states. Measures include asset freezes, travel bans, and sectoral restrictions targeting counterterrorism, non-proliferation, and regional conflicts. Sanctions are implemented through Security Council Resolutions with compliance monitored by sanctions committees.",
+        "jurisdiction": "Global",
+        "domains": ["Sanctions", "Asset Freezes", "Travel Bans", "Counterterrorism", "Non-Proliferation"],
+        "region": "Global"
+      },
+      {
+        "name": "EU Sanctions",
+        "type": "Sanctions Framework",
+        "description": "Comprehensive sanctions framework implementing UN measures and EU-specific sanctions. Measures include asset freezes, travel restrictions, sectoral sanctions (energy, finance, defense), and thematic sanctions addressing human rights violations and cyber-attacks. Enforced through regulations, requiring unanimous EU Council decisions.",
+        "jurisdiction": "EU",
+        "domains": ["Sanctions", "Asset Freezes", "Sectoral Sanctions", "Human Rights", "Cybersecurity"],
+        "region": "EU"
+      },
+      {
+        "name": "OFAC (US)",
+        "type": "Sanctions Framework",
+        "description": "The Office of Foreign Assets Control administers a comprehensive sanctions regime globally, impacting the US financial system. Maintains multiple lists including SDN (Specially Designated Nationals) and Sectoral Sanctions. Violations carry civil penalties up to $1.1 million per transaction, with criminal penalties including imprisonment.",
+        "jurisdiction": "US",
+        "domains": ["Sanctions", "SDN List", "Sectoral Sanctions", "Extraterritorial Impact"],
+        "region": "US"
+      },
+      {
+        "name": "UK Sanctions",
+        "type": "Sanctions Framework",
+        "description": "The UK’s post-Brexit sanctions regime under the Sanctions and Anti-Money Laundering Act 2018. Includes asset freezes and UK-specific measures administered by OFSI. Penalties include civil fines up to £1 million or 50% of the breach value, and criminal penalties including imprisonment for up to 7 years.",
+        "jurisdiction": "UK",
+        "domains": ["Sanctions", "Asset Freezes", "Brexit", "Financial Penalties"],
+        "region": "UK"
+      },
+      {
+        "name": "PEP Screening Requirements",
+        "type": "Compliance Requirement",
+        "description": "FATF Recommendation 12 requires enhanced due diligence for politically exposed persons (PEPs), including their family members and close associates. Requires identification, source of wealth verification, and ongoing monitoring. Varying definitions and risk tiers are implemented by different jurisdictions.",
+        "jurisdiction": "Global",
+        "domains": ["PEP Screening", "Due Diligence", "Risk Management", "Enhanced Monitoring"],
+        "region": "Global"
+      },
+      {
+        "name": "Regional Sanctions Regimes",
+        "type": "Sanctions Framework",
+        "description": "Various jurisdictions maintain independent sanctions frameworks, including Canada's Special Economic Measures Act (penalties up to $25,000 and 5 years imprisonment), Australia's autonomous sanctions, and Japan's Foreign Exchange and Foreign Trade Act. These align with but are not identical to UN, US, and EU sanctions.",
+        "jurisdiction": "Canada, Australia, Japan",
+        "domains": ["Sanctions", "Penalties", "International Cooperation", "Financial Restrictions"],
+        "region": "Canada, Australia, Japan"
+      },
+      {
+        "name": "Screening and Compliance Practices",
+        "type": "Compliance Requirement",
+        "description": "Financial institutions and designated non-financial businesses must screen transactions and customers against sanctions lists, PEP databases, and adverse media. This includes real-time transaction screening, periodic rescreening, and manual review processes, with layered approaches combining automated and manual procedures.",
+        "jurisdiction": "Global",
+        "domains": ["Sanctions Screening", "Customer Due Diligence", "Risk-Based Approach", "Compliance Practices"],
+        "region": "Global"
+      },
+      {
+        "name": "Export Administration Regulations (US)",
+        "type": "Export Control Framework",
+        "description": "Regulations administered by the Bureau of Industry and Security (BIS) that control the export, reexport, and transfer of commercial and dual-use items based on the Commerce Control List (CCL). Includes a complex license requirement system based on item classification, destination countries, and end-users. Targets emerging technologies and countries like China and Russia.",
+        "jurisdiction": "US",
+        "domains": ["Export Controls", "Dual-Use Items", "License Requirements", "Emerging Technologies"],
+        "region": "US"
+      },
+      {
+        "name": "International Traffic in Arms Regulations (US)",
+        "type": "Export Control Framework",
+        "description": "Regulations by the US State Department governing defense articles, technical data, and defense services listed on the United States Munitions List (USML). Requires registration with DDTC and licensing for exports. Violations incur penalties up to $1 million per violation and 20 years imprisonment.",
+        "jurisdiction": "US",
+        "domains": ["Defense Articles", "Export Licensing", "National Security", "Criminal Penalties"],
+        "region": "US"
+      },
+      {
+        "name": "EU Dual-Use Regulation",
+        "type": "Export Control Framework",
+        "description": "EU regulation 2021/821 establishing a regime for controlling exports, brokering, transit, and transfer of dual-use items. Based on international regimes such as the Wassenaar Arrangement, it requires common authorization for items with specific controls, including cyber-surveillance technologies and Internal Compliance Programs (ICPs).",
+        "jurisdiction": "EU",
+        "domains": ["Dual-Use Items", "Cyber-Surveillance", "Internal Compliance Programs", "Export Control"],
+        "region": "EU"
+      },
+      {
+        "name": "UK Export Control Order",
+        "type": "Export Control Framework",
+        "description": "Post-Brexit export control regime under the Export Control Order 2008. Manages military and dual-use controls, administered by the Export Control Joint Unit (ECJU). Features controls on software, technology transfers, and academic research, especially regarding intangible transfers (ITT) via electronic means.",
+        "jurisdiction": "UK",
+        "domains": ["Military Goods", "Dual-Use Items", "Technology Transfers", "Academic Research"],
+        "region": "UK"
+      },
+      {
+        "name": "Regional Export Controls",
+        "type": "Export Control Framework",
+        "description": "Export control regimes maintained by major trading nations, such as China's Export Control Law (2020), Japan's Foreign Exchange and Foreign Trade Act, Singapore's Strategic Goods Control Act, and South Korea's Foreign Trade Act. These include extraterritorial jurisdiction and controls on sensitive technologies with a focus on regional security concerns.",
+        "jurisdiction": "China, Japan, Singapore, South Korea",
+        "domains": ["Export Controls", "Regional Security", "Sensitive Technologies", "Extraterritorial Jurisdiction"],
+        "region": "China, Japan, Singapore, South Korea"
+      },
+      {
+        "name": "Anti-Boycott Regulations",
+        "type": "Trade Compliance Framework",
+        "description": "US regulations prohibiting participation in unsanctioned foreign boycotts, particularly the Arab League boycott of Israel. Includes reporting requirements and prohibits providing boycott-related information. Civil and criminal penalties are imposed for violations.",
+        "jurisdiction": "US",
+        "domains": ["Anti-Boycott", "Reporting Requirements", "Civil and Criminal Penalties"],
+        "region": "US"
+      },
+      {
+        "name": "Customs and Import Regulations",
+        "type": "Trade Compliance Framework",
+        "description": "Compliance requirements for customs including proper Harmonized Tariff Schedule (HTS) classification, country-of-origin determination, and compliance with Free Trade Agreements. Violations can result in civil penalties, detention or seizure of goods, and criminal prosecution under false statement statutes.",
+        "jurisdiction": "Global",
+        "domains": ["Customs Compliance", "Tariff Classification", "Free Trade Agreements", "Import Regulations"],
+        "region": "Global"
+      },
+      {
+        "name": "GDPR Chapter V",
+        "type": "Data Transfer Regulation",
+        "description": "Framework prohibiting transfers of personal data outside the European Economic Area (EEA) unless appropriate safeguards are in place or specific derogations apply. Features a tiered approach prioritizing adequacy decisions, safeguards (SCCs, BCRs), and specific derogations. Following the Schrems II decision, it requires transfer impact assessments and supplementary measures against third-country surveillance laws.",
+        "jurisdiction": "EU",
+        "domains": ["Data Localization", "Cross-Border Data Transfer", "Personal Data Protection", "Transfer Impact Assessments"],
+        "region": "EU"
+      },
+      {
+        "name": "EU Standard Contractual Clauses",
+        "type": "Data Transfer Regulation",
+        "description": "Commission-approved templates that ensure GDPR-equivalent protection for data transfers between data exporters and importers. The 2021 modernized SCCs feature modular approaches for various transfer scenarios and include Schrems II requirements for local law assessments and technical measures.",
+        "jurisdiction": "EU",
+        "domains": ["Data Transfer", "Legal Mechanism", "Data Protection", "SCCs"],
+        "region": "EU"
+      },
+      {
+        "name": "EU-US Data Privacy Framework",
+        "type": "Data Transfer Regulation",
+        "description": "An executive order-based framework for EU-US data transfers, replacing the invalidated Privacy Shield. It provides enhanced privacy protections, redress mechanisms, and safeguards against US intelligence collection. EU adequacy decision granted in 2023, though facing legal challenges on surveillance limitations.",
+        "jurisdiction": "EU/US",
+        "domains": ["Data Transfer", "Privacy Framework", "Transatlantic Transfers", "Surveillance Safeguards"],
+        "region": "EU/US"
+      },
+      {
+        "name": "Chinese PIPL Cross-Border Provisions",
+        "type": "Data Transfer Regulation",
+        "description": "China's Personal Information Protection Law (PIPL) mandates security assessments, certification by institutions, or signing standard contracts for personal information transfers. Includes localization requirements for critical information infrastructure operators and large-volume data processors.",
+        "jurisdiction": "China",
+        "domains": ["Cross-Border Data Transfer", "Data Protection", "Security Assessments", "Localization Requirements"],
+        "region": "China"
+      },
+      {
+        "name": "Russian Data Localization Law",
+        "type": "Data Localization Regulation",
+        "description": "Federal Law No. 242-FZ mandates that personal data of Russian citizens be stored and processed in databases physically located in Russia. Violations result in penalties including website blocking and fines, with enforcement by Roskomnadzor.",
+        "jurisdiction": "Russia",
+        "domains": ["Data Localization", "Personal Data", "Penalties", "Roskomnadzor Enforcement"],
+        "region": "Russia"
+      },
+      {
+        "name": "Indian Cross-Border Requirements",
+        "type": "Data Transfer Regulation",
+        "description": "India's approach includes sector-specific regulations for financial data, requiring domestic storage of payment system data. The Digital Personal Data Protection Act of 2023 allows cross-border transfers to notified countries while granting the government powers to restrict transfers to specific countries.",
+        "jurisdiction": "India",
+        "domains": ["Cross-Border Data Transfer", "Data Localization", "Payment System Data", "Digital Data Protection Act"],
+        "region": "India"
+      },
+      {
+        "name": "Vietnam Cybersecurity Law",
+        "type": "Data Localization Regulation",
+        "description": "Requires domestic and foreign service providers to store Vietnamese users' data within Vietnam, covering personal data, service user relationships, and data generated within the country. Violations can result in service suspension and license revocation.",
+        "jurisdiction": "Vietnam",
+        "domains": ["Data Localization", "Cybersecurity", "Service Providers", "Data Retention"],
+        "region": "Vietnam"
+      },
+      {
+        "name": "Regional Data Localization Requirements",
+        "type": "Data Localization Regulation",
+        "description": "Various approaches across Asia-Pacific, including Indonesia's regulation on domestic data centers, South Korea's sector-specific restrictions, Japan's consent-based transfers, Australia's health data requirements, Brazil's LGPD, and Saudi Arabia's cloud computing regulations for foreign data storage.",
+        "jurisdiction": "Asia-Pacific",
+        "domains": ["Data Localization", "Cross-Border Transfer", "Regional Regulations", "Sector-Specific Requirements"],
+        "region": "Asia-Pacific"
+      },
+      {
+        "name": "HIPAA (Health Insurance Portability and Accountability Act)",
+        "type": "Healthcare & Life Sciences Regulation",
+        "description": "Establishes comprehensive requirements for protected health information, with Privacy, Security, and Breach Notification Rules. Enforced by OCR, with penalties up to $1.5 million per violation category. The HITECH Act strengthened HIPAA enforcement and expanded requirements to business associates.",
+        "jurisdiction": "US",
+        "domains": ["Health Data Protection", "Privacy", "Security", "Breach Notification"],
+        "region": "US"
+      },
+      {
+        "name": "HITECH Act",
+        "type": "Healthcare & Life Sciences Regulation",
+        "description": "Strengthens HIPAA enforcement and extends requirements to business associates in the healthcare industry. Also addresses electronic health records and includes provisions to incentivize the adoption of health information technology.",
+        "jurisdiction": "US",
+        "domains": ["HIPAA", "Healthcare IT", "Business Associates"],
+        "region": "US"
+      },
+      {
+        "name": "21 CFR Part 11",
+        "type": "Healthcare & Life Sciences Regulation",
+        "description": "Governs electronic records and signatures in FDA-regulated environments. Requires validation, audit trails, and electronic signature controls.",
+        "jurisdiction": "US",
+        "domains": ["FDA Regulations", "Electronic Records", "Audit Trails", "Electronic Signatures"],
+        "region": "US"
+      },
+      {
+        "name": "EU Health Data Protections (GDPR Article 9)",
+        "type": "Healthcare & Life Sciences Regulation",
+        "description": "Classifies health data as 'special category' requiring explicit consent or specific legal bases for processing under GDPR. The upcoming European Health Data Space (EHDS) regulation will facilitate secure health data sharing.",
+        "jurisdiction": "EU",
+        "domains": ["Health Data Protection", "GDPR", "Data Sharing", "Privacy"],
+        "region": "EU"
+      },
+      {
+        "name": "Medical Device Regulation (MDR) and In Vitro Diagnostic Regulation (IVDR)",
+        "type": "Healthcare & Life Sciences Regulation",
+        "description": "Imposes strict cybersecurity requirements for medical devices and in vitro diagnostic devices to ensure their safe and secure use in healthcare environments.",
+        "jurisdiction": "EU",
+        "domains": ["Medical Devices", "Cybersecurity", "Regulation"],
+        "region": "EU"
+      },
+      {
+        "name": "Sarbanes-Oxley Act (SOX)",
+        "type": "Financial Services Regulation",
+        "description": "Mandates strict internal controls over financial reporting, including executive certification requirements and criminal penalties for violations.",
+        "jurisdiction": "US",
+        "domains": ["Financial Reporting", "Internal Controls", "Executive Certification"],
+        "region": "US"
+      },
+      {
+        "name": "Basel III/IV",
+        "type": "Financial Services Regulation",
+        "description": "Establishes international banking standards for capital adequacy, stress testing, and liquidity requirements to improve the banking sector's stability and resilience.",
+        "jurisdiction": "International",
+        "domains": ["Banking Regulation", "Capital Adequacy", "Liquidity"],
+        "region": "Global"
+      },
+      {
+        "name": "MiFID II (Markets in Financial Instruments Directive)",
+        "type": "Financial Services Regulation",
+        "description": "Regulates investment services across the EU, with extensive transaction reporting and best execution requirements to ensure investor protection and market transparency.",
+        "jurisdiction": "EU",
+        "domains": ["Investment Services", "Transaction Reporting", "Best Execution"],
+        "region": "EU"
+      },
+      {
+        "name": "PSD2 (Payment Services Directive 2)",
+        "type": "Financial Services Regulation",
+        "description": "Opens the EU banking market to non-bank payment service providers with strong customer authentication requirements to enhance security and consumer protection in payments.",
+        "jurisdiction": "EU",
+        "domains": ["Payment Services", "Authentication", "Consumer Protection"],
+        "region": "EU"
+      },
+      {
+        "name": "PCI-DSS (Payment Card Industry Data Security Standard)",
+        "type": "Financial Services Regulation",
+        "description": "Establishes security standards for payment card transactions with six major objectives including maintaining secure networks, protecting cardholder data, and regular testing. Enforced through merchant and service provider contracts.",
+        "jurisdiction": "Global",
+        "domains": ["Payment Security", "Cardholder Protection", "Data Security"],
+        "region": "Global"
+      },
+      {
+        "name": "AML/KYC Regulations",
+        "type": "Financial Services Regulation",
+        "description": "Requires financial institutions to identify customers, monitor transactions, and report suspicious activities to prevent money laundering and financing of terrorism.",
+        "jurisdiction": "Global",
+        "domains": ["Anti-Money Laundering", "Know Your Customer", "Financial Crime Prevention"],
+        "region": "Global"
+      },
+      {
+        "name": "FERPA (Family Educational Rights and Privacy Act)",
+        "type": "Education Regulation",
+        "description": "Protects student educational records in US federally-funded institutions by requiring parental consent for disclosure, with rights transferring to students at age 18.",
+        "jurisdiction": "US",
+        "domains": ["Student Privacy", "Education Records", "Parental Consent"],
+        "region": "US"
+      },
+      {
+        "name": "COPPA (Children's Online Privacy Protection Act)",
+        "type": "Education Regulation",
+        "description": "Regulates the collection of personal information from children under 13, requiring parental consent and privacy notices.",
+        "jurisdiction": "US",
+        "domains": ["Children's Privacy", "Data Collection", "Parental Consent"],
+        "region": "US"
+      },
+      {
+        "name": "State Student Privacy Laws (e.g., SOPIPA)",
+        "type": "Education Regulation",
+        "description": "Prohibit targeted advertising, profiling, and the sale of student information. Examples include California's SOPIPA and the Student Online Personal Information Protection Act.",
+        "jurisdiction": "US (State-level)",
+        "domains": ["Student Privacy", "Data Protection", "Advertising Restrictions"],
+        "region": "US"
+      },
+      {
+        "name": "UK Age Appropriate Design Code",
+        "type": "Education Regulation",
+        "description": "Imposes additional privacy requirements for services likely to be accessed by children, focusing on data minimization and privacy-by-default settings.",
+        "jurisdiction": "UK",
+        "domains": ["Children's Privacy", "Data Minimization", "Privacy by Design"],
+        "region": "UK"
+      },
+      {
+        "name": "FedRAMP (Federal Risk and Authorization Management Program)",
+        "type": "Government & Defense Regulation",
+        "description": "Standardizes cloud security assessments and authorizations across US federal agencies, with tiered impact levels (Low, Moderate, High) and continuous monitoring requirements.",
+        "jurisdiction": "US",
+        "domains": ["Cloud Security", "Federal Agencies", "Security Authorization"],
+        "region": "US"
+      },
+      {
+        "name": "NIST SP 800-171",
+        "type": "Government & Defense Regulation",
+        "description": "Governs the protection of Controlled Unclassified Information (CUI) in non-federal systems with 14 security requirement families.",
+        "jurisdiction": "US",
+        "domains": ["Information Protection", "CUI", "Security Requirements"],
+        "region": "US"
+      },
+      {
+        "name": "Cybersecurity Maturity Model Certification (CMMC)",
+        "type": "Government & Defense Regulation",
+        "description": "Establishes five progressive maturity levels for defense contractors handling Federal Contract Information (FCI) and Controlled Unclassified Information (CUI), with specific cybersecurity controls.",
+        "jurisdiction": "US",
+        "domains": ["Cybersecurity", "Defense Contractors", "Maturity Levels"],
+        "region": "US"
+      },
+      {
+        "name": "NERC CIP (Critical Infrastructure Protection)",
+        "type": "Energy & Environment Regulation",
+        "description": "Establishes mandatory cybersecurity requirements for bulk electric system operators, including controls for electronic security perimeters, systems security management, and incident reporting.",
+        "jurisdiction": "US",
+        "domains": ["Cybersecurity", "Energy Infrastructure", "Incident Reporting"],
+        "region": "US"
+      },
+      {
+        "name": "EPA Risk Management Program",
+        "type": "Energy & Environment Regulation",
+        "description": "Imposes environmental reporting requirements and safety measures for chemical facilities to prevent and mitigate potential hazards.",
+        "jurisdiction": "US",
+        "domains": ["Environmental Safety", "Chemical Facilities", "Risk Management"],
+        "region": "US"
+      },
+      {
+        "name": "SASB (Sustainability Accounting Standards Board) Energy Sector Metrics",
+        "type": "Energy & Environment Regulation",
+        "description": "Provides ESG (Environmental, Social, Governance) metrics for the energy sector, focusing on sustainability and climate-related risks.",
+        "jurisdiction": "International",
+        "domains": ["Sustainability", "ESG", "Energy Sector"],
+        "region": "Global"
+      },
+      {
+        "name": "TCFD (Task Force on Climate-related Financial Disclosures)",
+        "type": "Energy & Environment Regulation",
+        "description": "A reporting framework for climate risks in financial disclosures, focusing on energy and environment-related risks and opportunities.",
+        "jurisdiction": "International",
+        "domains": ["Climate Risks", "Financial Disclosures", "Energy Sector"],
+        "region": "Global"
+      },
+      {
+        "name": "EU Taxonomy Regulation",
+        "type": "Energy & Environment Regulation",
+        "description": "Establishes technical screening criteria for sustainable energy activities to determine which activities can be classified as environmentally sustainable.",
+        "jurisdiction": "EU",
+        "domains": ["Sustainability", "Energy", "EU Taxonomy"],
+        "region": "EU"
+      },
+      {
+        "name": "Carbon Disclosure Project (CDP) Energy Sector Reporting Protocols",
+        "type": "Energy & Environment Regulation",
+        "description": "Provides reporting protocols for the energy sector on climate change, water security, and forest management.",
+        "jurisdiction": "International",
+        "domains": ["Climate Change", "Energy Sector", "Environmental Reporting"],
+        "region": "Global"
+      },
+      {
+        "name": "ISO/IEC 27001",
+        "type": "Information Security Standard",
+        "description": "Internationally recognized standard specifying requirements for establishing, implementing, maintaining, and continually improving an Information Security Management System (ISMS). Built around a risk-based approach with 114 controls across 14 domains, including access control, cryptography, and supplier relationships.",
+        "jurisdiction": "International",
+        "domains": ["Information Security Management", "Risk Management", "Access Control", "Cryptography", "Supplier Relationships"],
+        "region": "Global"
+      },
+      {
+        "name": "SOC 2",
+        "type": "Service Organization Controls",
+        "description": "AICPA framework for service organizations to demonstrate controls over information security, availability, processing integrity, confidentiality, and privacy. Reports include Type 1 (control design assessment) and Type 2 (testing of operational effectiveness).",
+        "jurisdiction": "US",
+        "domains": ["Information Security", "Privacy", "Availability", "Processing Integrity", "Confidentiality"],
+        "region": "US"
+      },
+      {
+        "name": "NIST Cybersecurity Framework",
+        "type": "Cybersecurity Framework",
+        "description": "A voluntary, risk-based approach organizing cybersecurity activities into five core functions: Identify, Protect, Detect, Respond, and Recover. It features implementation tiers and detailed control profiles, cross-referencing other standards like NIST SP 800-53 and ISO 27001.",
+        "jurisdiction": "US",
+        "domains": ["Cybersecurity", "Risk Management", "Governance", "Supply Chain", "Emerging Technology"],
+        "region": "Global"
+      },
+      {
+        "name": "CIS Controls",
+        "type": "Cybersecurity Best Practices",
+        "description": "A prioritized set of cybersecurity best practices developed by the Center for Internet Security. Organized into three implementation groups, with 18 control categories that emphasize fundamental security hygiene, from inventory management to advanced organizational measures.",
+        "jurisdiction": "International",
+        "domains": ["Cybersecurity", "Security Hygiene", "Vulnerability Management", "Incident Management"],
+        "region": "Global"
+      },
+      {
+        "name": "OWASP Top 10",
+        "type": "Web Application Security",
+        "description": "Consensus-driven document identifying the top 10 most critical web application security risks. Updated periodically, the list includes risks such as broken access control, cryptographic failures, and injection attacks, serving as a baseline for web application security.",
+        "jurisdiction": "International",
+        "domains": ["Web Application Security", "Access Control", "Cryptography", "Injection Attacks"],
+        "region": "Global"
+      },
+      {
+        "name": "CSA STAR / CAIQ",
+        "type": "Cloud Security",
+        "description": "Cloud Security Alliance's Security Trust Assurance and Risk (STAR) program offering standardized assessment and certification of cloud provider security. The CAIQ contains over 250 questions aligned with CSA's Cloud Controls Matrix (CCM) across 17 control domains.",
+        "jurisdiction": "International",
+        "domains": ["Cloud Security", "Cloud Provider Certification", "Security Controls", "Compliance"],
+        "region": "Global"
+      },
+      {
+        "name": "Shared Assessments SIG",
+        "type": "Third-Party Risk Assessment",
+        "description": "A comprehensive third-party risk assessment framework with over 1,000 questions across 18 risk domains including data security, privacy, and business resilience. SIG Core is used for general assessments, while SIG Lite is for lower-risk relationships.",
+        "jurisdiction": "International",
+        "domains": ["Third-Party Risk", "Data Security", "Privacy", "Business Resilience", "Physical Security"],
+        "region": "Global"
+      },
+      {
+        "name": "PCI-DSS",
+        "type": "Payment Card Security Standard",
+        "description": "Comprehensive requirements for entities handling cardholder data, with 12 requirements covering network security, data protection, vulnerability management, access control, and monitoring. Compliance validation varies by merchant level.",
+        "jurisdiction": "International",
+        "domains": ["Payment Card Security", "Data Protection", "Access Control", "Network Security", "Vulnerability Management"],
+        "region": "Global"
+      },
+      {
+        "name": "EU AI Act",
+        "type": "AI Regulation",
+        "description": "The EU AI Act is the first comprehensive legal framework for AI, using a risk-based approach to categorize AI systems (unacceptable risk, high risk, limited risk, minimal risk), with corresponding requirements for transparency, human oversight, risk management, and documentation. Applies to all AI systems used or placing outputs on the market in the EU.",
+        "jurisdiction": "European Union",
+        "domains": ["AI Risk Management", "Transparency", "Human Oversight", "Documentation"],
+        "region": "EU"
+      },
+      {
+        "name": "NIST AI Risk Management Framework",
+        "type": "AI Risk Management",
+        "description": "A voluntary framework developed by NIST that provides organizations with a structured approach to identifying, assessing, and managing risks associated with AI systems throughout their lifecycle. Focuses on trustworthiness and responsible AI development.",
+        "jurisdiction": "US",
+        "domains": ["AI Risk Management", "Trustworthy AI", "Responsible AI Development"],
+        "region": "US"
+      },
+      {
+        "name": "Singapore Model AI Governance Framework",
+        "type": "AI Governance",
+        "description": "A practical guidance framework developed by Singapore's Personal Data Protection Commission to help organizations implement responsible AI governance practices. Includes addressing internal governance structures, determining AI decision-making models, and managing operations of AI systems.",
+        "jurisdiction": "Singapore",
+        "domains": ["AI Governance", "Responsible AI", "AI Decision-Making Models"],
+        "region": "Singapore"
+      },
+      {
+        "name": "IEEE P7000 Series",
+        "type": "Ethical AI Standards",
+        "description": "A collection of ethical standards developed by IEEE addressing various aspects of AI systems, including data privacy, algorithmic bias, children's data rights, and transparency requirements to promote responsible and trustworthy AI development.",
+        "jurisdiction": "International",
+        "domains": ["AI Ethics", "Data Privacy", "Algorithmic Bias", "Transparency"],
+        "region": "Global"
+      },
+      {
+        "name": "ISO/IEC 42001",
+        "type": "AI Management System",
+        "description": "International standard for AI management systems that provides requirements for establishing, implementing, maintaining, and continually improving an organization's AI management system, focusing on ethical considerations and risk management.",
+        "jurisdiction": "International",
+        "domains": ["AI Management", "Ethical Considerations", "Risk Management"],
+        "region": "Global"
+      },
+      {
+        "name": "OECD AI Principles",
+        "type": "AI Ethical Principles",
+        "description": "A set of intergovernmental policy guidelines developed by the OECD that promote AI innovation while ensuring respect for human rights, democratic values, transparency, technical robustness, and accountability.",
+        "jurisdiction": "International",
+        "domains": ["AI Innovation", "Human Rights", "Democratic Values", "Transparency", "Accountability"],
+        "region": "Global"
+      },
+      {
+        "name": "China's Algorithmic Recommendation Regulations",
+        "type": "AI Regulation",
+        "description": "A regulatory framework introduced by the Cyberspace Administration of China that imposes specific requirements for automated decision-making systems and algorithmic recommendations. Includes user opt-out options, transparency in content selection, and protection against discrimination.",
+        "jurisdiction": "China",
+        "domains": ["Automated Decision-Making", "Algorithmic Recommendations", "User Protection", "Transparency"],
+        "region": "China"
+      },
+      {
+        "name": "Canada's Artificial Intelligence and Data Act",
+        "type": "AI Regulation",
+        "description": "A legislative framework establishing requirements for high-impact AI systems, including risk assessment, mitigation measures, monitoring for harmful outcomes, and transparency requirements. Focuses on protecting Canadians from potential AI harms while fostering innovation.",
+        "jurisdiction": "Canada",
+        "domains": ["AI Risk Assessment", "AI Mitigation Measures", "Transparency", "AI Monitoring"],
+        "region": "Canada"
+      },
+      {
+        "name": "Digital Services Act/Digital Markets Act",
+        "type": "Digital Regulation",
+        "description": "A comprehensive EU regulatory framework aimed at creating a safer digital space and establishing a level playing field for digital services. The DSA imposes obligations on online platforms regarding content moderation, transparency, and user protection, while the DMA targets large 'gatekeeper' tech companies with additional requirements to ensure fair competition in digital markets.",
+        "jurisdiction": "European Union",
+        "domains": ["Online Platforms", "Content Moderation", "User Protection", "Fair Competition"],
+        "region": "EU"
+      },
+      {
+        "name": "DORA (Digital Operational Resilience Act)",
+        "type": "Digital Resilience Regulation",
+        "description": "The Digital Operational Resilience Act (DORA) establishes uniform requirements for the security of network and information systems of financial entities in the EU. It requires financial institutions to implement comprehensive ICT risk management frameworks, report major incidents, and conduct regular testing of digital operational resilience.",
+        "jurisdiction": "European Union",
+        "domains": ["Digital Resilience", "ICT Risk Management", "Incident Reporting", "Testing"],
+        "region": "EU"
+      },
+      {
+        "name": "NIS2 Directive",
+        "type": "Cybersecurity Regulation",
+        "description": "An enhanced version of the Network and Information Security Directive, the NIS2 Directive strengthens cybersecurity requirements across the EU, expanding its scope to additional sectors and imposing stricter compliance requirements, incident reporting obligations, and risk management measures for essential and important entities.",
+        "jurisdiction": "European Union",
+        "domains": ["Cybersecurity", "Incident Reporting", "Risk Management", "Compliance"],
+        "region": "EU"
+      },
+      {
+        "name": "ePrivacy Regulation (proposed)",
+        "type": "Privacy Regulation",
+        "description": "The proposed ePrivacy Regulation aims to replace the ePrivacy Directive (Cookie Law) to enhance privacy protection in electronic communications. It addresses issues such as cookie consent, metadata processing, and the confidentiality of communications. Designed to complement the GDPR with specific rules for digital communications.",
+        "jurisdiction": "European Union",
+        "domains": ["Privacy", "Cookie Consent", "Metadata Processing", "Digital Communications"],
+        "region": "EU"
+      },
+      {
+        "name": "Online Safety Laws",
+        "type": "Online Safety Regulation",
+        "description": "Various national regulations, including the UK Online Safety Bill, place legal responsibilities on online platforms to protect users from harmful content. This includes requirements for risk assessments, content moderation policies, and user protection measures. Similar frameworks are being developed in Australia, Canada, and other countries to address online harms.",
+        "jurisdiction": "UK, Australia, Canada, Other Countries",
+        "domains": ["Online Safety", "Risk Assessments", "Content Moderation", "User Protection"],
+        "region": "Global"
+      },
+      {
+        "name": "Corporate Sustainability Reporting Directive (EU)",
+        "type": "ESG Reporting Regulation",
+        "description": "Enhanced EU framework that significantly expands environmental, social, and governance (ESG) reporting requirements for large companies and listed SMEs. It mandates detailed disclosures on sustainability matters following European Sustainability Reporting Standards, including environmental impact, social responsibility, and governance practices with double materiality assessment.",
+        "jurisdiction": "European Union",
+        "domains": ["Sustainability", "ESG Reporting", "Environmental Impact", "Social Responsibility", "Governance", "Double Materiality Assessment"],
+        "region": "EU"
+      },
+      {
+        "name": "Modern Slavery Acts",
+        "type": "Human Rights Regulation",
+        "description": "National legislation requiring businesses of certain sizes to publish annual statements outlining steps taken to identify and address modern slavery risks in their operations and supply chains. The UK Modern Slavery Act (2015) and Australia's Modern Slavery Act (2018) aim to increase transparency and accountability regarding forced labor and human trafficking.",
+        "jurisdiction": "UK, Australia",
+        "domains": ["Supply Chain Transparency", "Modern Slavery", "Human Trafficking", "Transparency", "Accountability"],
+        "region": "UK, Australia"
+      },
+      {
+        "name": "Supply Chain Due Diligence Laws",
+        "type": "Human Rights and Environmental Due Diligence",
+        "description": "Legislation mandating human rights and environmental due diligence throughout global supply chains. The German Supply Chain Act (Lieferkettensorgfaltspflichtengesetz) requires companies to identify and mitigate human rights risks in their supply chains, while the French Duty of Vigilance Law (Loi de Vigilance) requires large companies to establish vigilance plans to prevent human rights violations and environmental damage.",
+        "jurisdiction": "Germany, France",
+        "domains": ["Supply Chain Due Diligence", "Human Rights", "Environmental Risk", "Vigilance Plans", "Human Rights Violations", "Environmental Damage Prevention"],
+        "region": "Germany, France"
+      },
+      {
+        "name": "Climate-related Financial Disclosures",
+        "type": "Climate Risk Reporting",
+        "description": "Based on Task Force on Climate-related Financial Disclosures (TCFD) recommendations, these requirements focus on how organizations assess and manage climate-related risks and opportunities. Initially voluntary, TCFD-aligned disclosures are becoming mandatory in jurisdictions including the UK, New Zealand, Singapore, and Switzerland, requiring companies to report on governance, strategy, risk management, and metrics related to climate change.",
+        "jurisdiction": "UK, New Zealand, Singapore, Switzerland",
+        "domains": ["Climate Risk", "Governance", "Strategy", "Risk Management", "Climate Change", "TCFD Recommendations"],
+        "region": "UK, New Zealand, Singapore, Switzerland"
+      }
+]
