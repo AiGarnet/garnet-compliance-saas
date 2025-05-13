@@ -8,9 +8,11 @@
     "dev:next": "cd frontend && npm run dev",
     "dev:vite": "vite",
     "dev": "npm run dev:next",
+    "prebuild": "node scripts/prebuild.js",
     "build:next": "cd frontend && npm run build",
     "build:vite": "tsc --skipLibCheck && vite build",
-    "build": "npm run build:next && npm run build:vite && node scripts/merge-builds.js",
+    "check-deps": "node scripts/check-deps.js",
+    "build": "npm run prebuild && npm run build:next && npm run build:vite && node scripts/merge-builds.js",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -29,10 +31,10 @@
     "eslint": "^8.53.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.4",
+    "fs-extra": "^11.1.1",
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.5",
     "typescript": "^5.2.2",
-    "vite": "^5.0.0",
-    "fs-extra": "^11.1.1"
+    "vite": "^5.0.0"
   }
 } 

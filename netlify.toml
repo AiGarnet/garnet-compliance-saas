@@ -6,6 +6,9 @@
   NODE_VERSION = "18"
   NPM_FLAGS = "--prefix=frontend --include=dev"
   VITE_ALLOW_CJS_IMPORTS = "true"
+  NETLIFY_USE_YARN = "false"
+  NETLIFY_BUILD_INSTALL_PACKAGE_DEPS = "true"
+  INSTALL_DEV_DEPS = "true"
 
 [[redirects]]
   from = "/dashboard/*"
