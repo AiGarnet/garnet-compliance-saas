@@ -4,8 +4,11 @@
   "description": "Data importer for Garnet AI compliance frameworks",
   "main": "import_data.js",
   "scripts": {
-    "import": "node import_data.js"
-  },
+  "import": "node import_data.js",
+  "build": "vite build",
+  "dev": "vite"
+},
+
   "dependencies": {
     "pg": "^8.11.3"
   }
