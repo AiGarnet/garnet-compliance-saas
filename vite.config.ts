@@ -12,6 +12,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
+      'moment': resolve(__dirname, 'node_modules/moment'),
     },
   },
   // This is helpful for Single Page Applications on Netlify

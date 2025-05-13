@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import './App.css'
+import { formatDate } from './utils/date-utils'
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
+  const today = formatDate(new Date())
 
   return (
     <div className="app-container">
@@ -34,6 +36,7 @@ function App() {
         {activeTab === 'dashboard' && (
           <div className="dashboard">
             <h2>Dashboard</h2>
+            <p className="text-sm text-gray-500">Today: {today}</p>
             <div className="dashboard-cards">
               <div className="dashboard-card">
                 <h3>Data Overview</h3>

@@ -5,6 +5,7 @@
 [build.environment]
   NODE_VERSION = "18"
   NPM_FLAGS = "--prefix=frontend --include=dev"
+  VITE_ALLOW_CJS_IMPORTS = "true"
 
 [[redirects]]
   from = "/dashboard/*"
