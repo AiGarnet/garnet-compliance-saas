@@ -5,9 +5,13 @@ This project is configured to deploy only the dashboard from the frontend direct
 ## How it works
 
 1. The `netlify.toml` configuration sets the base directory to `frontend`
-2. Netlify builds the Next.js application using `npm run build`
-3. The built files are published from `frontend/.next`
-4. The Netlify Next.js plugin handles server-side rendering
+2. Next.js is configured for static export with `output: 'export'` in next.config.js
+3. Netlify builds the Next.js application using `npm run build`
+4. The built files are published from the `out` directory
+5. Netlify redirects handle routing:
+   - Root URL (`/`) redirects to `/dashboard`
+   - `/dashboard` serves the dashboard page
+   - All other routes go to the main index.html
 
 ## Manual Deployment
 
