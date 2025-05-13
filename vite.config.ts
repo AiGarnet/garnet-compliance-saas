@@ -2,12 +2,37 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 
+// Custom plugin to handle CommonJS modules
+const handleCjsModules = () => {
+  return {
+    name: 'handle-cjs-modules',
+    resolveId(source) {
+      // Special handling for moment
+      if (source === 'moment') {
+        return { id: 'moment', external: true };
+      }
+      return null;
+    }
+  };
+};
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    handleCjsModules()
+  ],
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    rollupOptions: {
+      external: ['moment'],
+      output: {
+        globals: {
+          moment: 'moment'
+        }
+      }
+    }
   },
   resolve: {
     alias: {

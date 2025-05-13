@@ -9,7 +9,7 @@
     "dev:vite": "vite",
     "dev": "npm run dev:next",
     "build:next": "cd frontend && npm run build",
-    "build:vite": "tsc && vite build",
+    "build:vite": "tsc --skipLibCheck && vite build",
     "build": "npm run build:next && npm run build:vite && node scripts/merge-builds.js",
     "preview": "vite preview"
   },
