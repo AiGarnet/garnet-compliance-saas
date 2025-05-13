@@ -1,19 +1,19 @@
 [build]
+  base = "frontend"
   command = "npm run build"
-  publish = "dist"
+  publish = "frontend/.next"
 
 [build.environment]
   NODE_VERSION = "18"
-  NPM_FLAGS = "--prefix=frontend --include=dev"
-  VITE_ALLOW_CJS_IMPORTS = "true"
-  NETLIFY_USE_YARN = "false"
-  NETLIFY_BUILD_INSTALL_PACKAGE_DEPS = "true"
-  INSTALL_DEV_DEPS = "true"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 [[redirects]]
-  from = "/dashboard/*"
-  to = "/dashboard/index.html"
-  status = 200
+  from = "/"
+  to = "/dashboard"
+  status = 302
 
 [[redirects]]
   from = "/*"
