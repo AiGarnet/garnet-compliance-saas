@@ -108,6 +108,67 @@ cd backend
 npm run dev
 ```
 
+### 🧪 Running in Mock/Test Mode
+
+You can spin up the application using lightweight test data for development using:
+
+```bash
+npm run dev:mock
+```
+
+This command:
+- Seeds mock data from `data_new.json` using `scripts/seed-test-data.js`
+- Launches both frontend and backend servers with `NODE_ENV=mock`
+
+### ⚙️ Environment Variables Setup
+
+Copy the sample file and populate values:
+
+```bash
+cp .env.example .env
+```
+
+Ensure you configure the following keys:
+
+- `DB_HOST`
+- `DB_PORT`
+- `DB_NAME`
+- `DB_USER`
+- `DB_PASSWORD`
+- `PORT`
+- `NEXT_PUBLIC_API_URL`
+
+### 💾 Database Setup
+
+You can run Postgres locally in one of two ways:
+
+**Option 1: Using Docker**
+
+```bash
+docker-compose up -d db
+```
+
+**Option 2: Manual Setup**
+
+Install Postgres and create the DB manually:
+
+```bash
+createdb garnet_ai
+```
+
+Ensure .env values match your local database credentials.
+
+### 🚑 Troubleshooting
+
+- **Port already in use:**  
+  Run `lsof -i :PORT` and then `kill -9 PID` to free the port.
+
+- **Database connection refused:**  
+  Make sure PostgreSQL is running and your .env values are correct.
+
+- **Reset Docker volumes:**  
+  Run `docker-compose down -v` to remove all persisted data.
+
 ### 🌐 Environment Variables Setup
 
 To configure environment-specific settings, copy the example `.env` file and fill in your details:
@@ -156,11 +217,11 @@ The database connection details are configured in `import_data.js`. Modify these
 
 ```javascript
 const pool = new Pool({
-  host: 'GarnetAI',  // Server name
-  port: 5432,
-  database: 'garnet_ai',  // Database name
-  user: 'postgres',
-  password: 'Sonasuhani1'
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
 });
 ```
 
