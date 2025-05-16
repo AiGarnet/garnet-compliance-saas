@@ -9,18 +9,15 @@ import { VendorList, Vendor } from "@/components/dashboard/VendorList";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { cn } from "@/lib/utils";
 
-// Sample data for demonstration
-const demoVendors: Vendor[] = [
-  // Comment this out to test empty state
-  /*
-  { id: "v1", name: "CloudSecure Inc." },
-  { id: "v2", name: "DataGuard Solutions" },
-  { id: "v3", name: "SecureNet Systems" }
-  */
+// Vendor data
+const vendors = [
+  { id: "1", name: "Acme Corp", status: "Questionnaire Pending" },
+  { id: "2", name: "Globex Ltd", status: "In Review" },
+  { id: "3", name: "Stark Industries", status: "Approved" },
 ];
 
 const DashboardPage = () => {
-  const [vendors] = useState<Vendor[]>(demoVendors);
+  const [vendorList] = useState<Vendor[]>(vendors);
 
   return (
     <>
@@ -110,7 +107,7 @@ const DashboardPage = () => {
         </section>
         
         {/* Vendor Section */}
-        <VendorList vendors={vendors} className="min-h-[300px]" />
+        <VendorList vendors={vendorList} className="min-h-[300px]" />
         
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
