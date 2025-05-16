@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { AlertTriangle, Eye, PlusCircle } from "lucide-react";
+import { AlertTriangle, Eye, PlusCircle, LogOut, User } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ComplianceCard } from "@/components/dashboard/ComplianceCard";
 import { QuestionnaireCard } from "@/components/dashboard/QuestionnaireCard";
@@ -26,31 +26,50 @@ const DashboardPage = () => {
     <>
       <header 
         role="banner" 
-        className="sticky top-0 z-10 flex items-center justify-between bg-white border-b border-gray-200 px-4 md:px-8 h-16"
+        className="sticky top-0 z-10 flex items-center justify-between bg-white shadow-sm px-6 py-3"
       >
-        <div className="flex items-center gap-2">
-          <MobileNavigation />
+        <div className="flex items-center">
+          <h1 className="text-xl font-semibold mr-8">Vendor Onboarding</h1>
           
-          <Breadcrumbs
-            items={[
-              { label: "Home", href: "/" },
-              { label: "Dashboard" }
-            ]}
-            className="hidden md:flex ml-4"
-          />
+          <nav className="hidden md:flex items-center space-x-6">
+            <a href="/dashboard" className="text-primary font-medium min-h-[44px] flex items-center border-b-2 border-primary">
+              Dashboard
+            </a>
+            <a href="/questionnaires" className="text-gray-600 hover:text-primary min-h-[44px] flex items-center transition-colors">
+              Questionnaires
+            </a>
+            <a href="/vendors" className="text-gray-600 hover:text-primary min-h-[44px] flex items-center transition-colors">
+              Vendors
+            </a>
+            <a href="/trust-portal" className="text-gray-600 hover:text-primary min-h-[44px] flex items-center transition-colors">
+              Trust Portal
+            </a>
+            <a href="/compliance" className="text-gray-600 hover:text-primary min-h-[44px] flex items-center transition-colors">
+              Compliance
+            </a>
+          </nav>
         </div>
         
         <div className="flex items-center gap-4">
-          <button className="hidden md:inline-flex items-center text-sm font-medium text-primary border border-gray-200 hover:border-primary/50 px-4 py-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Questionnaire
+          <MobileNavigation />
+          
+          <button 
+            className="text-gray-600 hover:text-black flex items-center min-h-[44px] min-w-[44px] px-3 focus:outline-none focus:ring-2 focus:ring-primary/30 rounded-md" 
+            disabled
+            aria-label="User profile (not functional)"
+          >
+            <User className="h-5 w-5 mr-2" />
+            <span className="hidden md:inline">Profile</span>
           </button>
           
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-primary-light flex items-center justify-center">
-              <span className="text-sm text-primary font-medium">SA</span>
-            </div>
-          </div>
+          <button 
+            className="text-gray-600 hover:text-black flex items-center min-h-[44px] min-w-[44px] px-3 focus:outline-none focus:ring-2 focus:ring-primary/30 rounded-md" 
+            disabled
+            aria-label="Logout button (not functional)"
+          >
+            <LogOut className="h-5 w-5 md:mr-2" />
+            <span className="hidden md:inline">Logout</span>
+          </button>
         </div>
       </header>
       
