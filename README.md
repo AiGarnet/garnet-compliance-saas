@@ -171,13 +171,18 @@ The import script expects a JSON file named `data_new.json` containing an array 
 ```json
 [
   {
-    "name": "GDPR",
-    "type": "Privacy",
-    "jurisdiction": "European Union",
-    "description": "General Data Protection Regulation...",
-    "domains": ["Data Privacy", "Consumer Protection"],
-    "region": "Europe"
-  },
+        "name": "Privacy and Electronic Communications Regulations (PECR)",
+        "type": "Regulation",
+        "description": "UK regulations description....",
+        "jurisdiction": "United Kingdom",
+        "domains": ["Electronic Communications", "Cookies", "Direct Marketing", "Privacy"],
+        "region": "Europe",
+        "requirement": "Obtain user consent for cookies and ensure confidentiality of communications in direct marketing activities.",
+        "effective_date": "2003-12-11",
+        "last_updated": "2023-01-01",
+        "official_url": "url",
+        "category": "Data Privacy"
+      },
   ...
 ]
 ```
