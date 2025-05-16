@@ -13,7 +13,9 @@
     "build:vite": "tsc --skipLibCheck && vite build",
     "check-deps": "node scripts/check-deps.js",
     "build": "npm run prebuild && npm run build:next && npm run build:vite && node scripts/merge-builds.js",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:mock": "NODE_ENV=mock npm run seed:test && npm run dev",
+    "seed:test": "node scripts/seed-test-data.js"
   },
   "dependencies": {
     "@faker-js/faker": "^9.8.0",
