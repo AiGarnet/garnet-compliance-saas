@@ -1,19 +1,20 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { BarChart3, CheckSquare, Download, FileText, Plus, Search, ShieldCheck, Users } from "lucide-react";
 import { MobileNavigation } from "@/components/MobileNavigation";
+import { FrameworkList, Framework, FrameworkStatus } from "@/components/dashboard/FrameworkList";
 
 const CompliancePage = () => {
   // Sample data for compliance frameworks
-  const frameworks = [
+  const mockFrameworks = [
     { 
       id: "f1", 
       name: "SOC 2", 
       progress: 78, 
       totalControls: 116,
       completedControls: 91,
-      status: "In Progress",
+      status: "In Progress" as FrameworkStatus,
       lastUpdated: "Aug 10, 2023"
     },
     { 
@@ -22,7 +23,7 @@ const CompliancePage = () => {
       progress: 65, 
       totalControls: 93,
       completedControls: 61,
-      status: "In Progress",
+      status: "In Progress" as FrameworkStatus,
       lastUpdated: "Jul 28, 2023"
     },
     { 
@@ -31,7 +32,7 @@ const CompliancePage = () => {
       progress: 92, 
       totalControls: 42,
       completedControls: 39,
-      status: "Near Completion",
+      status: "Near Completion" as FrameworkStatus,
       lastUpdated: "Aug 15, 2023"
     },
     { 
@@ -40,10 +41,40 @@ const CompliancePage = () => {
       progress: 100, 
       totalControls: 75,
       completedControls: 75,
-      status: "Completed",
+      status: "Completed" as FrameworkStatus,
       lastUpdated: "Jun 30, 2023"
     },
   ];
+
+  const [frameworks, setFrameworks] = useState<Framework[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
+
+  // Simulate API fetch with delay and potential error
+  const fetchFrameworks = async () => {
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      // Simulate network request
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Uncomment to simulate error
+      // if (Math.random() > 0.7) throw new Error("Failed to fetch frameworks");
+      
+      setFrameworks(mockFrameworks);
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Error fetching frameworks:", err);
+      setError('Unable to load compliance frameworks. Please try again.');
+      setIsLoading(false);
+    }
+  };
+
+  // Initial fetch on component mount
+  useEffect(() => {
+    fetchFrameworks();
+  }, []);
 
   // Sample evidence data
   const evidenceItems = [
@@ -143,17 +174,7 @@ const CompliancePage = () => {
             <p className="text-gray-600 mt-1">Manage your compliance programs and frameworks</p>
           </div>
           
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <Search className="h-4 w-4 text-gray-400" />
-              </div>
-              <input 
-                type="search" 
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
-                placeholder="Search compliance..."
-              />
-            </div>
+          <div className="flex items-center">
             <button className="bg-primary text-white hover:bg-primary/90 px-4 py-2 rounded-md flex items-center transition-colors">
               <Plus className="h-5 w-5 mr-2" />
               Add Framework
@@ -207,63 +228,12 @@ const CompliancePage = () => {
         </div>
         
         {/* Compliance Frameworks */}
-        <section>
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">Compliance Frameworks</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {frameworks.map(framework => (
-              <div key={framework.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-gray-800">{framework.name}</h3>
-                  <span className={`text-sm px-2.5 py-1 rounded-full ${
-                    framework.status === 'Completed' ? 'bg-success-light text-success' :
-                    framework.status === 'Near Completion' ? 'bg-secondary-light text-secondary' :
-                    'bg-primary-light text-primary'
-                  }`}>
-                    {framework.status}
-                  </span>
-                </div>
-                
-                <div className="mb-6">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">Progress</span>
-                    <span className="font-medium">{framework.progress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className={`h-2 rounded-full ${
-                        framework.progress === 100 ? 'bg-success' :
-                        framework.progress > 75 ? 'bg-secondary' :
-                        'bg-primary'
-                      }`}
-                      style={{ width: `${framework.progress}%` }}
-                    ></div>
-                  </div>
-                </div>
-                
-                <div className="text-sm text-gray-600 space-y-2">
-                  <div className="flex justify-between">
-                    <span>Controls:</span>
-                    <span className="font-medium">{framework.completedControls}/{framework.totalControls}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Last Updated:</span>
-                    <span>{framework.lastUpdated}</span>
-                  </div>
-                </div>
-                
-                <div className="mt-6 pt-4 border-t border-gray-100">
-                  <a 
-                    href={`/compliance/${framework.id}`} 
-                    className="text-primary hover:text-primary/80 text-sm font-medium"
-                  >
-                    View Details →
-                  </a>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+        <FrameworkList 
+          frameworks={frameworks} 
+          isLoading={isLoading}
+          error={error}
+          onRetry={fetchFrameworks}
+        />
         
         {/* Recent Evidence */}
         <section id="evidence" className="pt-4">

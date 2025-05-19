@@ -1,23 +1,54 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AlertTriangle, Eye, PlusCircle, LogOut, User } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ComplianceCard } from "@/components/dashboard/ComplianceCard";
 import { QuestionnaireCard } from "@/components/dashboard/QuestionnaireCard";
-import { VendorList, Vendor } from "@/components/dashboard/VendorList";
+import { VendorList, Vendor, VendorStatus } from "@/components/dashboard/VendorList";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { cn } from "@/lib/utils";
 
 // Vendor data
-const vendors = [
-  { id: "1", name: "Acme Corp", status: "Questionnaire Pending" },
-  { id: "2", name: "Globex Ltd", status: "In Review" },
-  { id: "3", name: "Stark Industries", status: "Approved" },
+const mockVendors = [
+  { id: "1", name: "Acme Corp", status: "Questionnaire Pending" as VendorStatus },
+  { id: "2", name: "Globex Ltd", status: "In Review" as VendorStatus },
+  { id: "3", name: "Stark Industries", status: "Approved" as VendorStatus },
+  { id: "4", name: "Wayne Enterprises", status: "Questionnaire Pending" as VendorStatus },
+  { id: "5", name: "Oscorp Industries", status: "In Review" as VendorStatus },
+  { id: "6", name: "Umbrella Corporation", status: "Approved" as VendorStatus },
 ];
 
 const DashboardPage = () => {
-  const [vendorList] = useState<Vendor[]>(vendors);
+  const [vendorList, setVendorList] = useState<Vendor[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
+
+  // Simulate API fetch with delay and potential error
+  const fetchVendors = async () => {
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      // Simulate network request
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Uncomment to simulate error
+      // if (Math.random() > 0.7) throw new Error("Failed to fetch vendors");
+      
+      setVendorList(mockVendors);
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Error fetching vendors:", err);
+      setError('Unable to load vendors. Please try again.');
+      setIsLoading(false);
+    }
+  };
+
+  // Initial fetch on component mount
+  useEffect(() => {
+    fetchVendors();
+  }, []);
 
   return (
     <>
@@ -107,7 +138,13 @@ const DashboardPage = () => {
         </section>
         
         {/* Vendor Section */}
-        <VendorList vendors={vendorList} className="min-h-[300px]" />
+        <VendorList 
+          vendors={vendorList} 
+          className="min-h-[300px]" 
+          isLoading={isLoading}
+          error={error}
+          onRetry={fetchVendors}
+        />
         
         {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

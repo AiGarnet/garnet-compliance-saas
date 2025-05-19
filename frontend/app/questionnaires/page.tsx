@@ -1,18 +1,49 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { ClipboardList, Filter, Plus, Search, SlidersHorizontal } from "lucide-react";
 import { MobileNavigation } from "@/components/MobileNavigation";
+import { QuestionnaireList, Questionnaire, QuestionnaireStatus } from "@/components/dashboard/QuestionnaireList";
 
 const QuestionnairesPage = () => {
   // Sample data for demonstration
-  const questionnaires = [
-    { id: "q1", name: "SOC 2 Type II Assessment", status: "In Progress", dueDate: "Aug 15, 2023", progress: 65 },
-    { id: "q2", name: "GDPR Compliance Questionnaire", status: "Completed", dueDate: "Jul 28, 2023", progress: 100 },
-    { id: "q3", name: "ISO 27001 Readiness Assessment", status: "Not Started", dueDate: "Sep 10, 2023", progress: 0 },
-    { id: "q4", name: "HIPAA Security Assessment", status: "In Review", dueDate: "Aug 5, 2023", progress: 85 },
-    { id: "q5", name: "Vendor Security Assessment", status: "Draft", dueDate: "Sep 30, 2023", progress: 20 },
+  const mockQuestionnaires = [
+    { id: "q1", name: "SOC 2 Type II Assessment", status: "In Progress" as QuestionnaireStatus, dueDate: "Aug 15, 2023", progress: 65 },
+    { id: "q2", name: "GDPR Compliance Questionnaire", status: "Completed" as QuestionnaireStatus, dueDate: "Jul 28, 2023", progress: 100 },
+    { id: "q3", name: "ISO 27001 Readiness Assessment", status: "Not Started" as QuestionnaireStatus, dueDate: "Sep 10, 2023", progress: 0 },
+    { id: "q4", name: "HIPAA Security Assessment", status: "In Review" as QuestionnaireStatus, dueDate: "Aug 5, 2023", progress: 85 },
+    { id: "q5", name: "Vendor Security Assessment", status: "Draft" as QuestionnaireStatus, dueDate: "Sep 30, 2023", progress: 20 },
   ];
+  
+  const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
+
+  // Simulate API fetch with delay and potential error
+  const fetchQuestionnaires = async () => {
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      // Simulate network request
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Uncomment to simulate error
+      // if (Math.random() > 0.7) throw new Error("Failed to fetch questionnaires");
+      
+      setQuestionnaires(mockQuestionnaires);
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Error fetching questionnaires:", err);
+      setError('Unable to load questionnaires. Please try again.');
+      setIsLoading(false);
+    }
+  };
+
+  // Initial fetch on component mount
+  useEffect(() => {
+    fetchQuestionnaires();
+  }, []);
 
   return (
     <>
@@ -80,20 +111,7 @@ const QuestionnairesPage = () => {
             <p className="text-gray-600 mt-1">Manage and track all your compliance questionnaires</p>
           </div>
           
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <Search className="h-4 w-4 text-gray-400" />
-              </div>
-              <input 
-                type="search" 
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
-                placeholder="Search questionnaires..."
-              />
-            </div>
-            <button className="text-gray-600 hover:text-gray-800 p-2 rounded-md border border-gray-300 hover:border-gray-400 transition-colors">
-              <Filter className="h-5 w-5" />
-            </button>
+          <div className="flex items-center">
             <button className="bg-primary text-white hover:bg-primary/90 px-4 py-2 rounded-md flex items-center transition-colors">
               <Plus className="h-5 w-5 mr-2" />
               New Questionnaire
@@ -101,100 +119,13 @@ const QuestionnairesPage = () => {
           </div>
         </div>
         
-        {/* Filters */}
-        <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col md:flex-row gap-4 border border-gray-200">
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal className="h-5 w-5 text-gray-500" />
-            <span className="font-medium text-gray-700">Filters:</span>
-          </div>
-          
-          <div className="flex flex-wrap gap-3">
-            <select className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none">
-              <option value="">All Types</option>
-              <option value="soc2">SOC 2</option>
-              <option value="iso27001">ISO 27001</option>
-              <option value="gdpr">GDPR</option>
-              <option value="hipaa">HIPAA</option>
-            </select>
-            
-            <select className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none">
-              <option value="">All Status</option>
-              <option value="not-started">Not Started</option>
-              <option value="in-progress">In Progress</option>
-              <option value="in-review">In Review</option>
-              <option value="completed">Completed</option>
-            </select>
-            
-            <select className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none">
-              <option value="">All Due Dates</option>
-              <option value="overdue">Overdue</option>
-              <option value="this-week">Due This Week</option>
-              <option value="next-week">Due Next Week</option>
-              <option value="this-month">Due This Month</option>
-            </select>
-          </div>
-        </div>
-        
-        {/* Questionnaires List */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">Name</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">Status</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">Due Date</th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-600">Progress</th>
-                <th className="px-6 py-4 text-sm font-medium text-gray-600">Actions</th>
-              </tr>
-            </thead>
-            
-            <tbody className="divide-y divide-gray-200">
-              {questionnaires.map(questionnaire => (
-                <tr key={questionnaire.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="font-medium text-gray-800">{questionnaire.name}</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      questionnaire.status === 'Completed' ? 'bg-success-light text-success' :
-                      questionnaire.status === 'In Progress' ? 'bg-primary-light text-primary' :
-                      questionnaire.status === 'In Review' ? 'bg-secondary-light text-secondary' :
-                      questionnaire.status === 'Draft' ? 'bg-warning-light text-warning' :
-                      'bg-gray-100 text-gray-600'
-                    }`}>
-                      {questionnaire.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {questionnaire.dueDate}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-                      <div 
-                        className={`h-2.5 rounded-full ${
-                          questionnaire.progress === 100 ? 'bg-success' :
-                          questionnaire.progress > 75 ? 'bg-secondary' :
-                          questionnaire.progress > 30 ? 'bg-primary' :
-                          questionnaire.progress > 0 ? 'bg-warning' : 'bg-gray-300'
-                        }`}
-                        style={{ width: `${questionnaire.progress}%` }}
-                      ></div>
-                    </div>
-                    <span className="text-xs text-gray-500 mt-1 block">{questionnaire.progress}%</span>
-                  </td>
-                  <td className="px-6 py-4 text-right text-sm font-medium">
-                    <div className="flex justify-end gap-2">
-                      <button className="text-primary hover:text-primary/80 transition-colors">Edit</button>
-                      <button className="text-gray-600 hover:text-gray-800 transition-colors">View</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        {/* Questionnaire List Component */}
+        <QuestionnaireList 
+          questionnaires={questionnaires} 
+          isLoading={isLoading}
+          error={error}
+          onRetry={fetchQuestionnaires}
+        />
       </main>
     </>
   );

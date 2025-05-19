@@ -1,19 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Download, ExternalLink, Lock, Shield, ShieldCheck, User } from "lucide-react";
 import { MobileNavigation } from "@/components/MobileNavigation";
+import { ComplianceReportList, ComplianceReport } from "@/components/dashboard/ComplianceReportList";
 
 const TrustPortalPage = () => {
   // Sample data for demonstration
-  const complianceReports = [
+  const mockReports = [
     { 
       id: "r1", 
       name: "SOC 2 Type II Report", 
       date: "July 2023",
       description: "Independent assessment of our controls relevant to security, availability, and confidentiality.",
       fileSize: "3.2 MB",
-      fileType: "PDF"
+      fileType: "PDF",
+      category: "Certification" as const
     },
     { 
       id: "r2", 
@@ -21,7 +23,8 @@ const TrustPortalPage = () => {
       date: "March 2023",
       description: "Certification for our Information Security Management System (ISMS).",
       fileSize: "1.5 MB",
-      fileType: "PDF"
+      fileType: "PDF",
+      category: "Certification" as const
     },
     { 
       id: "r3", 
@@ -29,7 +32,8 @@ const TrustPortalPage = () => {
       date: "May 2023",
       description: "Details of our compliance with the General Data Protection Regulation.",
       fileSize: "845 KB",
-      fileType: "PDF"
+      fileType: "PDF",
+      category: "Statement" as const
     },
     { 
       id: "r4", 
@@ -37,9 +41,40 @@ const TrustPortalPage = () => {
       date: "June 2023",
       description: "Our policy regarding the collection, use, and disclosure of personal information.",
       fileSize: "720 KB",
-      fileType: "PDF"
+      fileType: "PDF",
+      category: "Policy" as const
     },
   ];
+
+  const [reports, setReports] = useState<ComplianceReport[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
+
+  // Simulate API fetch with delay and potential error
+  const fetchReports = async () => {
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      // Simulate network request
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Uncomment to simulate error
+      // if (Math.random() > 0.7) throw new Error("Failed to fetch reports");
+      
+      setReports(mockReports);
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Error fetching compliance reports:", err);
+      setError('Unable to load compliance reports. Please try again.');
+      setIsLoading(false);
+    }
+  };
+
+  // Initial fetch on component mount
+  useEffect(() => {
+    fetchReports();
+  }, []);
 
   return (
     <>
@@ -125,38 +160,12 @@ const TrustPortalPage = () => {
         
         {/* Compliance Reports Section */}
         <section id="compliance" className="pt-8">
-          <div className="flex items-center mb-6">
-            <ShieldCheck className="h-7 w-7 text-primary mr-3" />
-            <h2 className="text-2xl font-semibold text-gray-800">Compliance Reports</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {complianceReports.map(report => (
-              <div key={report.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col">
-                <div className="flex justify-between mb-4">
-                  <h3 className="text-lg font-medium text-gray-800">{report.name}</h3>
-                  <span className="text-sm text-gray-500">{report.date}</span>
-                </div>
-                
-                <p className="text-gray-600 mb-6 flex-grow">{report.description}</p>
-                
-                <div className="flex justify-between items-center mt-auto pt-4 border-t border-gray-100">
-                  <span className="text-sm text-gray-500">{report.fileSize} • {report.fileType}</span>
-                  
-                  <div className="flex gap-2">
-                    <button className="text-primary hover:text-primary/80 font-medium text-sm flex items-center">
-                      <Download className="h-4 w-4 mr-1" />
-                      Download
-                    </button>
-                    <button className="text-gray-500 hover:text-gray-700 text-sm flex items-center ml-3">
-                      <ExternalLink className="h-4 w-4 mr-1" />
-                      Preview
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <ComplianceReportList
+            reports={reports}
+            isLoading={isLoading}
+            error={error}
+            onRetry={fetchReports}
+          />
         </section>
         
         {/* Security Practices Section */}
