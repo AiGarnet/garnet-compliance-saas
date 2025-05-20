@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { ClipboardList, Filter, Plus, Search, SlidersHorizontal, X } from "lucide-react";
+import React, { useState, useEffect, useRef, ChangeEvent } from "react";
+import { ClipboardList, Filter, Plus, Search, SlidersHorizontal, X, Upload } from "lucide-react";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { QuestionnaireList, Questionnaire, QuestionnaireStatus } from "@/components/dashboard/QuestionnaireList";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -31,6 +31,11 @@ const QuestionnairesPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [questionAnswers, setQuestionAnswers] = useState<QuestionAnswer[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Add state for file upload
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Simulate API fetch with delay and potential error
   const fetchQuestionnaires = async () => {
@@ -124,6 +129,59 @@ const QuestionnairesPage = () => {
     setShowQuestionnaireInput(false);
     setQuestionnaireInput('');
     setQuestionAnswers([]);
+  };
+
+  // Handle file upload
+  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsUploading(true);
+    setUploadError(null);
+    
+    try {
+      // Check file type
+      if (file.type !== 'text/plain') {
+        throw new Error('Only .txt files are supported at this time');
+      }
+      
+      // Read file content
+      const text = await readFileAsText(file);
+      
+      // Set the text to the textarea
+      setQuestionnaireInput(text);
+      
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      setUploadError(error instanceof Error ? error.message : 'An error occurred while uploading the file');
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+  
+  // Helper function to read file as text
+  const readFileAsText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          resolve(event.target.result as string);
+        } else {
+          reject(new Error('Failed to read file'));
+        }
+      };
+      
+      reader.onerror = () => {
+        reject(new Error('File read error'));
+      };
+      
+      reader.readAsText(file);
+    });
   };
 
   return (
@@ -220,7 +278,41 @@ const QuestionnairesPage = () => {
               <div className="p-6 overflow-auto flex-grow">
                 <div className="mb-4">
                   <h3 className="text-lg font-medium mb-2">Your Questions</h3>
-                  <p className="text-gray-600 text-sm mb-4">Enter one question per line</p>
+                  <p className="text-gray-600 text-sm mb-4">Enter one question per line or upload a text file</p>
+                  
+                  {/* File upload area */}
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between">
+                      <label className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Questions (.txt)
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept=".txt"
+                          onChange={handleFileUpload}
+                          ref={fileInputRef}
+                          disabled={isUploading}
+                        />
+                      </label>
+                      
+                      {isUploading && (
+                        <span className="text-sm text-gray-500 flex items-center">
+                          <svg className="animate-spin h-4 w-4 mr-2 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Processing file...
+                        </span>
+                      )}
+                    </div>
+                    
+                    {uploadError && (
+                      <p className="mt-2 text-sm text-red-600">
+                        {uploadError}
+                      </p>
+                    )}
+                  </div>
                   
                   <form onSubmit={handleSubmitQuestionnaire}>
                     <textarea
