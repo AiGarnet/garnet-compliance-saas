@@ -3,9 +3,9 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { PlusCircle, ArrowUpDown, AlertTriangle, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 // Components
-import { VendorDetailModal } from './VendorDetailModal';
 import { StatusBadge } from './StatusBadge';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { FilterPills } from '@/components/ui/FilterPills';
@@ -52,9 +52,6 @@ export function VendorList({
   error = '',
   onRetry
 }: VendorListProps) {
-  // State for modal
-  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
-  
   // State for sorting
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -97,16 +94,8 @@ export function VendorList({
     }
   }, [filteredAndSortedVendors.length]);
 
-  const openVendorDetails = (vendor: Vendor) => {
-    setSelectedVendor(vendor);
-  };
-
-  const closeModal = () => {
-    setSelectedVendor(null);
-  };
-
   // Handle keyboard navigation in table
-  const handleTableKeyDown = (e: React.KeyboardEvent, index: number) => {
+  const handleTableKeyDown = (e: React.KeyboardEvent, vendor: Vendor, index: number) => {
     const rows = filteredAndSortedVendors.length;
     
     switch (e.key) {
@@ -129,11 +118,6 @@ export function VendorList({
       case 'End':
         e.preventDefault();
         document.getElementById(`vendor-row-${rows - 1}`)?.focus();
-        break;
-      case 'Enter':
-      case ' ':
-        e.preventDefault();
-        openVendorDetails(filteredAndSortedVendors[index]);
         break;
     }
   };
@@ -278,9 +262,8 @@ export function VendorList({
                   key={vendor.id}
                   id={`vendor-row-${index}`}
                   className="hover:bg-gray-50 transition-colors cursor-pointer"
-                  onClick={() => openVendorDetails(vendor)}
                   tabIndex={0}
-                  onKeyDown={(e) => handleTableKeyDown(e, index)}
+                  onKeyDown={(e) => handleTableKeyDown(e, vendor, index)}
                   aria-label={`${vendor.name}, Status: ${vendor.status}`}
                 >
                   <TableCell className="font-medium">{vendor.name}</TableCell>
@@ -288,16 +271,13 @@ export function VendorList({
                     <StatusBadge status={vendor.status} />
                   </TableCell>
                   <TableCell className="text-right">
-                    <button 
+                    <Link 
+                      href={`/vendors/${vendor.id}`}
                       className="text-sm text-purple-600 hover:text-purple-800 focus:outline-none focus:ring-2 focus:ring-primary/30 py-1 px-2 rounded"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openVendorDetails(vendor);
-                      }}
                       aria-label={`View details for ${vendor.name}`}
                     >
                       View Details
-                    </button>
+                    </Link>
                   </TableCell>
                 </TableRow>
               ))}
@@ -313,13 +293,9 @@ export function VendorList({
                 key={vendor.id}
                 id={`vendor-card-${index}`}
                 className="flex flex-col p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer shadow-sm"
-                onClick={() => openVendorDetails(vendor)}
                 tabIndex={0}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    openVendorDetails(vendor);
-                  } else if (e.key === 'ArrowDown' && index < filteredAndSortedVendors.length - 1) {
+                  if (e.key === 'ArrowDown' && index < filteredAndSortedVendors.length - 1) {
                     e.preventDefault();
                     document.getElementById(`vendor-card-${index + 1}`)?.focus();
                   } else if (e.key === 'ArrowUp' && index > 0) {
@@ -334,16 +310,13 @@ export function VendorList({
                   <StatusBadge status={vendor.status} />
                 </div>
                 <div className="flex justify-end mt-4">
-                  <button 
+                  <Link
+                    href={`/vendors/${vendor.id}`}
                     className="text-sm text-purple-600 hover:text-purple-800 focus:outline-none focus:ring-2 focus:ring-primary/30 py-1 px-2 rounded"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openVendorDetails(vendor);
-                    }}
                     aria-label={`View details for ${vendor.name}`}
                   >
                     View Details
-                  </button>
+                  </Link>
                 </div>
               </li>
             ))}
@@ -370,14 +343,6 @@ export function VendorList({
         {renderFilterPills()}
         {renderContent()}
       </section>
-
-      {/* Render the vendor detail modal when a vendor is selected */}
-      {selectedVendor && (
-        <VendorDetailModal 
-          vendor={selectedVendor} 
-          onClose={closeModal} 
-        />
-      )}
     </>
   );
 } 

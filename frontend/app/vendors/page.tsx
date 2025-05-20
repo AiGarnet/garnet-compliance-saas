@@ -8,10 +8,10 @@ import { VendorList, Vendor, VendorStatus } from "@/components/dashboard/VendorL
 const VendorsPage = () => {
   // Sample data for demonstration
   const mockVendors = [
-    { id: "1", name: "Acme Corp", status: "Questionnaire Pending" as VendorStatus },
-    { id: "2", name: "Globex Ltd", status: "In Review" as VendorStatus },
-    { id: "3", name: "Stark Industries", status: "Approved" as VendorStatus },
-    { id: "4", name: "Wayne Enterprises", status: "Questionnaire Pending" as VendorStatus },
+    { id: "1", name: "Acme Payments", status: "Questionnaire Pending" as VendorStatus },
+    { id: "2", name: "TechSecure Solutions", status: "In Review" as VendorStatus },
+    { id: "3", name: "Global Data Services", status: "Approved" as VendorStatus },
+    { id: "4", name: "SecureCloud Inc", status: "Questionnaire Pending" as VendorStatus },
     { id: "5", name: "Oscorp Industries", status: "In Review" as VendorStatus },
     { id: "6", name: "Umbrella Corporation", status: "Approved" as VendorStatus },
   ];
