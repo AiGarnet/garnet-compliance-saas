@@ -85,8 +85,13 @@ const QuestionnairesPage = () => {
     setIsSubmitting(true);
     
     try {
+      // Use the appropriate API endpoint based on environment
+      const apiEndpoint = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+        ? '/api/ai/questionnaire'
+        : '/.netlify/functions/questionnaire';
+        
       // Send questions to the API
-      const response = await fetch('/api/ai/questionnaire', {
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
