@@ -19,30 +19,39 @@ const mockVendors = [
   { id: "6", name: "Umbrella Corporation", status: "Approved" as VendorStatus },
 ];
 
-const DashboardPage = () => {
-  const [vendorList, setVendorList] = useState<Vendor[]>([]);
+export default function DashboardPage() {
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  const [simulateError, setSimulateError] = useState<boolean>(false);
 
-  // Simulate API fetch with delay and potential error
+  // Simulate API fetch with delay
   const fetchVendors = async () => {
     setIsLoading(true);
     setError('');
     
     try {
-      // Simulate network request
+      // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Uncomment to simulate error
-      // if (Math.random() > 0.7) throw new Error("Failed to fetch vendors");
+      // Simulate error for testing
+      if (simulateError) {
+        throw new Error("Failed to fetch vendors");
+      }
       
-      setVendorList(mockVendors);
+      setVendors(mockVendors);
       setIsLoading(false);
     } catch (err) {
       console.error("Error fetching vendors:", err);
-      setError('Unable to load vendors. Please try again.');
+      setError('Unable to load vendors.');
       setIsLoading(false);
     }
+  };
+  
+  // Toggle error simulation for testing
+  const toggleErrorSimulation = () => {
+    setSimulateError(prev => !prev);
+    fetchVendors();
   };
 
   // Initial fetch on component mount
@@ -137,9 +146,36 @@ const DashboardPage = () => {
           </div>
         </section>
         
+        {/* Debug controls for testing */}
+        <div className="mb-6 p-4 bg-gray-100 rounded-md">
+          <h2 className="text-lg font-semibold mb-2">Vendor List Testing Controls</h2>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={toggleErrorSimulation}
+              className={cn(
+                "px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-offset-2",
+                simulateError 
+                  ? "bg-danger text-white hover:bg-danger/90 focus:ring-danger" 
+                  : "bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-400"
+              )}
+            >
+              {simulateError ? "Error Mode: ON" : "Error Mode: OFF"}
+            </button>
+            <button
+              onClick={fetchVendors}
+              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              Reload Vendors
+            </button>
+          </div>
+          <p className="mt-2 text-sm text-gray-600">
+            Use these controls to test the error handling and retry functionality of the vendor list.
+          </p>
+        </div>
+        
         {/* Vendor Section */}
         <VendorList 
-          vendors={vendorList} 
+          vendors={vendors}
           className="min-h-[300px]" 
           isLoading={isLoading}
           error={error}
@@ -256,6 +292,4 @@ const DashboardPage = () => {
       </main>
     </>
   );
-};
-
-export default DashboardPage;
+}

@@ -38,5 +38,32 @@ jobs:
         working-directory: ./backend
         run: npm ci
 
+      # Run unit tests
+      - name: Run Frontend Tests
+        working-directory: ./frontend
+        run: npm test
+      
+      # Run accessibility tests
+      - name: Run Accessibility Tests
+        working-directory: ./frontend
+        run: |
+          npx jest --config=jest.config.accessibility.js
+          
+      # Visual regression tests with Percy
+      - name: Run Visual Regression Tests
+        working-directory: ./frontend
+        run: npx percy snapshot --config=percy.config.js
+        env:
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+      
+      # ESLint
+      - name: Run Frontend Linting
+        working-directory: ./frontend
+        run: npm run lint
+        
+      - name: Run Backend Linting
+        working-directory: ./backend
+        run: npm run lint
+
       - name: Success Message
         run: echo "✅ CI completed successfully for both frontend and backend!"
