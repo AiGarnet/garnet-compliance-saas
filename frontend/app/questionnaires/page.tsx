@@ -1,9 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { ClipboardList, Filter, Plus, Search, SlidersHorizontal } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { ClipboardList, Filter, Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { QuestionnaireList, Questionnaire, QuestionnaireStatus } from "@/components/dashboard/QuestionnaireList";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+
+interface QuestionAnswer {
+  question: string;
+  answer: string;
+}
 
 const QuestionnairesPage = () => {
   // Sample data for demonstration
@@ -18,6 +24,13 @@ const QuestionnairesPage = () => {
   const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  
+  // New state variables for the questionnaire input modal
+  const [showQuestionnaireInput, setShowQuestionnaireInput] = useState(false);
+  const [questionnaireInput, setQuestionnaireInput] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [questionAnswers, setQuestionAnswers] = useState<QuestionAnswer[]>([]);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Simulate API fetch with delay and potential error
   const fetchQuestionnaires = async () => {
@@ -44,6 +57,69 @@ const QuestionnairesPage = () => {
   useEffect(() => {
     fetchQuestionnaires();
   }, []);
+  
+  // Focus the textarea when the modal is shown
+  useEffect(() => {
+    if (showQuestionnaireInput && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [showQuestionnaireInput]);
+  
+  const handleNewQuestionnaire = () => {
+    setShowQuestionnaireInput(true);
+    setQuestionnaireInput('');
+    setQuestionAnswers([]);
+  };
+  
+  const handleSubmitQuestionnaire = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!questionnaireInput.trim()) return;
+    
+    // Parse input into separate questions (non-empty lines)
+    const questions = questionnaireInput
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Send questions to the API
+      const response = await fetch('/api/ai/questionnaire', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ questions }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate answers');
+      }
+      
+      const data = await response.json();
+      
+      // Assuming the API returns an array of answers corresponding to each question
+      const qaResults = questions.map((question, index) => ({
+        question,
+        answer: data.answers[index] || 'No answer generated',
+      }));
+      
+      setQuestionAnswers(qaResults);
+    } catch (error) {
+      console.error('Error submitting questionnaire:', error);
+      // In a real application, you would display an error message to the user
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  const closeQuestionnaireInput = () => {
+    setShowQuestionnaireInput(false);
+    setQuestionnaireInput('');
+    setQuestionAnswers([]);
+  };
 
   return (
     <>
@@ -112,12 +188,99 @@ const QuestionnairesPage = () => {
           </div>
           
           <div className="flex items-center">
-            <button className="bg-primary text-white hover:bg-primary/90 px-4 py-2 rounded-md flex items-center transition-colors">
+            <button 
+              className="bg-primary text-white hover:bg-primary/90 px-4 py-2 rounded-md flex items-center transition-colors"
+              onClick={handleNewQuestionnaire}
+            >
               <Plus className="h-5 w-5 mr-2" />
               New Questionnaire
             </button>
           </div>
         </div>
+        
+        {showQuestionnaireInput ? (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center overflow-auto p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
+              <div className="p-4 border-b flex justify-between items-center">
+                <h2 className="text-xl font-semibold">Compliance Questionnaire Input</h2>
+                <button 
+                  onClick={closeQuestionnaireInput}
+                  className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <div className="p-6 overflow-auto flex-grow">
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium mb-2">Your Questions</h3>
+                  <p className="text-gray-600 text-sm mb-4">Enter one question per line</p>
+                  
+                  <form onSubmit={handleSubmitQuestionnaire}>
+                    <textarea
+                      ref={textareaRef}
+                      className="w-full h-48 p-4 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                      placeholder="Enter one question per line"
+                      value={questionnaireInput}
+                      onChange={(e) => setQuestionnaireInput(e.target.value)}
+                      aria-label="Questionnaire input"
+                    />
+                    
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={!questionnaireInput.trim() || isSubmitting}
+                        className="bg-primary text-white py-2 px-6 rounded-md hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {isSubmitting ? (
+                          <div className="flex items-center">
+                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Processing...
+                          </div>
+                        ) : (
+                          'Submit'
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+                
+                {/* Response section */}
+                {questionAnswers.length > 0 && (
+                  <div className="mt-8">
+                    <h3 className="text-lg font-medium mb-4">AI Responses</h3>
+                    
+                    <div className="space-y-4">
+                      {questionAnswers.map((qa, index) => (
+                        <Card key={index} className="border-gray-200">
+                          <CardHeader className="p-4 pb-2">
+                            <CardTitle className="text-base">Q: {qa.question}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-0">
+                            <p className="text-sm">A: {qa.answer}</p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="p-4 border-t flex justify-end">
+                <button
+                  onClick={closeQuestionnaireInput}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
         
         {/* Questionnaire List Component */}
         <QuestionnaireList 
