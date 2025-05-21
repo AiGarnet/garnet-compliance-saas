@@ -9,6 +9,8 @@ import { VendorList, Vendor, VendorStatus } from "@/components/dashboard/VendorL
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { cn } from "@/lib/utils";
 import Header from "@/components/Header";
+import { DevModeToggle } from "@/components/DevModeToggle";
+import { isDevModeEnabled } from "@/lib/env-config";
 
 // Vendor data
 const mockVendors = [
@@ -25,6 +27,20 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [simulateError, setSimulateError] = useState<boolean>(false);
+  const [isDevMode, setIsDevMode] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Check developer mode on mount and when it changes
+    setIsDevMode(isDevModeEnabled());
+    
+    // Setup listener for storage changes (in case dev mode is toggled in another tab)
+    const handleStorageChange = () => {
+      setIsDevMode(isDevModeEnabled());
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // Simulate API fetch with delay
   const fetchVendors = async () => {
@@ -65,11 +81,14 @@ export default function DashboardPage() {
       <Header />
       
       <main id="main-content" className="flex flex-col gap-8 px-4 md:px-8 py-8 bg-body-bg dark:bg-body-bg">
-        {/* Welcome Section */}
-        <section className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Welcome back, Sarah</h1>
-          <p className="text-gray-600 dark:text-gray-300">Here's an overview of your compliance status</p>
-        </section>
+        {/* Top bar with dev mode toggle in top-right corner */}
+        <div className="flex justify-between items-center">
+          <section className="flex flex-col gap-2">
+            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Welcome back, Sarah</h1>
+            <p className="text-gray-600 dark:text-gray-300">Here's an overview of your compliance status</p>
+          </section>
+          <DevModeToggle />
+        </div>
         
         {/* Stat Cards */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
@@ -100,32 +119,34 @@ export default function DashboardPage() {
           </div>
         </section>
         
-        {/* Debug controls for testing */}
-        <div className="mb-6 p-4 bg-controls-bg rounded-md">
-          <h2 className="text-lg font-semibold mb-2">Vendor List Testing Controls</h2>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={toggleErrorSimulation}
-              className={cn(
-                "px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-offset-2",
-                simulateError 
-                  ? "bg-danger text-white hover:bg-danger/90 focus:ring-danger" 
-                  : "bg-gray-300 text-gray-800 hover:bg-gray-400 focus:ring-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
-              )}
-            >
-              {simulateError ? "Error Mode: ON" : "Error Mode: OFF"}
-            </button>
-            <button
-              onClick={fetchVendors}
-              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              Reload Vendors
-            </button>
+        {/* Debug controls for testing - only visible in dev mode */}
+        {isDevMode && (
+          <div className="mb-6 p-4 bg-controls-bg rounded-md">
+            <h2 className="text-lg font-semibold mb-2">Vendor List Testing Controls</h2>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={toggleErrorSimulation}
+                className={cn(
+                  "px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-offset-2",
+                  simulateError 
+                    ? "bg-danger text-white hover:bg-danger/90 focus:ring-danger" 
+                    : "bg-gray-300 text-gray-800 hover:bg-gray-400 focus:ring-gray-400 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
+                )}
+              >
+                {simulateError ? "Error Mode: ON" : "Error Mode: OFF"}
+              </button>
+              <button
+                onClick={fetchVendors}
+                className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                Reload Vendors
+              </button>
+            </div>
+            <p className="mt-2 text-sm">
+              Use these controls to test the error handling and retry functionality of the vendor list.
+            </p>
           </div>
-          <p className="mt-2 text-sm">
-            Use these controls to test the error handling and retry functionality of the vendor list.
-          </p>
-        </div>
+        )}
         
         {/* Vendor Section */}
         <VendorList 

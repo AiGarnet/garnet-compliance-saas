@@ -47,13 +47,14 @@ export default function Header({ locale = 'en' }: HeaderProps) {
   useEffect(() => {
     injectCriticalCSS();
     
-    // Check for saved theme preference
+    // Check for saved theme preference or default to light mode
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {
       setIsDarkMode(true);
       document.documentElement.classList.add('dark-mode');
     } else {
-      // Ensure default theme is light mode
+      // Explicitly set light mode theme as default
+      localStorage.setItem('theme', 'light');
       setIsDarkMode(false);
       document.documentElement.classList.remove('dark-mode');
     }
