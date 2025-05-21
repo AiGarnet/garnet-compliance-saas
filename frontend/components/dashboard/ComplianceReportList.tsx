@@ -311,30 +311,30 @@ export function ComplianceReportList({
             {filteredAndSortedReports.map(report => (
               <li 
                 key={report.id}
-                className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex flex-col"
+                className="bg-white dark:bg-card-bg p-5 rounded-xl shadow-sm border border-gray-200 dark:border-card-border flex flex-col"
               >
                 <div className="flex justify-between mb-2">
-                  <h3 className="text-lg font-medium text-gray-800">{report.name}</h3>
-                  <span className="text-sm text-gray-500">{report.date}</span>
+                  <h3 className="text-lg font-medium text-gray-800 dark:text-white">{report.name}</h3>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{report.date}</span>
                 </div>
                 
                 {report.category && (
-                  <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full w-fit mb-3">
+                  <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full w-fit mb-3">
                     {report.category}
                   </span>
                 )}
                 
-                <p className="text-gray-600 mb-4 text-sm line-clamp-2">{report.description}</p>
+                <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm line-clamp-2">{report.description}</p>
                 
-                <div className="flex justify-between items-center mt-auto pt-3 border-t border-gray-100">
-                  <span className="text-sm text-gray-500">{report.fileSize} • {report.fileType}</span>
+                <div className="flex justify-between items-center mt-auto pt-3 border-t border-gray-100 dark:border-gray-700">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{report.fileSize} • {report.fileType}</span>
                   
                   <div className="flex gap-2">
                     <button className="text-primary hover:text-primary/80 font-medium text-sm flex items-center">
                       <Download className="h-4 w-4 mr-1" />
                       Download
                     </button>
-                    <button className="text-gray-500 hover:text-gray-700 text-sm flex items-center ml-2">
+                    <button className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-sm flex items-center ml-2">
                       <ExternalLink className="h-4 w-4 mr-1" />
                       Preview
                     </button>
@@ -352,12 +352,12 @@ export function ComplianceReportList({
     <section 
       aria-label="Compliance reports" 
       className={cn(
-        "bg-white rounded-xl shadow-sm border border-gray-200 p-6",
+        "bg-white dark:bg-card-bg rounded-xl shadow-sm border border-gray-200 dark:border-card-border p-6",
         className
       )}
     >
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
-        <h2 className="text-xl font-semibold text-gray-800">Compliance Reports</h2>
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Compliance Reports</h2>
         <button 
           className="inline-flex items-center text-sm font-medium px-4 py-2 rounded-md bg-primary text-white hover:bg-primary/90 transition-colors"
         >

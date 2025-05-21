@@ -122,9 +122,9 @@ export function MobileNavigation() {
         onClick={() => setIsOpen(!isOpen)}
       >
         {isOpen ? (
-          <X className="h-6 w-6 text-gray-700" />
+          <X className="h-6 w-6 text-gray-700 dark:text-gray-300" />
         ) : (
-          <Menu className="h-6 w-6 text-gray-700" />
+          <Menu className="h-6 w-6 text-gray-700 dark:text-gray-300" />
         )}
       </button>
       
@@ -150,19 +150,19 @@ export function MobileNavigation() {
         <div
           data-mobile-drawer
           className={cn(
-            "fixed inset-y-0 left-0 flex w-3/4 max-w-xs flex-col bg-white shadow-lg transition-transform duration-300 ease-in-out",
+            "fixed inset-y-0 left-0 flex w-3/4 max-w-xs flex-col bg-white dark:bg-card-bg shadow-lg transition-transform duration-300 ease-in-out",
             isOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >
           {/* Drawer Header */}
-          <div className="flex items-center justify-between px-6 h-16 border-b border-gray-200">
-            <span className="text-lg font-semibold text-gray-900">GarnetAI</span>
+          <div className="flex items-center justify-between px-6 h-16 border-b border-gray-200 dark:border-gray-700">
+            <span className="text-lg font-semibold text-gray-900 dark:text-white">GarnetAI</span>
             <button
               aria-label="Close menu"
               className="h-10 w-10 flex items-center justify-center rounded-full"
               onClick={() => setIsOpen(false)}
             >
-              <X className="h-5 w-5 text-gray-500" />
+              <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
             </button>
           </div>
           
@@ -176,8 +176,8 @@ export function MobileNavigation() {
                     className={cn(
                       "flex items-center gap-x-3 px-3 py-4 rounded-lg text-base font-medium transition-colors",
                       item.href === '/dashboard'
-                        ? "bg-primary-light text-primary"
-                        : "text-gray-700 hover:bg-gray-100"
+                        ? "bg-primary-light dark:bg-primary-dark text-primary dark:text-primary-light"
+                        : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                     )}
                     onClick={() => setIsOpen(false)}
                   >
@@ -190,14 +190,14 @@ export function MobileNavigation() {
           </nav>
           
           {/* User Section */}
-          <div className="border-t border-gray-200 p-4">
+          <div className="border-t border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center gap-x-3">
-              <div className="h-10 w-10 rounded-full bg-primary-light flex items-center justify-center">
-                <span className="text-primary font-medium">SA</span>
+              <div className="h-10 w-10 rounded-full bg-primary-light dark:bg-primary-dark flex items-center justify-center">
+                <span className="text-primary dark:text-primary-light font-medium">SA</span>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900">Sarah Anderson</p>
-                <p className="text-xs text-gray-500">sarah@company.com</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Sarah Anderson</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">sarah@company.com</p>
               </div>
             </div>
           </div>

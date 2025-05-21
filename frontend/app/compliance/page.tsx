@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { BarChart3, CheckSquare, Download, FileText, Plus, Search, ShieldCheck, Users } from "lucide-react";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { FrameworkList, Framework, FrameworkStatus } from "@/components/dashboard/FrameworkList";
+import Header from "@/components/Header";
 
 const CompliancePage = () => {
   // Sample data for compliance frameworks
@@ -110,60 +111,9 @@ const CompliancePage = () => {
 
   return (
     <>
-      <header 
-        role="banner" 
-        className="sticky top-0 z-10 flex items-center justify-between bg-white shadow-sm px-6 py-3"
-      >
-        <div className="flex items-center">
-          <h1 className="text-xl font-semibold mr-8">Vendor Onboarding</h1>
-          
-          <nav className="hidden md:flex items-center space-x-6">
-            <a href="/dashboard" className="text-gray-600 hover:text-primary min-h-[44px] flex items-center transition-colors">
-              Dashboard
-            </a>
-            <a href="/questionnaires" className="text-gray-600 hover:text-primary min-h-[44px] flex items-center transition-colors">
-              Questionnaires
-            </a>
-            <a href="/vendors" className="text-gray-600 hover:text-primary min-h-[44px] flex items-center transition-colors">
-              Vendors
-            </a>
-            <a href="/trust-portal" className="text-gray-600 hover:text-primary min-h-[44px] flex items-center transition-colors">
-              Trust Portal
-            </a>
-            <a href="/compliance" className="text-primary font-medium min-h-[44px] flex items-center border-b-2 border-primary">
-              Compliance
-            </a>
-          </nav>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <MobileNavigation />
-          
-          <button 
-            className="text-gray-600 hover:text-black flex items-center min-h-[44px] min-w-[44px] px-3 focus:outline-none focus:ring-2 focus:ring-primary/30 rounded-md" 
-            disabled
-            aria-label="User profile (not functional)"
-          >
-            <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-            </svg>
-            <span className="hidden md:inline">Profile</span>
-          </button>
-          
-          <button 
-            className="text-gray-600 hover:text-black flex items-center min-h-[44px] min-w-[44px] px-3 focus:outline-none focus:ring-2 focus:ring-primary/30 rounded-md" 
-            disabled
-            aria-label="Logout button (not functional)"
-          >
-            <svg className="h-5 w-5 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-            </svg>
-            <span className="hidden md:inline">Logout</span>
-          </button>
-        </div>
-      </header>
+      <Header />
       
-      <main id="main-content" className="flex flex-col gap-8 px-4 md:px-8 py-8">
+      <main id="main-content" className="container mx-auto py-8 px-4">
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -193,7 +143,7 @@ const CompliancePage = () => {
               <span className="text-lg font-semibold text-primary">83%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-              <div className="bg-primary h-2.5 rounded-full" style={{ width: '83%' }}></div>
+              <div className="bg-indigo-500 dark:bg-primary h-2.5 rounded-full" style={{ width: '83%' }}></div>
             </div>
             <p className="text-sm text-gray-500">Across all compliance frameworks</p>
           </div>
@@ -207,7 +157,7 @@ const CompliancePage = () => {
               <span className="text-lg font-semibold text-success">266/326</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-              <div className="bg-success h-2.5 rounded-full" style={{ width: '81%' }}></div>
+              <div className="bg-emerald-500 dark:bg-success h-2.5 rounded-full" style={{ width: '81%' }}></div>
             </div>
             <p className="text-sm text-gray-500">Controls implemented across frameworks</p>
           </div>
@@ -296,6 +246,97 @@ const CompliancePage = () => {
             <button className="text-gray-600 hover:text-gray-800 text-sm font-medium py-2 px-4 border border-gray-200 rounded-md">
               View All Evidence
             </button>
+          </div>
+        </section>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+          {/* SOC 2 Card */}
+          <div className="bg-white dark:bg-card-bg p-6 rounded-xl shadow-sm border border-gray-200 dark:border-card-border">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">SOC 2 Type II</h3>
+              <span className="bg-success-light dark:bg-success-light/30 text-success px-2 py-1 text-xs rounded-full">Certified</span>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">Our platform has achieved SOC 2 Type II attestation, validating our security, availability, and confidentiality controls.</p>
+            <button className="text-primary hover:text-primary/80 text-sm font-medium flex items-center">
+              <FileText className="h-4 w-4 mr-2" />
+              View Certificate
+            </button>
+          </div>
+          
+          {/* ISO 27001 Card */}
+          <div className="bg-white dark:bg-card-bg p-6 rounded-xl shadow-sm border border-gray-200 dark:border-card-border">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">ISO 27001</h3>
+              <span className="bg-warning-light dark:bg-warning-light/30 text-warning px-2 py-1 text-xs rounded-full">In Progress</span>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">We're in the process of obtaining ISO 27001 certification. Our gap assessment and implementation of required controls is underway.</p>
+            <button className="text-primary hover:text-primary/80 text-sm font-medium flex items-center">
+              <FileText className="h-4 w-4 mr-2" />
+              View Roadmap
+            </button>
+          </div>
+          
+          {/* GDPR Card */}
+          <div className="bg-white dark:bg-card-bg p-6 rounded-xl shadow-sm border border-gray-200 dark:border-card-border">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">GDPR Compliance</h3>
+              <span className="bg-success-light dark:bg-success-light/30 text-success px-2 py-1 text-xs rounded-full">Compliant</span>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">We adhere to GDPR requirements for data protection and privacy, ensuring lawful and transparent processing of personal data.</p>
+            <button className="text-primary hover:text-primary/80 text-sm font-medium flex items-center">
+              <FileText className="h-4 w-4 mr-2" />
+              Privacy Policy
+            </button>
+          </div>
+        </div>
+        
+        {/* Data Processing Agreements */}
+        <section className="mt-12">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-6">Data Processing Agreements</h2>
+          <div className="bg-white dark:bg-card-bg rounded-xl shadow-sm border border-gray-200 dark:border-card-border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 border-b border-gray-200 dark:bg-gray-800">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-600 dark:text-white">Name</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-600 dark:text-white">Related To</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-600 dark:text-white">Uploaded By</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-600 dark:text-white">Date</th>
+                    <th className="px-6 py-4 text-right text-sm font-medium text-gray-600 dark:text-white">Actions</th>
+                  </tr>
+                </thead>
+                
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {evidenceItems.map(item => (
+                    <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-white">
+                        {item.name}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-white">
+                        {item.framework}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-white">
+                        <div className="flex items-center">
+                          <div className="h-6 w-6 rounded-full bg-primary-light dark:bg-primary-light flex items-center justify-center mr-2">
+                            <Users className="h-3 w-3 text-primary dark:text-primary" />
+                          </div>
+                          <span className="text-gray-600 dark:text-white">{item.uploadedBy}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-white">
+                        {item.uploadDate}
+                      </td>
+                      <td className="px-6 py-4 text-right text-sm text-gray-600 dark:text-white">
+                        <button className="text-primary hover:text-primary/80 font-medium text-sm flex items-center ml-auto">
+                          <Download className="h-4 w-4 mr-1" />
+                          Download
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
       </main>

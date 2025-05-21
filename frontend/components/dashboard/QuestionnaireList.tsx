@@ -142,11 +142,11 @@ export function QuestionnaireList({
   
   // Get progress bar styling based on progress
   const getProgressBarStyle = (progress: number) => {
-    if (progress === 100) return "bg-success";
-    if (progress > 75) return "bg-secondary";
-    if (progress > 30) return "bg-primary";
-    if (progress > 0) return "bg-warning";
-    return "bg-gray-300";
+    if (progress === 100) return "bg-emerald-500 dark:bg-success";
+    if (progress > 75) return "bg-blue-500 dark:bg-secondary";
+    if (progress > 30) return "bg-indigo-500 dark:bg-primary";
+    if (progress > 0) return "bg-amber-500 dark:bg-warning";
+    return "bg-gray-300 dark:bg-gray-600";
   };
   
   // Render filter pills
@@ -315,16 +315,16 @@ export function QuestionnaireList({
                     {questionnaire.dueDate}
                   </TableCell>
                   <TableCell>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                       <div 
                         className={cn(
-                          "h-2.5 rounded-full",
+                          "h-2.5 rounded-full transition-all duration-300",
                           getProgressBarStyle(questionnaire.progress)
                         )}
                         style={{ width: `${questionnaire.progress}%` }}
                       ></div>
                     </div>
-                    <span className="text-xs text-gray-500 mt-1 block">{questionnaire.progress}%</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">{questionnaire.progress}%</span>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
@@ -365,10 +365,10 @@ export function QuestionnaireList({
                     <span className="text-gray-600">Progress:</span>
                     <span className="font-medium">{questionnaire.progress}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                     <div 
                       className={cn(
-                        "h-2.5 rounded-full",
+                        "h-2.5 rounded-full transition-all duration-300",
                         getProgressBarStyle(questionnaire.progress)
                       )}
                       style={{ width: `${questionnaire.progress}%` }}

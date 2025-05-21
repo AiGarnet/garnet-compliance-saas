@@ -5,6 +5,7 @@ import { ClipboardList, Filter, Plus, Search, SlidersHorizontal, X, Upload } fro
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { QuestionnaireList, Questionnaire, QuestionnaireStatus } from "@/components/dashboard/QuestionnaireList";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import Header from '@/components/Header';
 
 interface QuestionAnswer {
   question: string;
@@ -186,60 +187,9 @@ const QuestionnairesPage = () => {
 
   return (
     <>
-      <header 
-        role="banner" 
-        className="sticky top-0 z-10 flex items-center justify-between bg-white shadow-sm px-6 py-3"
-      >
-        <div className="flex items-center">
-          <h1 className="text-xl font-semibold mr-8">Vendor Onboarding</h1>
-          
-          <nav className="hidden md:flex items-center space-x-6">
-            <a href="/dashboard" className="text-gray-600 hover:text-primary min-h-[44px] flex items-center transition-colors">
-              Dashboard
-            </a>
-            <a href="/questionnaires" className="text-primary font-medium min-h-[44px] flex items-center border-b-2 border-primary">
-              Questionnaires
-            </a>
-            <a href="/vendors" className="text-gray-600 hover:text-primary min-h-[44px] flex items-center transition-colors">
-              Vendors
-            </a>
-            <a href="/trust-portal" className="text-gray-600 hover:text-primary min-h-[44px] flex items-center transition-colors">
-              Trust Portal
-            </a>
-            <a href="/compliance" className="text-gray-600 hover:text-primary min-h-[44px] flex items-center transition-colors">
-              Compliance
-            </a>
-          </nav>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <MobileNavigation />
-          
-          <button 
-            className="text-gray-600 hover:text-black flex items-center min-h-[44px] min-w-[44px] px-3 focus:outline-none focus:ring-2 focus:ring-primary/30 rounded-md" 
-            disabled
-            aria-label="User profile (not functional)"
-          >
-            <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-            </svg>
-            <span className="hidden md:inline">Profile</span>
-          </button>
-          
-          <button 
-            className="text-gray-600 hover:text-black flex items-center min-h-[44px] min-w-[44px] px-3 focus:outline-none focus:ring-2 focus:ring-primary/30 rounded-md" 
-            disabled
-            aria-label="Logout button (not functional)"
-          >
-            <svg className="h-5 w-5 md:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-            </svg>
-            <span className="hidden md:inline">Logout</span>
-          </button>
-        </div>
-      </header>
+      <Header />
       
-      <main id="main-content" className="flex flex-col gap-8 px-4 md:px-8 py-8">
+      <main id="main-content" className="container mx-auto py-8 px-4">
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -263,12 +213,12 @@ const QuestionnairesPage = () => {
         
         {showQuestionnaireInput ? (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center overflow-auto p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
-              <div className="p-4 border-b flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Compliance Questionnaire Input</h2>
+            <div className="bg-white dark:bg-card-bg rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Compliance Questionnaire Input</h2>
                 <button 
                   onClick={closeQuestionnaireInput}
-                  className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
+                  className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
                   aria-label="Close"
                 >
                   <X className="h-5 w-5" />
@@ -277,13 +227,13 @@ const QuestionnairesPage = () => {
               
               <div className="p-6 overflow-auto flex-grow">
                 <div className="mb-4">
-                  <h3 className="text-lg font-medium mb-2">Your Questions</h3>
-                  <p className="text-gray-600 text-sm mb-4">Enter one question per line or upload a text file</p>
+                  <h3 className="text-lg font-medium mb-2 text-gray-800 dark:text-white">Your Questions</h3>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">Enter one question per line or upload a text file</p>
                   
                   {/* File upload area */}
                   <div className="mb-4">
                     <div className="flex items-center justify-between">
-                      <label className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer">
+                      <label className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
                         <Upload className="h-4 w-4 mr-2" />
                         Upload Questions (.txt)
                         <input
@@ -297,7 +247,7 @@ const QuestionnairesPage = () => {
                       </label>
                       
                       {isUploading && (
-                        <span className="text-sm text-gray-500 flex items-center">
+                        <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
                           <svg className="animate-spin h-4 w-4 mr-2 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -308,7 +258,7 @@ const QuestionnairesPage = () => {
                     </div>
                     
                     {uploadError && (
-                      <p className="mt-2 text-sm text-red-600">
+                      <p className="mt-2 text-sm text-red-600 dark:text-red-400">
                         {uploadError}
                       </p>
                     )}
@@ -317,7 +267,7 @@ const QuestionnairesPage = () => {
                   <form onSubmit={handleSubmitQuestionnaire}>
                     <textarea
                       ref={textareaRef}
-                      className="w-full h-48 p-4 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                      className="w-full h-48 p-4 border border-gray-300 dark:border-gray-600 rounded-md resize-none text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
                       placeholder="Enter one question per line"
                       value={questionnaireInput}
                       onChange={(e) => setQuestionnaireInput(e.target.value)}
@@ -328,7 +278,7 @@ const QuestionnairesPage = () => {
                       <button
                         type="submit"
                         disabled={!questionnaireInput.trim() || isSubmitting}
-                        className="bg-primary text-white py-2 px-6 rounded-md hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        className="bg-primary text-white py-2 px-6 rounded-md hover:bg-primary/90 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-500 dark:disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
                       >
                         {isSubmitting ? (
                           <div className="flex items-center">
@@ -349,16 +299,16 @@ const QuestionnairesPage = () => {
                 {/* Response section */}
                 {questionAnswers.length > 0 && (
                   <div className="mt-8">
-                    <h3 className="text-lg font-medium mb-4">AI Responses</h3>
+                    <h3 className="text-lg font-medium mb-4 text-gray-800 dark:text-white">AI Responses</h3>
                     
                     <div className="space-y-4">
                       {questionAnswers.map((qa, index) => (
-                        <Card key={index} className="border-gray-200">
+                        <Card key={index} className="border-gray-200 dark:border-gray-700">
                           <CardHeader className="p-4 pb-2">
-                            <CardTitle className="text-base">Q: {qa.question}</CardTitle>
+                            <CardTitle className="text-base text-gray-800 dark:text-gray-200">Q: {qa.question}</CardTitle>
                           </CardHeader>
                           <CardContent className="p-4 pt-0">
-                            <p className="text-sm">A: {qa.answer}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">A: {qa.answer}</p>
                           </CardContent>
                         </Card>
                       ))}
@@ -367,10 +317,10 @@ const QuestionnairesPage = () => {
                 )}
               </div>
               
-              <div className="p-4 border-t flex justify-end">
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
                 <button
                   onClick={closeQuestionnaireInput}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                   Close
                 </button>

@@ -29,33 +29,33 @@ export function VendorActivityFeed({ vendor }: VendorActivityFeedProps) {
   };
   
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
+    <div className="bg-white dark:bg-card-bg rounded-lg shadow-sm border border-gray-200 dark:border-card-border p-6">
+      <h2 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Recent Activity</h2>
       
       {sortedActivities.length === 0 ? (
-        <div className="text-center py-6 text-gray-500">
+        <div className="text-center py-6 text-gray-500 dark:text-gray-400">
           <p>No activity recorded yet</p>
         </div>
       ) : (
         <ul className="space-y-4">
           {sortedActivities.map((activity) => (
-            <li key={activity.id} className="border-b border-gray-100 pb-4">
+            <li key={activity.id} className="border-b border-gray-100 dark:border-gray-700 pb-4">
               <div className="flex">
                 <div className="mr-3 mt-0.5">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                     {getActivityIcon(activity.type)}
                   </div>
                 </div>
                 <div className="flex-1">
                   <div className="flex flex-col sm:flex-row sm:justify-between">
-                    <p className="text-sm font-medium text-gray-800">
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
                       <span className="font-semibold">{activity.user.name}</span>
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
                     </p>
                   </div>
-                  <p className="text-sm text-gray-600 mt-1">{activity.message}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{activity.message}</p>
                 </div>
               </div>
             </li>

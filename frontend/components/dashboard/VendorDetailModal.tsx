@@ -62,26 +62,26 @@ export function VendorDetailModal({ vendor, onClose }: VendorDetailModalProps) {
     >
       <div 
         id="vendor-detail-modal"
-        className="bg-white p-6 rounded-lg max-w-md w-full relative"
+        className="bg-white dark:bg-card-bg p-6 rounded-lg max-w-md w-full relative"
         tabIndex={-1}
       >
         <button 
           onClick={onClose} 
-          className="absolute top-3 right-3 text-gray-500 hover:text-black p-1 rounded-full hover:bg-gray-100 transition-colors"
+          className="absolute top-3 right-3 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           aria-label="Close modal"
         >
           <X className="h-5 w-5" />
         </button>
-        <h2 id="vendor-modal-title" className="text-xl font-semibold mb-4">Vendor Info</h2>
-        <p className="text-sm text-gray-600">Details for {vendor.name} will appear here.</p>
+        <h2 id="vendor-modal-title" className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Vendor Info</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-300">Details for {vendor.name} will appear here.</p>
         {vendor.status && (
           <div className="mt-4">
-            <span className="text-gray-700 font-medium">Status: </span>
+            <span className="text-gray-700 dark:text-gray-300 font-medium">Status: </span>
             <span className={cn(
               "text-xs ml-2 px-2 py-1 rounded-full inline-flex items-center",
-              vendor.status === "Approved" && "bg-success-light text-success",
-              vendor.status === "In Review" && "bg-warning-light text-warning",
-              vendor.status === "Questionnaire Pending" && "bg-secondary-light text-secondary"
+              vendor.status === "Approved" && "bg-success-light dark:bg-success-light/30 text-success dark:text-success",
+              vendor.status === "In Review" && "bg-warning-light dark:bg-warning-light/30 text-warning dark:text-warning",
+              vendor.status === "Questionnaire Pending" && "bg-secondary-light dark:bg-secondary-light/30 text-secondary dark:text-secondary"
             )}>
               {vendor.status}
             </span>

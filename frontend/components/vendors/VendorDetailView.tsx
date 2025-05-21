@@ -8,6 +8,7 @@ import { VendorActivityFeed } from '@/components/vendors/VendorActivityFeed';
 import { VendorDetailSkeleton } from '@/components/vendors/VendorDetailSkeleton';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { AlertCircle } from 'lucide-react';
+import Header from '@/components/Header';
 
 interface VendorDetailViewProps {
   vendorId: string;
@@ -44,23 +45,26 @@ export function VendorDetailView({ vendorId }: VendorDetailViewProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <VendorDetailHeader vendor={vendor} />
-      
-      <div className="container mx-auto max-w-7xl py-8 px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column */}
-          <div className="lg:col-span-2 space-y-6">
-            <QuestionnaireStatus vendor={vendor} />
-            <VendorActivityFeed vendor={vendor} />
-          </div>
-          
-          {/* Right column */}
-          <div>
-            <VendorInfoCard vendor={vendor} />
+    <>
+      <Header />
+      <div className="min-h-screen bg-gray-50 dark:bg-body-bg">
+        <VendorDetailHeader vendor={vendor} />
+        
+        <div className="container mx-auto max-w-7xl py-8 px-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left column */}
+            <div className="lg:col-span-2 space-y-6">
+              <QuestionnaireStatus vendor={vendor} />
+              <VendorActivityFeed vendor={vendor} />
+            </div>
+            
+            {/* Right column */}
+            <div>
+              <VendorInfoCard vendor={vendor} />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 } 

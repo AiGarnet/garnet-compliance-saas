@@ -141,11 +141,11 @@ export function FrameworkList({
   
   // Get progress bar styling based on progress
   const getProgressBarStyle = (progress: number) => {
-    if (progress === 100) return "bg-success";
-    if (progress > 75) return "bg-secondary";
-    if (progress > 30) return "bg-primary";
-    if (progress > 0) return "bg-warning";
-    return "bg-gray-300";
+    if (progress === 100) return "bg-emerald-500 dark:bg-success";
+    if (progress > 75) return "bg-blue-500 dark:bg-secondary";
+    if (progress > 30) return "bg-indigo-500 dark:bg-primary";
+    if (progress > 0) return "bg-amber-500 dark:bg-warning";
+    return "bg-gray-300 dark:bg-gray-600";
   };
   
   // Render filter pills
@@ -311,16 +311,16 @@ export function FrameworkList({
                     </span>
                   </TableCell>
                   <TableCell>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                       <div 
                         className={cn(
-                          "h-2.5 rounded-full",
+                          "h-2.5 rounded-full transition-all duration-300",
                           getProgressBarStyle(framework.progress)
                         )}
                         style={{ width: `${framework.progress}%` }}
                       ></div>
                     </div>
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
                       <span>{framework.progress}%</span>
                       <span>{framework.completedControls}/{framework.totalControls} controls</span>
                     </div>
@@ -363,16 +363,16 @@ export function FrameworkList({
                     <span className="text-gray-600">Progress:</span>
                     <span className="font-medium">{framework.progress}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                     <div 
                       className={cn(
-                        "h-2.5 rounded-full",
+                        "h-2.5 rounded-full transition-all duration-300",
                         getProgressBarStyle(framework.progress)
                       )}
                       style={{ width: `${framework.progress}%` }}
                     ></div>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {framework.completedControls}/{framework.totalControls} controls
                   </div>
                 </div>
