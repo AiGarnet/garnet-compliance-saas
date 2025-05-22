@@ -1,83 +1,18 @@
-export interface Vendor {
-  id: string;
-  name: string;
-  status: "Questionnaire Pending" | "In Review" | "Approved" | "Pending Review";
-  questionnaireAnswers: { question: string; answer: string }[];
-  riskScore?: number;
-  riskLevel?: "Low" | "Medium" | "High";
-}
+/**
+ * @deprecated This file is being maintained for backward compatibility.
+ * Please import from the new structure:
+ * - Types: import from '../types/vendor.types'
+ * - Data: import from '../data/vendors'
+ * - Functions: import from '../services/vendorService'
+ */
 
-export const vendors: Vendor[] = [
-  {
-    id: "1",
-    name: "Acme Payments",
-    status: "Pending Review",
-    questionnaireAnswers: [
-      { question: "Do you store personal data?", answer: "Yes" },
-      { question: "Is data encrypted at rest?", answer: "Yes" }
-    ],
-    riskScore: 65,
-    riskLevel: "High"
-  },
-  {
-    id: "2",
-    name: "TechSecure Solutions",
-    status: "Approved",
-    questionnaireAnswers: [
-      { question: "Do you store personal data?", answer: "Yes" },
-      { question: "Is data encrypted at rest?", answer: "Yes" },
-      { question: "Do you have a data retention policy?", answer: "Yes" }
-    ],
-    riskScore: 25,
-    riskLevel: "Low"
-  },
-  {
-    id: "3",
-    name: "Global Data Services",
-    status: "Questionnaire Pending",
-    questionnaireAnswers: [
-      { question: "Do you store personal data?", answer: "No" }
-    ],
-    riskScore: 45,
-    riskLevel: "Medium"
-  },
-  {
-    id: "4",
-    name: "SecureCloud Inc",
-    status: "In Review",
-    questionnaireAnswers: [
-      { question: "Do you store personal data?", answer: "Yes" },
-      { question: "Is data encrypted at rest?", answer: "Yes" },
-      { question: "Do you have a data retention policy?", answer: "Yes" },
-      { question: "Do you conduct regular security audits?", answer: "Yes" }
-    ],
-    riskScore: 30,
-    riskLevel: "Low"
-  },
-  {
-    id: "5",
-    name: "Oscorp Industries",
-    status: "In Review",
-    questionnaireAnswers: [
-      { question: "Do you store personal data?", answer: "Yes" },
-      { question: "Is data encrypted at rest?", answer: "Partially" },
-      { question: "Do you have a data retention policy?", answer: "No" }
-    ],
-    riskScore: 55,
-    riskLevel: "Medium"
-  },
-  {
-    id: "6",
-    name: "Umbrella Corporation",
-    status: "Approved",
-    questionnaireAnswers: [
-      { question: "Do you store personal data?", answer: "Yes" },
-      { question: "Is data encrypted at rest?", answer: "Yes" },
-      { question: "Do you have a data retention policy?", answer: "Yes" },
-      { question: "Do you conduct regular security audits?", answer: "Yes" },
-      { question: "Do you have a disaster recovery plan?", answer: "Yes" }
-    ],
-    riskScore: 15,
-    riskLevel: "Low"
-  }
-];
+import { Vendor, VendorStatus, RiskLevel } from './types/vendor.types';
+import { vendorsData as vendors } from './data/vendors';
+import { VendorService } from './services/vendorService';
+
+// Re-export for backward compatibility
+export type { Vendor };
+export { vendors, VendorStatus, RiskLevel, VendorService };
+
+// Default export for convenience
+export default vendors;

@@ -50,7 +50,7 @@ const VendorsPage = () => {
   return (
     <>
       <Header />
-      
+          
       <main id="main-content" className="container mx-auto py-8 px-4">
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

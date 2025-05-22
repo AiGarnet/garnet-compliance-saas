@@ -1,0 +1,142 @@
+/* ==========================================================================
+   ACCESSIBILITY STYLES
+   - Focus styles for keyboard navigation
+   - High contrast interactive elements
+   - Meets WCAG 2.1 AA requirements (4.5:1 contrast ratio minimum)
+   ========================================================================== */
+
+/* Global focus styles */
+:focus {
+  outline: var(--focus-ring-width) solid rgb(var(--color-primary) / 0.7);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Remove default focus styles for mouse users, but keep for keyboard navigation */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+:focus-visible {
+  outline: var(--focus-ring-width) solid rgb(var(--color-primary) / 0.7);
+  outline-offset: var(--focus-ring-offset);
+  box-shadow: 0 0 0 var(--focus-ring-width) rgb(var(--color-primary) / 0.3);
+  transition: outline-color var(--transition-duration-fast) var(--transition-timing-default),
+              box-shadow var(--transition-duration-fast) var(--transition-timing-default);
+}
+
+/* Links - ensure 4.5:1 contrast ratio */
+a {
+  color: rgb(var(--color-primary-dark));
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.dark-mode a {
+  color: rgb(165 108 255); /* High-contrast purple for dark mode */
+}
+
+/* Buttons - ensure 4.5:1 contrast ratio */
+button, 
+.button,
+[type="button"],
+[type="submit"],
+[type="reset"] {
+  position: relative;
+}
+
+/* Primary button with good contrast */
+.btn-primary,
+button[type="submit"] {
+  background-color: rgb(91 33 182); /* Purple-800 - darker for better contrast */
+  color: rgb(255 255 255);
+  border: 1px solid transparent;
+}
+
+.btn-primary:hover,
+button[type="submit"]:hover {
+  background-color: rgb(76 29 149); /* Purple-900 - even darker for hover state */
+}
+
+.dark-mode .btn-primary,
+.dark-mode button[type="submit"] {
+  background-color: rgb(165 108 255); /* Brighter purple in dark mode */
+  color: rgb(0 0 0); /* Black text for contrast with bright background */
+}
+
+/* Secondary button with good contrast */
+.btn-secondary {
+  background-color: rgb(255 255 255);
+  color: rgb(31 41 55); /* Gray-800 */
+  border: 1px solid rgb(209 213 219); /* Gray-300 */
+}
+
+.btn-secondary:hover {
+  background-color: rgb(243 244 246); /* Gray-100 */
+}
+
+.dark-mode .btn-secondary {
+  background-color: rgb(55 65 81); /* Gray-700 */
+  color: rgb(255 255 255);
+  border: 1px solid rgb(75 85 99); /* Gray-600 */
+}
+
+.dark-mode .btn-secondary:hover {
+  background-color: rgb(75 85 99); /* Gray-600 */
+}
+
+/* Skip link for keyboard navigation */
+.skip-link {
+  position: absolute;
+  top: -50px;
+  left: 8px;
+  padding: 8px 16px;
+  background-color: rgb(var(--color-primary));
+  color: rgb(255 255 255);
+  z-index: var(--z-index-tooltip);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  transition: top var(--transition-duration-fast) var(--transition-timing-default);
+}
+
+.skip-link:focus {
+  top: 8px;
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(255 255 255), 0 0 0 6px rgb(var(--color-primary));
+}
+
+/* Increase contrast for muted text elements */
+.text-muted, 
+.text-gray-500 {
+  color: rgb(75 85 99) !important; /* Gray-600 instead of 500 for better contrast */
+}
+
+.dark-mode .text-muted,
+.dark-mode .text-gray-500 {
+  color: rgb(209 213 219) !important; /* Gray-300 in dark mode */
+}
+
+/* Visually hidden content for screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* High contrast outlines for form elements */
+input:focus, 
+select:focus, 
+textarea:focus {
+  outline: none;
+  border-color: rgb(var(--color-primary));
+  box-shadow: 0 0 0 3px rgb(var(--color-primary) / 0.3);
+} 

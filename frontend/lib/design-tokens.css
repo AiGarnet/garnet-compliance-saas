@@ -1,0 +1,259 @@
+/* ==========================================================================
+   DESIGN TOKENS
+   - CSS custom properties for consistent styling across the application
+   - These variables follow the System UI theme specification 
+   - https://system-ui.com/theme/
+   ========================================================================== */
+
+:root {
+  /* --------------------------------------------------------------------------
+     TYPOGRAPHY
+     - Type scale based on a 1.2 ratio (minor third)
+     - Base size: 16px (1rem)
+     -------------------------------------------------------------------------- */
+  --font-size-2xs: 0.694rem;    /* 11.104px */
+  --font-size-xs: 0.833rem;     /* 13.328px */
+  --font-size-sm: 0.875rem;     /* 14px - special case for small text */
+  --font-size-base: 1rem;       /* 16px */
+  --font-size-lg: 1.2rem;       /* 19.2px */
+  --font-size-xl: 1.44rem;      /* 23.04px */
+  --font-size-2xl: 1.728rem;    /* 27.648px */
+  --font-size-3xl: 2.074rem;    /* 33.178px */
+  --font-size-4xl: 2.488rem;    /* 39.813px */
+  --font-size-5xl: 2.986rem;    /* 47.776px */
+  
+  --font-family-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  
+  --font-weight-thin: 100;
+  --font-weight-extralight: 200;
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --font-weight-black: 900;
+  
+  --line-height-none: 1;
+  --line-height-tight: 1.25;
+  --line-height-snug: 1.375;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --line-height-loose: 2;
+  
+  --letter-spacing-tighter: -0.05em;
+  --letter-spacing-tight: -0.025em;
+  --letter-spacing-normal: 0em;
+  --letter-spacing-wide: 0.025em;
+  --letter-spacing-wider: 0.05em;
+  --letter-spacing-widest: 0.1em;
+  
+  /* --------------------------------------------------------------------------
+     SPACING
+     - Based on an 8px grid system
+     - Can be used for margins, padding, gaps, etc.
+     -------------------------------------------------------------------------- */
+  --spacing-0: 0;
+  --spacing-px: 1px;
+  --spacing-0-5: 0.125rem;    /* 2px */
+  --spacing-1: 0.25rem;       /* 4px */
+  --spacing-1-5: 0.375rem;    /* 6px */
+  --spacing-2: 0.5rem;        /* 8px */
+  --spacing-2-5: 0.625rem;    /* 10px */
+  --spacing-3: 0.75rem;       /* 12px */
+  --spacing-3-5: 0.875rem;    /* 14px */
+  --spacing-4: 1rem;          /* 16px */
+  --spacing-5: 1.25rem;       /* 20px */
+  --spacing-6: 1.5rem;        /* 24px */
+  --spacing-7: 1.75rem;       /* 28px */
+  --spacing-8: 2rem;          /* 32px */
+  --spacing-9: 2.25rem;       /* 36px */
+  --spacing-10: 2.5rem;       /* 40px */
+  --spacing-11: 2.75rem;      /* 44px */
+  --spacing-12: 3rem;         /* 48px */
+  --spacing-14: 3.5rem;       /* 56px */
+  --spacing-16: 4rem;         /* 64px */
+  --spacing-20: 5rem;         /* 80px */
+  --spacing-24: 6rem;         /* 96px */
+  --spacing-28: 7rem;         /* 112px */
+  --spacing-32: 8rem;         /* 128px */
+  --spacing-36: 9rem;         /* 144px */
+  --spacing-40: 10rem;        /* 160px */
+  --spacing-44: 11rem;        /* 176px */
+  --spacing-48: 12rem;        /* 192px */
+  --spacing-52: 13rem;        /* 208px */
+  --spacing-56: 14rem;        /* 224px */
+  --spacing-60: 15rem;        /* 240px */
+  --spacing-64: 16rem;        /* 256px */
+  --spacing-72: 18rem;        /* 288px */
+  --spacing-80: 20rem;        /* 320px */
+  --spacing-96: 24rem;        /* 384px */
+  
+  /* --------------------------------------------------------------------------
+     COLORS - SEMANTIC
+     - Functional colors with semantic meaning 
+     - Colors are specified in RGB format for Tailwind compatibility
+     -------------------------------------------------------------------------- */
+  --color-primary: 124 58 237;        /* Purple-600 */
+  --color-primary-light: 237 233 254; /* Purple-100 */
+  --color-primary-dark: 91 33 182;    /* Purple-800 */
+  
+  --color-secondary: 37 99 235;       /* Blue-600 */
+  --color-secondary-light: 219 234 254; /* Blue-100 */
+  --color-secondary-dark: 30 58 138;  /* Blue-800 */
+  
+  --color-success: 22 163 74;         /* Green-600 */
+  --color-success-light: 220 252 231; /* Green-100 */
+  --color-success-dark: 6 95 70;      /* Green-800 */
+  
+  --color-danger: 220 38 38;          /* Red-600 */
+  --color-danger-light: 254 226 226;  /* Red-100 */
+  --color-danger-dark: 153 27 27;     /* Red-800 */
+  
+  --color-warning: 234 179 8;         /* Yellow-500 */
+  --color-warning-light: 254 249 195; /* Yellow-100 */
+  --color-warning-dark: 161 98 7;     /* Yellow-700 */
+  
+  --color-info: 6 182 212;            /* Cyan-500 */
+  --color-info-light: 207 250 254;    /* Cyan-100 */
+  --color-info-dark: 21 94 117;       /* Cyan-800 */
+  
+  /* --------------------------------------------------------------------------
+     COLORS - NEUTRAL
+     - Grayscale colors from white to black
+     -------------------------------------------------------------------------- */
+  --color-gray-50: 249 250 251;
+  --color-gray-100: 243 244 246;
+  --color-gray-200: 229 231 235;
+  --color-gray-300: 209 213 219;
+  --color-gray-400: 156 163 175;
+  --color-gray-500: 107 114 128;
+  --color-gray-600: 75 85 99;
+  --color-gray-700: 55 65 81;
+  --color-gray-800: 31 41 55;
+  --color-gray-900: 17 24 39;
+  --color-gray-950: 3 7 18;
+  
+  /* --------------------------------------------------------------------------
+     COLORS - THEME
+     - Theme colors for application UI elements
+     -------------------------------------------------------------------------- */
+  --color-body-bg: var(--color-gray-50);
+  --color-body-text: var(--color-gray-900);
+  
+  --color-header-bg: 255 255 255; /* white */
+  --color-header-text: var(--color-gray-800);
+  
+  --color-card-bg: 255 255 255; /* white */
+  --color-card-border: var(--color-gray-200);
+  --color-card-text: var(--color-gray-700);
+  
+  --color-muted-text: var(--color-gray-500);
+  
+  --color-input-bg: var(--color-gray-100);
+  --color-input-text: var(--color-gray-900);
+  --color-input-placeholder: var(--color-gray-500);
+  --color-input-border: var(--color-gray-300);
+  --color-input-focus: var(--color-primary);
+  
+  /* --------------------------------------------------------------------------
+     RADIUS
+     - Border radius for different sized elements
+     -------------------------------------------------------------------------- */
+  --radius-none: 0;
+  --radius-sm: 0.125rem;     /* 2px */
+  --radius-md: 0.25rem;      /* 4px */
+  --radius-lg: 0.5rem;       /* 8px */
+  --radius-xl: 0.75rem;      /* 12px */
+  --radius-2xl: 1rem;        /* 16px */
+  --radius-3xl: 1.5rem;      /* 24px */
+  --radius-full: 9999px;     /* Fully rounded (pill shape) */
+  
+  /* --------------------------------------------------------------------------
+     SHADOWS
+     - Box shadows with a standardized system
+     -------------------------------------------------------------------------- */
+  --shadow-none: none;
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+  
+  /* --------------------------------------------------------------------------
+     ANIMATIONS
+     - Timing functions and durations for animations
+     -------------------------------------------------------------------------- */
+  --transition-duration-fast: 150ms;
+  --transition-duration-normal: 300ms;
+  --transition-duration-slow: 500ms;
+  --transition-timing-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-timing-in: cubic-bezier(0.4, 0, 1, 1);
+  --transition-timing-out: cubic-bezier(0, 0, 0.2, 1);
+  --transition-timing-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* --------------------------------------------------------------------------
+     Z-INDEX
+     - Standardized z-index values to avoid conflicts
+     -------------------------------------------------------------------------- */
+  --z-index-behind: -1;
+  --z-index-default: 0;
+  --z-index-dropdown: 10;
+  --z-index-sticky: 20;
+  --z-index-fixed: 30;
+  --z-index-overlay: 40;
+  --z-index-modal: 50;
+  --z-index-popover: 60;
+  --z-index-tooltip: 70;
+  
+  /* --------------------------------------------------------------------------
+     FOCUS
+     - Focus styles for accessibility
+     -------------------------------------------------------------------------- */
+  --focus-ring-width: 2px;
+  --focus-ring-color: rgb(var(--color-primary) / 0.5);
+  --focus-ring-offset: 2px;
+}
+
+/* Dark Mode Overrides
+   Apply these variables when the .dark-mode class is present on the html element */
+.dark-mode {
+  --color-body-bg: var(--color-gray-900);
+  --color-body-text: var(--color-gray-50);
+  
+  --color-header-bg: var(--color-gray-800);
+  --color-header-text: var(--color-gray-50);
+  
+  --color-card-bg: var(--color-gray-800);
+  --color-card-border: var(--color-gray-700);
+  --color-card-text: var(--color-gray-200);
+  
+  --color-muted-text: var(--color-gray-400);
+  
+  --color-input-bg: var(--color-gray-800);
+  --color-input-text: var(--color-gray-50);
+  --color-input-placeholder: var(--color-gray-400);
+  --color-input-border: var(--color-gray-700);
+  
+  /* In dark mode, we brighten some colors for better contrast */
+  --color-primary: 165 108 255;       /* Brighter purple */
+  --color-primary-light: 91 33 182;   /* Purple-800 as light in dark mode */
+  --color-primary-dark: 237 233 254;  /* Purple-100 as dark in dark mode */
+  
+  --color-success: 52 211 153;        /* Brighter green */
+  --color-success-light: 6 78 59;     /* Green-900 as light in dark mode */
+  
+  --color-danger: 248 113 113;        /* Brighter red */
+  --color-danger-light: 127 29 29;    /* Red-900 as light in dark mode */
+  
+  --color-warning: 251 191 36;        /* Brighter yellow */
+  --color-warning-light: 120 53 15;   /* Yellow-900 as light in dark mode */
+  
+  --color-info: 56 189 248;           /* Brighter cyan */
+  --color-info-light: 22 78 99;       /* Cyan-900 as light in dark mode */
+  
+  --focus-ring-color: rgb(var(--color-primary) / 0.7);
+} 

@@ -2,8 +2,9 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { PlusCircle, ArrowUpDown, AlertTriangle, Loader2 } from 'lucide-react';
+import { PlusCircle, ArrowUpDown, AlertTriangle, Loader2, User, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import { translations } from '@/lib/i18n';
 
 // Components
 import { StatusBadge } from './StatusBadge';
@@ -43,6 +44,7 @@ export interface VendorListProps {
   isLoading?: boolean;
   error?: string;
   onRetry?: () => void;
+  locale?: string;
 }
 
 export function VendorList({ 
@@ -50,8 +52,12 @@ export function VendorList({
   className,
   isLoading = false,
   error = '',
-  onRetry
+  onRetry,
+  locale = 'en'
 }: VendorListProps) {
+  // Access translations based on locale
+  const t = translations[locale as keyof typeof translations]?.vendorList || translations.en.vendorList;
+  
   // State for sorting
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -122,17 +128,37 @@ export function VendorList({
     }
   };
 
+  // Map status values to i18n keys
+  const getStatusI18nKey = (status: VendorStatus | 'All'): string => {
+    switch(status) {
+      case 'All': return t.status.all;
+      case 'Questionnaire Pending': return t.status.questionnairePending;
+      case 'In Review': return t.status.inReview;
+      case 'Approved': return t.status.approved;
+      default: return status;
+    }
+  }
+
+  // Status filter handler to convert string to correct type
+  const handleStatusFilterChange = (option: string) => {
+    setStatusFilter(option as VendorStatus | 'All');
+  };
+
   // Render filter pills
   const renderFilterPills = () => {
     const statuses: (VendorStatus | 'All')[] = ['All', 'Questionnaire Pending', 'In Review', 'Approved'];
+    const translatedStatuses = statuses.map(status => ({
+      value: status,
+      label: getStatusI18nKey(status)
+    }));
     
     return (
       <FilterPills
-        options={statuses}
+        options={translatedStatuses}
         selectedOption={statusFilter}
-        onChange={setStatusFilter}
+        onChange={handleStatusFilterChange}
         className="mb-4"
-        label="Filter vendors by status"
+        label={t.filter.label}
       />
     );
   };
@@ -144,9 +170,9 @@ export function VendorList({
         id="vendor-search"
         value={searchTerm}
         onChange={setSearchTerm}
-        placeholder="Search vendors by name..."
+        placeholder={t.search.placeholder}
         className="mb-4"
-        label="Search vendors by name"
+        label={t.search.label}
       />
     );
   };
@@ -158,7 +184,7 @@ export function VendorList({
       return (
         <div className="flex flex-col items-center justify-center py-16" aria-live="polite">
           <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" aria-hidden="true" />
-          <p className="text-gray-500">Loading vendors...</p>
+          <p className="text-gray-500">{t.loading}</p>
         </div>
       );
     }
@@ -170,14 +196,14 @@ export function VendorList({
           <div className="w-12 h-12 rounded-full bg-danger-light flex items-center justify-center mb-4" aria-hidden="true">
             <AlertTriangle className="w-6 h-6 text-danger" />
           </div>
-          <p className="text-gray-800 mb-4">Unable to load vendors. Retry?</p>
+          <p className="text-gray-800 mb-4">{t.error}</p>
           {onRetry && (
             <button 
               className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/30"
               onClick={onRetry}
-              aria-label="Retry loading vendors"
+              aria-label={t.retry}
             >
-              Retry
+              {t.retry}
             </button>
           )}
         </div>
@@ -193,8 +219,8 @@ export function VendorList({
             className="border-2 border-dashed border-gray-200 rounded-md p-16 flex flex-col items-center justify-center"
             aria-live="polite"
           >
-            <p className="text-gray-500 text-center mb-2">No vendors in onboarding yet.</p>
-            <p className="text-gray-500 text-center">Invite your first vendor →</p>
+            <p className="text-gray-500 text-center mb-2">{t.emptyState.noVendors}</p>
+            <p className="text-gray-500 text-center">{t.emptyState.invite}</p>
           </div>
         );
       }
@@ -205,7 +231,7 @@ export function VendorList({
           className="border-2 border-dashed border-gray-200 rounded-md p-16 flex flex-col items-center justify-center"
           aria-live="polite"
         >
-          <p className="text-gray-500 text-center">No vendors match your current filters.</p>
+          <p className="text-gray-500 text-center">{t.emptyState.noMatches}</p>
           <button 
             className="mt-4 text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary/30 rounded-md px-2 py-1"
             onClick={() => {
@@ -213,7 +239,7 @@ export function VendorList({
               setStatusFilter('All');
             }}
           >
-            Clear all filters
+            {t.emptyState.clearFilters}
           </button>
         </div>
       );
@@ -238,7 +264,7 @@ export function VendorList({
                   scope="col"
                 >
                   <div className="flex items-center">
-                    Name
+                    {t.table.name}
                     <ArrowUpDown className="ml-2 h-4 w-4" aria-hidden="true" />
                   </div>
                 </TableHead>
@@ -249,11 +275,11 @@ export function VendorList({
                   scope="col"
                 >
                   <div className="flex items-center">
-                    Status
+                    {t.table.status}
                     <ArrowUpDown className="ml-2 h-4 w-4" aria-hidden="true" />
                   </div>
                 </TableHead>
-                <TableHead className="w-1/5 text-right" scope="col">Actions</TableHead>
+                <TableHead className="w-1/5 text-right" scope="col">{t.table.actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -264,7 +290,7 @@ export function VendorList({
                   className="hover:bg-gray-50 transition-colors cursor-pointer"
                   tabIndex={0}
                   onKeyDown={(e) => handleTableKeyDown(e, vendor, index)}
-                  aria-label={`${vendor.name}, Status: ${vendor.status}`}
+                  aria-label={`${vendor.name}, Status: ${getStatusI18nKey(vendor.status as VendorStatus)}`}
                 >
                   <TableCell className="font-medium">{vendor.name}</TableCell>
                   <TableCell>
@@ -274,9 +300,9 @@ export function VendorList({
                     <Link 
                       href={`/vendors/${vendor.id}`}
                       className="text-sm text-purple-600 hover:text-purple-800 focus:outline-none focus:ring-2 focus:ring-primary/30 py-1 px-2 rounded"
-                      aria-label={`View details for ${vendor.name}`}
+                      aria-label={`${t.table.viewDetails} ${vendor.name}`}
                     >
-                      View Details
+                      {t.table.viewDetails}
                     </Link>
                   </TableCell>
                 </TableRow>
@@ -303,7 +329,7 @@ export function VendorList({
                     document.getElementById(`vendor-card-${index - 1}`)?.focus();
                   }
                 }}
-                aria-label={`${vendor.name}, Status: ${vendor.status}`}
+                aria-label={`${vendor.name}, Status: ${getStatusI18nKey(vendor.status as VendorStatus)}`}
               >
                 <div className="flex justify-between items-start">
                   <span className="text-gray-800 font-medium">{vendor.name}</span>
@@ -313,9 +339,9 @@ export function VendorList({
                   <Link
                     href={`/vendors/${vendor.id}`}
                     className="text-sm text-purple-600 hover:text-purple-800 focus:outline-none focus:ring-2 focus:ring-primary/30 py-1 px-2 rounded"
-                    aria-label={`View details for ${vendor.name}`}
+                    aria-label={`${t.table.viewDetails} ${vendor.name}`}
                   >
-                    View Details
+                    {t.table.viewDetails}
                   </Link>
                 </div>
               </li>
@@ -336,7 +362,7 @@ export function VendorList({
         )}
       >
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
-          <h2 className="text-xl font-semibold text-gray-800" id="vendor-list-heading">Vendors</h2>
+          <h2 className="text-xl font-semibold text-gray-800" id="vendor-list-heading">{t.title}</h2>
         </div>
 
         {renderSearchBar()}

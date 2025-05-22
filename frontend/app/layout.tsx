@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import './styles.css'
+import { ThemeInitializer } from '@/components/ThemeInitializer'
 
 export const metadata: Metadata = {
   title: 'GarnetAI - Compliance Platform',
@@ -20,6 +21,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         
+        <ThemeInitializer />
         {children}
       </body>
     </html>

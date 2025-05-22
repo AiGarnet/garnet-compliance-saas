@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { MobileNavigation } from './MobileNavigation';
 import { translations } from '@/lib/i18n';
 import { injectCriticalCSS } from './critical-css';
+import { ThemeToggle } from './ui/ThemeToggle';
 
 // Remove the hardcoded CSS variables since we're using the ones from critical-css
 // const cssVariables = {
@@ -42,6 +43,7 @@ export default function Header({ locale = 'en' }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentLocale, setCurrentLocale] = useState(locale);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
   
   // Inject critical CSS on component mount and check for saved theme preference
   useEffect(() => {
@@ -60,26 +62,19 @@ export default function Header({ locale = 'en' }: HeaderProps) {
     }
   }, []);
   
-  // Toggle dark mode
+  // We'll use our ThemeToggle component instead of this function
+  // Keep the state for compatibility
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
     setIsDarkMode(newDarkMode);
-    
-    // Save preference to localStorage
-    localStorage.setItem('theme', newDarkMode ? 'dark' : 'light');
-    
-    // Toggle dark mode class on the html element to affect the entire application
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark-mode');
-    } else {
-      document.documentElement.classList.remove('dark-mode');
-    }
   };
 
   // Handle clicking outside to close dropdowns
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
-      if (isProfileOpen && !(e.target as HTMLElement).closest('[data-profile-dropdown]')) {
+      if (isProfileOpen && 
+          profileDropdownRef.current && 
+          !profileDropdownRef.current.contains(e.target as Node)) {
         setIsProfileOpen(false);
       }
     };
@@ -87,6 +82,19 @@ export default function Header({ locale = 'en' }: HeaderProps) {
     document.addEventListener('mousedown', handleOutsideClick);
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [isProfileOpen]);
+
+  // Handle ESC key to close dropdowns
+  useEffect(() => {
+    const handleEscKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsProfileOpen(false);
+        setIsSearchOpen(false);
+      }
+    };
+    
+    document.addEventListener('keydown', handleEscKey);
+    return () => document.removeEventListener('keydown', handleEscKey);
+  }, []);
 
   // Get translations based on locale
   const t = translations[currentLocale as keyof typeof translations] || translations.en;
@@ -111,19 +119,20 @@ export default function Header({ locale = 'en' }: HeaderProps) {
   return (
     <header 
       className="sticky top-0 z-30 transition-colors"
+      style={{backgroundColor: 'var(--header-bg)', color: 'var(--header-text)'}}
     >
-      {/* Skip to content link - visually hidden but accessible */}
+      {/* Skip to content link */}
       <a 
-        href="#main-content" 
-        className="sr-only focus:not-sr-only focus:absolute focus:p-4 focus:bg-primary focus:text-white focus:z-50"
+        href="#main"
+        className="skip-link sr-only focus:not-sr-only focus:absolute focus:p-4 focus:bg-primary focus:text-white focus:z-50"
       >
         {t.skipToContent}
       </a>
       
       <div className="w-full max-w-screen-2xl mx-auto px-2 sm:px-4 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo and Brand - adjusted left spacing */}
-          <div className="flex items-center pl-0 md:pl-0">
+          {/* Logo and Brand */}
+          <div className="flex items-center">
             <Link href="/" className="flex items-center" aria-label={t.homePage}>
               <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary flex items-center justify-center mr-2">
                 <span className="text-white text-lg font-bold">G</span>
@@ -134,9 +143,9 @@ export default function Header({ locale = 'en' }: HeaderProps) {
             </Link>
           </div>
           
-          {/* Main Navigation - centered */}
-          <nav aria-label="Main navigation" className="hidden md:block flex-grow">
-            <ul className="flex justify-center space-x-6 px-4">
+          {/* Main Navigation */}
+          <nav aria-label="Main navigation" className="hidden md:block">
+            <ul className="flex space-x-6">
               {navItems.map((item) => (
                 <li key={item.href}>
                   <Link 
@@ -154,8 +163,8 @@ export default function Header({ locale = 'en' }: HeaderProps) {
             </ul>
           </nav>
           
-          {/* Right side controls - adjusted right spacing */}
-          <div className="flex items-center gap-2 pr-0 md:pr-0">
+          {/* Right side controls */}
+          <div className="flex items-center gap-2">
             {/* Search Bar */}
             <div className="relative hidden md:block">
               <div className={cn(
@@ -166,6 +175,7 @@ export default function Header({ locale = 'en' }: HeaderProps) {
                   onClick={() => setIsSearchOpen(!isSearchOpen)}
                   className="absolute inset-y-0 left-0 flex items-center pl-3"
                   aria-label={t.search}
+                  aria-expanded={isSearchOpen}
                 >
                   <Search className="h-5 w-5" />
                 </button>
@@ -183,29 +193,19 @@ export default function Header({ locale = 'en' }: HeaderProps) {
             
             {/* Notifications Bell */}
             <button
-              className="min-h-[44px] min-w-[44px] p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="min-h-[44px] min-w-[44px] p-2 rounded-full hover:bg-controls-bg focus:outline-none focus:ring-2 focus:ring-primary/30"
               aria-label={t.notifications}
             >
               <Bell className="h-5 w-5" />
             </button>
             
             {/* Dark Mode Toggle */}
-            <button
-              className="min-h-[44px] min-w-[44px] p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/30"
-              onClick={toggleDarkMode}
-              aria-label={isDarkMode ? t.lightMode : t.darkMode}
-            >
-              {isDarkMode ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </button>
+            <ThemeToggle locale={currentLocale} />
             
             {/* Language Selector */}
             <div className="relative">
               <button
-                className="min-h-[44px] min-w-[44px] p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="min-h-[44px] min-w-[44px] p-2 rounded-full hover:bg-controls-bg focus:outline-none focus:ring-2 focus:ring-primary/30"
                 aria-label={t.language}
                 onClick={() => {
                   // Toggle through languages for simplicity
@@ -219,9 +219,9 @@ export default function Header({ locale = 'en' }: HeaderProps) {
             </div>
             
             {/* Profile Dropdown */}
-            <div className="relative" data-profile-dropdown>
+            <div className="relative" ref={profileDropdownRef}>
               <button
-                className="min-h-[44px] min-w-[44px] p-2 flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="min-h-[44px] min-w-[44px] p-2 flex items-center gap-2 rounded-full hover:bg-controls-bg focus:outline-none focus:ring-2 focus:ring-primary/30"
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 aria-expanded={isProfileOpen}
                 aria-haspopup="true"
@@ -233,7 +233,11 @@ export default function Header({ locale = 'en' }: HeaderProps) {
               </button>
               
               {isProfileOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-card-bg rounded-md shadow-lg py-1 z-10 border border-card-border">
+                <div 
+                  className="absolute right-0 mt-2 w-48 bg-card-bg rounded-md shadow-lg py-1 z-10 border border-card-border"
+                  role="menu"
+                  aria-orientation="vertical"
+                >
                   <div className="px-4 py-2 border-b border-card-border">
                     <div className="text-sm font-medium">Sarah Anderson</div>
                     <div className="text-xs text-muted-text">sarah@company.com</div>

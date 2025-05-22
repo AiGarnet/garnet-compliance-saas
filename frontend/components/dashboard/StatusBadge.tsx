@@ -1,13 +1,18 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { VendorStatus } from './VendorList';
+import { translations } from '@/lib/i18n';
 
 interface StatusBadgeProps {
   status: VendorStatus;
   className?: string;
+  locale?: string;
 }
 
-export function StatusBadge({ status, className }: StatusBadgeProps) {
+export function StatusBadge({ status, className, locale = 'en' }: StatusBadgeProps) {
+  // Access translations based on locale
+  const t = translations[locale as keyof typeof translations]?.statusBadge || translations.en.statusBadge;
+  
   // Get the status badge styling based on status
   const getStatusStyle = (status: VendorStatus) => {
     switch (status) {
@@ -29,13 +34,27 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   const getAriaAttributes = (status: VendorStatus) => {
     switch (status) {
       case 'Approved':
-        return { 'aria-description': 'Vendor is approved' };
+        return { 'aria-description': t.approved.description };
       case 'In Review':
-        return { 'aria-description': 'Vendor is currently under review' };
+        return { 'aria-description': t.inReview.description };
       case 'Questionnaire Pending':
-        return { 'aria-description': 'Vendor has a pending questionnaire' };
+        return { 'aria-description': t.questionnairePending.description };
       default:
         return {};
+    }
+  };
+  
+  // Get the translated status text
+  const getStatusText = (status: VendorStatus): string => {
+    switch (status) {
+      case 'Approved':
+        return t.approved.text;
+      case 'In Review':
+        return t.inReview.text;
+      case 'Questionnaire Pending':
+        return t.questionnairePending.text;
+      default:
+        return status;
     }
   };
 
@@ -50,7 +69,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
       {...getAriaAttributes(status)}
       aria-live="polite"
     >
-      {status}
+      {getStatusText(status)}
     </span>
   );
 } 

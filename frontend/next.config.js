@@ -7,6 +7,11 @@ const nextConfig = {
     unoptimized: true,
   },
   swcMinify: true,
+  
+  // Optimize bundle size
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  }
 }
 
 module.exports = nextConfig 
