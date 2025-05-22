@@ -22,7 +22,8 @@
     "next": "^14.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "tailwind-merge": "^2.6.0"
+    "tailwind-merge": "^2.6.0",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@axe-core/react": "^4.10.1",
