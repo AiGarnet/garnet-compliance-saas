@@ -19,7 +19,9 @@
   },
   "dependencies": {
     "@faker-js/faker": "^9.8.0",
+    "@types/lodash": "^4.17.17",
     "dotenv": "^16.5.0",
+    "lodash": "^4.17.21",
     "lucide-react": "^0.294.0",
     "moment": "^2.29.4",
     "pg": "^8.16.0",
