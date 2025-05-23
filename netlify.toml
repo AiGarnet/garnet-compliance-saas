@@ -23,12 +23,6 @@
   to = "/.netlify/functions/questionnaire"
   status = 200
 
-# Redirect root to dashboard
-[[redirects]]
-  from = "/"
-  to = "/dashboard"
-  status = 302
-
 # Handle SPA routing - catch all routes and serve index.html
 [[redirects]]
   from = "/*"
