@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, ChangeEvent, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { ClipboardList, Filter, Plus, Search, SlidersHorizontal, X, Upload, FileText, FileType, Files, RefreshCw, Trash2 } from "lucide-react";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { QuestionnaireList, Questionnaire, QuestionnaireStatus } from "@/components/dashboard/QuestionnaireList";
@@ -18,15 +19,8 @@ const MAX_QUESTION_LENGTH = 200;
 const AUTOSAVE_KEY = 'questionnaire_draft';
 
 const QuestionnairesPage = () => {
-  // Sample data for demonstration
-  const mockQuestionnaires = [
-    { id: "q1", name: "SOC 2 Type II Assessment", status: "In Progress" as QuestionnaireStatus, dueDate: "Aug 15, 2023", progress: 65 },
-    { id: "q2", name: "GDPR Compliance Questionnaire", status: "Completed" as QuestionnaireStatus, dueDate: "Jul 28, 2023", progress: 100 },
-    { id: "q3", name: "ISO 27001 Readiness Assessment", status: "Not Started" as QuestionnaireStatus, dueDate: "Sep 10, 2023", progress: 0 },
-    { id: "q4", name: "HIPAA Security Assessment", status: "In Review" as QuestionnaireStatus, dueDate: "Aug 5, 2023", progress: 85 },
-    { id: "q5", name: "Vendor Security Assessment", status: "Draft" as QuestionnaireStatus, dueDate: "Sep 30, 2023", progress: 20 },
-  ];
-  
+  const router = useRouter();
+  // Remove mock data and start with empty array
   const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
@@ -198,23 +192,32 @@ const QuestionnairesPage = () => {
     }
   };
 
-  // Simulate API fetch with delay and potential error
   const fetchQuestionnaires = async () => {
     setIsLoading(true);
     setError('');
     
     try {
-      // Simulate network request
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Only use questionnaires from local storage, no mock data
+      const storedQuestionnaires = localStorage.getItem('user_questionnaires');
+      let userQuestionnaires: Questionnaire[] = [];
       
-      // Uncomment to simulate error
-      // if (Math.random() > 0.7) throw new Error("Failed to fetch questionnaires");
+      if (storedQuestionnaires) {
+        try {
+          userQuestionnaires = JSON.parse(storedQuestionnaires);
+        } catch (e) {
+          console.error('Error parsing stored questionnaires:', e);
+        }
+      }
       
-      setQuestionnaires(mockQuestionnaires);
-      setIsLoading(false);
+      // Only use user-created questionnaires
+      setQuestionnaires(userQuestionnaires);
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 300));
     } catch (err) {
-      console.error("Error fetching questionnaires:", err);
-      setError('Unable to load questionnaires. Please try again.');
+      console.error('Error fetching questionnaires:', err);
+      setError('Failed to load questionnaires. Please try again.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -288,7 +291,6 @@ const QuestionnairesPage = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Add CSRF token header
           'X-CSRF-Token': 'csrf-token-placeholder',
         },
         body: JSON.stringify({ 
@@ -303,9 +305,60 @@ const QuestionnairesPage = () => {
       
       const data = await response.json();
       
-      // Success! Show toast message and close modal
-      // In a real implementation, you would show a toast notification
-      alert("Questionnaire submitted! You'll see it in your list shortly.");
+      // Now call the security questionnaire endpoint to get AI-generated answers
+      const securityEndpoint = '/api/answer';
+      
+      const aiResponses = await Promise.all(
+        questions.map(async (question) => {
+          try {
+            const aiResponse = await fetch(securityEndpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ question }),
+            });
+            
+            if (!aiResponse.ok) {
+              return { question, answer: 'Unable to generate an answer. Please consult the compliance officer.' };
+            }
+            
+            const aiData = await aiResponse.json();
+            return { question, answer: aiData.answer || 'No answer available' };
+          } catch (error) {
+            console.error('Error getting AI answer:', error);
+            return { question, answer: 'Error generating answer. Please consult the compliance officer.' };
+          }
+        })
+      );
+      
+      // Store the new questionnaire with AI answers
+      const newQuestionnaire: Questionnaire & { answers?: QuestionAnswer[] } = {
+        id: data.questionnaire?.id || `q${Date.now()}`,  
+        name: questionnaireTitle,
+        status: "Not Started" as QuestionnaireStatus,
+        dueDate: data.questionnaire?.dueDate || new Date().toLocaleDateString(),
+        progress: 0,
+        answers: aiResponses, // Store the AI-generated answers
+      };
+      
+      // Get existing questionnaires from local storage
+      const storedQuestionnaires = localStorage.getItem('user_questionnaires');
+      let userQuestionnaires: Array<Questionnaire & { answers?: QuestionAnswer[] }> = [];
+      
+      if (storedQuestionnaires) {
+        try {
+          userQuestionnaires = JSON.parse(storedQuestionnaires);
+        } catch (e) {
+          console.error('Error parsing stored questionnaires:', e);
+        }
+      }
+      
+      // Add the new questionnaire
+      userQuestionnaires.push(newQuestionnaire);
+      
+      // Save back to local storage
+      localStorage.setItem('user_questionnaires', JSON.stringify(userQuestionnaires));
       
       // Clear autosaved draft
       localStorage.removeItem(AUTOSAVE_KEY);
@@ -315,6 +368,9 @@ const QuestionnairesPage = () => {
       
       // Refresh the questionnaire list
       fetchQuestionnaires();
+      
+      // Redirect to the questionnaire answers page - use router.push instead of window.location
+      router.push(`/questionnaires/answers/${newQuestionnaire.id}`);
       
     } catch (error) {
       console.error('Error submitting questionnaire:', error);
@@ -497,6 +553,52 @@ const QuestionnairesPage = () => {
       .split('\n')
       .map(line => line.trim())
       .filter(line => line.length > 0);
+  };
+
+  // Add handling for viewing a questionnaire
+  const handleViewQuestionnaire = (questionnaire: Questionnaire) => {
+    router.push(`/questionnaires/answers/${questionnaire.id}`);
+  };
+  
+  // Add handling for editing a questionnaire
+  const handleEditQuestionnaire = (questionnaire: Questionnaire) => {
+    // Set the questionnaire input and title
+    setQuestionnaireTitle(questionnaire.name);
+    
+    // If the questionnaire has answers, get the questions from them
+    if ((questionnaire as any).answers) {
+      const questions = (questionnaire as any).answers.map((qa: any) => qa.question).join('\n');
+      setQuestionnaireInput(questions);
+    }
+    
+    // Show the questionnaire input modal
+    setShowQuestionnaireInput(true);
+  };
+  
+  // Add handling for deleting a questionnaire
+  const handleDeleteQuestionnaire = (questionnaire: Questionnaire) => {
+    if (confirm(`Are you sure you want to delete the questionnaire "${questionnaire.name}"?`)) {
+      // Get existing questionnaires from local storage
+      const storedQuestionnaires = localStorage.getItem('user_questionnaires');
+      if (storedQuestionnaires) {
+        try {
+          const userQuestionnaires = JSON.parse(storedQuestionnaires);
+          
+          // Filter out the questionnaire to delete
+          const updatedQuestionnaires = userQuestionnaires.filter(
+            (q: Questionnaire) => q.id !== questionnaire.id
+          );
+          
+          // Save back to local storage
+          localStorage.setItem('user_questionnaires', JSON.stringify(updatedQuestionnaires));
+          
+          // Refresh the questionnaire list
+          fetchQuestionnaires();
+        } catch (e) {
+          console.error('Error deleting questionnaire:', e);
+        }
+      }
+    }
   };
 
   return (
@@ -837,6 +939,10 @@ const QuestionnairesPage = () => {
           isLoading={isLoading}
           error={error}
           onRetry={fetchQuestionnaires}
+          onAddQuestionnaire={handleNewQuestionnaire}
+          onViewQuestionnaire={handleViewQuestionnaire}
+          onEditQuestionnaire={handleEditQuestionnaire}
+          onDeleteQuestionnaire={handleDeleteQuestionnaire}
         />
       </main>
     </>

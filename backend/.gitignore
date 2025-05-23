@@ -20,7 +20,7 @@ node_modules/
 # Output of 'npm pack'
 *.tgz
 
-# dotenv environment variable files
+# Environment variables
 .env
 .env.local
 .env.development.local

@@ -261,3 +261,38 @@ The script will:
 - Parse each framework object
 - Insert records into the `compliance_frameworks` table in PostgreSQL
 - Log progress and results to the console
+
+## Security Questionnaire Module
+
+The Security Questionnaire Module helps enterprise sales and compliance teams respond accurately to security questionnaires using AI. This module analyzes security-related questions and generates precise answers based on the company's compliance data.
+
+### Setup
+
+1. **API Key**
+   - Create an OpenAI API key (if you don't have one)
+   - Create a `.env` file in the `/backend` directory using the `.env.example` template
+   - Add your OpenAI API key to the `.env` file (NEVER commit this to source control)
+
+2. **Backend Setup**
+   ```bash
+   cd backend
+   npm install
+   npm run dev
+   ```
+
+3. **Frontend Setup**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+4. **Access the Module**
+   - Navigate to `http://localhost:3000/security-questionnaire` in your browser
+   - Enter security questions and receive answers based on your company's compliance data
+
+### Security Considerations
+
+- Never expose your API key in client-side code or commit it to version control
+- All answers should be reviewed by a compliance officer before sending to customers
+- The system only uses information from your compliance dataset - it will not fabricate answers

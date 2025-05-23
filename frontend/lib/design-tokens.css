@@ -95,9 +95,9 @@
      - Functional colors with semantic meaning 
      - Colors are specified in RGB format for Tailwind compatibility
      -------------------------------------------------------------------------- */
-  --color-primary: 124 58 237;        /* Purple-600 */
-  --color-primary-light: 237 233 254; /* Purple-100 */
-  --color-primary-dark: 91 33 182;    /* Purple-800 */
+  --color-primary: 14 165 233;        /* Sky-500 (Blue-teal tone) */
+  --color-primary-light: 224 242 254; /* Sky-100 */
+  --color-primary-dark: 3 105 161;    /* Sky-700 */
   
   --color-secondary: 37 99 235;       /* Blue-600 */
   --color-secondary-light: 219 234 254; /* Blue-100 */
@@ -239,9 +239,9 @@
   --color-input-border: var(--color-gray-700);
   
   /* In dark mode, we brighten some colors for better contrast */
-  --color-primary: 165 108 255;       /* Brighter purple */
-  --color-primary-light: 91 33 182;   /* Purple-800 as light in dark mode */
-  --color-primary-dark: 237 233 254;  /* Purple-100 as dark in dark mode */
+  --color-primary: 56 189 248;        /* Brighter sky blue */
+  --color-primary-light: 3 105 161;   /* Sky-700 as light in dark mode */
+  --color-primary-dark: 224 242 254;  /* Sky-100 as dark in dark mode */
   
   --color-success: 52 211 153;        /* Brighter green */
   --color-success-light: 6 78 59;     /* Green-900 as light in dark mode */

@@ -32,6 +32,10 @@ export interface QuestionnaireListProps {
   isLoading?: boolean;
   error?: string;
   onRetry?: () => void;
+  onAddQuestionnaire?: () => void;
+  onViewQuestionnaire?: (questionnaire: Questionnaire) => void;
+  onEditQuestionnaire?: (questionnaire: Questionnaire) => void;
+  onDeleteQuestionnaire?: (questionnaire: Questionnaire) => void;
 }
 
 type SortField = 'name' | 'status' | 'dueDate' | 'progress';
@@ -42,7 +46,11 @@ export function QuestionnaireList({
   className,
   isLoading = false,
   error = '',
-  onRetry
+  onRetry,
+  onAddQuestionnaire,
+  onViewQuestionnaire,
+  onEditQuestionnaire,
+  onDeleteQuestionnaire
 }: QuestionnaireListProps) {
   // State for sorting
   const [sortField, setSortField] = useState<SortField>('name');
@@ -219,8 +227,16 @@ export function QuestionnaireList({
             className="border-2 border-dashed border-gray-200 rounded-md p-16 flex flex-col items-center justify-center"
             aria-live="polite"
           >
-            <p className="text-gray-500 text-center mb-2">No questionnaires available yet.</p>
-            <p className="text-gray-500 text-center">Create your first questionnaire →</p>
+            <p className="text-gray-500 text-center mb-4">No questionnaires available yet.</p>
+            {onAddQuestionnaire && (
+              <button 
+                onClick={onAddQuestionnaire}
+                className="bg-primary text-white hover:bg-primary/90 px-4 py-2 rounded-md flex items-center transition-colors"
+              >
+                <PlusCircle className="h-5 w-5 mr-2" />
+                Add Questionnaire
+              </button>
+            )}
           </div>
         );
       }
@@ -328,8 +344,24 @@ export function QuestionnaireList({
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <button className="text-primary hover:text-primary/80 transition-colors">Edit</button>
-                      <button className="text-gray-600 hover:text-gray-800 transition-colors">View</button>
+                      <button 
+                        className="text-primary hover:text-primary/80 transition-colors"
+                        onClick={() => onEditQuestionnaire && onEditQuestionnaire(questionnaire)}
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        className="text-gray-600 hover:text-gray-800 transition-colors"
+                        onClick={() => onViewQuestionnaire && onViewQuestionnaire(questionnaire)}
+                      >
+                        View
+                      </button>
+                      <button 
+                        className="text-red-600 hover:text-red-800 transition-colors"
+                        onClick={() => onDeleteQuestionnaire && onDeleteQuestionnaire(questionnaire)}
+                      >
+                        Delete
+                      </button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -377,8 +409,24 @@ export function QuestionnaireList({
                 </div>
                 
                 <div className="flex justify-end gap-2 mt-2">
-                  <button className="text-primary hover:text-primary/80 transition-colors text-sm">Edit</button>
-                  <button className="text-gray-600 hover:text-gray-800 transition-colors text-sm">View</button>
+                  <button 
+                    className="text-primary hover:text-primary/80 transition-colors text-sm"
+                    onClick={() => onEditQuestionnaire && onEditQuestionnaire(questionnaire)}
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    className="text-gray-600 hover:text-gray-800 transition-colors text-sm"
+                    onClick={() => onViewQuestionnaire && onViewQuestionnaire(questionnaire)}
+                  >
+                    View
+                  </button>
+                  <button 
+                    className="text-red-600 hover:text-red-800 transition-colors text-sm"
+                    onClick={() => onDeleteQuestionnaire && onDeleteQuestionnaire(questionnaire)}
+                  >
+                    Delete
+                  </button>
                 </div>
               </li>
             ))}
