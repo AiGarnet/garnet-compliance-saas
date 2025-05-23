@@ -5,38 +5,28 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { title, questions } = body;
     
+    if (!title || !questions || !Array.isArray(questions)) {
+      return NextResponse.json({ error: 'Title and questions array are required' }, { status: 400 });
+    }
+    
     // Generate a random ID
-    const id = `q${Date.now().toString(36)}`;
+    const id = `q${Date.now().toString(36)}${Math.random().toString(36).substr(2, 5)}`;
     
-    // Generate a random due date in the next 30 days
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + Math.floor(Math.random() * 30) + 1);
-    const formattedDueDate = dueDate.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    });
+    // Create questionnaire object
+    const questionnaire = {
+      id,
+      name: title,
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
+      status: 'In Progress',
+      answers: questions.map((question: string) => ({
+        question,
+        answer: '' // Empty answer to be filled later
+      }))
+    };
     
-    // Store the questionnaire in memory (in a real app, this would go to a database)
-    // In this demo, we'll just return a mock response since we can't persist data between requests
-    
-    return NextResponse.json({
-      success: true,
-      message: 'Questionnaire created successfully',
-      questionnaire: {
-        id,
-        name: title,
-        status: 'Not Started',
-        dueDate: formattedDueDate,
-        progress: 0,
-        questions
-      }
-    });
+    return NextResponse.json(questionnaire);
   } catch (error) {
-    console.error('Error processing questionnaire:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to process questionnaire' },
-      { status: 500 }
-    );
+    console.error('Error creating questionnaire:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 

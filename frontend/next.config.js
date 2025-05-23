@@ -1,13 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  output: 'export',
+  // Use standalone output for Netlify deployment
+  output: 'standalone',
   trailingSlash: true,
-  distDir: 'out',
+  distDir: '.next',
   images: {
     unoptimized: true,
   },
   swcMinify: true,
+  
+  // Skip static generation for dynamic routes
+  skipTrailingSlashRedirect: true,
   
   // Optimize bundle size
   compiler: {
@@ -19,6 +23,12 @@ const nextConfig = {
     // Warning: This allows production builds to successfully complete even if
     // your project has ESLint errors.
     ignoreDuringBuilds: true,
+  },
+  
+  // Experimental features for better Netlify compatibility
+  experimental: {
+    // Enable server components
+    serverComponentsExternalPackages: [],
   }
 }
 

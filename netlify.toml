@@ -1,11 +1,27 @@
 [build]
   base = "frontend"
   command = "npm run build"
-  publish = "out"
+  publish = ".next"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "18"
   NEXT_TELEMETRY_DISABLED = "1"
+
+# Use Next.js runtime for Netlify
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# API redirects to Netlify functions (fallback)
+[[redirects]]
+  from = "/api/answer"
+  to = "/.netlify/functions/answer"
+  status = 200
+
+[[redirects]]
+  from = "/api/ai/questionnaire"
+  to = "/.netlify/functions/questionnaire"
+  status = 200
 
 # Redirect root to dashboard
 [[redirects]]

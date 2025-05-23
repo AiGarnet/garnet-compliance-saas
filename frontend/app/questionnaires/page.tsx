@@ -373,7 +373,7 @@ const QuestionnairesPage = () => {
       fetchQuestionnaires();
       
       // Redirect to the questionnaire answers page - use router.push instead of window.location
-      router.push(`/questionnaires/answers/${newQuestionnaire.id}`);
+      router.push(`/questionnaires/answers?id=${newQuestionnaire.id}`);
       
     } catch (error) {
       console.error('Error submitting questionnaire:', error);
@@ -560,7 +560,7 @@ const QuestionnairesPage = () => {
 
   // Add handling for viewing a questionnaire
   const handleViewQuestionnaire = (questionnaire: Questionnaire) => {
-    router.push(`/questionnaires/answers/${questionnaire.id}`);
+    router.push(`/questionnaires/answers?id=${questionnaire.id}`);
   };
   
   // Add handling for editing a questionnaire
