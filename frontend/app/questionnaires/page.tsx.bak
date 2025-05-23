@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, ChangeEvent, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList, Filter, Plus, Search, SlidersHorizontal, X, Upload, FileText, FileType, Files, RefreshCw, Trash2, Sparkles, MessageSquare } from "lucide-react";
+import { ClipboardList, Filter, Plus, Search, SlidersHorizontal, X, Upload, FileText, FileType, Files, RefreshCw, Trash2 } from "lucide-react";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { QuestionnaireList, Questionnaire, QuestionnaireStatus } from "@/components/dashboard/QuestionnaireList";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -12,6 +12,13 @@ import { debounce } from 'lodash';
 interface QuestionAnswer {
   question: string;
   answer: string;
+}
+
+// Add ChatbotResponse interface
+interface ChatbotResponse {
+  question: string;
+  answer: string;
+  timestamp: string;
 }
 
 const MAX_QUESTIONS = 500;
@@ -51,10 +58,12 @@ const QuestionnairesPage = () => {
   const [findText, setFindText] = useState('');
   const [replaceText, setReplaceText] = useState('');
 
-  // AI Assistant state for questionnaire creation
-  const [isGeneratingAnswers, setIsGeneratingAnswers] = useState(false);
-  const [generatedAnswers, setGeneratedAnswers] = useState<QuestionAnswer[]>([]);
-  const [showAIAssistant, setShowAIAssistant] = useState(false);
+  // Add chatbot state
+  const [chatbotQuestion, setChatbotQuestion] = useState('');
+  const [chatbotAnswer, setChatbotAnswer] = useState<string | null>(null);
+  const [isChatbotLoading, setIsChatbotLoading] = useState(false);
+  const [chatbotError, setChatbotError] = useState<string | null>(null);
+  const [chatHistory, setChatHistory] = useState<ChatbotResponse[]>([]);
 
   // Calculate and update question count and validation when input changes
   useEffect(() => {
@@ -253,69 +262,6 @@ const QuestionnairesPage = () => {
     setFindReplaceMode(false);
     setUploadError(null);
     setValidationError(null);
-    setGeneratedAnswers([]);
-    setShowAIAssistant(false);
-  };
-
-  // Generate AI answers for questions
-  const handleGenerateAnswers = async (): Promise<QuestionAnswer[]> => {
-    const questions = questionnaireInput
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
-
-    if (questions.length === 0) {
-      setValidationError("No questions detected – please add questions first.");
-      return [];
-    }
-
-    setIsGeneratingAnswers(true);
-    
-    try {
-      const apiEndpoint = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-        ? 'http://localhost:5000/ask'
-        : 'https://testinggarnet.netlify.app/.netlify/functions/compliance-chatbot';
-
-      const aiResponses = await Promise.all(
-        questions.map(async (question) => {
-          try {
-            const aiResponse = await fetch(apiEndpoint, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ question }),
-            });
-            
-            if (!aiResponse.ok) {
-              throw new Error('Failed to get AI response');
-            }
-            
-            const aiData = await aiResponse.json();
-            return { question, answer: aiData.answer || 'No answer available' };
-          } catch (error) {
-            console.error('Error getting AI answer:', error);
-            return { question, answer: 'Unable to generate an answer. Please consult the compliance officer.' };
-          }
-        })
-      );
-
-      setGeneratedAnswers(aiResponses);
-      setShowAIAssistant(true);
-      return aiResponses; // Return the generated answers
-      
-    } catch (error) {
-      console.error('Error generating answers:', error);
-      setValidationError('Failed to generate AI answers. Please try again.');
-      return [];
-    } finally {
-      setIsGeneratingAnswers(false);
-    }
-  };
-
-  // Wrapper function for button clicks (doesn't return anything)
-  const handleGenerateAnswersClick = async () => {
-    await handleGenerateAnswers();
   };
   
   const handleSubmitQuestionnaire = async (e: React.FormEvent) => {
@@ -349,22 +295,68 @@ const QuestionnairesPage = () => {
     setIsSubmitting(true);
     
     try {
-      // Use generated answers if available, otherwise generate them
-      let finalAnswers = generatedAnswers;
+      // Use the appropriate API endpoint based on environment
+      const apiEndpoint = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+        ? '/api/ai/questionnaire'
+        : '/.netlify/functions/questionnaire';
+        
+      // Send questions to the API
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': 'csrf-token-placeholder',
+        },
+        body: JSON.stringify({ 
+          title: questionnaireTitle,
+          questions 
+        }),
+      });
       
-      if (finalAnswers.length === 0) {
-        // Generate answers if not already done
-        finalAnswers = await handleGenerateAnswers();
+      if (!response.ok) {
+        throw new Error('Failed to generate answers');
       }
+      
+      const data = await response.json();
+      
+      // Now call the security questionnaire endpoint to get AI-generated answers
+      const chatbotUrl = process.env.NEXT_PUBLIC_CHATBOT_URL || 'http://localhost:5000';
+      const securityEndpoint = `${chatbotUrl}/ask`;
+      
+      const aiResponses = await Promise.all(
+        questions.map(async (question) => {
+          try {
+            const aiResponse = await fetch(securityEndpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ question }),
+            });
+            
+            if (!aiResponse.ok) {
+              const errorData = await aiResponse.json().catch(() => ({}));
+              console.error('AI response error:', errorData);
+              return { question, answer: 'Unable to generate an answer. Please consult the compliance officer.' };
+            }
+            
+            const aiData = await aiResponse.json();
+            return { question, answer: aiData.answer || 'No answer available' };
+          } catch (error) {
+            console.error('Error getting AI answer:', error);
+            return { question, answer: 'Error generating answer. Please consult the compliance officer.' };
+          }
+        })
+      );
       
       // Store the new questionnaire with AI answers
       const newQuestionnaire: Questionnaire & { answers?: QuestionAnswer[] } = {
-        id: `q${Date.now()}`,  
+        id: data.questionnaire?.id || `q${Date.now()}`,  
         name: questionnaireTitle,
         status: "Not Started" as QuestionnaireStatus,
-        dueDate: new Date().toLocaleDateString(),
+        dueDate: data.questionnaire?.dueDate || new Date().toLocaleDateString(),
         progress: 0,
-        answers: finalAnswers.length > 0 ? finalAnswers : questions.map(q => ({ question: q, answer: 'AI answer will be generated' })),
+        answers: aiResponses, // Store the AI-generated answers
       };
       
       // Get existing questionnaires from local storage
@@ -394,7 +386,7 @@ const QuestionnairesPage = () => {
       // Refresh the questionnaire list
       fetchQuestionnaires();
       
-      // Redirect to the questionnaire answers page
+      // Redirect to the questionnaire answers page - use router.push instead of window.location
       router.push(`/questionnaires/answers?id=${newQuestionnaire.id}`);
       
     } catch (error) {
@@ -412,8 +404,6 @@ const QuestionnairesPage = () => {
     setQuestionAnswers([]);
     setShowPreview(false);
     setFindReplaceMode(false);
-    setGeneratedAnswers([]);
-    setShowAIAssistant(false);
   };
 
   // Process file regardless of upload method
@@ -541,7 +531,6 @@ const QuestionnairesPage = () => {
   const handleClearTextarea = () => {
     if (confirm('Are you sure you want to clear all questions?')) {
       setQuestionnaireInput('');
-      setGeneratedAnswers([]);
       textareaRef.current?.focus();
     }
   };
@@ -629,6 +618,89 @@ const QuestionnairesPage = () => {
     }
   };
 
+  // Add handleChatbotSubmit function
+  const handleChatbotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!chatbotQuestion.trim()) {
+      setChatbotError('Please enter a question');
+      return;
+    }
+    
+    setIsChatbotLoading(true);
+    setChatbotError(null);
+    
+    try {
+      // Use the appropriate API endpoint based on environment
+      const apiEndpoint = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+        ? 'http://localhost:3001/api/answer'
+        : 'https://testinggarnet.netlify.app/.netlify/functions/compliance-chatbot';
+      
+      // Call our chatbot API
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ question: chatbotQuestion }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to get answer from chatbot');
+      }
+      
+      const data = await response.json();
+      setChatbotAnswer(data.answer);
+      
+      // Add to chat history
+      const newChatItem: ChatbotResponse = {
+        question: chatbotQuestion,
+        answer: data.answer,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Clear the question input after successful submission
+      setChatbotQuestion('');
+      
+      setChatHistory(prevHistory => [newChatItem, ...prevHistory]);
+      
+      // Save chat history to localStorage
+      const storedHistory = localStorage.getItem('chatbot_history');
+      let chatHistoryArray: ChatbotResponse[] = [];
+      
+      if (storedHistory) {
+        try {
+          chatHistoryArray = JSON.parse(storedHistory);
+        } catch (e) {
+          console.error('Error parsing stored chat history:', e);
+        }
+      }
+      
+      // Add new chat and limit to 20 most recent
+      chatHistoryArray = [newChatItem, ...chatHistoryArray].slice(0, 20);
+      localStorage.setItem('chatbot_history', JSON.stringify(chatHistoryArray));
+      
+    } catch (error) {
+      console.error('Error getting chatbot answer:', error);
+      setChatbotError('Failed to get answer. Please try again.');
+    } finally {
+      setIsChatbotLoading(false);
+    }
+  };
+
+  // Load chat history from localStorage
+  useEffect(() => {
+    const storedHistory = localStorage.getItem('chatbot_history');
+    if (storedHistory) {
+      try {
+        const parsedHistory = JSON.parse(storedHistory);
+        setChatHistory(parsedHistory);
+      } catch (e) {
+        console.error('Error loading chat history:', e);
+      }
+    }
+  }, []);
+
   return (
     <>
       <Header />
@@ -655,18 +727,89 @@ const QuestionnairesPage = () => {
           </div>
         </div>
         
+        {/* Add Chatbot Section */}
+        <div className="mt-8 mb-12 bg-white border border-gray-200 rounded-lg shadow-sm">
+          <div className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Compliance Assistant</h2>
+            <p className="text-gray-600 mb-6">
+              Ask questions about compliance frameworks, security standards, or regulatory requirements.
+            </p>
+            
+            <form onSubmit={handleChatbotSubmit} className="mb-6">
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label htmlFor="chatbot-question" className="sr-only">Your compliance question</label>
+                  <textarea
+                    id="chatbot-question"
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                    placeholder="Ask a question about compliance, security standards, or regulations..."
+                    value={chatbotQuestion}
+                    onChange={(e) => setChatbotQuestion(e.target.value)}
+                  />
+                </div>
+                
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isChatbotLoading}
+                    className="bg-primary text-white hover:bg-primary/90 px-6 py-2 rounded-md transition-colors disabled:opacity-50"
+                  >
+                    {isChatbotLoading ? 'Getting answer...' : 'Ask Question'}
+                  </button>
+                </div>
+              </div>
+              
+              {chatbotError && (
+                <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-md">
+                  {chatbotError}
+                </div>
+              )}
+            </form>
+            
+            {/* Answer display */}
+            {chatbotAnswer && (
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 mt-4">
+                <h3 className="font-medium text-gray-800 mb-2">Answer:</h3>
+                <div className="prose max-w-none">
+                  {chatbotAnswer.split('\n').map((paragraph, index) => (
+                    <p key={index} className="mb-4">{paragraph}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Chat history */}
+            {chatHistory.length > 0 && (
+              <div className="mt-8">
+                <h3 className="text-lg font-medium mb-4">Recent Questions</h3>
+                <div className="space-y-4">
+                  {chatHistory.map((chat, index) => (
+                    <div key={index} className="p-4 bg-gray-50 rounded-md border border-gray-200">
+                      <p className="font-medium">{chat.question}</p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {new Date(chat.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        
         {showQuestionnaireInput ? (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center overflow-auto p-4">
             <div 
               ref={modalRef}
-              className="bg-white dark:bg-card-bg rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col"
+              className="bg-white dark:bg-card-bg rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col"
               role="dialog"
               aria-modal="true"
               aria-labelledby="questionnaire-modal-title"
             >
               <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                 <h2 id="questionnaire-modal-title" className="text-xl font-semibold text-gray-800 dark:text-white">
-                  Create Questionnaire with AI Assistance
+                  Upload/Enter Questionnaire
                 </h2>
                 <button 
                   onClick={closeQuestionnaireInput}
@@ -696,22 +839,13 @@ const QuestionnairesPage = () => {
                     />
                   </div>
 
-                  {!showPreview && !showAIAssistant && (
+                  {!showPreview && (
                     <>
                       <div className="mb-4">
                         <div className="flex justify-between items-center mb-2">
                           <h3 className="text-lg font-medium text-gray-800 dark:text-white">Questions</h3>
                           
                           <div className="flex space-x-2">
-                            <button 
-                              type="button"
-                              onClick={handleGenerateAnswersClick}
-                              disabled={isGeneratingAnswers || questionCount === 0}
-                              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-md hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm transition-all"
-                            >
-                              <Sparkles className="h-4 w-4 mr-1" />
-                              {isGeneratingAnswers ? 'Generating...' : 'Generate AI Answers'}
-                            </button>
                             <button 
                               type="button"
                               onClick={() => setFindReplaceMode(!findReplaceMode)}
@@ -740,7 +874,7 @@ const QuestionnairesPage = () => {
                         </div>
                         
                         <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">
-                          Type or paste each question on its own line. Click "Generate AI Answers" to get compliance-based responses.
+                          Type or paste each question on its own line (e.g. 'Do you encrypt data at rest?').
                         </p>
                         
                         {/* Find and replace section */}
@@ -884,24 +1018,13 @@ const QuestionnairesPage = () => {
                     <div className="mb-4">
                       <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-medium text-gray-800 dark:text-white">Question Preview</h3>
-                        <div className="flex space-x-2">
-                          <button 
-                            type="button"
-                            onClick={handleGenerateAnswersClick}
-                            disabled={isGeneratingAnswers || questionCount === 0}
-                            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-md hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm transition-all"
-                          >
-                            <Sparkles className="h-4 w-4 mr-1" />
-                            {isGeneratingAnswers ? 'Generating...' : 'Generate AI Answers'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleTogglePreview}
-                            className="text-sm text-primary hover:text-primary/80 flex items-center"
-                          >
-                            Back to Edit
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={handleTogglePreview}
+                          className="text-sm text-primary hover:text-primary/80 flex items-center"
+                        >
+                          Back to Edit
+                        </button>
                       </div>
                       
                       <div className="border border-gray-200 dark:border-gray-700 rounded-md p-4 max-h-[400px] overflow-y-auto">
@@ -921,44 +1044,6 @@ const QuestionnairesPage = () => {
                       </div>
                     </div>
                   )}
-
-                  {/* AI Assistant Panel */}
-                  {showAIAssistant && generatedAnswers.length > 0 && (
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium text-gray-800 dark:text-white flex items-center">
-                          <MessageSquare className="h-5 w-5 mr-2 text-purple-500" />
-                          AI-Generated Answers
-                        </h3>
-                        <button
-                          type="button"
-                          onClick={() => setShowAIAssistant(false)}
-                          className="text-sm text-primary hover:text-primary/80 flex items-center"
-                        >
-                          Back to Edit
-                        </button>
-                      </div>
-                      
-                      <div className="border border-gray-200 dark:border-gray-700 rounded-md max-h-[500px] overflow-y-auto">
-                        {generatedAnswers.map((qa, index) => (
-                          <div key={index} className={`p-4 ${index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-800' : 'bg-white dark:bg-gray-900'}`}>
-                            <div className="mb-2">
-                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Q{index + 1}:</span>
-                              <p className="font-medium text-gray-800 dark:text-gray-200">{qa.question}</p>
-                            </div>
-                            <div>
-                              <span className="text-sm font-medium text-purple-600 dark:text-purple-400">AI Answer:</span>
-                              <div className="mt-1 text-gray-700 dark:text-gray-300 prose prose-sm max-w-none">
-                                {qa.answer.split('\n').map((paragraph, pIndex) => (
-                                  <p key={pIndex} className="mb-2">{paragraph}</p>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                   
                   <div className="flex justify-between items-center">
                     <div id="question-counter" className="text-sm text-gray-600 dark:text-gray-400">
@@ -970,11 +1055,6 @@ const QuestionnairesPage = () => {
                       {questionCount > MAX_QUESTIONS && (
                         <span className="text-red-500 ml-1">
                           (exceeds maximum of {MAX_QUESTIONS})
-                        </span>
-                      )}
-                      {generatedAnswers.length > 0 && (
-                        <span className="text-purple-600 ml-2">
-                          • {generatedAnswers.length} AI answers generated
                         </span>
                       )}
                     </div>
@@ -1009,12 +1089,12 @@ const QuestionnairesPage = () => {
                         <div className="flex items-center">
                           <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
                           Processing...
                         </div>
                       ) : (
-                        'Create Questionnaire'
+                        'Submit'
                       )}
                     </button>
                   </div>
@@ -1022,7 +1102,7 @@ const QuestionnairesPage = () => {
               </div>
             </div>
           </div>
-        ) : null}
+        )}
         
         {/* Questionnaire List Component */}
         <QuestionnaireList 
@@ -1040,4 +1120,4 @@ const QuestionnairesPage = () => {
   );
 };
 
-export default QuestionnairesPage;
+export default QuestionnairesPage; 

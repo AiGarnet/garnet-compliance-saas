@@ -29,7 +29,21 @@ const nextConfig = {
   experimental: {
     // Enable server components
     serverComponentsExternalPackages: [],
-  }
+  },
+
+  // API rewrites to proxy requests to backend
+  async rewrites() {
+    return [
+      {
+        source: '/api/waitlist/:path*',
+        destination: 'http://localhost:5000/api/waitlist/:path*',
+      },
+      {
+        source: '/api/answer',
+        destination: 'http://localhost:5000/api/answer',
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig 
