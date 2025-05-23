@@ -306,7 +306,8 @@ const QuestionnairesPage = () => {
       const data = await response.json();
       
       // Now call the security questionnaire endpoint to get AI-generated answers
-      const securityEndpoint = '/api/answer';
+      const chatbotUrl = process.env.NEXT_PUBLIC_CHATBOT_URL || 'http://localhost:5000';
+      const securityEndpoint = `${chatbotUrl}/ask`;
       
       const aiResponses = await Promise.all(
         questions.map(async (question) => {
@@ -320,6 +321,8 @@ const QuestionnairesPage = () => {
             });
             
             if (!aiResponse.ok) {
+              const errorData = await aiResponse.json().catch(() => ({}));
+              console.error('AI response error:', errorData);
               return { question, answer: 'Unable to generate an answer. Please consult the compliance officer.' };
             }
             

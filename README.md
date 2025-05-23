@@ -11,10 +11,20 @@ A comprehensive vendor compliance and onboarding platform with a modern UI built
 - Vendors catalog with risk assessment visualization
 - Trust Portal for public-facing compliance information
 - Compliance framework tracking and evidence management
+- **🤖 AI-Powered Chatbot Microservice** - Flask-based compliance Q&A system using OpenAI GPT-4
 - Responsive design that works on all devices
 - Accessible UI components following best practices
 
 ## Features
+
+### 🤖 AI Chatbot Microservice (NEW)
+- **OpenAI GPT-4 Integration**: All answers generated using OpenAI API
+- **Compliance Context**: Uses internal policy data for accurate responses  
+- **Input Sanitization**: Automatically removes PII and sensitive information
+- **Specialized Prompts**: GDPR, SOC 2, HIPAA, and general compliance expertise
+- **Security Features**: Input validation, XSS protection, rate limiting ready
+- **Health Monitoring**: Built-in endpoints for service health and status
+- **Integration Ready**: Works seamlessly with existing questionnaire system
 
 ### Dashboard
 - Overview of compliance status with key metrics
@@ -24,6 +34,7 @@ A comprehensive vendor compliance and onboarding platform with a modern UI built
 
 ### Questionnaires
 - Manage and track compliance questionnaires
+- **AI-powered question answering** using the chatbot microservice
 - Filter by type, status, and due dates
 - Progress tracking with visual indicators
 - Detailed status overview for each assessment
@@ -58,6 +69,13 @@ A comprehensive vendor compliance and onboarding platform with a modern UI built
   - `components/`: Reusable UI components
   - `lib/`: Utility functions and shared code
 - `backend/`: Express.js API server
+- **`chatbot/`: Flask-based AI chatbot microservice**
+  - `app.py`: Main Flask application
+  - `services/`: OpenAI API client wrapper
+  - `models/`: Prompt templates for different compliance areas
+  - `utils/`: Input sanitization and validation
+  - `data/`: Compliance data (data_new.json)
+  - `tests/`: Comprehensive unit and integration tests
 - `.github/workflows/`: CI/CD configuration
 
 ## Design System
@@ -80,7 +98,7 @@ The application uses a consistent design system with:
 ### Local Installation
 
 1. Clone the repository
-2. Install dependencies for both projects:
+2. Install dependencies for all projects:
 
 ```bash
 # Install frontend dependencies
@@ -90,6 +108,10 @@ npm install
 # Install backend dependencies
 cd ../backend
 npm install
+
+# Install chatbot dependencies
+cd ../chatbot
+pip install -r requirements.txt
 ```
 
 ### Local Development
@@ -106,6 +128,36 @@ npm run dev
 ```bash
 cd backend
 npm run dev
+```
+
+#### 🤖 AI Chatbot Microservice
+
+```bash
+cd chatbot
+
+# Create .env file with your OpenAI API key
+echo "OPENAI_API_KEY=your_openai_api_key_here" > .env
+
+# Start the Flask service
+python start_server.py
+
+# OR run directly
+python app.py
+
+# Test the service (in another terminal)
+python test_integration.py
+```
+
+The chatbot service will start on http://localhost:5000 with these endpoints:
+- `GET /health` - Health check
+- `GET /status` - Service status and configuration  
+- `POST /ask` - Ask compliance questions
+
+**Example Usage:**
+```bash
+curl -X POST http://localhost:5000/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What are the GDPR data subject rights?"}'
 ```
 
 ### 🧪 Running in Mock/Test Mode

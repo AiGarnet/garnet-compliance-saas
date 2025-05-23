@@ -6,6 +6,7 @@ export function SecurityQuestionnaire() {
   const [answer, setAnswer] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [metadata, setMetadata] = useState<any>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,9 +18,12 @@ export function SecurityQuestionnaire() {
 
     setLoading(true);
     setError('');
+    setMetadata(null);
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/answer`, {
+      // Use the new Flask chatbot microservice endpoint
+      const chatbotUrl = process.env.NEXT_PUBLIC_CHATBOT_URL || 'http://localhost:5000';
+      const response = await fetch(`${chatbotUrl}/ask`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -28,11 +32,13 @@ export function SecurityQuestionnaire() {
       });
 
       if (!response.ok) {
-        throw new Error(`Server responded with ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server responded with ${response.status}`);
       }
 
       const data = await response.json();
       setAnswer(data.answer);
+      setMetadata(data.metadata);
     } catch (err: any) {
       setError(err.message || 'Failed to get answer');
     } finally {
@@ -52,34 +58,45 @@ export function SecurityQuestionnaire() {
           <textarea
             id="question"
             rows={4}
-            className="w-full p-3 border border-gray-300 rounded-md"
+            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            placeholder="e.g., What data privacy regulations does your company comply with?"
+            placeholder="e.g., What are the GDPR data subject rights? How do we handle SOC 2 audits? What are our HIPAA compliance requirements?"
           />
         </div>
         
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? 'Processing...' : 'Get Answer'}
         </button>
       </form>
 
       {error && (
-        <div className="p-4 mb-6 bg-red-100 border-l-4 border-red-500 text-red-700">
-          <p>{error}</p>
+        <div className="p-4 mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 rounded-md">
+          <p><strong>Error:</strong> {error}</p>
         </div>
       )}
 
       {answer && (
-        <div className="border border-gray-300 rounded-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Answer:</h2>
-          <div className="prose">
+        <div className="border border-gray-300 rounded-md p-6 bg-white shadow-sm">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">Answer:</h2>
+          <div className="prose max-w-none">
             <ReactMarkdown>{answer}</ReactMarkdown>
           </div>
+          
+          {metadata && (
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <h3 className="text-sm font-medium text-gray-600 mb-2">Response Details:</h3>
+              <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+                <span>Sources: {metadata.relevant_sources}</span>
+                <span>Tokens: {metadata.tokens_used}</span>
+                <span>Model: {metadata.model}</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
