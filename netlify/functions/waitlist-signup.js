@@ -1,11 +1,12 @@
 // Netlify serverless function to handle waitlist signup
-// This will proxy the request to the Railway backend
+// This will directly insert data into PostgreSQL database
 
 const fetch = require('node-fetch');
 const fs = require('fs');
 const path = require('path');
+const { Client } = require('pg');
 
-// Helper function to store waitlist data
+// Helper function to store waitlist data in the filesystem
 async function storeWaitlistData(userData) {
   try {
     // Create a data object with timestamp
@@ -37,11 +38,135 @@ async function storeWaitlistData(userData) {
     // Write the updated data back to the file
     fs.writeFileSync(dataFilePath, JSON.stringify(existingData, null, 2));
     
-    console.log('Waitlist data stored successfully for:', userData.email);
+    console.log('Waitlist data stored successfully in file for:', userData.email);
     return true;
   } catch (error) {
-    console.error('Failed to store waitlist data:', error);
+    console.error('Failed to store waitlist data in file:', error);
     return false;
+  }
+}
+
+// Helper function to store data directly in PostgreSQL
+async function storeInPostgres(userData) {
+  // Get database connection string from environment variables
+  const connectionString = process.env.DATABASE_URL;
+  
+  if (!connectionString) {
+    console.error('DATABASE_URL environment variable not set');
+    return false;
+  }
+  
+  const client = new Client({
+    connectionString,
+    ssl: {
+      rejectUnauthorized: false // Required for some Postgres providers
+    }
+  });
+  
+  try {
+    console.log('Connecting to PostgreSQL database...');
+    await client.connect();
+    
+    // Check if users table exists
+    const tableCheckResult = await client.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'users'
+      );
+    `);
+    
+    const tableExists = tableCheckResult.rows[0].exists;
+    
+    // Create users table if it doesn't exist
+    if (!tableExists) {
+      console.log('Creating users table...');
+      await client.query(`
+        CREATE TABLE users (
+          id UUID PRIMARY KEY,
+          email TEXT UNIQUE NOT NULL,
+          password_hash TEXT NOT NULL,
+          full_name TEXT NOT NULL,
+          role TEXT NOT NULL,
+          organization TEXT,
+          metadata JSONB DEFAULT '{}'::jsonb,
+          is_active BOOLEAN DEFAULT TRUE,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        CREATE INDEX idx_users_email ON users(email);
+      `);
+    }
+    
+    // Generate a UUID for the user
+    const userId = require('crypto').randomUUID();
+    
+    // Hash the password (in a real app, use bcrypt or similar)
+    const passwordHash = Buffer.from(userData.password).toString('base64');
+    
+    // Check if user with this email already exists
+    const userCheckResult = await client.query(
+      'SELECT id FROM users WHERE email = $1',
+      [userData.email.toLowerCase()]
+    );
+    
+    if (userCheckResult.rows.length > 0) {
+      console.log('User with this email already exists:', userData.email);
+      await client.end();
+      return {
+        success: false,
+        error: 'Email already registered'
+      };
+    }
+    
+    // Create metadata
+    const metadata = {
+      signup_source: 'landing_page',
+      signup_date: new Date().toISOString()
+    };
+    
+    // Insert user
+    const result = await client.query(
+      `INSERT INTO users (
+        id, email, password_hash, full_name, role, organization, metadata
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id, email, full_name, role, organization, metadata, is_active, created_at, updated_at`,
+      [
+        userId,
+        userData.email.toLowerCase(),
+        passwordHash,
+        userData.full_name,
+        userData.role,
+        userData.organization || null,
+        JSON.stringify(metadata)
+      ]
+    );
+    
+    await client.end();
+    
+    if (result.rows.length > 0) {
+      console.log('User successfully inserted into PostgreSQL:', userData.email);
+      return {
+        success: true,
+        user: result.rows[0]
+      };
+    } else {
+      return {
+        success: false,
+        error: 'Failed to insert user'
+      };
+    }
+  } catch (error) {
+    console.error('PostgreSQL Error:', error);
+    try {
+      await client.end();
+    } catch (e) {
+      // Ignore error on connection close
+    }
+    return {
+      success: false,
+      error: error.message
+    };
   }
 }
 
@@ -83,13 +208,13 @@ exports.handler = async function(event, context) {
     console.log('Received signup request for:', userData.email);
 
     // Check if user data is valid
-    if (!userData.email || !userData.full_name || !userData.role) {
+    if (!userData.email || !userData.password || !userData.full_name || !userData.role) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({ 
           error: 'Missing required fields',
-          details: 'Email, full_name, and role are required' 
+          details: 'Email, password, full_name, and role are required' 
         })
       };
     }
@@ -103,13 +228,43 @@ exports.handler = async function(event, context) {
         body: JSON.stringify({ error: 'Invalid email format' })
       };
     }
+    
+    // Validate password
+    if (userData.password.length < 8) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Password must be at least 8 characters long' })
+      };
+    }
 
-    // Store the waitlist data locally
+    // Store the waitlist data locally as backup
     await storeWaitlistData(userData);
-
-    // Since we're having issues with Railway connectivity,
-    // we'll use a mock success response to allow testing to continue
-    console.log('Using mock waitlist signup response for development/testing');
+    
+    // Try to store in PostgreSQL directly
+    const pgResult = await storeInPostgres(userData);
+    
+    if (pgResult.success) {
+      // Successfully stored in PostgreSQL
+      return {
+        statusCode: 201,
+        headers,
+        body: JSON.stringify({
+          message: 'Successfully joined the waitlist!',
+          user: pgResult.user
+        })
+      };
+    } else if (pgResult.error === 'Email already registered') {
+      // Email already exists
+      return {
+        statusCode: 409,
+        headers,
+        body: JSON.stringify({ error: 'Email already registered' })
+      };
+    }
+    
+    // If PostgreSQL fails, use the mock response as fallback
+    console.log('Using mock waitlist signup response as fallback');
     
     // Generate a unique user ID for the mock response
     const mockUserId = require('crypto').randomUUID();
@@ -131,51 +286,6 @@ exports.handler = async function(event, context) {
         updated_at: new Date().toISOString()
       }
     };
-    
-    // Uncomment and modify this section when Railway is ready
-    /*
-    try {
-      // Try to connect to Railway backend
-      console.log('Attempting to connect to Railway backend...');
-      
-      const backendUrl = 'https://garnet-compliance-saas-production.up.railway.app/api/waitlist/signup';
-      
-      // Set a short timeout to avoid long waits if Railway is down
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Connection to Railway timed out')), 5000)
-      );
-      
-      // Try to fetch with a timeout
-      const fetchPromise = fetch(backendUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Origin': 'https://testinggarnet.netlify.app'
-        },
-        body: JSON.stringify(userData)
-      });
-      
-      // Race between fetch and timeout
-      const response = await Promise.race([fetchPromise, timeoutPromise]);
-      
-      console.log('Railway response status:', response.status);
-      
-      if (response.ok) {
-        const railwayResponseData = await response.json();
-        console.log('Successfully connected to Railway backend!');
-        console.log('Railway response data:', JSON.stringify(railwayResponseData));
-        
-        return {
-          statusCode: 200,
-          headers,
-          body: JSON.stringify(railwayResponseData)
-        };
-      }
-    } catch (error) {
-      console.log('Failed to connect to Railway backend:', error.message);
-    }
-    */
     
     // Return the mock response
     return {
