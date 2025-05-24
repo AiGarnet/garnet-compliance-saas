@@ -67,6 +67,12 @@ exports.handler = async function(event, context) {
       const dbData = await readDatabaseWaitlistData();
       responseData.databaseData = dbData;
     }
+    
+    // Test database connection by creating a test record
+    if (action === 'test-connection') {
+      const testResult = await testDatabaseConnection();
+      responseData.testResult = testResult;
+    }
 
     // Get environment variables (sanitized)
     if (action === 'env') {
@@ -246,6 +252,105 @@ async function readDatabaseWaitlistData() {
       users: result.rows
     };
   } catch (error) {
+    try {
+      await client.end();
+    } catch (e) {
+      // Ignore
+    }
+    
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// Helper function to test database connection
+async function testDatabaseConnection() {
+  const connectionString = process.env.DATABASE_URL;
+  
+  if (!connectionString) {
+    return {
+      success: false,
+      error: 'DATABASE_URL environment variable not set'
+    };
+  }
+  
+  const client = new Client({
+    connectionString,
+    ssl: {
+      rejectUnauthorized: false
+    }
+  });
+  
+  try {
+    await client.connect();
+    
+    // Create test UUID
+    const testId = require('crypto').randomUUID();
+    const testEmail = `test-${testId.slice(0, 8)}@example.com`;
+    const passwordHash = Buffer.from('testpassword123').toString('base64');
+    
+    console.log('Attempting to create test user with ID:', testId);
+    
+    // Check if users table exists
+    const tableCheckResult = await client.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_name = 'users'
+      );
+    `);
+    
+    const tableExists = tableCheckResult.rows[0].exists;
+    
+    // Create users table if it doesn't exist
+    if (!tableExists) {
+      console.log('Creating users table...');
+      await client.query(`
+        CREATE TABLE users (
+          id UUID PRIMARY KEY,
+          email TEXT UNIQUE NOT NULL,
+          password_hash TEXT NOT NULL,
+          full_name TEXT NOT NULL,
+          role TEXT NOT NULL,
+          organization TEXT,
+          metadata JSONB DEFAULT '{}'::jsonb,
+          is_active BOOLEAN DEFAULT TRUE,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        CREATE INDEX idx_users_email ON users(email);
+      `);
+    }
+    
+    // Insert a test record
+    const result = await client.query(`
+      INSERT INTO users (
+        id, email, password_hash, full_name, role, organization, metadata
+      ) 
+      VALUES (
+        $1, $2, $3, $4, $5, $6, $7
+      )
+      RETURNING id, email, full_name, role;
+    `, [
+      testId,
+      testEmail,
+      passwordHash,
+      'Test User',
+      'user',
+      'Test Organization',
+      JSON.stringify({ test: 'data', created_via: 'admin-test' })
+    ]);
+    
+    await client.end();
+    
+    return {
+      success: true,
+      testUser: result.rows[0]
+    };
+  } catch (error) {
+    console.error('Test connection error:', error);
     try {
       await client.end();
     } catch (e) {

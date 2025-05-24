@@ -51,6 +51,11 @@ async function storeInPostgres(userData) {
   // Get database connection string from environment variables
   const connectionString = process.env.DATABASE_URL;
   
+  // Log connection attempt (mask sensitive info)
+  const maskedConnectionString = connectionString ? 
+    connectionString.replace(/\/\/(.+?)@/, '//****:****@') : 'not set';
+  console.log('Database connection string:', maskedConnectionString);
+  
   // Log connection attempt (without exposing full credentials)
   console.log('Database connection string available:', !!connectionString);
   
