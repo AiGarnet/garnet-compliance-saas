@@ -97,12 +97,12 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
     setErrors({});
 
     try {
-      // Use Netlify's serverless function to handle the request
-      // This will run server-side and avoid CORS issues
+      // Use Netlify's serverless function directly
       console.log('Submitting waitlist form to Netlify function');
       console.log('Form data:', JSON.stringify(formData));
       
-      const response = await fetch('/api/waitlist/signup', {
+      // Call the Netlify function directly instead of through the Next.js API
+      const response = await fetch('/.netlify/functions/waitlist-signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
