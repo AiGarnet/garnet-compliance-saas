@@ -1,36 +1,26 @@
 /**
- * Database initialization script for both local and Netlify environments
+ * Database initialization script
  * Run with: node scripts/init-db.js
  */
 
-require('dotenv').config();
 const { Pool } = require('pg');
 
-// Check if database URL is available
-const DATABASE_URL = process.env.DATABASE_URL;
+// Database connection configuration
+const pool = new Pool({
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5432'),
+  database: process.env.DB_NAME || 'garnet_ai',
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD || 'Sonasuhani1',
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
 
-async function initDb() {
-  // If no database URL is provided, just warn and exit successfully
-  if (!DATABASE_URL) {
-    console.warn('No DATABASE_URL provided. Skipping database initialization.');
-    return;
-  }
-
-  console.log('Initializing database...');
-  
-  // Create database connection
-  const pool = new Pool({
-    connectionString: DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false
-    }
-  });
-
-  let client;
+async function initializeDatabase() {
+  const client = await pool.connect();
   try {
-    client = await pool.connect();
+    console.log('Creating users table if it does not exist...');
     
-    // Create users table if it doesn't exist
+    // Create users table
     await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id UUID PRIMARY KEY,
@@ -44,27 +34,21 @@ async function initDb() {
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
-      
+    `);
+    
+    // Create index on email
+    await client.query(`
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     `);
     
-    console.log('Database initialized successfully');
+    console.log('Database initialized successfully!');
   } catch (error) {
-    console.error('Error initializing database:', error.message);
-    
-    // Don't fail the build if database initialization fails
-    console.log('Continuing build process despite database initialization failure');
+    console.error('Error initializing database:', error);
   } finally {
-    if (client) {
-      client.release();
-    }
-    await pool.end().catch(e => console.warn('Error closing pool:', e.message));
+    client.release();
+    await pool.end();
   }
 }
 
 // Run the initialization
-initDb().catch(err => {
-  console.error('Unhandled error in database initialization:', err);
-  // Continue with build even if DB init fails
-  console.log('Continuing build process despite database initialization failure');
-}); 
+initializeDatabase().catch(console.error); 

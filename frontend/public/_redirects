@@ -1,9 +1,2 @@
-# Netlify redirects file
-# Redirect API requests to Netlify Functions
-/api/health              /.netlify/functions/health          200
-/api/init-db             /.netlify/functions/init-db         200
-/api/auth/signup         /.netlify/functions/api             200
-/api/auth/login          /.netlify/functions/api             200
-
-# Let the Next.js server handle all other routes
-/*                       /.netlify/functions/___netlify-handler    200 
+# SPA catch-all rule - serve index.html for all routes
+/* /index.html 200 
