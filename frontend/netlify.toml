@@ -1,10 +1,20 @@
 [build]
-  command = "npm run build"
+  command = "npm run build:netlify"
   publish = ".next"
 
 [build.environment]
   NODE_VERSION = "18"
   NPM_VERSION = "9"
+  # Database configuration - replace with your production values
+  DB_HOST = "localhost"
+  DB_PORT = "5432"
+  DB_NAME = "garnet_ai"
+  DB_USER = "postgres"
+  DB_PASSWORD = "Sonasuhani1"
+  # JWT configuration
+  JWT_SECRET = "your-secure-secret-key-change-this-in-production"
+  # Next.js configuration
+  NEXT_PUBLIC_API_URL = "https://your-netlify-site-name.netlify.app"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
@@ -17,4 +27,7 @@
 [dev]
   command = "npm run dev"
   port = 3000
-  framework = "nextjs" 
+  framework = "nextjs"
+
+# Note: In a real production environment, set these environment variables
+# through the Netlify UI instead of storing them in this file. 
