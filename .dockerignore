@@ -1,0 +1,7 @@
+# Ignore everything except the backend directory
+/*
+!/backend/
+
+# Then ignore node_modules inside backend
+/backend/node_modules/
+/backend/dist/ 
