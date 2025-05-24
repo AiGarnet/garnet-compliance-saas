@@ -31,46 +31,8 @@ const nextConfig = {
     serverComponentsExternalPackages: [],
   },
 
-  // API rewrites to proxy requests to backend
-  async rewrites() {
-    // Get backend URL from env or use Railway URL as default
-    const backendUrl = process.env.BACKEND_URL || 'https://garnet-compliance-saas-production.up.railway.app';
-    console.log('Using backend URL:', backendUrl);
-    
-    return [
-      {
-        source: '/api/waitlist/:path*',
-        destination: `${backendUrl}/api/waitlist/:path*`,
-        // Add explicit CORS header configuration to fix Netlify to Railway routing
-        has: [
-          {
-            type: 'header',
-            key: 'Content-Type',
-            value: '(.*)',
-          },
-        ],
-      },
-      {
-        source: '/api/answer',
-        destination: `${backendUrl}/api/answer`,
-      },
-    ]
-  },
-
-  // Add headers configuration to enable CORS
-  async headers() {
-    return [
-      {
-        source: '/api/:path*',
-        headers: [
-          { key: 'Access-Control-Allow-Credentials', value: 'true' },
-          { key: 'Access-Control-Allow-Origin', value: '*' },
-          { key: 'Access-Control-Allow-Methods', value: 'GET,DELETE,PATCH,POST,PUT' },
-          { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version' },
-        ],
-      },
-    ]
-  },
+  // Note: When using 'output: export', rewrites and headers won't work
+  // They are removed since they're incompatible with static export
 }
 
 module.exports = nextConfig 
