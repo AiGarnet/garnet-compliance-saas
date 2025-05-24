@@ -19,34 +19,40 @@
 [[plugins]]
   package = "@netlify/plugin-functions-install-core"
 
+# Make sure JavaScript files are served with correct content type
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Content-Type = "application/javascript"
+
+# Make sure JavaScript chunk files are served with correct content type
+[[headers]]
+  for = "/_next/static/chunks/*.js"
+  [headers.values]
+    Content-Type = "application/javascript"
+
+# Make sure _next/static files are properly served with long cache
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
 # API redirect for waitlist
 [[redirects]]
   from = "/api/waitlist/*"
   to = "/.netlify/functions/waitlist-signup"
   status = 200
 
-# SPA redirect
+# SPA redirect for client-side routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  force = true
+  force = false
 
 [context]
   [context.production]
     command = "npm install && npm run build"
 
-    [[context.production.headers]]
-    for = "/_next/static/*"
-
-      [context.production.headers.values]
-      Cache-Control = "public, max-age=31536000, immutable"
-
   [context.Dev-testing]
     command = "npm install && npm run build"
-
-    [[context.Dev-testing.headers]]
-    for = "/_next/static/*"
-
-      [context.Dev-testing.headers.values]
-      Cache-Control = "public, max-age=31536000, immutable"
