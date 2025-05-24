@@ -33,14 +33,17 @@ const nextConfig = {
 
   // API rewrites to proxy requests to backend
   async rewrites() {
+    // Get backend URL from env or use Railway URL as default
+    const backendUrl = process.env.BACKEND_URL || 'https://garnet-compliance-saas-production.up.railway.app';
+    
     return [
       {
         source: '/api/waitlist/:path*',
-        destination: 'http://localhost:5000/api/waitlist/:path*',
+        destination: `${backendUrl}/api/waitlist/:path*`,
       },
       {
         source: '/api/answer',
-        destination: 'http://localhost:5000/api/answer',
+        destination: `${backendUrl}/api/answer`,
       },
     ]
   },
