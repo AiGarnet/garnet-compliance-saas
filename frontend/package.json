@@ -8,6 +8,7 @@
     "build": "next build",
     "build:netlify": "next build && npm run ensure-netlify-functions",
     "ensure-netlify-functions": "node scripts/ensure-netlify-functions.js",
+    "verify-netlify": "node scripts/verify-netlify.js",
     "build:optimized": "NODE_ENV=production next build && npm run css-stats",
     "start": "next start",
     "lint": "next lint",

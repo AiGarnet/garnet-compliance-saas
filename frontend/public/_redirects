@@ -5,6 +5,9 @@
 /api/auth/signup         /.netlify/functions/api             200
 /api/auth/login          /.netlify/functions/api             200
 
+# Let the Next.js server handle all other routes
+/*                       /.netlify/functions/___netlify-handler    200
+
 # Ensure Next.js handles all other routes
 /_next/*                 /_next/:splat                       200
 /static/*                /static/:splat                      200
