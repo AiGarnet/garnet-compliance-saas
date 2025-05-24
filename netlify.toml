@@ -12,6 +12,10 @@
   node_bundler = "esbuild"
   included_files = ["../netlify/functions/**"]
 
+# Add the Netlify Functions Install Core plugin
+[[plugins]]
+  package = "@netlify/plugin-functions-install-core"
+
 [[redirects]]
   from = "/api/waitlist/*"
   to = "/.netlify/functions/waitlist-signup"
