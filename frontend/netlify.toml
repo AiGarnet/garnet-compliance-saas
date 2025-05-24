@@ -15,10 +15,10 @@
   # Increase node memory limit
   NODE_OPTIONS = "--max_old_space_size=4096"
   
-# Install required dependencies for pg and other modules
+# Use the Next.js plugin
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-
+  
 # Handle server-side dependencies
 [[plugins]]
   package = "@netlify/plugin-functions-install-core"
