@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
+const fetch = require('node-fetch');
 
 // Initialize PostgreSQL connection pool
 const createPool = () => {
@@ -89,76 +90,52 @@ const userExists = async (email) => {
   }
 };
 
-exports.handler = async (event, context) => {
-  console.log('Netlify function: waitlist-signup invoked');
-  
+// Netlify serverless function to handle waitlist signup
+// This will proxy the request to the Railway backend
+
+exports.handler = async function(event, context) {
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      body: JSON.stringify({ error: 'Method not allowed' }),
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+      headers: { 'Content-Type': 'application/json' }
     };
   }
 
   try {
-    // Parse the request body
-    const data = JSON.parse(event.body);
-    const { email, password, full_name, role, organization } = data;
+    // Parse the incoming request body
+    const userData = JSON.parse(event.body);
+    console.log('Received signup request for:', userData.email);
 
-    // Basic validation
-    if (!email || !password || !full_name || !role) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Missing required fields' }),
-      };
-    }
-
-    // Check if user already exists
-    console.log('Checking if user exists in database...');
-    const exists = await userExists(email);
-    if (exists) {
-      return {
-        statusCode: 409,
-        body: JSON.stringify({ error: 'Email already registered' }),
-      };
-    }
-
-    // Create new user
-    console.log('Creating new user in database...');
-    const newUser = await createUser({
-      email,
-      password,
-      full_name,
-      role,
-      organization
+    // Forward the request to the Railway backend
+    const backendUrl = 'https://garnet-compliance-saas-production.up.railway.app/api/waitlist/signup';
+    
+    const response = await fetch(backendUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(userData)
     });
 
-    // Return success response
+    // Get the response data
+    const responseData = await response.json();
+    
+    // Return the response with appropriate status
     return {
-      statusCode: 201,
-      body: JSON.stringify({ 
-        message: 'Successfully joined the waitlist!',
-        user: newUser,
-        storage: 'postgresql_netlify'
-      }),
+      statusCode: response.status,
+      body: JSON.stringify(responseData),
+      headers: { 'Content-Type': 'application/json' }
     };
   } catch (error) {
-    console.error('Error processing waitlist signup on Netlify:', error);
-    // Handle specific errors
-    if (error.message === 'Email already registered') {
-      return {
-        statusCode: 409,
-        body: JSON.stringify({ error: error.message }),
-      };
-    } else if (error.message === 'Database connection not available') {
-      return {
-        statusCode: 503,
-        body: JSON.stringify({ error: 'Database service unavailable' }),
-      };
-    }
+    console.error('Error forwarding request to backend:', error);
+    
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Server error processing your request' }),
+      body: JSON.stringify({ error: 'Error forwarding request to backend' }),
+      headers: { 'Content-Type': 'application/json' }
     };
   }
 }; 
