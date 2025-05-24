@@ -2,6 +2,48 @@
 // This will proxy the request to the Railway backend
 
 const fetch = require('node-fetch');
+const fs = require('fs');
+const path = require('path');
+
+// Helper function to store waitlist data
+async function storeWaitlistData(userData) {
+  try {
+    // Create a data object with timestamp
+    const signupData = {
+      ...userData,
+      timestamp: new Date().toISOString(),
+      id: require('crypto').randomUUID()
+    };
+    
+    // File path for waitlist data
+    // This will be in the Netlify function's temporary directory
+    const dataFilePath = path.join('/tmp', 'waitlist-data.json');
+    
+    // Check if file exists and read existing data
+    let existingData = [];
+    try {
+      if (fs.existsSync(dataFilePath)) {
+        const fileData = fs.readFileSync(dataFilePath, 'utf8');
+        existingData = JSON.parse(fileData);
+      }
+    } catch (error) {
+      console.log('Error reading existing waitlist data:', error.message);
+      // Continue with empty array if file doesn't exist or can't be read
+    }
+    
+    // Add new signup to the array
+    existingData.push(signupData);
+    
+    // Write the updated data back to the file
+    fs.writeFileSync(dataFilePath, JSON.stringify(existingData, null, 2));
+    
+    console.log('Waitlist data stored successfully for:', userData.email);
+    return true;
+  } catch (error) {
+    console.error('Failed to store waitlist data:', error);
+    return false;
+  }
+}
 
 exports.handler = async function(event, context) {
   // Log the request for debugging
@@ -61,6 +103,9 @@ exports.handler = async function(event, context) {
         body: JSON.stringify({ error: 'Invalid email format' })
       };
     }
+
+    // Store the waitlist data locally
+    await storeWaitlistData(userData);
 
     // Since we're having issues with Railway connectivity,
     // we'll use a mock success response to allow testing to continue

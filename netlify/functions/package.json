@@ -1,16 +1,19 @@
 {
-  "name": "functions",
+  "name": "netlify-functions",
   "version": "1.0.0",
-  "description": "",
-  "main": "questionnaire.js",
+  "description": "Netlify serverless functions for GARNET compliance",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "GARNET Team",
+  "license": "MIT",
   "type": "commonjs",
   "dependencies": {
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.6.1",
+    "crypto": "^1.0.1",
+    "fs": "0.0.1-security",
+    "path": "^0.12.7"
   }
 }
