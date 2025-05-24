@@ -3,13 +3,18 @@
   command = "npm run build:netlify"
   publish = ".next"
   functions = ".netlify/functions"
+  ignore = "false" # Never ignore - ensure all errors are visible
 
 [build.environment]
   NEXT_USE_NETLIFY_EDGE = "true"
   NODE_VERSION = "18"
-  # Add these environment variables for PostgreSQL
+  # For PostgreSQL connection
   POSTGRES_PRISMA_URL = "${env:DATABASE_URL}"
   POSTGRES_URL_NON_POOLING = "${env:DATABASE_URL}"
+  # Prevent build from failing if DB initialization fails
+  SKIP_DB_INIT_ON_ERROR = "true"
+  # Increase node memory limit
+  NODE_OPTIONS = "--max_old_space_size=4096"
   
 # Install required dependencies for pg and other modules
 [[plugins]]
@@ -21,9 +26,15 @@
 
 # Force installation of pg and other dependencies
 [functions]
-  included_files = ["node_modules/pg/**", "node_modules/bcryptjs/**", "node_modules/jose/**"]
-  external_node_modules = ["pg", "bcryptjs", "jose"]
   node_bundler = "esbuild"
+  external_node_modules = ["pg", "bcryptjs", "jose", "jsonwebtoken", "fs-extra"]
+
+# Health check
+[[redirects]]
+  from = "/api/health"
+  to = "/.netlify/functions/health"
+  status = 200
+  force = true
 
 # Initialize database
 [[redirects]]

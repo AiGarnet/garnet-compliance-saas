@@ -1,66 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SignJWT } from 'jose';
-import bcrypt from 'bcryptjs';
-import { userDb } from '@/lib/db';
-import { JWT_SECRET, JWT_EXPIRY } from '@/lib/env';
-import { findUserByEmail } from '../signup/route';
 
-export async function POST(request: NextRequest) {
-  try {
-    const { email, password } = await request.json();
-    
-    // Validate required fields
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      );
-    }
-    
-    // Try to find user in database first
-    let user = await userDb.findUserByEmail(email);
-    
-    // If not found in DB, try in-memory array (for backward compatibility)
-    if (!user) {
-      const memoryUser = findUserByEmail(email);
-      if (!memoryUser) {
-        return NextResponse.json(
-          { error: 'Invalid email or password' },
-          { status: 401 }
-        );
-      }
-      user = memoryUser;
-    }
-    
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      );
-    }
-    
-    // Generate JWT token using jose
-    const encoder = new TextEncoder();
-    const token = await new SignJWT({ id: user.id, email: user.email })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setIssuedAt()
-      .setExpirationTime(JWT_EXPIRY)
-      .sign(encoder.encode(JWT_SECRET));
-    
-    // Return success response (don't include password hash)
-    const { password_hash, ...userResponse } = user;
-    return NextResponse.json({
-      message: 'Login successful',
-      token,
-      user: userResponse
-    });
-    
-  } catch (error) {
-    console.error('Login error:', error);
+export async function POST(req: NextRequest) {
+  // When running on Netlify, the function is handled by Netlify Functions
+  // This route only runs for local development
+  if (process.env.NETLIFY === 'true') {
     return NextResponse.json(
-      { error: 'Failed to process request' },
+      { error: 'This route is handled by Netlify Functions in production' }, 
+      { status: 307, headers: { 'Location': '/.netlify/functions/api' } }
+    );
+  }
+
+  try {
+    const body = await req.json();
+    const { email, password } = body;
+
+    // Forward request to the API endpoint
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+    
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    console.error('Error in login route:', error);
+    return NextResponse.json(
+      { error: 'Failed to process login request' },
       { status: 500 }
     );
   }
