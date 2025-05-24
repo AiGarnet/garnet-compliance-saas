@@ -11,7 +11,8 @@
     "test": "jest",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "css-stats": "node lib/css-stats.js"
+    "css-stats": "node lib/css-stats.js",
+    "postinstall": "cd ../netlify && npm install"
   },
   "dependencies": {
     "@types/pg": "^8.15.2",

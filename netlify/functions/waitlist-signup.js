@@ -10,9 +10,12 @@ const createPool = () => {
     return null;
   }
 
+  // For Netlify deployment, we need to enable SSL
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   return new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: isProduction ? { rejectUnauthorized: false } : false
   });
 };
 
@@ -53,7 +56,9 @@ const createUser = async (userData) => {
       new Date() // Both created_at and updated_at
     ];
     
+    console.log('Executing database query on Netlify...');
     const result = await client.query(query, values);
+    console.log('User created successfully in database on Netlify');
     return result.rows[0];
   } catch (error) {
     console.error('Error creating user:', error);
@@ -85,6 +90,8 @@ const userExists = async (email) => {
 };
 
 exports.handler = async (event, context) => {
+  console.log('Netlify function: waitlist-signup invoked');
+  
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
     return {
@@ -107,6 +114,7 @@ exports.handler = async (event, context) => {
     }
 
     // Check if user already exists
+    console.log('Checking if user exists in database...');
     const exists = await userExists(email);
     if (exists) {
       return {
@@ -116,6 +124,7 @@ exports.handler = async (event, context) => {
     }
 
     // Create new user
+    console.log('Creating new user in database...');
     const newUser = await createUser({
       email,
       password,
@@ -129,11 +138,12 @@ exports.handler = async (event, context) => {
       statusCode: 201,
       body: JSON.stringify({ 
         message: 'Successfully joined the waitlist!',
-        user: newUser
+        user: newUser,
+        storage: 'postgresql_netlify'
       }),
     };
   } catch (error) {
-    console.error('Error processing waitlist signup:', error);
+    console.error('Error processing waitlist signup on Netlify:', error);
     // Handle specific errors
     if (error.message === 'Email already registered') {
       return {
