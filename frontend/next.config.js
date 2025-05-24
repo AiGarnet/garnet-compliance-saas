@@ -25,10 +25,33 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   
-  // Experimental features for better Netlify compatibility
+  // Adding webpack configuration for handling node modules
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Mark pg and other server-only modules as external
+      // This prevents them from being bundled by webpack
+      config.externals.push('pg', 'pg-native', 'bcryptjs', 'jose');
+    }
+    
+    return config;
+  },
+  
+  // Adding transpilePackages to ensure compatibility
+  transpilePackages: [],
+  
+  // Additional environment variables to make available
+  env: {
+    DB_HOST: process.env.DB_HOST || 'localhost',
+    DB_PORT: process.env.DB_PORT || '5432',
+    DB_NAME: process.env.DB_NAME || 'garnet_ai',
+    DB_USER: process.env.DB_USER || 'postgres',
+    DB_PASSWORD: process.env.DB_PASSWORD || 'Sonasuhani1',
+    JWT_SECRET: process.env.JWT_SECRET || 'your-secure-secret-key-change-this-in-production',
+  },
+  
+  // Specify which serverless function dependencies to exclude
   experimental: {
-    // Enable server components
-    serverComponentsExternalPackages: [],
+    serverComponentsExternalPackages: ['pg', 'pg-native', 'bcryptjs', 'jose'],
   },
 
   // API rewrites to proxy requests to backend

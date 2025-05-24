@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/init-db.js",
     "build": "next build",
     "build:optimized": "NODE_ENV=production next build && npm run css-stats",
     "start": "next start",
@@ -14,6 +15,7 @@
     "css-stats": "node lib/css-stats.js"
   },
   "dependencies": {
+    "@netlify/plugin-nextjs": "^4.41.3",
     "@types/pg": "^8.15.2",
     "bcryptjs": "^3.0.2",
     "clsx": "^2.1.1",
@@ -78,5 +80,8 @@
     "extends": [
       "plugin:storybook/recommended"
     ]
+  },
+  "overrides": {
+    "pg": "8.11.3"
   }
 }

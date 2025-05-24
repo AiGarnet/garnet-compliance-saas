@@ -1,14 +1,38 @@
 import { Pool } from 'pg';
 import { DB_CONFIG } from './env';
 
-// Create a database connection pool
-const pool = new Pool(DB_CONFIG);
+// Create a database connection pool with fallback for Netlify environment
+const createPool = () => {
+  // Check if we're in a Netlify environment (function)
+  const isNetlify = process.env.NETLIFY === 'true';
+  
+  if (isNetlify) {
+    console.log('Running in Netlify environment, using DATABASE_URL if available');
+    // In Netlify, we'll prefer the DATABASE_URL environment variable
+    if (process.env.DATABASE_URL) {
+      return new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: {
+          rejectUnauthorized: false
+        }
+      });
+    }
+  }
+  
+  // Fall back to configuration from env.ts
+  return new Pool(DB_CONFIG);
+};
+
+const pool = createPool();
 
 // Helper function to execute database queries
 export async function executeQuery(text: string, params: any[] = []) {
   const client = await pool.connect();
   try {
     return await client.query(text, params);
+  } catch (error) {
+    console.error('Database query error:', error);
+    throw error;
   } finally {
     client.release();
   }
@@ -38,6 +62,8 @@ export async function initDb() {
     console.log('Database initialized successfully');
   } catch (error) {
     console.error('Failed to initialize database:', error);
+    // Don't throw error here to allow the application to start
+    // even if the database initialization fails
   }
 }
 
@@ -86,8 +112,16 @@ export const userDb = {
 };
 
 // Initialize the database when this module is imported
+// But only if we're not in a test environment
 if (process.env.NODE_ENV !== 'test') {
-  initDb().catch(console.error);
+  // Wrap in try/catch to prevent app from crashing if DB isn't available
+  try {
+    initDb().catch(error => {
+      console.error('Database initialization error:', error);
+    });
+  } catch (error) {
+    console.error('Error during database module initialization:', error);
+  }
 }
 
 export default pool; 

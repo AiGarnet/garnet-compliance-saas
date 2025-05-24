@@ -1,0 +1,54 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NEXT_USE_NETLIFY_EDGE = "true"
+  NODE_VERSION = "18"
+  
+# Install required dependencies for pg and other modules
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Handle server-side dependencies
+[[plugins]]
+  package = "@netlify/plugin-functions-install-core"
+
+# Force installation of pg and other dependencies
+[functions]
+  included_files = ["node_modules/pg/**", "node_modules/bcryptjs/**", "node_modules/jose/**"]
+  external_node_modules = ["pg", "bcryptjs", "jose"]
+  node_bundler = "esbuild"
+
+# Define redirects for API routes
+[[redirects]]
+  from = "/api/auth/signup"
+  to = "/.netlify/functions/api"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/auth/login"
+  to = "/.netlify/functions/api"
+  status = 200
+  force = true
+  
+# Default redirect
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  
+# Add edge functions configuration for Netlify
+[build.processing]
+  skip_processing = false
+[build.processing.css]
+  bundle = false
+  minify = false
+[build.processing.js]
+  bundle = false
+  minify = false
+[build.processing.html]
+  pretty_urls = true
+[build.processing.images]
+  compress = false 
