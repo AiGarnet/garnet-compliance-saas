@@ -97,46 +97,62 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
     setErrors({});
 
     try {
-      // Direct API call to Railway backend with no proxy
+      // Direct API call to Railway backend with additional workarounds for CORS
       const backendUrl = 'https://garnet-compliance-saas-production.up.railway.app';
       const apiUrl = `${backendUrl}/api/waitlist/signup`;
       
       console.log('Submitting waitlist form directly to Railway:', apiUrl);
       console.log('Form data:', JSON.stringify(formData));
       
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        mode: 'cors',
-        credentials: 'omit',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      console.log('Response status:', response.status);
-      const data = await response.json();
-      console.log('Response data:', data);
-
-      if (response.ok) {
-        setIsSuccess(true);
-        setSubmitMessage('Successfully joined the waitlist! We\'ll notify you when GARNET is ready.');
-        // Reset form
-        setFormData({
-          email: '',
-          password: '',
-          full_name: '',
-          role: '',
-          organization: ''
-        });
-      } else {
-        setSubmitMessage(data.error || 'Something went wrong. Please try again.');
-      }
+      // Create a simple JSON string of the data
+      const jsonData = JSON.stringify(formData);
+      
+      // Use XMLHttpRequest as an alternative to fetch
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', apiUrl, true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.setRequestHeader('Accept', 'application/json');
+      
+      // Setup response handlers
+      xhr.onload = function() {
+        try {
+          const responseData = JSON.parse(xhr.responseText);
+          console.log('Response status:', xhr.status);
+          console.log('Response data:', responseData);
+          
+          if (xhr.status >= 200 && xhr.status < 300) {
+            setIsSuccess(true);
+            setSubmitMessage('Successfully joined the waitlist! We\'ll notify you when GARNET is ready.');
+            // Reset form
+            setFormData({
+              email: '',
+              password: '',
+              full_name: '',
+              role: '',
+              organization: ''
+            });
+          } else {
+            setSubmitMessage(responseData.error || 'Something went wrong. Please try again.');
+          }
+        } catch (error) {
+          console.error('Error parsing response:', error);
+          setSubmitMessage('Error processing server response. Please try again.');
+        } finally {
+          setIsSubmitting(false);
+        }
+      };
+      
+      xhr.onerror = function() {
+        console.error('Request failed:', xhr.statusText);
+        setSubmitMessage('Network error. Please check your connection and try again.');
+        setIsSubmitting(false);
+      };
+      
+      // Send the request
+      xhr.send(jsonData);
     } catch (error) {
       console.error('Submission error:', error);
       setSubmitMessage('Network error. Please check your connection and try again.');
-    } finally {
       setIsSubmitting(false);
     }
   };
