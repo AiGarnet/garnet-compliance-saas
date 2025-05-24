@@ -97,15 +97,26 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
     setErrors({});
 
     try {
-      const response = await fetch('/api/waitlist/signup', {
+      // Direct API call to Railway backend
+      const backendUrl = 'https://garnet-compliance-saas-production.up.railway.app';
+      const apiUrl = `${backendUrl}/api/waitlist/signup`;
+      
+      console.log('Submitting waitlist form to:', apiUrl);
+      console.log('Form data:', JSON.stringify(formData));
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Origin': window.location.origin,
         },
         body: JSON.stringify(formData),
       });
 
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (response.ok) {
         setIsSuccess(true);
