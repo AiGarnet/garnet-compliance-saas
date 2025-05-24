@@ -1,0 +1,12 @@
+{
+  "name": "garnet-backend",
+  "version": "1.0.0",
+  "description": "GARNET AI Backend Service",
+  "main": "start.js",
+  "scripts": {
+    "start": "node start.js"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+} 
