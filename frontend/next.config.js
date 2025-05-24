@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Use standalone output for Netlify deployment
-  output: 'standalone',
+  // Use export output for static site generation
+  output: 'export',
   trailingSlash: true,
   distDir: '.next',
   images: {
