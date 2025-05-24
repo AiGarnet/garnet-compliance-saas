@@ -14,36 +14,22 @@ const app = express();
 const port = process.env.PORT || 5000;
 const userService = new UserService();
 
-// Configure CORS with specific options
-const corsOptions = {
-  origin: ['https://testinggarnet.netlify.app', 'https://www.testinggarnet.netlify.app', 'http://localhost:3000'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  credentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204
-};
-
-// Apply CORS middleware
-app.use(cors(corsOptions));
-app.use(express.json());
-
-// Add CORS headers manually to ensure they're set
+// Enable CORS for all routes and origins (simplified approach)
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
   
-  // Set CORS headers for all requests
-  res.header('Access-Control-Allow-Origin', '*'); // Allow all origins
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
-  // Handle preflight OPTIONS requests
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
-    return res.status(204).end();
+    return res.status(200).end();
   }
   
   next();
 });
+
+// Regular middleware
+app.use(express.json());
 
 // Load compliance data
 // Check multiple possible paths for the data file
