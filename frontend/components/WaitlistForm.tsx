@@ -102,7 +102,7 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
       console.log('Submitting waitlist form to Netlify function');
       console.log('Form data:', JSON.stringify(formData));
       
-      const response = await fetch('/.netlify/functions/waitlist-signup', {
+      const response = await fetch('/api/waitlist/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
