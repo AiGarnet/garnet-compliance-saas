@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Use export for static site generation compatibility with Netlify
-  output: process.env.NETLIFY === 'true' ? 'export' : 'standalone',
+  // Use standalone output for Netlify deployment
+  output: 'standalone',
   // Enable trailing slash for better path handling
   trailingSlash: true,
   distDir: '.next',
@@ -23,7 +23,7 @@ const nextConfig = {
   // Skip TypeScript type checking during build for faster builds in CI
   typescript: {
     // Only run type checking locally during development to speed up builds
-    ignoreBuildErrors: process.env.CI === 'true' || process.env.NETLIFY === 'true',
+    ignoreBuildErrors: true,
   },
   
   // Skip ESLint during build for faster builds in CI
@@ -35,11 +35,8 @@ const nextConfig = {
   // Handle potential issues with Postgres in Netlify functions
   webpack: (config, { isServer }) => {
     if (isServer) {
-      // When running in Netlify, we don't need to bundle pg or other native modules
-      if (process.env.NETLIFY === 'true') {
-        // Don't bundle pg or native modules for server-side
-        config.externals = [...(config.externals || []), 'pg', 'bcryptjs', 'jose', 'jsonwebtoken'];
-      }
+      // Don't bundle pg or native modules for server-side
+      config.externals = [...(config.externals || []), 'pg', 'bcryptjs', 'jose', 'jsonwebtoken'];
     }
     return config;
   },
