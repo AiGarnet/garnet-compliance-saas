@@ -5,23 +5,29 @@
 [build.environment]
   NODE_VERSION = "18"
   NPM_VERSION = "9"
-  # Database configuration - replace with your production values
+  # Note: For security, set actual database credentials in the Netlify UI Environment Variables section
+  # The values below are placeholders and will be overridden by the UI settings
   DB_HOST = "localhost"
   DB_PORT = "5432"
   DB_NAME = "garnet_ai"
   DB_USER = "postgres"
-  DB_PASSWORD = "Sonasuhani1"
-  # JWT configuration
-  JWT_SECRET = "your-secure-secret-key-change-this-in-production"
-  # Next.js configuration
+  DB_PASSWORD = "placeholder"
+  JWT_SECRET = "placeholder-jwt-secret-replace-in-netlify-ui"
   NEXT_PUBLIC_API_URL = "https://your-netlify-site-name.netlify.app"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+# Set up redirects for client-side routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
+  status = 200
+
+# Next.js API routes and Server Components need special handling
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
   status = 200
 
 [dev]
@@ -29,5 +35,5 @@
   port = 3000
   framework = "nextjs"
 
-# Note: In a real production environment, set these environment variables
-# through the Netlify UI instead of storing them in this file. 
+# IMPORTANT: In production, set the actual database credentials and JWT secret
+# in the Netlify UI under Site settings > Build & deploy > Environment variables 

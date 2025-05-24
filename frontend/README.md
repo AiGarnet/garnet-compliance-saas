@@ -14,13 +14,13 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ## Authentication System
 
-GARNET now features a frontend-based authentication system that handles user signup and login without requiring a backend database. This approach simplifies development and testing while maintaining security.
+GARNET features a frontend-based authentication system that handles user signup and login with PostgreSQL database storage.
 
 ### Features:
 
 - JWT-based authentication
 - Secure cookie storage for tokens
-- In-memory user storage (in a production app, this would use a real database)
+- PostgreSQL database storage for users
 - Protected routes with middleware
 - Password hashing with bcrypt
 
@@ -35,17 +35,44 @@ All authentication utilities are available in the `lib/auth.ts` file:
 - `getCurrentUser()` - Get the current user's data
 - `getAuthHeaders()` - Get headers for authenticated API requests
 
-### Protected Routes:
+## Database Configuration
 
-Routes requiring authentication are defined in `lib/middleware.ts`. Currently protected paths include:
+The application uses PostgreSQL for storing user data. Configuration is in `lib/env.ts`.
 
-- `/dashboard/*`
-- `/admin/*`
-- `/questionnaires/*`
-- `/compliance/*`
-- `/vendors/*`
+### Database Scripts:
 
-Unauthenticated users will be redirected to the home page.
+- `node scripts/init-db.js` - Initialize the database schema
+- `node scripts/check-users.js` - Check for users in the database
+
+## Deploying to Netlify
+
+For detailed deployment instructions, see [README-NETLIFY.md](./README-NETLIFY.md).
+
+Quick start:
+
+```bash
+# Install Netlify CLI
+npm install netlify-cli -g
+
+# Login to Netlify
+netlify login
+
+# Deploy using our script
+node scripts/deploy-netlify.js
+```
+
+For manual deployment:
+
+```bash
+# Clean up unnecessary files
+node scripts/cleanup.js
+
+# Build the project
+npm run build:netlify
+
+# Deploy to Netlify
+netlify deploy --prod
+```
 
 ## Storybook
 
@@ -64,6 +91,7 @@ npm run storybook
 
 - `npm run dev`: Start the development server
 - `npm run build`: Build the application for production
+- `npm run build:netlify`: Build for Netlify deployment
 - `npm run start`: Start the production server
 - `npm run lint`: Run ESLint
 - `npm test`: Run Jest tests

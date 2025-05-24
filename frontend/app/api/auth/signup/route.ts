@@ -3,21 +3,7 @@ import { SignJWT } from 'jose';
 import bcrypt from 'bcryptjs';
 import { userDb } from '@/lib/db';
 import { JWT_SECRET, JWT_EXPIRY } from '@/lib/env';
-
-// We'll still keep the users array for backward compatibility
-// but will primarily use the database
-interface User {
-  id: string;
-  email: string;
-  password_hash: string;
-  full_name: string;
-  role: string;
-  organization: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export let users: User[] = [];
+import { users, User } from '@/lib/users-store';
 
 export async function POST(request: NextRequest) {
   try {

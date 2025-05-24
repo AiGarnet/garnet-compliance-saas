@@ -3,9 +3,7 @@ import { SignJWT } from 'jose';
 import bcrypt from 'bcryptjs';
 import { userDb } from '@/lib/db';
 import { JWT_SECRET, JWT_EXPIRY } from '@/lib/env';
-
-// Import the users array from the signup route (for backward compatibility)
-import { users } from '../signup/route';
+import { users } from '@/lib/users-store';
 
 export async function POST(request: NextRequest) {
   try {
