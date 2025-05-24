@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garnet AI - Vendor Onboarding Platform</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .card {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .tag {
+            display: inline-block;
+            background: #e7f5ff;
+            color: #0077cc;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Garnet AI - Vendor Onboarding Platform</h1>
+    <p>A comprehensive vendor compliance and onboarding platform with a modern UI built with Next.js and Tailwind CSS.</p>
+
+    <div class="card">
+        <h2>Project Structure</h2>
+        <div class="container">
+            <div>
+                <h3>Frontend</h3>
+                <ul>
+                    <li><span class="tag">Next.js</span> <strong>frontend/</strong> - Next.js application with Tailwind CSS</li>
+                    <li><strong>frontend/app/</strong> - Next.js app directory structure</li>
+                    <li><strong>frontend/components/</strong> - Reusable UI components</li>
+                    <li><strong>frontend/lib/</strong> - Utility functions and shared code</li>
+                </ul>
+            </div>
+            <div>
+                <h3>Backend</h3>
+                <ul>
+                    <li><span class="tag">Express.js</span> <strong>backend/</strong> - Express.js API server</li>
+                    <li><strong>backend/src/</strong> - Backend source code</li>
+                    <li><strong>backend/src/utils/</strong> - Utility functions</li>
+                    <li><strong>backend/src/services/</strong> - Service layer</li>
+                </ul>
+            </div>
+        </div>
+        <div class="container">
+            <div>
+                <h3>Chatbot</h3>
+                <ul>
+                    <li><span class="tag">Flask</span> <strong>chatbot/</strong> - Flask-based AI chatbot microservice</li>
+                    <li><strong>chatbot/server/</strong> - Server implementation</li>
+                </ul>
+            </div>
+            <div>
+                <h3>Other</h3>
+                <ul>
+                    <li><strong>scripts/</strong> - Utility scripts</li>
+                    <li><strong>public/</strong> - Static assets</li>
+                    <li><strong>.github/workflows/</strong> - CI/CD configuration</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Key Features</h2>
+        <div class="container">
+            <div>
+                <ul>
+                    <li>🤖 <strong>AI-Powered Chatbot</strong> - Flask-based compliance Q&A system using OpenAI GPT-4</li>
+                    <li>📊 <strong>Dashboard</strong> - Overview of compliance status with key metrics</li>
+                    <li>📝 <strong>Questionnaires</strong> - Manage and track compliance questionnaires</li>
+                </ul>
+            </div>
+            <div>
+                <ul>
+                    <li>🏢 <strong>Vendors</strong> - Vendor catalog with risk assessment indicators</li>
+                    <li>🔒 <strong>Trust Portal</strong> - Public-facing trust and compliance information hub</li>
+                    <li>✅ <strong>Compliance</strong> - Framework-specific compliance tracking</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Main Configuration Files</h2>
+        <ul>
+            <li><strong>package.json</strong> - Root package configuration</li>
+            <li><strong>frontend/package.json</strong> - Frontend dependencies and scripts</li>
+            <li><strong>backend/package.json</strong> - Backend dependencies and scripts</li>
+            <li><strong>docker-compose.yml</strong> - Docker configuration</li>
+            <li><strong>netlify.toml</strong> - Netlify deployment configuration</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>Getting Started</h2>
+        <h3>Prerequisites</h3>
+        <ul>
+            <li>Node.js (v18 or higher)</li>
+            <li>npm or yarn</li>
+            <li>Docker and Docker Compose (for containerized setup)</li>
+        </ul>
+
+        <h3>Installation</h3>
+        <ol>
+            <li>Install frontend dependencies: <code>cd frontend && npm install</code></li>
+            <li>Install backend dependencies: <code>cd backend && npm install</code></li>
+            <li>Install chatbot dependencies: <code>cd chatbot && pip install -r requirements.txt</code></li>
+        </ol>
+
+        <h3>Development</h3>
+        <ul>
+            <li>Start frontend: <code>cd frontend && npm run dev</code></li>
+            <li>Start backend: <code>cd backend && npm run dev</code></li>
+            <li>Start chatbot: <code>cd chatbot && python app.py</code></li>
+        </ul>
+    </div>
+</body>
+</html> 

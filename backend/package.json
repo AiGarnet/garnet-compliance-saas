@@ -2,13 +2,13 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Express.js backend for monorepo project",
-  "main": "railway-deploy.js",
+  "main": "src/index.js",
   "engines": {
     "node": ">=16.0.0"
   },
   "scripts": {
     "build": "tsc",
-    "start": "node railway-deploy.js",
+    "start": "node dist/index.js",
     "dev": "nodemon --exec ts-node src/index.ts",
     "dev:alt": "ts-node src/index.ts",
     "lint": "eslint src --ext .ts",

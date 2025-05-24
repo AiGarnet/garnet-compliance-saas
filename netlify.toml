@@ -1,57 +1,25 @@
 [build]
   base = "frontend"
-  command = "npm run build:netlify"
+  command = "npm run build"
   publish = ".next"
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF ./frontend/"
   functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "18"
-  NPM_VERSION = "9"
   NEXT_TELEMETRY_DISABLED = "1"
+  NETLIFY = "true"
 
-# Plugin for optimal Next.js handling
+# Use Next.js runtime for Netlify
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Redirects for client-side routing
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Database setup during build
+[[plugins]]
+  package = "@netlify/plugin-functions-core"
 
-# API route handling
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
-  status = 200
-
-# Development settings
-[dev]
-  command = "npm run dev"
-  port = 3000
-  framework = "nextjs"
-  targetPort = 3000
-  autoLaunch = true
-
-# This makes it easier to deploy specific branches with custom domains
-# Just add a section like [context.branch-name]
-[context.production]
-  environment = { NODE_ENV = "production" }
-
-[context.deploy-preview]
-  environment = { NODE_ENV = "production" }
-
-# Cache control for static assets
-[[headers]]
-  for = "/static/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/_next/static/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+[[plugins.inputs.functions]]
+  path = "netlify/functions/setup-db.js"
+  schedule = "@build"
 
 # API redirects to Netlify functions (fallback)
 [[redirects]]
@@ -62,4 +30,15 @@
 [[redirects]]
   from = "/api/ai/questionnaire"
   to = "/.netlify/functions/questionnaire"
+  status = 200
+
+[[redirects]]
+  from = "/api/waitlist/signup"
+  to = "/.netlify/functions/waitlist-signup"
+  status = 200
+
+# Handle SPA routing - catch all routes and serve index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
   status = 200 

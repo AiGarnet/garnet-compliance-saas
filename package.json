@@ -14,13 +14,13 @@
     "check-deps": "node scripts/check-deps.js",
     "build": "npm run prebuild && npm run build:next && npm run build:vite && node scripts/merge-builds.js",
     "preview": "vite preview",
-    "start": "NODE_ENV=production cd frontend && npm run start",
     "dev:mock": "NODE_ENV=mock npm run seed:test && concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "seed:test": "node scripts/seed-test-data.js"
   },
   "dependencies": {
     "@faker-js/faker": "^9.8.0",
     "@types/lodash": "^4.17.17",
+    "bcryptjs": "^3.0.2",
     "dotenv": "^16.5.0",
     "framer-motion": "^12.12.2",
     "lodash": "^4.17.21",
@@ -29,10 +29,10 @@
     "pg": "^8.16.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "uuid": "^11.1.0",
     "zod": "^3.25.13"
   },
   "devDependencies": {
-    "@netlify/plugin-nextjs": "^5.11.2",
     "@types/jest-axe": "^3.5.9",
     "@types/node": "^22.15.18",
     "@types/pg": "^8.15.2",

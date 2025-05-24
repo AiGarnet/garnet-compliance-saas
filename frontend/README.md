@@ -1,86 +1,20 @@
-# GARNET Frontend
+# Frontend App
 
-This is the frontend application for GARNET, built with Next.js.
+Next.js frontend for the monorepo project.
 
-## Getting Started
+## Setup
 
-To run the development server:
+1. Install dependencies:
+```bash
+npm install
+```
 
+2. Run the development server:
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-## Authentication System
-
-GARNET features a frontend-based authentication system that handles user signup and login with PostgreSQL database storage.
-
-### Features:
-
-- JWT-based authentication
-- Secure cookie storage for tokens
-- PostgreSQL database storage for users
-- Protected routes with middleware
-- Password hashing with bcrypt
-
-### Auth Utilities:
-
-All authentication utilities are available in the `lib/auth.ts` file:
-
-- `signup()` - Register a new user
-- `login()` - Authenticate an existing user
-- `logout()` - End the current session
-- `isAuthenticated()` - Check if the user is logged in
-- `getCurrentUser()` - Get the current user's data
-- `getAuthHeaders()` - Get headers for authenticated API requests
-
-## Database Configuration
-
-The application uses PostgreSQL for storing user data. Configuration is in `lib/env.ts`.
-
-### Database Scripts:
-
-- `node scripts/init-db.js` - Initialize the database schema
-- `node scripts/check-users.js` - Check for users in the database
-
-## Deploying to Netlify
-
-For detailed deployment instructions, see [README-NETLIFY.md](./README-NETLIFY.md).
-
-Quick start:
-
-```bash
-# Install Netlify CLI
-npm install netlify-cli -g
-
-# Login to Netlify
-netlify login
-
-# Deploy using our script
-node scripts/deploy-netlify.js
-```
-
-For manual deployment:
-
-```bash
-# Clean up unnecessary files
-node scripts/cleanup.js
-
-# Build the project
-npm run build:netlify
-
-# Deploy to Netlify
-netlify deploy --prod
-```
-
-## Storybook
-
-To run Storybook:
-
-```bash
-npm run storybook
-```
+3. Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
 
 ## Pages
 
@@ -91,7 +25,6 @@ npm run storybook
 
 - `npm run dev`: Start the development server
 - `npm run build`: Build the application for production
-- `npm run build:netlify`: Build for Netlify deployment
 - `npm run start`: Start the production server
 - `npm run lint`: Run ESLint
 - `npm test`: Run Jest tests
@@ -102,4 +35,33 @@ npm run storybook
 - TypeScript
 - Tailwind CSS for styling
 - ESLint
-- Jest for testing 
+- Jest for testing
+
+## PostgreSQL Integration for Waitlist Feature
+
+The waitlist signup feature can now work directly with PostgreSQL instead of requiring a backend server. To use this feature:
+
+1. Make sure you have PostgreSQL installed and running
+2. Create a database named `garnet_ai` (or any name you prefer)
+3. Create the users table with the following schema:
+
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  role TEXT NOT NULL,
+  organization TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+```
+
+4. Copy `.env.local.example` to `.env.local` and update the `DATABASE_URL` with your PostgreSQL connection string
+
+With this setup, the waitlist form will directly insert user data into the PostgreSQL database. If the database connection fails or is not configured, it will fall back to storing users in a JSON file in the public directory.
