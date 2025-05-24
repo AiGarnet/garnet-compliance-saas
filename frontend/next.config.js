@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Use standalone output for Netlify deployment
-  output: 'standalone',
+  // Use export for static site generation compatibility with Netlify
+  output: process.env.NETLIFY === 'true' ? 'export' : 'standalone',
+  // Enable trailing slash for better path handling
   trailingSlash: true,
   distDir: '.next',
+  // Disable image optimization for static export
   images: {
     unoptimized: true,
   },
@@ -30,7 +32,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   
-  // Adding webpack configuration for handling node modules
+  // Handle potential issues with Postgres in Netlify functions
   webpack: (config, { isServer }) => {
     if (isServer) {
       // When running in Netlify, we don't need to bundle pg or other native modules

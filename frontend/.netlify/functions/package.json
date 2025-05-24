@@ -1,11 +1,7 @@
 {
-  "name": "netlify-functions",
+  "name": "garnet-ai-netlify-functions",
   "version": "1.0.0",
-  "private": true,
-  "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "jose": "^4.15.5",
-    "jsonwebtoken": "^9.0.2",
-    "pg": "^8.11.3"
-  }
+  "description": "Netlify Functions for Garnet AI",
+  "main": "questionnaire.js",
+  "dependencies": {}
 } 

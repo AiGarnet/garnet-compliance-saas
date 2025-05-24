@@ -1,5 +1,5 @@
 [build]
-  base = "frontend"
+  base = "."
   command = "npm run build:netlify"
   publish = ".next"
   functions = ".netlify/functions"
@@ -15,6 +15,8 @@
   SKIP_DB_INIT_ON_ERROR = "true"
   # Increase node memory limit
   NODE_OPTIONS = "--max_old_space_size=4096"
+  # Enable static site generation
+  NETLIFY = "true"
   
 # Install required dependencies for pg and other modules
 [[plugins]]
@@ -55,7 +57,20 @@
   to = "/.netlify/functions/api"
   status = 200
   force = true
-  
+
+# Index page fallback - ensure landing page is properly served
+[[redirects]]
+  from = "/"
+  to = "/index.html"
+  status = 200
+  force = true
+
+# Default redirect for Next.js pages and static assets
+[[redirects]]
+  from = "/_next/*"
+  to = "/_next/:splat"
+  status = 200
+
 # Default redirect for SPA
 [[redirects]]
   from = "/*"
