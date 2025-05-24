@@ -37,7 +37,13 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# API redirect for waitlist
+# API redirect for waitlist - direct match for signup endpoint
+[[redirects]]
+  from = "/api/waitlist/signup"
+  to = "/.netlify/functions/waitlist-signup"
+  status = 200
+
+# API redirect for other waitlist endpoints
 [[redirects]]
   from = "/api/waitlist/*"
   to = "/.netlify/functions/waitlist-signup"
