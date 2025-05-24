@@ -97,19 +97,20 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
     setErrors({});
 
     try {
-      // Direct API call to Railway backend
+      // Direct API call to Railway backend with no proxy
       const backendUrl = 'https://garnet-compliance-saas-production.up.railway.app';
       const apiUrl = `${backendUrl}/api/waitlist/signup`;
       
-      console.log('Submitting waitlist form to:', apiUrl);
+      console.log('Submitting waitlist form directly to Railway:', apiUrl);
       console.log('Form data:', JSON.stringify(formData));
       
       const response = await fetch(apiUrl, {
         method: 'POST',
+        mode: 'cors',
+        credentials: 'omit',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Origin': window.location.origin,
         },
         body: JSON.stringify(formData),
       });

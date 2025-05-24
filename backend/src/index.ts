@@ -14,9 +14,30 @@ const app = express();
 const port = process.env.PORT || 5000;
 const userService = new UserService();
 
+// Configure CORS with specific options
+const corsOptions = {
+  origin: '*', // Allow all origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  credentials: false,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
+
+// Set standard headers for all responses
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  next();
+});
+
+// Handle OPTIONS requests
+app.options('*', cors(corsOptions));
 
 // Load compliance data
 const dataPath = path.join(__dirname, '../../data_new.json');
