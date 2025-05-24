@@ -3,9 +3,7 @@ import { SignJWT } from 'jose';
 import bcrypt from 'bcryptjs';
 import { userDb } from '@/lib/db';
 import { JWT_SECRET, JWT_EXPIRY } from '@/lib/env';
-
-// Import the users array from the signup route (for backward compatibility)
-import { users } from '../signup/route';
+import { findUserByEmail } from '../signup/route';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,7 +22,7 @@ export async function POST(request: NextRequest) {
     
     // If not found in DB, try in-memory array (for backward compatibility)
     if (!user) {
-      const memoryUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      const memoryUser = findUserByEmail(email);
       if (!memoryUser) {
         return NextResponse.json(
           { error: 'Invalid email or password' },

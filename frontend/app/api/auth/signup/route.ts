@@ -5,7 +5,7 @@ import { userDb } from '@/lib/db';
 import { JWT_SECRET, JWT_EXPIRY } from '@/lib/env';
 
 // We'll still keep the users array for backward compatibility
-// but will primarily use the database
+// but will primarily use the database and make it non-exported
 interface User {
   id: string;
   email: string;
@@ -17,7 +17,13 @@ interface User {
   updated_at: string;
 }
 
-export let users: User[] = [];
+// Make users array a local variable instead of an export
+const users: User[] = [];
+
+// Helper function to find a user by email in the local array
+export const findUserByEmail = (email: string): User | undefined => {
+  return users.find(user => user.email.toLowerCase() === email.toLowerCase());
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Also check in-memory users (for backward compatibility)
-    const existingMemoryUser = users.find(user => user.email.toLowerCase() === email.toLowerCase());
+    const existingMemoryUser = findUserByEmail(email);
     if (existingMemoryUser) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
     }
