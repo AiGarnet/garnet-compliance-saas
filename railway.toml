@@ -1,9 +1,9 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install && npm run build"
+buildCommand = "cd backend && npm install && npm run build"
 
 [deploy]
-startCommand = "npm start"
+startCommand = "cd backend && npm start"
 runtime = "V2"
 numReplicas = 1
 sleepApplication = false
