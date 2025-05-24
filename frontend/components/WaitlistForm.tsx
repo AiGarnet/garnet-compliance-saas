@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, AlertCircle, User, Mail, Lock, Building, UserCheck } from 'lucide-react';
+import { signup } from '../lib/auth';
 
 interface WaitlistFormProps {
   isOpen: boolean;
@@ -97,33 +98,29 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
     setErrors({});
 
     try {
-      const response = await fetch('/api/waitlist/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      // Use the auth service instead of calling the API directly
+      const response = await signup({
+        email: formData.email,
+        password: formData.password,
+        full_name: formData.full_name,
+        role: formData.role,
+        organization: formData.organization || undefined
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setIsSuccess(true);
-        setSubmitMessage('Successfully joined the waitlist! We\'ll notify you when GARNET is ready.');
-        // Reset form
-        setFormData({
-          email: '',
-          password: '',
-          full_name: '',
-          role: '',
-          organization: ''
-        });
-      } else {
-        setSubmitMessage(data.error || 'Something went wrong. Please try again.');
-      }
-    } catch (error) {
+      setIsSuccess(true);
+      setSubmitMessage('Successfully signed up! You can now access GARNET.');
+      
+      // Reset form
+      setFormData({
+        email: '',
+        password: '',
+        full_name: '',
+        role: '',
+        organization: ''
+      });
+    } catch (error: any) {
       console.error('Submission error:', error);
-      setSubmitMessage('Network error. Please check your connection and try again.');
+      setSubmitMessage(error.message || 'Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -167,7 +164,7 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
           {/* Header */}
           <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white">Join GARNET Waitlist</h2>
+              <h2 className="text-xl font-bold text-white">Join GARNET</h2>
               <button
                 onClick={handleClose}
                 className="text-white hover:text-gray-200 transition-colors"
@@ -177,7 +174,7 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
               </button>
             </div>
             <p className="text-purple-100 text-sm mt-1">
-              Get early access to AI-powered compliance automation
+              Get access to AI-powered compliance automation
             </p>
           </div>
 
@@ -190,7 +187,7 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
                 animate={{ opacity: 1, y: 0 }}
               >
                 <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Welcome to the Waitlist!</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Welcome to GARNET!</h3>
                 <p className="text-gray-600 mb-6">{submitMessage}</p>
                 <motion.button
                   onClick={handleClose}
@@ -357,15 +354,15 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
                   {isSubmitting ? (
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      Joining Waitlist...
+                      Signing Up...
                     </div>
                   ) : (
-                    'Join Waitlist'
+                    'Sign Up'
                   )}
                 </motion.button>
 
                 <p className="text-xs text-gray-500 text-center">
-                  By joining, you agree to receive updates about GARNET.
+                  By signing up, you agree to our Terms of Service and Privacy Policy.
                 </p>
               </form>
             )}

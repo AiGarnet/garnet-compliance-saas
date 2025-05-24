@@ -7,26 +7,21 @@
   "scripts": {
     "dev:next": "cd frontend && npm run dev",
     "dev:vite": "vite",
-    "dev": "nodemon server.js",
+    "dev": "npm run dev:next",
     "prebuild": "node scripts/prebuild.js",
     "build:next": "cd frontend && npm run build",
     "build:vite": "tsc --skipLibCheck && vite build",
     "check-deps": "node scripts/check-deps.js",
     "build": "npm run prebuild && npm run build:next && npm run build:vite && node scripts/merge-builds.js",
     "preview": "vite preview",
-    "start": "node server.js",
+    "start": "NODE_ENV=production cd frontend && npm run start",
     "dev:mock": "NODE_ENV=mock npm run seed:test && concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "seed:test": "node scripts/seed-test-data.js"
-  },
-  "engines": {
-    "node": ">=16.0.0"
   },
   "dependencies": {
     "@faker-js/faker": "^9.8.0",
     "@types/lodash": "^4.17.17",
-    "cors": "^2.8.5",
     "dotenv": "^16.5.0",
-    "express": "^4.18.2",
     "framer-motion": "^12.12.2",
     "lodash": "^4.17.21",
     "lucide-react": "^0.294.0",
@@ -50,7 +45,6 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.4",
     "fs-extra": "^11.1.1",
-    "nodemon": "^3.0.1",
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.5",
     "typescript": "^5.8.3",
