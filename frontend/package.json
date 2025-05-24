@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "export": "next export",
     "build:optimized": "NODE_ENV=production next build && npm run css-stats",
     "start": "next start",
     "lint": "next lint",
