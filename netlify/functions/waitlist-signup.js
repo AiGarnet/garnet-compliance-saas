@@ -51,11 +51,18 @@ async function storeInPostgres(userData) {
   // Get database connection string from environment variables
   const connectionString = process.env.DATABASE_URL;
   
+  // Log connection attempt (without exposing full credentials)
+  console.log('Database connection string available:', !!connectionString);
+  
   if (!connectionString) {
     console.error('DATABASE_URL environment variable not set');
-    return false;
+    return {
+      success: false,
+      error: 'Database connection string not configured'
+    };
   }
   
+  // Create a new client with your connection string
   const client = new Client({
     connectionString,
     ssl: {
@@ -64,10 +71,16 @@ async function storeInPostgres(userData) {
   });
   
   try {
-    console.log('Connecting to PostgreSQL database...');
+    console.log('Attempting to connect to PostgreSQL database...');
     await client.connect();
+    console.log('Successfully connected to PostgreSQL database!');
+    
+    // Log database version to verify connection
+    const versionResult = await client.query('SELECT version()');
+    console.log('PostgreSQL version:', versionResult.rows[0].version);
     
     // Check if users table exists
+    console.log('Checking if users table exists...');
     const tableCheckResult = await client.query(`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
@@ -76,6 +89,7 @@ async function storeInPostgres(userData) {
     `);
     
     const tableExists = tableCheckResult.rows[0].exists;
+    console.log('Users table exists:', tableExists);
     
     // Create users table if it doesn't exist
     if (!tableExists) {
@@ -96,6 +110,7 @@ async function storeInPostgres(userData) {
         
         CREATE INDEX idx_users_email ON users(email);
       `);
+      console.log('Users table created successfully!');
     }
     
     // Generate a UUID for the user
@@ -105,6 +120,7 @@ async function storeInPostgres(userData) {
     const passwordHash = Buffer.from(userData.password).toString('base64');
     
     // Check if user with this email already exists
+    console.log('Checking if email already exists:', userData.email);
     const userCheckResult = await client.query(
       'SELECT id FROM users WHERE email = $1',
       [userData.email.toLowerCase()]
@@ -126,6 +142,7 @@ async function storeInPostgres(userData) {
     };
     
     // Insert user
+    console.log('Inserting new user into database:', userData.email);
     const result = await client.query(
       `INSERT INTO users (
         id, email, password_hash, full_name, role, organization, metadata
@@ -142,7 +159,10 @@ async function storeInPostgres(userData) {
       ]
     );
     
+    console.log('Database insert successful! Rows returned:', result.rows.length);
+    
     await client.end();
+    console.log('Database connection closed');
     
     if (result.rows.length > 0) {
       console.log('User successfully inserted into PostgreSQL:', userData.email);
@@ -158,11 +178,16 @@ async function storeInPostgres(userData) {
     }
   } catch (error) {
     console.error('PostgreSQL Error:', error);
+    console.error('Error details:', error.stack);
+    
     try {
       await client.end();
+      console.log('Database connection closed after error');
     } catch (e) {
       // Ignore error on connection close
+      console.log('Error closing connection:', e.message);
     }
+    
     return {
       success: false,
       error: error.message
