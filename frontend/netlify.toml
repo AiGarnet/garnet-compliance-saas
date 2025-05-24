@@ -1,10 +1,15 @@
 [build]
-  command = "npm run build"
+  base = "frontend"
+  command = "npm run build:netlify"
   publish = ".next"
+  functions = ".netlify/functions"
 
 [build.environment]
   NEXT_USE_NETLIFY_EDGE = "true"
   NODE_VERSION = "18"
+  # Add these environment variables for PostgreSQL
+  POSTGRES_PRISMA_URL = "${env:DATABASE_URL}"
+  POSTGRES_URL_NON_POOLING = "${env:DATABASE_URL}"
   
 # Install required dependencies for pg and other modules
 [[plugins]]
@@ -20,7 +25,14 @@
   external_node_modules = ["pg", "bcryptjs", "jose"]
   node_bundler = "esbuild"
 
-# Define redirects for API routes
+# Initialize database
+[[redirects]]
+  from = "/api/init-db"
+  to = "/.netlify/functions/init-db"
+  status = 200
+  force = true
+
+# Handle redirects for API routes
 [[redirects]]
   from = "/api/auth/signup"
   to = "/.netlify/functions/api"
@@ -33,7 +45,7 @@
   status = 200
   force = true
   
-# Default redirect
+# Default redirect for SPA
 [[redirects]]
   from = "/*"
   to = "/index.html"
