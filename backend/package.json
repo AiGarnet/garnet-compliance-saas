@@ -12,7 +12,8 @@
     "dev": "nodemon --exec ts-node src/index.ts",
     "dev:alt": "ts-node src/index.ts",
     "lint": "eslint src --ext .ts",
-    "test": "jest"
+    "test": "jest",
+    "migrate": "node src/db/migrations/create_users_table.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
