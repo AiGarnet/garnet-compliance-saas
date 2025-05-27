@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 
 export function SecurityQuestionnaire() {
@@ -7,6 +7,41 @@ export function SecurityQuestionnaire() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [metadata, setMetadata] = useState<any>(null);
+  const [serverStatus, setServerStatus] = useState<'unknown' | 'online' | 'offline'>('unknown');
+
+  // Check server status on component mount
+  useEffect(() => {
+    checkServerStatus();
+  }, []);
+
+  const checkServerStatus = async () => {
+    try {
+      const chatbotUrl = process.env.NEXT_PUBLIC_CHATBOT_URL || 'https://garnet-compliance-saas-production.up.railway.app';
+      console.log("Checking server status at:", chatbotUrl);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for status check
+      
+      const response = await fetch(`${chatbotUrl}/status`, {
+        method: 'GET',
+        signal: controller.signal,
+        mode: 'cors',
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        setServerStatus('online');
+        console.log("Server is online");
+      } else {
+        setServerStatus('offline');
+        console.log("Server responded with error:", response.status);
+      }
+    } catch (err) {
+      console.error("Server status check failed:", err);
+      setServerStatus('offline');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,6 +55,18 @@ export function SecurityQuestionnaire() {
     setError('');
     setMetadata(null);
     
+    // Try the main endpoint first
+    const success = await tryMainEndpoint();
+    
+    // If main endpoint fails, try the fallback
+    if (!success && serverStatus === 'offline') {
+      await tryFallbackEndpoint();
+    }
+    
+    setLoading(false);
+  };
+  
+  const tryMainEndpoint = async (): Promise<boolean> => {
     try {
       // Use the Railway backend URL with a fallback
       const chatbotUrl = process.env.NEXT_PUBLIC_CHATBOT_URL || 'https://garnet-compliance-saas-production.up.railway.app';
@@ -27,7 +74,7 @@ export function SecurityQuestionnaire() {
       
       // Create AbortController to handle timeouts
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // Reduce timeout to 15 seconds for faster fallback
       
       const response = await fetch(`${chatbotUrl}/ask`, {
         method: 'POST',
@@ -59,21 +106,59 @@ export function SecurityQuestionnaire() {
       const data = await response.json();
       setAnswer(data.answer || 'No answer received');
       setMetadata(data.metadata);
+      return true;
     } catch (err: any) {
-      console.error("Error in chatbot request:", err);
+      console.error("Error in main chatbot request:", err);
       if (err.name === 'AbortError') {
         setError('Request timed out. The server might be busy or offline.');
+      } else if (err.message.includes('404')) {
+        setError('The chatbot API endpoint (/ask) was not found. The server may be misconfigured or not fully deployed.');
       } else {
         setError(err.message || 'Failed to get answer from the chatbot server');
       }
-    } finally {
-      setLoading(false);
+      
+      return false;
+    }
+  };
+  
+  const tryFallbackEndpoint = async (): Promise<boolean> => {
+    try {
+      console.log("Trying fallback endpoint");
+      
+      // Use the local fallback endpoint
+      const response = await fetch(`/ask-fallback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ question }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Fallback server responded with ${response.status}`);
+      }
+
+      const data = await response.json();
+      setAnswer(data.answer || 'No answer received from fallback');
+      setMetadata(data.metadata);
+      setError(''); // Clear any previous errors since fallback succeeded
+      return true;
+    } catch (err: any) {
+      console.error("Error in fallback request:", err);
+      setError(prev => `${prev} Fallback also failed: ${err.message}`);
+      return false;
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-6">Security Questionnaire Assistant</h1>
+      
+      {serverStatus === 'offline' && (
+        <div className="p-4 mb-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 rounded-md">
+          <p><strong>Warning:</strong> The chatbot server appears to be offline or inaccessible. Using fallback mode with limited functionality.</p>
+        </div>
+      )}
       
       <form onSubmit={handleSubmit} className="mb-8">
         <div className="mb-4">
@@ -119,6 +204,7 @@ export function SecurityQuestionnaire() {
                 <span>Sources: {metadata.relevant_sources}</span>
                 <span>Tokens: {metadata.tokens_used}</span>
                 <span>Model: {metadata.model}</span>
+                {metadata.status && <span>Status: {metadata.status}</span>}
               </div>
             </div>
           )}
