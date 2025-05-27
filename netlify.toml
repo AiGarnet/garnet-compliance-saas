@@ -1,0 +1,30 @@
+[build]
+  base = "/"
+  command = "cd frontend && npm install && npm run build"
+  publish = "frontend/out"
+  
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_VERSION = "10"
+  NEXT_PUBLIC_CHATBOT_URL = "https://garnet-compliance-saas-production.up.railway.app"
+  NEXT_PUBLIC_API_URL = "https://garnet-compliance-saas-production.up.railway.app"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[[redirects]]
+  from = "/ask"
+  to = "https://garnet-compliance-saas-production.up.railway.app/ask"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://garnet-compliance-saas-production.up.railway.app/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
