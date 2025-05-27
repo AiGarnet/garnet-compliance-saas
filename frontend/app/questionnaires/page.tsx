@@ -274,7 +274,7 @@ const QuestionnairesPage = () => {
     try {
       const apiEndpoint = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
         ? 'http://localhost:5000/ask'
-        : 'https://testinggarnet.netlify.app/.netlify/functions/compliance-chatbot';
+        : 'https://garnet-compliance-saas-production.up.railway.app/ask';
 
       const aiResponses = await Promise.all(
         questions.map(async (question) => {

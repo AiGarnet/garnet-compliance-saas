@@ -21,8 +21,8 @@ export function SecurityQuestionnaire() {
     setMetadata(null);
     
     try {
-      // Use the new Flask chatbot microservice endpoint
-      const chatbotUrl = process.env.NEXT_PUBLIC_CHATBOT_URL || 'http://localhost:5000';
+      // Use the Railway backend URL
+      const chatbotUrl = process.env.NEXT_PUBLIC_CHATBOT_URL || 'https://garnet-compliance-saas-production.up.railway.app';
       const response = await fetch(`${chatbotUrl}/ask`, {
         method: 'POST',
         headers: {

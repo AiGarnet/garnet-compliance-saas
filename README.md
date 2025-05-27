@@ -348,3 +348,121 @@ The Security Questionnaire Module helps enterprise sales and compliance teams re
 - Never expose your API key in client-side code or commit it to version control
 - All answers should be reviewed by a compliance officer before sending to customers
 - The system only uses information from your compliance dataset - it will not fabricate answers
+
+# Garnet Compliance UI Component Library
+
+A comprehensive Figma UI component library for the Garnet Compliance SaaS platform, providing consistent design elements for the compliance onboarding experience.
+
+## Project Overview
+
+This library contains the official UI components for Garnet Compliance, created and maintained as a single source of truth for designers and developers. All components are built with Figma Auto Layout, organized into component sets with variant properties, and published through Figma Team Library for easy access across projects.
+
+## Features
+
+- **Consistent Design System**: Standardized components reflecting Garnet's professional design language
+- **Auto Layout Components**: All elements built with Figma Auto Layout for responsive behavior
+- **Variant Management**: Complete component sets with all necessary states and variants
+- **Design Tokens**: Color variables, typography, and spacing tokens for consistent implementation
+- **Documentation**: Comprehensive usage guidelines for all components
+- **Developer Handoff**: Optimized for seamless developer implementation
+
+## Components Included
+
+### Core Elements
+- **Buttons**
+  - Primary (Default, Hover, Active, Disabled)
+  - Secondary (Default, Hover, Active, Disabled)
+  - Tertiary/Text Buttons
+
+### Form Controls
+- **Input Fields**
+  - Text Input (Default, Active, Error, Disabled)
+  - Textarea (Default, Active, Error, Disabled)
+  - Dropdown/Select (Default, Open, Disabled)
+  - Checkbox (Unchecked, Checked, Indeterminate, Disabled)
+  - Radio Buttons (Unselected, Selected, Disabled)
+
+### Content Containers
+- **Cards**
+  - Vendor Card
+  - Questionnaire Summary Card
+  - Information Card
+
+### Interactive Elements
+- **Modals** (various sizes and configurations)
+- **Navigation Bar**
+- **Tooltips**
+- **Notifications/Alerts**
+
+## File Structure & Organization
+
+The Figma file is organized on a single page with clearly labeled frames:
+
+```
+Garnet Compliance UI Library
+├── 🎨 Design Tokens
+│   ├── Colors
+│   ├── Typography
+│   ├── Spacing
+│   └── Shadows
+├── 🧩 Components
+│   ├── Buttons
+│   ├── Form Controls
+│   ├── Cards
+│   ├── Modals
+│   └── Navigation
+├── 📱 Responsive Patterns
+├── 📝 Examples
+└── 📚 Documentation
+```
+
+## How to Use the Library in Figma
+
+### For Designers
+1. Open your Figma file
+2. Navigate to the Assets panel (in the left sidebar)
+3. Select "Team Library" from the dropdown
+4. Enable the "Garnet Compliance UI Library"
+5. Access components through the Assets panel
+
+### For Developers
+1. Request access to the Figma file from your design team
+2. Reference the Documentation section for implementation details
+3. Use the Inspect tab (right sidebar) for specific CSS properties
+4. Follow the component specifications in the `components.md` file in the frontend repository
+
+## Setup Instructions for Contributors
+
+To contribute to this component library:
+
+1. Request edit access to the main Figma file
+2. Review the existing components and documentation
+3. Create your components following established patterns:
+   - Use Auto Layout for all components
+   - Create component sets with appropriate variants
+   - Document usage and properties
+4. Submit your additions for review before publishing
+
+## Best Practices
+
+- Always use existing components when available
+- Follow naming conventions for new components
+- Document any new variants or properties
+- Test components at different screen sizes
+- Ensure all interactive states are represented
+
+## Credits & Acknowledgments
+
+This component library was created by the Garnet Compliance design team based on specifications from the engineering team. Special thanks to all contributors who have helped establish and maintain these design standards.
+
+## License
+
+MIT License
+
+Copyright (c) 2023 Garnet Compliance
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
