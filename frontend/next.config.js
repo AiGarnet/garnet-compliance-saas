@@ -5,9 +5,8 @@ const nextConfig = {
   output: 'export',
   trailingSlash: true,
   distDir: '.next',
-  // Specify the output directory for the static export
-  // This should match the publish directory in netlify.toml
-  outDir: 'out',
+  // This option is no longer supported in Next.js 14+
+  // outDir: 'out',
   images: {
     unoptimized: true,
   },

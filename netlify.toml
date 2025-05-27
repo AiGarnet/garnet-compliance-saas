@@ -1,7 +1,7 @@
 [build]
   base = "/"
-  command = "cd frontend && npm install && npm run build"
-  publish = "frontend/out"
+  command = "cd frontend && npm install glob@^10.3.10 --no-save && npm install && npm run build"
+  publish = "frontend/.next/out"
   
 [build.environment]
   NODE_VERSION = "20"
