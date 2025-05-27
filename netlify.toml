@@ -7,6 +7,7 @@
 [build.environment]
   NODE_VERSION = "20"
   NPM_VERSION = "10"
+  # Make sure these URLs are correct and accessible from the browser
   NEXT_PUBLIC_CHATBOT_URL = "https://garnet-compliance-saas-production.up.railway.app"
   NEXT_PUBLIC_API_URL = "https://garnet-compliance-saas-production.up.railway.app"
 
@@ -16,17 +17,26 @@
 [[plugins]]
   package = "@netlify/plugin-functions-install-core"
 
+[[headers]]
+  for = "/*"
+    [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept"
+
 [[redirects]]
   from = "/ask"
   to = "https://garnet-compliance-saas-production.up.railway.app/ask"
   status = 200
   force = true
+  headers = {Access-Control-Allow-Origin = "*"}
 
 [[redirects]]
   from = "/api/*"
   to = "https://garnet-compliance-saas-production.up.railway.app/api/:splat"
   status = 200
   force = true
+  headers = {Access-Control-Allow-Origin = "*"}
 
 [[redirects]]
   from = "/*"

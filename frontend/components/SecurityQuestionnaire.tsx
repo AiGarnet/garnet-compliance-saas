@@ -21,26 +21,51 @@ export function SecurityQuestionnaire() {
     setMetadata(null);
     
     try {
-      // Use the Railway backend URL
+      // Use the Railway backend URL with a fallback
       const chatbotUrl = process.env.NEXT_PUBLIC_CHATBOT_URL || 'https://garnet-compliance-saas-production.up.railway.app';
+      console.log("Using chatbot URL:", chatbotUrl);
+      
+      // Create AbortController to handle timeouts
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
       const response = await fetch(`${chatbotUrl}/ask`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Origin': window.location.origin,
         },
         body: JSON.stringify({ question }),
+        signal: controller.signal,
+        credentials: 'omit', // Don't send credentials
+        mode: 'cors', // Explicitly request CORS
       });
+      
+      // Clear the timeout
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server responded with ${response.status}`);
+        const errorText = await response.text();
+        let errorMessage;
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || `Server responded with ${response.status}`;
+        } catch (e) {
+          errorMessage = `Server responded with ${response.status}: ${errorText.substring(0, 100)}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
-      setAnswer(data.answer);
+      setAnswer(data.answer || 'No answer received');
       setMetadata(data.metadata);
     } catch (err: any) {
-      setError(err.message || 'Failed to get answer');
+      console.error("Error in chatbot request:", err);
+      if (err.name === 'AbortError') {
+        setError('Request timed out. The server might be busy or offline.');
+      } else {
+        setError(err.message || 'Failed to get answer from the chatbot server');
+      }
     } finally {
       setLoading(false);
     }

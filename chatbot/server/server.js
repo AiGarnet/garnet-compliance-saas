@@ -23,9 +23,24 @@ if (!apiKey || apiKey.includes('XXXXXXXX')) {
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Configure CORS to explicitly allow all origins
+const corsOptions = {
+  origin: '*',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  optionsSuccessStatus: 204,
+  maxAge: 86400 // 24 hours
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
+
+// Increase the timeout for Express
+app.use((req, res, next) => {
+  res.setTimeout(60000); // 60 seconds timeout
+  next();
+});
 
 // Read the compliance framework data
 const dataFilePath = path.resolve(__dirname, '../../data_new.json');
