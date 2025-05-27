@@ -13,7 +13,7 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "css-stats": "node lib/css-stats.js",
-    "postinstall": "cd ../netlify && npm install"
+    "_postinstall": "cd ../netlify && npm install"
   },
   "dependencies": {
     "clsx": "^2.1.1",
