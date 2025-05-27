@@ -30,11 +30,23 @@ const nextConfig = {
   // Experimental features for better Netlify compatibility
   experimental: {
     // Enable server components
-    serverComponentsExternalPackages: [],
+    serverComponentsExternalPackages: ['lodash'],
   },
 
   // Note: When using 'output: export', rewrites and headers won't work
   // They are removed since they're incompatible with static export
+  
+  // Configure webpack to properly handle lodash
+  webpack: (config, { isServer }) => {
+    // This ensures lodash is properly bundled
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        lodash: require.resolve('lodash'),
+      };
+    }
+    return config;
+  },
 }
 
 module.exports = nextConfig 
