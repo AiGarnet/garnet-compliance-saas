@@ -81,6 +81,9 @@ export function SecurityQuestionnaire() {
         headers: {
           'Content-Type': 'application/json',
           'Origin': window.location.origin,
+          'Referer': window.location.origin,
+          'Access-Control-Request-Method': 'POST',
+          'Access-Control-Request-Headers': 'content-type',
         },
         body: JSON.stringify({ question }),
         signal: controller.signal,
