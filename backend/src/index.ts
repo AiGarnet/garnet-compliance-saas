@@ -12,8 +12,8 @@ import http from 'http';
 dotenv.config();
 
 const app = express();
-// Ensure we log the port we're using for debugging
-const port = process.env.PORT || 8080;
+// Force port to be 8080 for Railway deployment
+const port = 8080;
 console.log(`Configured to use PORT: ${port}`);
 const userService = new UserService();
 
