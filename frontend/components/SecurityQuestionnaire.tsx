@@ -155,13 +155,14 @@ export function SecurityQuestionnaire() {
         </div>
       )}
       
-      <form onSubmit={handleSubmit} className="mb-8">
+      <form onSubmit={handleSubmit} className="mb-8" id="security-questionnaire-form" name="security-questionnaire-form">
         <div className="mb-4">
           <label htmlFor="question" className="block text-sm font-medium mb-2">
             Enter security or compliance question:
           </label>
           <textarea
             id="question"
+            name="question"
             rows={4}
             className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             value={question}
@@ -172,6 +173,8 @@ export function SecurityQuestionnaire() {
         
         <button
           type="submit"
+          id="submit-question"
+          name="submit-question"
           disabled={loading}
           className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
         >
