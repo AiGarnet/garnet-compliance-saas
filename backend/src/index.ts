@@ -12,21 +12,16 @@ import http from 'http';
 dotenv.config();
 
 const app = express();
-// Force port to be 8080 for Railway deployment
-const port = 8080;
-console.log(`Configured to use PORT: ${port}`);
+// Update port configuration to use environment variable with fallback
+const PORT = process.env.PORT || 8080;
+console.log(`Configured to use PORT: ${PORT}`);
 const userService = new UserService();
 
 // Configure CORS with specific options
 const corsOptions = {
-  origin: '*', // Allow all origins
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-  exposedHeaders: ['Content-Length', 'Content-Type'],
-  credentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-  maxAge: 86400 // 24 hours
+  origin: ['https://testinggarnet.netlify.app'],
+  methods: ['GET', 'POST'],
+  credentials: false
 };
 
 // Middleware
@@ -35,15 +30,6 @@ app.use(express.json());
 
 // Handle CORS preflight requests properly
 app.options('*', cors(corsOptions));
-
-// Set standard headers for all responses
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  next();
-});
 
 // Global error handling middleware
 app.use((err: any, req: Request, res: Response, next: Function) => {
@@ -644,7 +630,7 @@ process.on('SIGINT', () => {
   });
 });
 
-// Start server - listen on IPv6 interface with the PORT environment variable
-server.listen(Number(port), '::', () => {
-  console.log(`Server running on port ${port} and listening on IPv6`);
+// Start server - use PORT environment variable
+server.listen(Number(PORT), '::', () => {
+  console.log(`Server running on port ${PORT} and listening on IPv6`);
 });
