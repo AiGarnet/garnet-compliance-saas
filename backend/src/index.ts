@@ -585,6 +585,11 @@ Use the following compliance information as additional context for your answers:
   }
 }
 
+// Specific healthcheck endpoint for Railway
+app.get('/railway-healthcheck', (req: Request, res: Response) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // Health and version endpoints
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'healthy' });
@@ -609,7 +614,7 @@ const server = http.createServer(app);
 // Set server timeout to prevent hanging connections
 server.timeout = 30000; // 30 seconds
 
-// Start server
-server.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+// Start server - listen on IPv6 interface with the PORT environment variable
+server.listen(Number(port), '::', () => {
+  console.log(`Server running on port ${port} and listening on IPv6`);
 });
