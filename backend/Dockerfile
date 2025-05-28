@@ -17,8 +17,8 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Expose the port the app will run on
-EXPOSE 5000
+# Expose the ports the app might run on
+EXPOSE 5000 8080
 
-# Start the application in production mode
-CMD ["npm", "run", "start"] 
+# Start the application in production mode using the railway script
+CMD ["npm", "run", "railway-start"] 
