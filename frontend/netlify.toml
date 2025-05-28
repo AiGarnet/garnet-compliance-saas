@@ -1,0 +1,48 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+
+# Proxy all /api requests to the Railway backend
+[[redirects]]
+  from = "/api/*"
+  to = "https://garnet-compliance-saas-production.up.railway.app/api/:splat"
+  status = 200
+  force = true
+
+# Proxy specific endpoints
+[[redirects]]
+  from = "/ask"
+  to = "https://garnet-compliance-saas-production.up.railway.app/ask"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/status"
+  to = "https://garnet-compliance-saas-production.up.railway.app/status"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/health"
+  to = "https://garnet-compliance-saas-production.up.railway.app/health"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/ping"
+  to = "https://garnet-compliance-saas-production.up.railway.app/ping"
+  status = 200
+  force = true
+
+# SPA fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200 

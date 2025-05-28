@@ -1,0 +1,9 @@
+# Proxy API requests to Railway backend
+/api/*  https://garnet-compliance-saas-production.up.railway.app/api/:splat  200
+/ask    https://garnet-compliance-saas-production.up.railway.app/ask  200
+/status https://garnet-compliance-saas-production.up.railway.app/status  200
+/health https://garnet-compliance-saas-production.up.railway.app/health  200
+/ping   https://garnet-compliance-saas-production.up.railway.app/ping  200
+
+# SPA fallback
+/*      /index.html  200 
