@@ -21,7 +21,7 @@ RUN npm run build
 ENV PORT=8080
 
 # Expose the ports the app might run on
-EXPOSE 5000 8080
+EXPOSE 8080
 
-# Start the application in production mode using the railway script
-CMD ["npm", "run", "start"] 
+# Start the application in production mode - using exec form for proper signal handling
+ENTRYPOINT ["node", "dist/index.js"] 
