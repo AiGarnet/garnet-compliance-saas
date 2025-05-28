@@ -614,6 +614,23 @@ const server = http.createServer(app);
 // Set server timeout to prevent hanging connections
 server.timeout = 30000; // 30 seconds
 
+// Add proper signal handling for graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+});
+
 // Start server - listen on IPv6 interface with the PORT environment variable
 server.listen(Number(port), '::', () => {
   console.log(`Server running on port ${port} and listening on IPv6`);
