@@ -16,15 +16,16 @@ export function SecurityQuestionnaire() {
 
   const checkServerStatus = async () => {
     try {
-      // Use local endpoint with Netlify proxy
-      console.log("Checking server status via proxy");
+      const chatbotUrl = process.env.NEXT_PUBLIC_CHATBOT_URL || 'https://garnet-compliance-saas-production.up.railway.app';
+      console.log("Checking server status at:", chatbotUrl);
       
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout for status check
       
-      const response = await fetch(`/status`, {
+      const response = await fetch(`${chatbotUrl}/status`, {
         method: 'GET',
         signal: controller.signal,
+        mode: 'cors',
       });
       
       clearTimeout(timeoutId);
@@ -67,20 +68,22 @@ export function SecurityQuestionnaire() {
   
   const tryMainEndpoint = async (): Promise<boolean> => {
     try {
-      // Use local endpoint with Netlify proxy
-      console.log("Sending question to /ask endpoint via proxy");
+      // Use the Railway backend URL with a fallback
+      const chatbotUrl = process.env.NEXT_PUBLIC_CHATBOT_URL || 'https://garnet-compliance-saas-production.up.railway.app';
+      console.log("Using chatbot URL:", chatbotUrl);
       
       // Create AbortController to handle timeouts
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000); // Reduce timeout to 15 seconds for faster fallback
       
-      const response = await fetch(`/ask`, {
+      const response = await fetch(`${chatbotUrl}/ask`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ question }),
         signal: controller.signal,
+        mode: 'cors',
       });
       
       // Clear the timeout

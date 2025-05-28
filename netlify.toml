@@ -7,9 +7,8 @@
 [build.environment]
   NODE_VERSION = "20"
   NPM_VERSION = "10"
-  # Make sure these URLs are correct and accessible from the browser
+  # Make sure the URL is correct and accessible from the browser
   NEXT_PUBLIC_CHATBOT_URL = "https://garnet-compliance-saas-production.up.railway.app"
-  NEXT_PUBLIC_API_URL = "https://garnet-compliance-saas-production.up.railway.app"
   # Add the Netlify URL as an environment variable that will be available at build time
   NETLIFY_URL = "https://testinggarnet.netlify.app"
 
@@ -23,7 +22,7 @@
   for = "/*"
     [headers.values]
     Access-Control-Allow-Origin = "https://garnet-compliance-saas-production.up.railway.app"
-    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
     Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept"
 
 # Redirects to the Railway backend - Added fallback behavior
