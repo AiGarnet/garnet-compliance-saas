@@ -12,7 +12,9 @@ import http from 'http';
 dotenv.config();
 
 const app = express();
+// Ensure we log the port we're using for debugging
 const port = process.env.PORT || 8080;
+console.log(`Configured to use PORT: ${port}`);
 const userService = new UserService();
 
 // Configure CORS with specific options
