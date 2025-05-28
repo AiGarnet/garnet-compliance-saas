@@ -39,16 +39,36 @@ app.use((req, res, next) => {
 // Handle OPTIONS requests
 app.options('*', cors(corsOptions));
 
-// Load compliance data
-const dataPath = path.join(__dirname, '../../data_new.json');
+// Load compliance data with more robust path resolution
 let complianceData: any[] = [];
 
-try {
-  const rawData = fs.readFileSync(dataPath, 'utf-8');
-  complianceData = JSON.parse(rawData);
-  console.log(`Loaded ${complianceData.length} compliance records`);
-} catch (error) {
-  console.error('Error loading compliance data:', error);
+// Define possible paths for the data file in different environments
+const possiblePaths = [
+  path.join(__dirname, '../../data_new.json'),  // Development path
+  path.join(__dirname, '../data_new.json'),     // Production build path
+  path.join(process.cwd(), 'data_new.json'),    // Docker container root
+  '/app/data_new.json'                          // Common Docker workdir path
+];
+
+// Try to load the data from any of the possible paths
+let dataLoaded = false;
+for (const dataPath of possiblePaths) {
+  try {
+    console.log(`Attempting to load data from: ${dataPath}`);
+    const rawData = fs.readFileSync(dataPath, 'utf-8');
+    complianceData = JSON.parse(rawData);
+    console.log(`Successfully loaded ${complianceData.length} compliance records from ${dataPath}`);
+    dataLoaded = true;
+    break;
+  } catch (error) {
+    console.log(`Could not load data from ${dataPath}`);
+  }
+}
+
+if (!dataLoaded) {
+  console.error('Error: Could not load compliance data from any of the expected locations');
+  // Initialize with empty array to prevent application crash
+  complianceData = [];
 }
 
 // Initialize OpenAI client
@@ -170,6 +190,34 @@ app.post('/api/answer', async (req: Request, res: Response) => {
   }
 });
 
+// Add a compatible /ask endpoint for frontend integration
+app.post('/ask', async (req: Request, res: Response) => {
+  try {
+    const { question } = req.body;
+    
+    if (!question) {
+      return res.status(400).json({ error: 'Question is required' });
+    }
+
+    // Validate OpenAI configuration
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    }
+
+    // Find relevant compliance information
+    const relevantData = findRelevantComplianceData(question, complianceData);
+    
+    // Generate answer using OpenAI
+    const answer = await generateAnswer(question, relevantData);
+    
+    // Return just the answer field as expected by the frontend
+    res.json({ answer });
+  } catch (error: any) {
+    console.error('Error processing question:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
 // Helper function to find relevant compliance data
 function findRelevantComplianceData(question: string, data: any[]): any[] {
   // Convert question to lowercase for case-insensitive matching
@@ -239,17 +287,256 @@ function findRelevantComplianceData(question: string, data: any[]): any[] {
   });
 }
 
+// Helper function to detect vendor-directed questions
+function isVendorDirectedQuestion(question: string): boolean {
+  const vendorPhrases = [
+    // Original phrases
+    'how does your company',
+    'do you have',
+    'are you compliant with',
+    'how is your data handled',
+    'what measures do you follow',
+    'how do you ensure',
+    'does your organization',
+    'can you provide',
+    'what steps do you take',
+    'how do you manage',
+    'what policies do you have',
+    'how do you handle',
+    'are you certified',
+    'do you maintain',
+    'what security measures',
+    'how do you protect',
+    'do you comply with',
+    'what compliance frameworks',
+    'are any directors',
+    'are any owners',
+    'are any employees',
+    
+    // Added phrases from the question list
+    'privacy policy',
+    'data processing agreements',
+    'appointed a data protection officer',
+    'personal data encrypted',
+    'access control',
+    'data subject access requests',
+    'data retention',
+    'data deletion',
+    'notify supervisory authorities',
+    'consent collected',
+    'cross-border data transfer',
+    'internal audits',
+    'country risk matrix',
+    'beneficial ownership',
+    'storing or processing personal data',
+    'documented legal basis',
+    'appointed local representatives',
+    'incident response plan',
+    'cybersecurity awareness training',
+    'vulnerability assessments',
+    'report data breaches',
+    'enforcement action',
+    'directors currently under investigation',
+    'anti-boycott laws',
+    'ultimate beneficial owners',
+    'enhanced due diligence',
+    'know your business',
+    'transaction monitoring',
+    'aml/cft compliance',
+    'screened against',
+    'linked to a pep',
+    'negative news search',
+    'sanctions compliance',
+    'anti-bribery',
+    'government officials',
+    'training program',
+    'code of conduct',
+    'ethics policy',
+    'third-party risk assessments',
+    'sanctions screening',
+    'iso 27001',
+    'soc 2',
+    'information security policy',
+    'business continuity',
+    'disaster recovery',
+    'audit logs',
+    'mas aml/cft',
+    'gdpr article 30',
+    'thailand pdpa',
+    'pdp commissioner',
+    'ccpa',
+    'fatf-listed',
+    'red flags',
+    'non-compliance',
+    'litigation',
+    'multi-factor authentication',
+    'access review',
+    'security incidents',
+    'third-party security audit',
+    'sub-processors',
+    'corporate registry',
+    'verified via government',
+    'trust-based',
+    'nominee directors',
+    'dual-use export',
+    'ownership tracing',
+    'embargoed territories',
+    'delisted from a sanctions list',
+    'ip addresses',
+    'facilitation payments',
+    'corruption risk assessment',
+    'whistleblower hotline',
+    'third-party agents',
+    'sub-vendors',
+    'attestation of aml/ctf',
+    'mas aml/cft notice 626',
+    'soc 2 type ii',
+    'risk-based scoring',
+    'compliance monitoring tool',
+    'data processors',
+    'sub-processors',
+    'data protection impact assessment',
+    'nric',
+    'national id numbers',
+    'data subject requests',
+    'privacy governance',
+    
+    // Additional phrases from research document
+    'what categories of personal data',
+    'what is the purpose of collection',
+    'what is the legal basis for processing',
+    'what are the data retention periods',
+    'where is data stored',
+    'is consent explicit',
+    'is it opt-in or opt-out',
+    'is there a clear mechanism for withdrawal',
+    'how are dsars handled',
+    'what is the process for data access',
+    'what are the timelines for responding',
+    'does the vendor\'s system embed privacy',
+    'are the highest privacy settings enabled',
+    'what is the vendor\'s incident response plan',
+    'what are the data breach notification timelines',
+    'has a dpo been appointed',
+    'what are the dpo\'s responsibilities',
+    'are dpas signed',
+    'do dpas include required clauses',
+    'is the vendor on global sanctions lists',
+    'are any directors/ubos peps',
+    'has a negative news search been performed',
+    'have all ubos been identified',
+    'have ubos been verified',
+    'do any ubos own',
+    'what is the nationality',
+    'has ownership tracing been conducted',
+    'has the vendor been classified as',
+    'does the vendor operate in a fatf-listed',
+    'was edd conducted',
+    'is transaction monitoring in place',
+    'does the vendor maintain aml/cft compliance records',
+    'is the vendor required to report suspicious transactions',
+    'have you reviewed the vendor\'s code of conduct',
+    'are facilitation payments explicitly prohibited',
+    'has the vendor conducted a corruption risk assessment',
+    'is there a whistleblower hotline',
+    'are third-party agents used',
+    'does the vendor require its sub-vendors',
+    'what is the vendor\'s business continuity posture',
+    'are there historical instances of non-compliance',
+    'have you identified any red flags',
+    'are all compliance requirements explicitly included',
+    'are audit rights clearly defined',
+    'are non-compliance penalties outlined',
+    'has the vendor provided a documented risk-based scoring model',
+    'is personal data encrypted',
+    'is there a formal internal access review process',
+    'are security incidents reported to customers',
+    'are e-signatures valid',
+    'what are the requirements for cross-border data transfers'
+  ];
+  
+  const questionLower = question.toLowerCase();
+  return vendorPhrases.some(phrase => questionLower.includes(phrase));
+}
+
 // Generate answer using OpenAI with the new v4 API
 async function generateAnswer(question: string, relevantData: any[]): Promise<string> {
-  if (relevantData.length === 0) {
+  // Default response if no relevant data found
+  if (relevantData.length === 0 && !isVendorDirectedQuestion(question)) {
     return 'This information is not available in the current compliance dataset. Please consult the compliance officer.';
   }
 
   try {
-    // Construct the prompt as specified in the requirements
-    const systemPrompt = "You are a security and compliance assistant for SaaS vendors. Use the following reference information to answer the user's question accurately and concisely:";
+    // Detect if this is a vendor-directed question
+    const isVendorQuestion = isVendorDirectedQuestion(question);
     const contextData = JSON.stringify(relevantData, null, 2);
-    const userPrompt = `${systemPrompt}\n\nReference Information:\n${contextData}\n\nQ: ${question}`;
+    
+    let systemPrompt;
+    let userContent;
+    let temperature = 0;
+    
+    if (isVendorQuestion) {
+      // Enhanced vendor-impersonation prompt with comprehensive regulatory knowledge
+      systemPrompt = `You are answering as a SaaS vendor called GarnetAI that follows GDPR, ISO 27001, SOC 2 Type II, and other global regulatory frameworks including European, American, and Southeast Asian regulations. Your company implements comprehensive security and compliance measures based on industry best practices.
+
+Your company profile is as follows:
+- You have a published Privacy Policy that is regularly updated and available on your website
+- You sign Data Processing Agreements (DPAs) with all sub-processors
+- You have appointed a Data Protection Officer (DPO) who oversees privacy compliance
+- All personal data is encrypted both at rest and in transit using industry-standard encryption
+- You implement role-based access controls for all sensitive data
+- You have a formal process for handling data subject access requests (DSARs)
+- Your data retention policy follows a "minimum necessary" approach
+- You notify authorities of data breaches within required timeframes (typically 72 hours)
+- You collect and document consent before processing personal data
+- You comply with cross-border data transfer mechanisms using Standard Contractual Clauses (SCCs)
+- You conduct regular internal audits for financial crime risk
+- You maintain a comprehensive country risk matrix aligned with FATF guidelines
+- You conduct enhanced due diligence for high-risk relationships
+- You update beneficial ownership records promptly when changes occur
+- You have robust incident response plans aligned with ISO 27035
+- You provide regular security awareness training to all staff
+- You use third-party security firms for independent vulnerability assessments
+- None of your directors are currently under investigation or government officials
+- You maintain audit logs for all compliance-related activities
+- You support multi-factor authentication (MFA) for all users
+- You have formal access review processes
+- You report security incidents to customers according to contractual SLAs
+- You review all sub-processors for compliance before onboarding
+- You have a company-wide anti-bribery training program that is regularly updated
+- You explicitly prohibit facilitation payments in your code of conduct
+- You have a whistleblower hotline that is anonymous and globally available
+- You require sub-vendors to sign binding anti-corruption clauses
+- You maintain AML/CFT compliance records for at least 5 years
+- You have a comprehensive Business Continuity and Disaster Recovery Plan
+
+You are an expert in global compliance regulations with deep knowledge of:
+
+DATA PRIVACY: You understand that while GDPR is influential, regional variations exist. You know that the EU and UK GDPR require 72-hour breach notifications, CCPA/CPRA applies to businesses with $25M+ revenue or 100,000+ consumers, PIPEDA requires "real risk of significant harm" breach reporting, Australia's Privacy Act has 13 APPs with a 30-day breach assessment period, New Zealand requires breach reports "promptly", Brazil's LGPD requires notification within 3 business days, and Asian laws have varying timelines (Singapore 3 days, Thailand 72 hours, Malaysia 72 hours, China 24 hours for national security impacts).
+
+FINANCIAL CRIME: You know beneficial ownership thresholds vary (typically 25%, but 10% in India, 5% in Colombia), public BO registers exist in the UK, EU member states, and are coming to Canada and China, but not Australia/South Korea. You understand that PEPs require Enhanced Due Diligence, and SAR/STR reporting timelines vary by jurisdiction (US 30-60 days, Brazil 24 hours, UK "as soon as practicable").
+
+ANTI-BRIBERY: You're familiar with the FCPA's prohibition on bribing foreign officials and its accounting provisions, the UK Bribery Act's "failure to prevent bribery" corporate offense and "adequate procedures" defense, and that most modern laws prohibit facilitation payments (except the narrow FCPA exception).
+
+CYBERSECURITY: You understand key frameworks like ISO 27001, SOC 2, NIST CSF, and the EU's NIS2 Directive, along with varying breach notification requirements and the importance of MFA, access controls, and vulnerability management.
+
+E-SIGNATURES: You know that while e-signatures are generally valid in 180+ countries, there are variations (EU eIDAS has Simple, Advanced, and Qualified signatures) and exceptions for certain documents (wills, real estate, etc.).
+
+CROSS-BORDER DATA: You're aware of adequacy decisions, SCCs, BCRs, and contractual safeguards for international transfers, and data localization requirements in certain jurisdictions like China.
+
+When answering, speak as the vendor ("we", "our company", "our organization") and provide specific, confident responses about your compliance practices. Draw from both the company profile above, your regulatory knowledge, and the compliance framework information provided to demonstrate how you meet various regulatory requirements. Tailor your answer to the specific jurisdiction if mentioned in the question.
+
+Use the following compliance information as additional context for your answers:`;
+      
+      userContent = `Reference Information:\n${contextData}\n\nAnswer the following question from a prospective enterprise client, as if you are the vendor:\n\nQ: ${question}\nA:`;
+      temperature = 0.5;
+    } else {
+      // Generic assistant prompt
+      systemPrompt = "You are a security and compliance assistant for SaaS vendors. Use the following reference information to answer the user's question accurately and concisely. Provide helpful guidance about compliance frameworks and security best practices.";
+      
+      userContent = `Reference Information:\n${contextData}\n\nQ: ${question}`;
+      temperature = 0.4;
+    }
     
     const response = await openai.chat.completions.create({
       model: "gpt-4",
@@ -260,10 +547,10 @@ async function generateAnswer(question: string, relevantData: any[]): Promise<st
         },
         {
           role: "user",
-          content: `Reference Information:\n${contextData}\n\nQ: ${question}`
+          content: userContent
         }
       ],
-      temperature: 0,
+      temperature: temperature,
     });
 
     const answer = response.choices[0]?.message?.content || 

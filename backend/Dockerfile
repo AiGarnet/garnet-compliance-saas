@@ -8,6 +8,9 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
+# Copy the data file explicitly to ensure it's available
+COPY data_new.json ./data_new.json
+
 # Copy the rest of the application code
 COPY . .
 
