@@ -21,26 +21,29 @@ const userService = new UserService();
 const corsOptions = {
   origin: '*', // Allow all origins
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  credentials: false,
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+  exposedHeaders: ['Content-Length', 'Content-Type'],
+  credentials: true,
   preflightContinue: false,
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 204,
+  maxAge: 86400 // 24 hours
 };
 
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// Handle CORS preflight requests properly
+app.options('*', cors(corsOptions));
+
 // Set standard headers for all responses
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
   next();
 });
-
-// Handle OPTIONS requests
-app.options('*', cors(corsOptions));
 
 // Global error handling middleware
 app.use((err: any, req: Request, res: Response, next: Function) => {
@@ -113,11 +116,11 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
-app.get('/api/status', (req: Request, res: Response) => {
-  res.json({ 
-    status: 'ok', 
+app.get('/status', (req: Request, res: Response) => {
+  res.status(200).json({ 
+    status: 'ok',
     timestamp: new Date(),
-    complianceRecords: complianceData.length 
+    complianceRecords: complianceData.length
   });
 });
 
