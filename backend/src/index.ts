@@ -95,11 +95,21 @@ const openai = new OpenAI({
 
 // Routes
 app.get('/', (req: Request, res: Response) => {
-  // Simple response for health checks and root requests
+  // Provide a useful API documentation response
   res.status(200).json({ 
     status: 'ok',
-    service: 'GarnetAI Compliance Backend',
-    message: 'Server is running'
+    service: 'GarnetAI Compliance Backend API',
+    version: '1.0.0',
+    endpoints: {
+      '/': 'API documentation (this response)',
+      '/ask': 'POST - Submit a question to the AI chatbot',
+      '/api/answer': 'POST - Submit a question to get compliance answers',
+      '/health': 'GET - Health check endpoint',
+      '/ping': 'GET - Simple ping-pong response',
+      '/version': 'GET - Get API version information'
+    },
+    documentation: 'For more information, please refer to the API documentation',
+    frontend: 'https://testinggarnet.netlify.app/'
   });
 });
 
