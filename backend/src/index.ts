@@ -6,6 +6,7 @@ import path from 'path';
 import OpenAI from 'openai';
 import { UserService } from './services/userService';
 import { WaitlistSignupRequest } from './types/user';
+import http from 'http';
 
 // Load environment variables
 dotenv.config();
@@ -38,6 +39,20 @@ app.use((req, res, next) => {
 
 // Handle OPTIONS requests
 app.options('*', cors(corsOptions));
+
+// Global error handling middleware
+app.use((err: any, req: Request, res: Response, next: Function) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
+// Error handler for 404 Not Found
+app.use((req: Request, res: Response) => {
+  res.status(404).json({ error: 'Not Found', path: req.path });
+});
 
 // Load compliance data with more robust path resolution
 let complianceData: any[] = [];
@@ -78,7 +93,12 @@ const openai = new OpenAI({
 
 // Routes
 app.get('/', (req: Request, res: Response) => {
-  res.json({ message: 'Welcome to the security questionnaire module API' });
+  // Simple response for health checks and root requests
+  res.status(200).json({ 
+    status: 'ok',
+    service: 'GarnetAI Compliance Backend',
+    message: 'Server is running'
+  });
 });
 
 app.get('/api/status', (req: Request, res: Response) => {
@@ -563,12 +583,31 @@ Use the following compliance information as additional context for your answers:
   }
 }
 
+// Health and version endpoints
+app.get('/health', (req: Request, res: Response) => {
+  res.status(200).json({ status: 'healthy' });
+});
+
+app.get('/version', (req: Request, res: Response) => {
+  res.status(200).json({ 
+    version: process.env.npm_package_version || '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime()
+  });
+});
+
 // Ping route
 app.get('/ping', (req: Request, res: Response) => {
   res.send('pong');
 });
 
+// Create HTTP server with proper timeout
+const server = http.createServer(app);
+
+// Set server timeout to prevent hanging connections
+server.timeout = 30000; // 30 seconds
+
 // Start server
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
