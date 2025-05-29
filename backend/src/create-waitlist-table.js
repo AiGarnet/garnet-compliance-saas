@@ -9,7 +9,7 @@ const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:FaHf
 const pool = new Pool({
   connectionString,
   ssl: {
-    rejectUnauthorized: false // Required for some Postgres providers
+    rejectUnauthorized: false // Required for some PostgreSQL providers
   }
 });
 
@@ -37,17 +37,59 @@ async function createWaitlistTable() {
       console.log('\nWaitlist table already exists. Do you want to drop it and recreate? (Not doing it automatically for safety)');
       console.log('If you want to drop and recreate, run this SQL:');
       console.log('DROP TABLE waitlist; -- Be careful with this!');
+
+      // Check if the table structure matches what we need
+      const columnsResult = await client.query(`
+        SELECT column_name, data_type 
+        FROM information_schema.columns 
+        WHERE table_name = 'waitlist'
+        ORDER BY ordinal_position;
+      `);
+      
+      console.log('\nCurrent table structure:');
+      console.table(columnsResult.rows);
+      
+      // Check for missing columns based on form fields
+      const existingColumns = columnsResult.rows.map(row => row.column_name);
+      const requiredColumns = ['full_name', 'email', 'password', 'role', 'organization'];
+      const missingColumns = requiredColumns.filter(col => !existingColumns.includes(col));
+      
+      if (missingColumns.length > 0) {
+        console.log('\nMissing columns that need to be added:', missingColumns);
+        console.log('Adding missing columns...');
+        
+        for (const column of missingColumns) {
+          await client.query(`
+            ALTER TABLE waitlist
+            ADD COLUMN ${column} TEXT;
+          `);
+          console.log(`Added column: ${column}`);
+        }
+        
+        // Verify columns were added
+        const updatedColumnsResult = await client.query(`
+          SELECT column_name, data_type 
+          FROM information_schema.columns 
+          WHERE table_name = 'waitlist'
+          ORDER BY ordinal_position;
+        `);
+        
+        console.log('\nUpdated table structure:');
+        console.table(updatedColumnsResult.rows);
+      } else {
+        console.log('\nAll required columns already exist in the table.');
+      }
     } else {
-      // Create the waitlist table with common fields
-      console.log('\nCreating waitlist table with standard fields...');
+      // Create the waitlist table with fields matching the form
+      console.log('\nCreating waitlist table with fields matching the form...');
       await client.query(`
         CREATE TABLE waitlist (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           email TEXT UNIQUE NOT NULL,
-          name TEXT,
-          company TEXT,
-          role TEXT,
-          interests TEXT,
+          full_name TEXT NOT NULL,
+          password TEXT NOT NULL,
+          role TEXT NOT NULL,
+          organization TEXT,
           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
         
@@ -57,10 +99,10 @@ async function createWaitlistTable() {
       console.log('Waitlist table created successfully with these fields:');
       console.log('- id (UUID, primary key)');
       console.log('- email (TEXT, unique, required)');
-      console.log('- name (TEXT)');
-      console.log('- company (TEXT)');
-      console.log('- role (TEXT)');
-      console.log('- interests (TEXT)');
+      console.log('- full_name (TEXT, required)');
+      console.log('- password (TEXT, required)');
+      console.log('- role (TEXT, required)');
+      console.log('- organization (TEXT, optional)');
       console.log('- created_at (TIMESTAMP)');
       
       // Verify table was created
