@@ -10,7 +10,7 @@ import React from 'react';
  * These styles are essential for above-the-fold content
  */
 export const criticalStyles = `
-:root{--font-size-base:1rem;--font-family-sans:'Inter',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;--font-weight-normal:400;--line-height-normal:1.5;--color-primary:124 58 237;--color-gray-50:249 250 251;--color-gray-900:17 24 39;}
+:root{--font-size-base:1rem;--font-family-sans:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;--font-weight-normal:400;--line-height-normal:1.5;--color-primary:124 58 237;--color-gray-50:249 250 251;--color-gray-900:17 24 39;}
 body{margin:0;font-family:var(--font-family-sans);font-size:var(--font-size-base);line-height:var(--line-height-normal);color:rgb(var(--color-gray-900));background-color:rgb(var(--color-gray-50));}
 .skip-link{position:absolute;top:-9999px;left:0;padding:8px;background-color:rgb(var(--color-primary));color:white;z-index:9999;}
 .skip-link:focus{top:0;}
@@ -64,7 +64,6 @@ export function shouldPreloadCss(href: string): boolean {
   const preloadPaths = [
     '/globals.css',
     '/design-tokens.css',
-    '/fonts.css',
   ];
   
   return preloadPaths.some(path => href.includes(path));

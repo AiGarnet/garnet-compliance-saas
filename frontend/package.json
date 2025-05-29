@@ -7,7 +7,6 @@
     "build": "next build",
     "export": "next export",
     "build:optimized": "NODE_ENV=production next build && npm run css-stats",
-    "build:netlify": "next build && next export && node scripts/copy-assets.js",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",

@@ -40,8 +40,7 @@ import {
   Upload,
   Sliders,
   Network,
-  Gauge,
-  HelpCircle
+  Gauge
 } from 'lucide-react';
 
 // Counter component for animated statistics
@@ -497,7 +496,7 @@ const IntegrationShowcase = () => {
 };
 
 const GarnetLandingPage = () => {
-  const [activeFeature, setActiveFeature] = useState<number | null>(0);
+  const [activeFeature, setActiveFeature] = useState(0);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
   const features = [
@@ -558,6 +557,33 @@ const GarnetLandingPage = () => {
     { value: 25, suffix: '+', label: 'Frameworks Supported' }
   ];
 
+  const faqs = [
+    {
+      question: "How can AI help streamline my compliance process?",
+      answer: "GARNET's AI automation reduces questionnaire response time by up to 80%, automatically analyzing your security posture and suggesting accurate responses. Our AI learns from your previous submissions and adapts to different compliance frameworks, transforming weeks of manual work into hours of intelligent automation."
+    },
+    {
+      question: "Is GARNET difficult to integrate with existing systems?",
+      answer: "Not at all! GARNET offers seamless integration with popular cloud services like AWS, Google Cloud, and Azure through secure API connectors. Our one-click integration process automatically collects evidence from your connected systems, and our team provides full support throughout the setup process."
+    },
+    {
+      question: "What compliance frameworks does GARNET support?",
+      answer: "GARNET supports 25+ major compliance frameworks including ISO 27001, SOC 2, GDPR, HIPAA, CCPA, PCI DSS, and many more. Our platform continuously updates to include new frameworks, ensuring you stay compliant as regulations evolve."
+    },
+    {
+      question: "Do I need technical knowledge to use GARNET?",
+      answer: "No technical expertise required! GARNET is designed for compliance professionals, not developers. Our intuitive interface guides you through the process, while our AI handles the complex analysis. We also provide comprehensive training and dedicated support to ensure your success."
+    },
+    {
+      question: "What kind of support do you offer?",
+      answer: "We provide comprehensive support including email and chat assistance for all users, priority support for Pro customers, and dedicated account management for Enterprise clients. Our team includes compliance experts who understand the nuances of various frameworks and can provide strategic guidance."
+    },
+    {
+      question: "How secure is my compliance data with GARNET?",
+      answer: "Security is our top priority. GARNET is SOC 2 compliant, ISO 27001 certified, and GDPR-ready. We use enterprise-grade encryption, implement strict access controls, and undergo regular security audits. Your compliance data is protected with the same standards you're working to achieve."
+    }
+  ];
+
   const toggleFaq = (index: number) => {
     setActiveFaq(activeFaq === index ? null : index);
   };
@@ -586,10 +612,6 @@ const GarnetLandingPage = () => {
               <a href="#demo" className="text-gray-600 hover:text-purple-600 transition-colors">Demo</a>
               <a href="#stats" className="text-gray-600 hover:text-purple-600 transition-colors">Impact</a>
               <a href="#testimonials" className="text-gray-600 hover:text-purple-600 transition-colors">Testimonials</a>
-              <a href="/faq" className="text-gray-600 hover:text-purple-600 transition-colors flex items-center">
-                <HelpCircle className="h-4 w-4 mr-1" />
-                FAQ
-              </a>
               <motion.button 
                 className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all"
                 whileHover={{ scale: 1.05 }}
@@ -968,6 +990,36 @@ const GarnetLandingPage = () => {
                 </div>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              We've Got the Answers 
+              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> You're Looking For</span>
+            </h2>
+          </motion.div>
+
+          <div className="text-center">
+            <motion.a 
+              href="/faq"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:shadow-lg transition-all inline-flex items-center"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              FAQ
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </motion.a>
           </div>
         </div>
       </section>

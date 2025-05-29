@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import fonts */
-@import "../lib/fonts.css";
-
 /* Import design tokens */
 @import "../lib/design-tokens.css";
 

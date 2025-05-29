@@ -43,7 +43,6 @@ import {
   Network,
   Gauge
 } from 'lucide-react';
-import Link from 'next/link';
 
 // Counter component for animated statistics
 const AnimatedCounter = ({ end, duration = 2, suffix = '' }: { end: number; duration?: number; suffix?: string }) => {
@@ -622,12 +621,6 @@ const GarnetLandingPage = () => {
               {/* <a href="#demo" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Demo</a> */}
               <a href="#stats" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Impact</a>
               {/* <a href="#testimonials" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Testimonials</a> */}
-              <Link 
-                href="/faq" 
-                className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base"
-              >
-                FAQ
-              </Link>
               <motion.button 
                 className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 lg:px-6 py-2 rounded-full hover:shadow-lg transition-all text-sm lg:text-base"
                 whileHover={{ scale: 1.05 }}
@@ -1026,11 +1019,11 @@ const GarnetLandingPage = () => {
         </div>
       </section> */}
 
-      {/* FAQ Section - Modified to link to dedicated FAQ page */}
+      {/* FAQ Section */}
       <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
-            className="text-center mb-12"
+            className="text-center mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -1040,32 +1033,19 @@ const GarnetLandingPage = () => {
               We've Got the Answers 
               <span className="block sm:inline bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> You're Looking For</span>
             </h2>
-            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-              Quick answers to your AI-powered compliance automation questions.
-            </p>
-            
-            <motion.div
-              className="mt-8"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-            >
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Link 
-                  href="/faq"
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:shadow-lg transition-all inline-flex items-center group"
-                  style={{ display: 'inline-flex' }}
-                >
-                  Visit Our FAQ Page
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </motion.div>
-            </motion.div>
           </motion.div>
+
+          <div className="text-center">
+            <motion.a 
+              href="/faq"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 sm:px-8 py-4 rounded-full text-lg font-semibold hover:shadow-lg transition-all inline-flex items-center group"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              FAQ
+              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            </motion.a>
+          </div>
         </div>
       </section>
 
