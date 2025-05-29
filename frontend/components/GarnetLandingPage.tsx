@@ -129,7 +129,7 @@ const InteractiveDemo = () => {
   const demoSteps = [
     {
       title: "Upload Your Security Documentation",
-      description: "Simply drag and drop your existing security documents, policies, and certifications into GARNET.",
+      description: "Simply drag and drop your existing security documents, policies, and certifications into Garnet.",
       action: "Upload",
       icon: <Upload className="h-6 w-6" />,
       visual: (
@@ -204,7 +204,7 @@ const InteractiveDemo = () => {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            See GARNET in
+            See Garnet in
             <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> Action</span>
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -333,7 +333,7 @@ const SecurityTrustSection = () => {
             <span className="block sm:inline bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> Security</span>
           </h2>
           <p className="text-lg sm:text-xl text-purple-100 max-w-3xl mx-auto">
-            Your compliance data deserves the highest level of protection. We've built GARNET with security as our foundation.
+            Your compliance data deserves the highest level of protection. We've built Garnet with security as our foundation.
           </p>
         </motion.div>
 
@@ -376,9 +376,6 @@ const SecurityTrustSection = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.6 }}
         >
-          <p className="text-purple-200 mb-6 text-sm sm:text-base">
-            Trusted by security teams at Fortune 500 companies
-          </p>
           <motion.button 
             className="inline-flex items-center bg-white text-purple-900 px-6 sm:px-8 py-3 rounded-full font-semibold hover:bg-purple-50 transition-all group"
             whileHover={{ scale: 1.05 }}
@@ -540,7 +537,7 @@ const GarnetLandingPage = () => {
 
   const testimonials = [
     {
-      quote: "GARNET reduced our questionnaire response time from weeks to hours. The AI accuracy is incredible.",
+      quote: "Garnet reduced our questionnaire response time from weeks to hours. The AI accuracy is incredible.",
       author: "Sarah Chen",
       title: "CISO, TechCorp Inc.",
       avatar: "SC",
@@ -572,27 +569,27 @@ const GarnetLandingPage = () => {
   const faqs = [
     {
       question: "How can AI help streamline my compliance process?",
-      answer: "GARNET's AI automation reduces questionnaire response time by up to 80%, automatically analyzing your security posture and suggesting accurate responses. Our AI learns from your previous submissions and adapts to different compliance frameworks, transforming weeks of manual work into hours of intelligent automation."
+      answer: "Garnet's AI automation reduces questionnaire response time by up to 80%, automatically analyzing your security posture and suggesting accurate responses. Our AI learns from your previous submissions and adapts to different compliance frameworks, transforming weeks of manual work into hours of intelligent automation."
     },
     {
-      question: "Is GARNET difficult to integrate with existing systems?",
-      answer: "Not at all! GARNET offers seamless integration with popular cloud services like AWS, Google Cloud, and Azure through secure API connectors. Our one-click integration process automatically collects evidence from your connected systems, and our team provides full support throughout the setup process."
+      question: "Is Garnet difficult to integrate with existing systems?",
+      answer: "Not at all! Garnet offers seamless integration with popular cloud services like AWS, Google Cloud, and Azure through secure API connectors. Our one-click integration process automatically collects evidence from your connected systems, and our team provides full support throughout the setup process."
     },
     {
-      question: "What compliance frameworks does GARNET support?",
-      answer: "GARNET supports 25+ major compliance frameworks including ISO 27001, SOC 2, GDPR, HIPAA, CCPA, PCI DSS, and many more. Our platform continuously updates to include new frameworks, ensuring you stay compliant as regulations evolve."
+      question: "What compliance frameworks does Garnet support?",
+      answer: "Garnet supports 25+ major compliance frameworks including ISO 27001, SOC 2, GDPR, HIPAA, CCPA, PCI DSS, and many more. Our platform continuously updates to include new frameworks, ensuring you stay compliant as regulations evolve."
     },
     {
-      question: "Do I need technical knowledge to use GARNET?",
-      answer: "No technical expertise required! GARNET is designed for compliance professionals, not developers. Our intuitive interface guides you through the process, while our AI handles the complex analysis. We also provide comprehensive training and dedicated support to ensure your success."
+      question: "Do I need technical knowledge to use Garnet?",
+      answer: "No technical expertise required! Garnet is designed for compliance professionals, not developers. Our intuitive interface guides you through the process, while our AI handles the complex analysis. We also provide comprehensive training and dedicated support to ensure your success."
     },
     {
       question: "What kind of support do you offer?",
       answer: "We provide comprehensive support including email and chat assistance for all users, priority support for Pro customers, and dedicated account management for Enterprise clients. Our team includes compliance experts who understand the nuances of various frameworks and can provide strategic guidance."
     },
     {
-      question: "How secure is my compliance data with GARNET?",
-      answer: "Security is our top priority. GARNET is SOC 2 compliant, ISO 27001 certified, and GDPR-ready. We use enterprise-grade encryption, implement strict access controls, and undergo regular security audits. Your compliance data is protected with the same standards you're working to achieve."
+      question: "How secure is my compliance data with Garnet?",
+      answer: "Security is our top priority. Garnet is SOC 2 compliant, ISO 27001 certified, and GDPR-ready. We use enterprise-grade encryption, implement strict access controls, and undergo regular security audits. Your compliance data is protected with the same standards you're working to achieve."
     }
   ];
 
@@ -616,14 +613,14 @@ const GarnetLandingPage = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <span className="text-xl sm:text-2xl font-bold">
-                <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">GARNET</span>
+                <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Garnet</span>
               </span>
             </div>
             <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
               <a href="#features" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Features</a>
-              <a href="#demo" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Demo</a>
+              {/* <a href="#demo" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Demo</a> */}
               <a href="#stats" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Impact</a>
-              <a href="#testimonials" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Testimonials</a>
+              {/* <a href="#testimonials" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Testimonials</a> */}
               <motion.button 
                 className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 lg:px-6 py-2 rounded-full hover:shadow-lg transition-all text-sm lg:text-base"
                 whileHover={{ scale: 1.05 }}
@@ -688,14 +685,14 @@ const GarnetLandingPage = () => {
                 Join Waitlist
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </motion.button>
-            <motion.button 
+            {/* <motion.button 
                 className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-full text-lg font-semibold hover:border-purple-300 hover:text-purple-600 transition-all flex items-center justify-center group"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
                 <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
               Watch Demo
-            </motion.button>
+            </motion.button> */}
           </motion.div>
 
           {/* Hero Visual */}
@@ -788,12 +785,12 @@ const GarnetLandingPage = () => {
       </section>
 
       {/* Interactive Demo Section */}
-      <div id="demo">
+      {/* <div id="demo">
         <InteractiveDemo />
-      </div>
+      </div> */}
 
       {/* Integration Showcase */}
-      <IntegrationShowcase />
+      {/* <IntegrationShowcase /> */}
 
       {/* All in One Solution Section */}
       <section className="py-20 bg-white">
@@ -913,7 +910,7 @@ const GarnetLandingPage = () => {
             transition={{ duration: 0.6, delay: 0.8 }}
           >
             <p className="text-gray-600 mb-6 text-lg">
-              Don't see your industry? GARNET adapts to any compliance framework.
+              Don't see your industry? Garnet adapts to any compliance framework.
             </p>
             <motion.button 
               className="bg-white text-purple-600 border-2 border-purple-200 px-8 py-3 rounded-full font-semibold hover:bg-purple-50 hover:border-purple-300 transition-all inline-flex items-center group"
@@ -931,7 +928,7 @@ const GarnetLandingPage = () => {
       <SecurityTrustSection />
 
       {/* Interactive Statistics Section */}
-      <section id="stats" className="py-20 bg-gradient-to-br from-gray-50 to-white">
+      {/* <section id="stats" className="py-20 bg-gradient-to-br from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             className="text-center mb-16"
@@ -945,7 +942,7 @@ const GarnetLandingPage = () => {
               <span className="block sm:inline bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Drive Growth</span>
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
-              See how GARNET transforms compliance workflows and accelerates business outcomes.
+              See how Garnet transforms compliance workflows and accelerates business outcomes.
             </p>
           </motion.div>
 
@@ -968,10 +965,10 @@ const GarnetLandingPage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 bg-gradient-to-br from-purple-50 to-pink-50">
+      {/* <section id="testimonials" className="py-20 bg-gradient-to-br from-purple-50 to-pink-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             className="text-center mb-16"
@@ -985,7 +982,7 @@ const GarnetLandingPage = () => {
               <span className="block sm:inline bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Leaders</span>
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
-              Hear from compliance professionals who've transformed their workflows with GARNET.
+              Hear from compliance professionals who've transformed their workflows with Garnet.
             </p>
           </motion.div>
 
@@ -1020,7 +1017,7 @@ const GarnetLandingPage = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* FAQ Section */}
       <section className="py-20 bg-white">
@@ -1122,7 +1119,7 @@ const GarnetLandingPage = () => {
               <span className="block">Compliance Process?</span>
             </h2>
             <p className="text-lg sm:text-xl text-purple-100 max-w-3xl mx-auto mb-10">
-              Join hundreds of companies already saving time and closing deals faster with GARNET's AI-powered compliance platform.
+              Join hundreds of companies already saving time and closing deals faster with Garnet's AI-powered compliance platform.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <motion.button 
@@ -1134,13 +1131,13 @@ const GarnetLandingPage = () => {
                 Join Waitlist
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </motion.button>
-              <motion.button 
+              {/* <motion.button 
                 className="border-2 border-white text-white px-6 sm:px-8 py-4 rounded-full text-lg font-semibold hover:bg-white hover:text-purple-600 transition-all group"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 Schedule Demo
-              </motion.button>
+              </motion.button> */}
             </div>
             <p className="text-purple-200 text-sm mt-6">
               No credit card required • 14-day free trial • Cancel anytime

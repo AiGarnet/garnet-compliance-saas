@@ -53,9 +53,9 @@ const VendorsPage = () => {
           
       <main id="main-content" className="container mx-auto py-8 px-4">
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-800 flex items-center">
+            <h1 className="text-2xl font-bold text-gray-800 flex items-center">
               <Building2 className="mr-3 h-7 w-7 text-primary" />
               Vendors
             </h1>
@@ -63,7 +63,7 @@ const VendorsPage = () => {
           </div>
           
           <div className="flex items-center">
-            <button className="bg-primary text-white hover:bg-primary/90 px-4 py-2 rounded-md flex items-center transition-colors">
+            <button className="garnet-button garnet-button-gradient flex items-center">
               <Plus className="h-5 w-5 mr-2" />
               Add Vendor
             </button>

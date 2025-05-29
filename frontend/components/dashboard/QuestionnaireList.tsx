@@ -134,15 +134,15 @@ export function QuestionnaireList({
   const getStatusBadgeStyle = (status: QuestionnaireStatus) => {
     switch (status) {
       case 'Completed':
-        return "bg-success-light text-success";
+        return "badge-success";
       case 'In Review':
-        return "bg-secondary-light text-secondary";
+        return "badge-secondary";
       case 'In Progress':
-        return "bg-primary-light text-primary";
+        return "badge-primary";
       case 'Draft':
-        return "bg-warning-light text-warning";
+        return "badge-warning";
       case 'Not Started':
-        return "bg-gray-100 text-gray-600";
+        return "badge-primary bg-opacity-10";
       default:
         return "bg-gray-100 text-gray-600";
     }
@@ -150,11 +150,11 @@ export function QuestionnaireList({
   
   // Get progress bar styling based on progress
   const getProgressBarStyle = (progress: number) => {
-    if (progress === 100) return "bg-emerald-500 dark:bg-success";
-    if (progress > 75) return "bg-blue-500 dark:bg-secondary";
-    if (progress > 30) return "bg-indigo-500 dark:bg-primary";
-    if (progress > 0) return "bg-amber-500 dark:bg-warning";
-    return "bg-gray-300 dark:bg-gray-600";
+    if (progress === 100) return "progress-bar-fill-success";
+    if (progress > 75) return "progress-bar-fill-primary";
+    if (progress > 30) return "progress-bar-fill-primary";
+    if (progress > 0) return "progress-bar-fill-warning";
+    return "bg-gray-300";
   };
   
   // Render filter pills
@@ -201,14 +201,14 @@ export function QuestionnaireList({
     // Error state
     if (error) {
       return (
-        <div className="flex flex-col items-center justify-center py-16 text-center" aria-live="assertive">
+        <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in" aria-live="assertive">
           <div className="w-12 h-12 rounded-full bg-danger-light flex items-center justify-center mb-4">
             <AlertTriangle className="w-6 h-6 text-danger" />
           </div>
           <p className="text-gray-800 mb-4">{error || 'Unable to load questionnaires.'}</p>
           {onRetry && (
             <button 
-              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="garnet-button garnet-button-primary"
               onClick={onRetry}
             >
               Retry
@@ -224,19 +224,11 @@ export function QuestionnaireList({
       if (initialQuestionnaires.length === 0 && !searchTerm && statusFilter === 'All') {
         return (
           <div 
-            className="border-2 border-dashed border-gray-200 rounded-md p-16 flex flex-col items-center justify-center"
+            className="border-2 border-dashed border-gray-200 rounded-xl p-16 flex flex-col items-center justify-center animate-fade-in"
             aria-live="polite"
           >
             <p className="text-gray-500 text-center mb-4">No questionnaires available yet.</p>
-            {onAddQuestionnaire && (
-              <button 
-                onClick={onAddQuestionnaire}
-                className="bg-primary text-white hover:bg-primary/90 px-4 py-2 rounded-md flex items-center transition-colors"
-              >
-                <PlusCircle className="h-5 w-5 mr-2" />
-                Add Questionnaire
-              </button>
-            )}
+            <p className="text-gray-500 text-center">Click the "New Questionnaire" button above to get started.</p>
           </div>
         );
       }
@@ -244,12 +236,12 @@ export function QuestionnaireList({
       // If no questionnaires after filtering/searching
       return (
         <div 
-          className="border-2 border-dashed border-gray-200 rounded-md p-16 flex flex-col items-center justify-center"
+          className="border-2 border-dashed border-gray-200 rounded-xl p-16 flex flex-col items-center justify-center animate-fade-in"
           aria-live="polite"
         >
           <p className="text-gray-500 text-center">No questionnaires match your current filters.</p>
           <button 
-            className="mt-4 text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary/30 rounded-md px-2 py-1"
+            className="mt-4 text-primary hover:text-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30 rounded-md px-2 py-1"
             onClick={() => {
               setSearchTerm('');
               setStatusFilter('All');
@@ -321,7 +313,7 @@ export function QuestionnaireList({
                   <TableCell className="font-medium">{questionnaire.name}</TableCell>
                   <TableCell>
                     <span className={cn(
-                      "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+                      "badge",
                       getStatusBadgeStyle(questionnaire.status)
                     )}>
                       {questionnaire.status}
@@ -331,33 +323,33 @@ export function QuestionnaireList({
                     {questionnaire.dueDate}
                   </TableCell>
                   <TableCell>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                    <div className="progress-bar">
                       <div 
                         className={cn(
-                          "h-2.5 rounded-full transition-all duration-300",
+                          "progress-bar-fill",
                           getProgressBarStyle(questionnaire.progress)
                         )}
                         style={{ width: `${questionnaire.progress}%` }}
                       ></div>
                     </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">{questionnaire.progress}%</span>
+                    <span className="text-xs text-gray-500 mt-1 block">{questionnaire.progress}%</span>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <button 
-                        className="text-primary hover:text-primary/80 transition-colors"
-                        onClick={() => onEditQuestionnaire && onEditQuestionnaire(questionnaire)}
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        className="text-gray-600 hover:text-gray-800 transition-colors"
+                        className="text-primary hover:text-primary-dark transition-colors"
                         onClick={() => onViewQuestionnaire && onViewQuestionnaire(questionnaire)}
                       >
                         View
                       </button>
                       <button 
-                        className="text-red-600 hover:text-red-800 transition-colors"
+                        className="text-primary hover:text-primary-dark transition-colors"
+                        onClick={() => onEditQuestionnaire && onEditQuestionnaire(questionnaire)}
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        className="text-danger hover:text-danger-dark transition-colors"
                         onClick={() => onDeleteQuestionnaire && onDeleteQuestionnaire(questionnaire)}
                       >
                         Delete
@@ -372,35 +364,35 @@ export function QuestionnaireList({
         
         {/* Mobile Card View */}
         <div className="md:hidden">
-          <ul className="space-y-3">
+          <ul className="space-y-6">
             {filteredAndSortedQuestionnaires.map(questionnaire => (
               <li 
                 key={questionnaire.id}
-                className="flex flex-col p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                className="garnet-card p-5 animate-fade-in"
               >
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-medium text-gray-800">{questionnaire.name}</h3>
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800">{questionnaire.name}</h3>
                   <span className={cn(
-                    "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+                    "badge",
                     getStatusBadgeStyle(questionnaire.status)
                   )}>
                     {questionnaire.status}
                   </span>
                 </div>
                 
-                <div className="text-sm text-gray-600 mb-3">
+                <div className="text-sm text-gray-600 mb-4">
                   <span className="font-medium">Due:</span> {questionnaire.dueDate}
                 </div>
                 
-                <div className="mb-3">
-                  <div className="flex justify-between text-sm mb-1">
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-600">Progress:</span>
                     <span className="font-medium">{questionnaire.progress}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                  <div className="progress-bar">
                     <div 
                       className={cn(
-                        "h-2.5 rounded-full transition-all duration-300",
+                        "progress-bar-fill",
                         getProgressBarStyle(questionnaire.progress)
                       )}
                       style={{ width: `${questionnaire.progress}%` }}
@@ -408,21 +400,21 @@ export function QuestionnaireList({
                   </div>
                 </div>
                 
-                <div className="flex justify-end gap-2 mt-2">
+                <div className="flex justify-end gap-3 mt-4 border-t pt-4 border-gray-100">
                   <button 
-                    className="text-primary hover:text-primary/80 transition-colors text-sm"
-                    onClick={() => onEditQuestionnaire && onEditQuestionnaire(questionnaire)}
-                  >
-                    Edit
-                  </button>
-                  <button 
-                    className="text-gray-600 hover:text-gray-800 transition-colors text-sm"
+                    className="garnet-button-small text-primary hover:text-primary-dark transition-colors"
                     onClick={() => onViewQuestionnaire && onViewQuestionnaire(questionnaire)}
                   >
                     View
                   </button>
                   <button 
-                    className="text-red-600 hover:text-red-800 transition-colors text-sm"
+                    className="garnet-button-small text-primary hover:text-primary-dark transition-colors"
+                    onClick={() => onEditQuestionnaire && onEditQuestionnaire(questionnaire)}
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    className="garnet-button-small text-danger hover:text-danger-dark transition-colors"
                     onClick={() => onDeleteQuestionnaire && onDeleteQuestionnaire(questionnaire)}
                   >
                     Delete
@@ -440,12 +432,24 @@ export function QuestionnaireList({
     <section 
       aria-label="Questionnaire list" 
       className={cn(
-        "bg-white rounded-xl shadow-sm border border-gray-200 p-6",
+        "bg-white rounded-xl shadow-md p-6 overflow-hidden",
         className
       )}
     >
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
-        <h2 className="text-xl font-semibold text-gray-800">Questionnaires</h2>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
+        <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+          <span className="text-primary mr-2">Your</span> Questionnaires
+        </h2>
+        
+        {onAddQuestionnaire && (
+          <button 
+            onClick={onAddQuestionnaire}
+            className="garnet-button garnet-button-gradient self-start sm:self-auto"
+          >
+            <PlusCircle className="h-5 w-5 mr-2" />
+            Add Questionnaire
+          </button>
+        )}
       </div>
 
       {renderSearchBar()}

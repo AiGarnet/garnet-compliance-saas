@@ -121,4 +121,423 @@
 .text-xs {
   font-size: var(--font-size-xs);
   line-height: 1.5;
+}
+
+/* Additional application styles */
+
+/* Apply base styles and CSS variables */
+:root {
+  scroll-behavior: smooth;
+}
+
+/* Implement GARNET theme based on the landing page */
+
+/* Gradient button styles */
+.btn-gradient {
+  background: linear-gradient(to right, rgb(var(--color-gradient-from)), rgb(var(--color-gradient-to)));
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-gradient:hover {
+  box-shadow: 0 4px 12px rgba(var(--color-gradient-from), 0.3);
+  transform: translateY(-2px);
+}
+
+/* Landing page inspired card style */
+.garnet-card {
+  background-color: white;
+  border-radius: var(--radius-xl);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  border: 1px solid rgb(var(--color-gray-100));
+  overflow: hidden;
+  position: relative;
+}
+
+.garnet-card:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.garnet-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(to right, rgb(var(--color-gradient-from)), rgb(var(--color-gradient-to)));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.garnet-card:hover::before {
+  opacity: 1;
+}
+
+/* Heading styles similar to landing page */
+.garnet-heading {
+  font-weight: 700;
+  color: rgb(var(--color-gray-900));
+  line-height: 1.2;
+}
+
+.garnet-heading-accent {
+  color: rgb(var(--color-primary));
+}
+
+/* Dashboard card with count and icon */
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  background-color: white;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.stat-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, rgba(var(--color-primary), 0.2), rgba(var(--color-primary), 0.1));
+  color: rgb(var(--color-primary));
+}
+
+.stat-card-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: rgb(var(--color-gray-900));
+}
+
+.stat-card-label {
+  font-size: 0.875rem;
+  color: rgb(var(--color-gray-500));
+  margin-top: 0.25rem;
+}
+
+/* Header and navigation styles */
+.nav-link {
+  position: relative;
+  color: rgb(var(--color-gray-700));
+  transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+  color: rgb(var(--color-primary));
+}
+
+.nav-link.active {
+  color: rgb(var(--color-primary));
+  font-weight: 500;
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -0.25rem;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: rgb(var(--color-primary));
+  border-radius: 1px;
+}
+
+/* Badge styles */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.badge-primary {
+  background-color: rgba(var(--color-primary), 0.15);
+  color: rgb(var(--color-primary-dark));
+}
+
+.badge-secondary {
+  background-color: rgba(var(--color-secondary), 0.15);
+  color: rgb(var(--color-secondary-dark));
+}
+
+.badge-success {
+  background-color: rgba(var(--color-success), 0.15);
+  color: rgb(var(--color-success-dark));
+}
+
+.badge-warning {
+  background-color: rgba(var(--color-warning), 0.15);
+  color: rgb(var(--color-warning-dark));
+}
+
+.badge-danger {
+  background-color: rgba(var(--color-danger), 0.15);
+  color: rgb(var(--color-danger-dark));
+}
+
+/* Form input styles */
+.garnet-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgb(var(--color-gray-200));
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  background-color: white;
+}
+
+.garnet-input:focus {
+  outline: none;
+  border-color: rgb(var(--color-primary));
+  box-shadow: 0 0 0 3px rgba(var(--color-primary), 0.1);
+}
+
+/* Button styles */
+.garnet-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.garnet-button-small {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.garnet-button-primary {
+  background-color: rgb(var(--color-primary));
+  color: white;
+}
+
+.garnet-button-primary:hover {
+  background-color: rgb(var(--color-primary-dark));
+}
+
+.garnet-button-secondary {
+  background-color: white;
+  color: rgb(var(--color-gray-800));
+  border: 1px solid rgb(var(--color-gray-200));
+}
+
+.garnet-button-secondary:hover {
+  background-color: rgb(var(--color-gray-50));
+}
+
+.garnet-button-gradient {
+  background: linear-gradient(to right, rgb(var(--color-gradient-from)), rgb(var(--color-gradient-to)));
+  color: white;
+  border: none;
+}
+
+.garnet-button-gradient:hover {
+  box-shadow: 0 4px 12px rgba(var(--color-gradient-from), 0.3);
+  transform: translateY(-1px);
+}
+
+/* Progress bar styles */
+.progress-bar {
+  width: 100%;
+  height: 0.5rem;
+  background-color: rgb(var(--color-gray-100));
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.5s ease;
+}
+
+.progress-bar-fill-primary {
+  background: linear-gradient(to right, rgb(var(--color-primary)), rgb(var(--color-gradient-to)));
+}
+
+.progress-bar-fill-success {
+  background-color: rgb(var(--color-success));
+}
+
+.progress-bar-fill-warning {
+  background-color: rgb(var(--color-warning));
+}
+
+.progress-bar-fill-danger {
+  background-color: rgb(var(--color-danger));
+}
+
+/* Questionnaire page specific styles */
+.questionnaire-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.questionnaire-header {
+  margin-bottom: 2rem;
+  position: relative;
+  padding-bottom: 1rem;
+}
+
+.questionnaire-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(to right, rgb(var(--color-primary)), rgb(var(--color-secondary)));
+  border-radius: 3px;
+}
+
+.questionnaire-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: rgb(var(--color-gray-900));
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.questionnaire-description {
+  color: rgb(var(--color-gray-600));
+  max-width: 768px;
+  font-size: 1.125rem;
+}
+
+.questionnaire-card {
+  background-color: white;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgb(var(--color-gray-200));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.questionnaire-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.questionnaire-card-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgb(var(--color-gray-200));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(to right, rgba(var(--color-primary), 0.05), rgba(var(--color-secondary), 0.05));
+}
+
+.questionnaire-card-title {
+  font-weight: 700;
+  color: rgb(var(--color-gray-900));
+  font-size: 1.25rem;
+}
+
+.questionnaire-card-body {
+  padding: 1.5rem;
+}
+
+.questionnaire-card-footer {
+  padding: 1.5rem;
+  border-top: 1px solid rgb(var(--color-gray-200));
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  background-color: rgba(var(--color-gray-50), 0.5);
+}
+
+/* Animated gradient border for cards on hover */
+.gradient-border {
+  position: relative;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(to right, rgb(var(--color-primary)), rgb(var(--color-secondary)));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.gradient-border:hover::before {
+  opacity: 1;
+}
+
+/* Pill accent elements */
+.pill-accent {
+  position: relative;
+  padding-left: 1rem;
+}
+
+.pill-accent::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 1rem;
+  background: linear-gradient(to bottom, rgb(var(--color-primary)), rgb(var(--color-secondary)));
+  border-radius: 2px;
+}
+
+/* Add animation classes */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Override any dark mode styles for consistency with landing page */
+.dark-mode {
+  --color-body-bg: 255 255 255;
+  --color-body-text: var(--color-gray-900);
+  
+  --color-header-bg: 255 255 255; 
+  --color-header-text: var(--color-gray-800);
+  
+  --color-card-bg: 255 255 255;
+  --color-card-border: var(--color-gray-200);
+  --color-card-text: var(--color-gray-700);
 } 

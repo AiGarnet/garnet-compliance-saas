@@ -118,7 +118,7 @@ export default function Header({ locale = 'en' }: HeaderProps) {
 
   return (
     <header 
-      className="sticky top-0 z-30 transition-colors"
+      className="sticky top-0 z-30 transition-colors bg-white shadow-sm"
       style={{backgroundColor: 'var(--header-bg)', color: 'var(--header-text)'}}
     >
       {/* Skip to content link */}
@@ -134,11 +134,8 @@ export default function Header({ locale = 'en' }: HeaderProps) {
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center" aria-label={t.homePage}>
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary flex items-center justify-center mr-2">
-                <span className="text-white text-lg font-bold">G</span>
-              </div>
-              <span className="text-xl font-semibold">
-                GarnetAI
+              <span className="text-2xl font-extrabold tracking-wide bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Garnet
               </span>
             </Link>
           </div>
@@ -151,8 +148,8 @@ export default function Header({ locale = 'en' }: HeaderProps) {
                   <Link 
                     href={item.href}
                     className={cn(
-                      "hover:text-primary min-h-[44px] min-w-[44px] flex items-center px-3 py-2 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30",
-                      pathname === item.href && "text-primary font-medium border-b-2 border-primary"
+                      "nav-link min-h-[44px] min-w-[44px] flex items-center px-3 py-2 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30",
+                      pathname === item.href ? "active" : ""
                     )}
                     aria-current={pathname === item.href ? 'page' : undefined}
                   >
@@ -177,13 +174,13 @@ export default function Header({ locale = 'en' }: HeaderProps) {
                   aria-label={t.search}
                   aria-expanded={isSearchOpen}
                 >
-                  <Search className="h-5 w-5" />
+                  <Search className="h-5 w-5 text-gray-500" />
                 </button>
                 <input
                   type="text"
                   placeholder={isSearchOpen ? t.searchPlaceholder : ""}
                   className={cn(
-                    "pl-10 py-2 pr-4 rounded-full text-sm bg-controls-bg focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all duration-200",
+                    "pl-10 py-2 pr-4 rounded-full text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all duration-200",
                     isSearchOpen ? "w-full opacity-100" : "w-10 opacity-0 cursor-pointer"
                   )}
                   aria-hidden={!isSearchOpen}
@@ -193,83 +190,76 @@ export default function Header({ locale = 'en' }: HeaderProps) {
             
             {/* Notifications Bell */}
             <button
-              className="min-h-[44px] min-w-[44px] p-2 rounded-full hover:bg-controls-bg focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="min-h-[44px] min-w-[44px] p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/30"
               aria-label={t.notifications}
             >
-              <Bell className="h-5 w-5" />
+              <Bell className="h-5 w-5 text-gray-500" />
             </button>
-            
-            {/* Dark Mode Toggle */}
-            <ThemeToggle locale={currentLocale} />
-            
-            {/* Language Selector */}
-            <div className="relative">
-              <button
-                className="min-h-[44px] min-w-[44px] p-2 rounded-full hover:bg-controls-bg focus:outline-none focus:ring-2 focus:ring-primary/30"
-                aria-label={t.language}
-                onClick={() => {
-                  // Toggle through languages for simplicity
-                  const currentIndex = languages.findIndex(l => l.code === currentLocale);
-                  const nextIndex = (currentIndex + 1) % languages.length;
-                  setCurrentLocale(languages[nextIndex].code);
-                }}
-              >
-                <Globe className="h-5 w-5" />
-              </button>
-            </div>
             
             {/* Profile Dropdown */}
             <div className="relative" ref={profileDropdownRef}>
               <button
-                className="min-h-[44px] min-w-[44px] p-2 flex items-center gap-2 rounded-full hover:bg-controls-bg focus:outline-none focus:ring-2 focus:ring-primary/30"
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="flex items-center min-h-[44px] min-w-[44px] p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/30"
                 aria-expanded={isProfileOpen}
                 aria-haspopup="true"
+                aria-label={t.profile}
               >
-                <div className="h-8 w-8 rounded-full bg-primary-light flex items-center justify-center dark:bg-primary-dark">
-                  <span className="text-primary font-medium dark:text-white">SA</span>
+                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 flex items-center justify-center text-primary">
+                  <User className="h-5 w-5" />
                 </div>
-                <span className="hidden md:inline">{t.profile}</span>
               </button>
               
               {isProfileOpen && (
                 <div 
-                  className="absolute right-0 mt-2 w-48 bg-card-bg rounded-md shadow-lg py-1 z-10 border border-card-border"
+                  className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 animate-fade-in"
                   role="menu"
                   aria-orientation="vertical"
+                  aria-labelledby="user-menu"
                 >
-                  <div className="px-4 py-2 border-b border-card-border">
-                    <div className="text-sm font-medium">Sarah Anderson</div>
-                    <div className="text-xs text-muted-text">sarah@company.com</div>
-                  </div>
-                  
-                  <button 
-                    className="block w-full text-left px-4 py-2 text-sm hover:bg-controls-bg focus:bg-controls-bg focus:outline-none"
+                  <a 
+                    href="#" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary/5 transition-colors"
                     role="menuitem"
                   >
-                    <User className="h-4 w-4 inline-block mr-2" />
                     {t.profile}
-                  </button>
-                  
-                  <form method="POST" action="/logout">
-                    <input type="hidden" name="csrf_token" value="fake-csrf-token" />
-                    <button 
-                      type="submit"
-                      className="block w-full text-left px-4 py-2 text-sm hover:bg-controls-bg focus:bg-controls-bg focus:outline-none"
-                      role="menuitem"
-                    >
-                      <LogOut className="h-4 w-4 inline-block mr-2" />
-                      {t.logout}
-                    </button>
-                  </form>
+                  </a>
+                  <a 
+                    href="#" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary/5 transition-colors"
+                    role="menuitem"
+                  >
+                    Settings
+                  </a>
+                  <a 
+                    href="#" 
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary/5 transition-colors flex items-center"
+                    role="menuitem"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    {t.logout}
+                  </a>
                 </div>
               )}
             </div>
             
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-              <MobileNavigation />
-            </div>
+            {/* Mobile Menu Button - Only visible on mobile */}
+            <button 
+              aria-label="Menu"
+              className="md:hidden min-h-[44px] min-w-[44px] p-2 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              onClick={() => {
+                // This is expected to be handled by the MobileNavigation component
+                const mobileMenu = document.getElementById('mobile-menu');
+                if (mobileMenu) {
+                  const isExpanded = mobileMenu.getAttribute('aria-expanded') === 'true';
+                  mobileMenu.setAttribute('aria-expanded', (!isExpanded).toString());
+                  mobileMenu.classList.toggle('translate-x-0');
+                  mobileMenu.classList.toggle('-translate-x-full');
+                }
+              }}
+            >
+              <Menu className="h-6 w-6" />
+            </button>
           </div>
         </div>
       </div>

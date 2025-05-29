@@ -95,13 +95,14 @@
      - Functional colors with semantic meaning 
      - Colors are specified in RGB format for Tailwind compatibility
      -------------------------------------------------------------------------- */
-  --color-primary: 14 165 233;        /* Sky-500 (Blue-teal tone) */
-  --color-primary-light: 224 242 254; /* Sky-100 */
-  --color-primary-dark: 3 105 161;    /* Sky-700 */
+  /* Garnet Purple Theme - based on the landing page */
+  --color-primary: 124 58 237;        /* Purple-600 */
+  --color-primary-light: 233 213 255; /* Purple-100 */
+  --color-primary-dark: 107 33 168;   /* Purple-800 */
   
-  --color-secondary: 37 99 235;       /* Blue-600 */
-  --color-secondary-light: 219 234 254; /* Blue-100 */
-  --color-secondary-dark: 30 58 138;  /* Blue-800 */
+  --color-secondary: 219 39 119;      /* Pink-600 */
+  --color-secondary-light: 252 231 243; /* Pink-100 */
+  --color-secondary-dark: 157 23 77;  /* Pink-800 */
   
   --color-success: 22 163 74;         /* Green-600 */
   --color-success-light: 220 252 231; /* Green-100 */
@@ -115,9 +116,9 @@
   --color-warning-light: 254 249 195; /* Yellow-100 */
   --color-warning-dark: 161 98 7;     /* Yellow-700 */
   
-  --color-info: 6 182 212;            /* Cyan-500 */
-  --color-info-light: 207 250 254;    /* Cyan-100 */
-  --color-info-dark: 21 94 117;       /* Cyan-800 */
+  --color-info: 79 70 229;            /* Indigo-600 */
+  --color-info-light: 224 231 255;    /* Indigo-100 */
+  --color-info-dark: 55 48 163;       /* Indigo-800 */
   
   /* --------------------------------------------------------------------------
      COLORS - NEUTRAL
@@ -139,7 +140,7 @@
      COLORS - THEME
      - Theme colors for application UI elements
      -------------------------------------------------------------------------- */
-  --color-body-bg: var(--color-gray-50);
+  --color-body-bg: 255 255 255; /* White background like landing page */
   --color-body-text: var(--color-gray-900);
   
   --color-header-bg: 255 255 255; /* white */
@@ -151,11 +152,15 @@
   
   --color-muted-text: var(--color-gray-500);
   
-  --color-input-bg: var(--color-gray-100);
+  --color-input-bg: 255 255 255; /* white input fields */
   --color-input-text: var(--color-gray-900);
   --color-input-placeholder: var(--color-gray-500);
   --color-input-border: var(--color-gray-300);
   --color-input-focus: var(--color-primary);
+  
+  /* Gradient colors for buttons and accents - from the landing page */
+  --color-gradient-from: 124 58 237; /* Purple-600 */
+  --color-gradient-to: 219 39 119;   /* Pink-600 */
   
   /* --------------------------------------------------------------------------
      RADIUS
@@ -163,7 +168,7 @@
      -------------------------------------------------------------------------- */
   --radius-none: 0;
   --radius-sm: 0.125rem;     /* 2px */
-  --radius-md: 0.25rem;      /* 4px */
+  --radius-md: 0.375rem;     /* 6px - increased for more modern look */
   --radius-lg: 0.5rem;       /* 8px */
   --radius-xl: 0.75rem;      /* 12px */
   --radius-2xl: 1rem;        /* 16px */
@@ -239,21 +244,16 @@
   --color-input-border: var(--color-gray-700);
   
   /* In dark mode, we brighten some colors for better contrast */
-  --color-primary: 56 189 248;        /* Brighter sky blue */
-  --color-primary-light: 3 105 161;   /* Sky-700 as light in dark mode */
-  --color-primary-dark: 224 242 254;  /* Sky-100 as dark in dark mode */
+  --color-primary: 167 139 250;       /* Brighter purple */
+  --color-primary-light: 107 33 168;  /* Purple-800 as light in dark mode */
+  --color-primary-dark: 233 213 255;  /* Purple-100 as dark in dark mode */
+  
+  --color-secondary: 244 114 182;     /* Brighter pink */
+  --color-secondary-light: 157 23 77; /* Pink-800 as light in dark mode */
   
   --color-success: 52 211 153;        /* Brighter green */
   --color-success-light: 6 78 59;     /* Green-900 as light in dark mode */
   
   --color-danger: 248 113 113;        /* Brighter red */
   --color-danger-light: 127 29 29;    /* Red-900 as light in dark mode */
-  
-  --color-warning: 251 191 36;        /* Brighter yellow */
-  --color-warning-light: 120 53 15;   /* Yellow-900 as light in dark mode */
-  
-  --color-info: 56 189 248;           /* Brighter cyan */
-  --color-info-light: 22 78 99;       /* Cyan-900 as light in dark mode */
-  
-  --focus-ring-color: rgb(var(--color-primary) / 0.7);
 } 

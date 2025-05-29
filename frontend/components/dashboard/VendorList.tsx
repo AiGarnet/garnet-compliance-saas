@@ -353,22 +353,25 @@ export function VendorList({
   };
 
   return (
-    <>
-      <section 
-        aria-label="Vendor list" 
-        className={cn(
-          "bg-white p-8 rounded-xl shadow-sm border border-gray-200",
-          className
-        )}
-      >
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
-          <h2 className="text-xl font-semibold text-gray-800" id="vendor-list-heading">{t.title}</h2>
-        </div>
+    <section 
+      aria-label="Vendor list" 
+      className={cn(
+        "bg-white rounded-xl shadow-md p-6 overflow-hidden",
+        className
+      )}
+    >
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
+        <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+          <span className="text-primary mr-2">Your</span> Vendors
+        </h2>
+      </div>
 
-        {renderSearchBar()}
-        {renderFilterPills()}
-        {renderContent()}
-      </section>
-    </>
+      {renderSearchBar()}
+      {renderFilterPills()}
+      {renderContent()}
+      
+      {/* Hidden status for screen readers */}
+      <div className="sr-only" aria-live="polite" ref={statusUpdateRef}></div>
+    </section>
   );
 } 

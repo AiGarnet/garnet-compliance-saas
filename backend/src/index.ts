@@ -54,6 +54,8 @@ try {
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  maxRetries: 3,
+  timeout: 60000, // Increase timeout to 60 seconds for more comprehensive answers
 });
 
 // Routes
@@ -246,10 +248,35 @@ async function generateAnswer(question: string, relevantData: any[]): Promise<st
   }
 
   try {
-    // Construct the prompt as specified in the requirements
-    const systemPrompt = "You are a security and compliance assistant for SaaS vendors. Use the following reference information to answer the user's question accurately and concisely:";
+    // Enhanced system prompt clarifying the role as the vendor being questioned
+    const systemPrompt = `You are answering compliance questions on behalf of a vendor being assessed. You must respond as if you are the actual vendor, NOT as a SaaS platform or compliance assistant.
+
+Instructions:
+1. Answer as if you are the vendor directly answering the compliance questionnaire.
+2. Use first-person perspective: "We implement...", "Our company has...", "Yes, our organization..."
+3. Be specific and factual about compliance practices.
+4. When answering security/compliance questions, provide specific details about your controls and processes.
+5. Begin with a direct answer (Yes/No when applicable) followed by specific details.
+6. Include relevant regulatory references when applicable.
+7. Avoid phrases like "As a compliance assistant..." or "The vendor should..."
+8. Respond in a professional, confident, and transparent tone.
+9. Include specific details about implementation when relevant.
+10. For questions about certifications or policies, mention specific standards or frameworks.
+
+Example questions and answers:
+Q: Does your organization have a published Privacy Policy?
+A: Yes, our organization maintains a comprehensive Privacy Policy that is publicly available on our website. Our policy details what data we collect, how we use it, and the rights of data subjects. We regularly review and update it to reflect changes in regulations and our business practices. Our policy is compliant with GDPR, CCPA, and other applicable privacy regulations.
+
+Q: Do you notify supervisory authorities and affected individuals within 72 hours of a data breach?
+A: Yes, we notify supervisory authorities and affected individuals within 72 hours of becoming aware of a data breach, as required by GDPR Article 33. Our incident response team assesses breach impact, prepares documentation, and handles all notifications within the statutory timeframe. We conduct regular breach simulation exercises to ensure our team is prepared to respond efficiently.
+
+Q: Is personal data encrypted at rest and in transit?
+A: Yes, we encrypt all personal data both at rest and in transit. Our organization uses industry-standard encryption protocols (AES-256 for data at rest and TLS 1.2+ for data in transit). Our encryption key management follows NIST guidelines, with regular rotation and secure storage of encryption keys. We verify our encryption implementation through regular security audits and penetration testing.
+
+Q: Have you appointed a Data Protection Officer (DPO)? If yes, provide details.
+A: Yes, our organization has appointed a qualified Data Protection Officer who oversees our data protection strategy and implementation. Our DPO has expertise in data protection law and practices, and is responsible for monitoring compliance, advising on Data Protection Impact Assessments, and serving as a contact point for data subjects and supervisory authorities. The DPO reports directly to our executive leadership to ensure independence in their function.`;
+
     const contextData = JSON.stringify(relevantData, null, 2);
-    const userPrompt = `${systemPrompt}\n\nReference Information:\n${contextData}\n\nQ: ${question}`;
     
     const response = await openai.chat.completions.create({
       model: "gpt-4",
@@ -263,7 +290,11 @@ async function generateAnswer(question: string, relevantData: any[]): Promise<st
           content: `Reference Information:\n${contextData}\n\nQ: ${question}`
         }
       ],
-      temperature: 0,
+      temperature: 0.3, // Slightly increased for better articulation while maintaining accuracy
+      max_tokens: 800, // Allow for more comprehensive answers
+      top_p: 0.95, // Slightly higher nucleus sampling for more natural language
+      presence_penalty: 0.1, // Slight penalty to reduce repetition
+      frequency_penalty: 0.1, // Slight penalty to encourage diverse phrasing
     });
 
     const answer = response.choices[0]?.message?.content || 
@@ -279,6 +310,79 @@ async function generateAnswer(question: string, relevantData: any[]): Promise<st
 // Ping route
 app.get('/ping', (req: Request, res: Response) => {
   res.send('pong');
+});
+
+// Batch questionnaire endpoint for processing multiple questions at once
+app.post('/api/batch-answers', async (req: Request, res: Response) => {
+  try {
+    const { questions } = req.body;
+    
+    if (!questions || !Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ error: 'Questions array is required' });
+    }
+
+    // Validate OpenAI configuration
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    }
+
+    // Process each question in parallel
+    const answers = await Promise.all(
+      questions.map(async (question) => {
+        try {
+          // Find relevant compliance information
+          const relevantData = findRelevantComplianceData(question, complianceData);
+          
+          // Generate answer using OpenAI
+          const answer = await generateAnswer(question, relevantData);
+          
+          return { question, answer, error: null };
+        } catch (error: any) {
+          console.error(`Error processing question: ${question}`, error);
+          return { 
+            question, 
+            answer: "We couldn't generate an answer—please try again.", 
+            error: error.message || 'Error processing question' 
+          };
+        }
+      })
+    );
+    
+    res.json({ answers });
+  } catch (error: any) {
+    console.error('Error processing batch questions:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// Add the /ask endpoint to match the one called from the frontend
+app.post('/ask', async (req: Request, res: Response) => {
+  try {
+    const { question } = req.body;
+    
+    if (!question) {
+      return res.status(400).json({ error: 'Question is required' });
+    }
+
+    // Validate OpenAI configuration
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    }
+
+    // Find relevant compliance information
+    const relevantData = findRelevantComplianceData(question, complianceData);
+    
+    // Generate answer using OpenAI
+    const answer = await generateAnswer(question, relevantData);
+    
+    res.json({ question, answer });
+  } catch (error: any) {
+    console.error('Error processing question:', error);
+    res.status(500).json({ 
+      error: error.message || 'Internal server error',
+      answer: "We couldn't generate an answer—please try again."
+    });
+  }
 });
 
 // Start server

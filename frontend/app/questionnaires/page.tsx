@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, ChangeEvent, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList, Filter, Plus, Search, SlidersHorizontal, X, Upload, FileText, FileType, Files, RefreshCw, Trash2, Sparkles, MessageSquare } from "lucide-react";
+import { ClipboardList, Filter, Plus, Search, SlidersHorizontal, X, Upload, FileText, FileType, Files, RefreshCw, Trash2, Sparkles, MessageSquare, ClipboardCopy } from "lucide-react";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { QuestionnaireList, Questionnaire, QuestionnaireStatus } from "@/components/dashboard/QuestionnaireList";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { debounce } from 'lodash';
 interface QuestionAnswer {
   question: string;
   answer: string;
+  isLoading?: boolean;
 }
 
 const MAX_QUESTIONS = 500;
@@ -271,15 +272,142 @@ const QuestionnairesPage = () => {
 
     setIsGeneratingAnswers(true);
     
+    // Initialize answers with loading states for each question
+    const initialAnswers = questions.map(question => ({ 
+      question, 
+      answer: 'Generating...', 
+      isLoading: true 
+    }));
+    setGeneratedAnswers(initialAnswers);
+    setShowAIAssistant(true);
+    
     try {
-      const apiEndpoint = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-        ? 'http://localhost:5000/ask'
-        : 'https://garnet-compliance-saas-production.up.railway.app/ask';
+      const baseApiEndpoint = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+        ? 'http://localhost:5000'
+        : 'https://garnet-compliance-saas-production.up.railway.app';
+      
+      const batchEndpoint = `${baseApiEndpoint}/batch-ask`;
+      const singleEndpoint = `${baseApiEndpoint}/ask`;
+      
+      // Try batch processing first
+      try {
+        const batchResponse = await fetch(batchEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ questions }),
+        });
+        
+        if (batchResponse.ok) {
+          const data = await batchResponse.json();
+          
+          if (data.answers && Array.isArray(data.answers)) {
+            // Map the batch responses back to our format
+            const answers = data.answers.map((item: any, index: number) => ({
+              question: item.question || questions[index],
+              answer: item.answer || "We couldn't generate an answer—please try again.",
+              isLoading: false
+            }));
+            
+            setGeneratedAnswers(answers);
+            
+            // Check if a questionnaire with the same title or questions already exists
+            const storedQuestionnaires = localStorage.getItem('user_questionnaires');
+            let userQuestionnaires: Array<Questionnaire & { answers?: QuestionAnswer[] }> = [];
+            let existingQuestionnaireId: string | null = null;
+            
+            if (storedQuestionnaires) {
+              try {
+                userQuestionnaires = JSON.parse(storedQuestionnaires);
+                
+                // Check for duplicate by comparing title and questions
+                const normalizedTitle = (questionnaireTitle || 'Untitled Questionnaire').trim().toLowerCase();
+                
+                for (const q of userQuestionnaires) {
+                  // Check if title matches
+                  const qTitle = q.name.trim().toLowerCase();
+                  if (qTitle === normalizedTitle) {
+                    // Check if questions match (at least 80% match)
+                    if (q.answers && q.answers.length === questions.length) {
+                      let matchCount = 0;
+                      for (let i = 0; i < questions.length; i++) {
+                        if (q.answers[i].question.trim().toLowerCase() === questions[i].trim().toLowerCase()) {
+                          matchCount++;
+                        }
+                      }
+                      
+                      // If more than 80% of questions match, consider it a duplicate
+                      if (matchCount / questions.length >= 0.8) {
+                        existingQuestionnaireId = q.id;
+                        
+                        // Update the existing questionnaire with new answers
+                        q.answers = answers;
+                        break;
+                      }
+                    }
+                  }
+                }
+                
+                // If a duplicate was found, update it
+                if (existingQuestionnaireId) {
+                  localStorage.setItem('user_questionnaires', JSON.stringify(userQuestionnaires));
+                  
+                  // Clear autosaved draft
+                  localStorage.removeItem(AUTOSAVE_KEY);
+                  
+                  // Close modal and redirect to answers page
+                  closeQuestionnaireInput();
+                  router.push(`/questionnaires/answers?id=${existingQuestionnaireId}`);
+                  
+                  return answers;
+                }
+              } catch (e) {
+                console.error('Error parsing stored questionnaires:', e);
+              }
+            }
+            
+            // Create and save questionnaire directly after generation, then redirect
+            const newQuestionnaire: Questionnaire & { answers?: QuestionAnswer[] } = {
+              id: `q${Date.now()}`,  
+              name: questionnaireTitle || 'Untitled Questionnaire',
+              status: "Not Started" as QuestionnaireStatus,
+              dueDate: new Date().toLocaleDateString(),
+              progress: 0,
+              answers: answers,
+            };
+            
+            // Add the new questionnaire
+            userQuestionnaires.push(newQuestionnaire);
+            
+            // Save back to local storage
+            localStorage.setItem('user_questionnaires', JSON.stringify(userQuestionnaires));
+            
+            // Clear autosaved draft
+            localStorage.removeItem(AUTOSAVE_KEY);
+            
+            // Close modal and redirect to answers page
+            closeQuestionnaireInput();
+            router.push(`/questionnaires/answers?id=${newQuestionnaire.id}`);
+            
+            return answers;
+          }
+        }
+        
+        // If we reach here, batch processing failed but we'll continue with individual processing
+        console.warn("Batch processing failed, falling back to individual processing");
+      } catch (batchError) {
+        console.error("Error in batch processing:", batchError);
+        // Continue with individual processing
+      }
 
-      const aiResponses = await Promise.all(
-        questions.map(async (question) => {
+      // Process questions in parallel but update UI as each answer arrives
+      const finalAnswers: QuestionAnswer[] = [...initialAnswers];
+      
+      await Promise.all(
+        questions.map(async (question, index) => {
           try {
-            const aiResponse = await fetch(apiEndpoint, {
+            const aiResponse = await fetch(singleEndpoint, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -292,17 +420,122 @@ const QuestionnairesPage = () => {
             }
             
             const aiData = await aiResponse.json();
-            return { question, answer: aiData.answer || 'No answer available' };
+            const answer = aiData.answer || "We couldn't generate an answer—please try again.";
+            
+            // Update this specific answer
+            finalAnswers[index] = { 
+              question, 
+              answer, 
+              isLoading: false 
+            };
+            
+            // Update UI with current state of all answers
+            setGeneratedAnswers([...finalAnswers]);
+            
           } catch (error) {
             console.error('Error getting AI answer:', error);
-            return { question, answer: 'Unable to generate an answer. Please consult the compliance officer.' };
+            
+            // Update with error state
+            finalAnswers[index] = { 
+              question, 
+              answer: "We couldn't generate an answer—please try again.", 
+              isLoading: false 
+            };
+            
+            // Update UI with current state
+            setGeneratedAnswers([...finalAnswers]);
           }
         })
       );
 
-      setGeneratedAnswers(aiResponses);
-      setShowAIAssistant(true);
-      return aiResponses; // Return the generated answers
+      // Final update - all loading states should be false now
+      const completedAnswers = finalAnswers.map(qa => ({
+        question: qa.question,
+        answer: qa.answer,
+        isLoading: false
+      }));
+      
+      setGeneratedAnswers(completedAnswers);
+      
+      // Check if a questionnaire with the same title or questions already exists
+      const storedQuestionnaires = localStorage.getItem('user_questionnaires');
+      let userQuestionnaires: Array<Questionnaire & { answers?: QuestionAnswer[] }> = [];
+      let existingQuestionnaireId: string | null = null;
+      
+      if (storedQuestionnaires) {
+        try {
+          userQuestionnaires = JSON.parse(storedQuestionnaires);
+          
+          // Check for duplicate by comparing title and questions
+          const normalizedTitle = (questionnaireTitle || 'Untitled Questionnaire').trim().toLowerCase();
+          
+          for (const q of userQuestionnaires) {
+            // Check if title matches
+            const qTitle = q.name.trim().toLowerCase();
+            if (qTitle === normalizedTitle) {
+              // Check if questions match (at least 80% match)
+              if (q.answers && q.answers.length === questions.length) {
+                let matchCount = 0;
+                for (let i = 0; i < questions.length; i++) {
+                  if (q.answers[i].question.trim().toLowerCase() === questions[i].trim().toLowerCase()) {
+                    matchCount++;
+                  }
+                }
+                
+                // If more than 80% of questions match, consider it a duplicate
+                if (matchCount / questions.length >= 0.8) {
+                  existingQuestionnaireId = q.id;
+                  
+                  // Update the existing questionnaire with new answers
+                  q.answers = completedAnswers;
+                  break;
+                }
+              }
+            }
+          }
+          
+          // If a duplicate was found, update it
+          if (existingQuestionnaireId) {
+            localStorage.setItem('user_questionnaires', JSON.stringify(userQuestionnaires));
+            
+            // Clear autosaved draft
+            localStorage.removeItem(AUTOSAVE_KEY);
+            
+            // Close modal and redirect to answers page
+            closeQuestionnaireInput();
+            router.push(`/questionnaires/answers?id=${existingQuestionnaireId}`);
+            
+            return completedAnswers;
+          }
+        } catch (e) {
+          console.error('Error parsing stored questionnaires:', e);
+        }
+      }
+      
+      // Create and save questionnaire directly after generation, then redirect
+      const newQuestionnaire: Questionnaire & { answers?: QuestionAnswer[] } = {
+        id: `q${Date.now()}`,  
+        name: questionnaireTitle || 'Untitled Questionnaire',
+        status: "Not Started" as QuestionnaireStatus,
+        dueDate: new Date().toLocaleDateString(),
+        progress: 0,
+        answers: completedAnswers,
+      };
+      
+      // Add the new questionnaire
+      userQuestionnaires.push(newQuestionnaire);
+      
+      // Save back to local storage
+      localStorage.setItem('user_questionnaires', JSON.stringify(userQuestionnaires));
+      
+      // Clear autosaved draft
+      localStorage.removeItem(AUTOSAVE_KEY);
+      
+      // Close modal and redirect to answers page
+      closeQuestionnaireInput();
+      router.push(`/questionnaires/answers?id=${newQuestionnaire.id}`);
+      
+      return completedAnswers;
       
     } catch (error) {
       console.error('Error generating answers:', error);
@@ -357,6 +590,67 @@ const QuestionnairesPage = () => {
         finalAnswers = await handleGenerateAnswers();
       }
       
+      // Check if a questionnaire with the same title or questions already exists
+      const storedQuestionnaires = localStorage.getItem('user_questionnaires');
+      let userQuestionnaires: Array<Questionnaire & { answers?: QuestionAnswer[] }> = [];
+      let existingQuestionnaireId: string | null = null;
+      
+      if (storedQuestionnaires) {
+        try {
+          userQuestionnaires = JSON.parse(storedQuestionnaires);
+          
+          // Check for duplicate by comparing title and questions
+          const normalizedTitle = questionnaireTitle.trim().toLowerCase();
+          
+          for (const q of userQuestionnaires) {
+            // Check if title matches
+            const qTitle = q.name.trim().toLowerCase();
+            if (qTitle === normalizedTitle) {
+              // Check if questions match (at least 80% match)
+              if (q.answers && q.answers.length === questions.length) {
+                let matchCount = 0;
+                for (let i = 0; i < questions.length; i++) {
+                  if (q.answers[i].question.trim().toLowerCase() === questions[i].trim().toLowerCase()) {
+                    matchCount++;
+                  }
+                }
+                
+                // If more than 80% of questions match, consider it a duplicate
+                if (matchCount / questions.length >= 0.8) {
+                  existingQuestionnaireId = q.id;
+                  
+                  // Update the existing questionnaire with new answers
+                  q.answers = finalAnswers.length > 0 ? finalAnswers : questions.map(q => ({ question: q, answer: 'AI answer will be generated' }));
+                  break;
+                }
+              }
+            }
+          }
+          
+          // If a duplicate was found, update it
+          if (existingQuestionnaireId) {
+            localStorage.setItem('user_questionnaires', JSON.stringify(userQuestionnaires));
+            
+            // Clear autosaved draft
+            localStorage.removeItem(AUTOSAVE_KEY);
+            
+            // Close modal
+            closeQuestionnaireInput();
+            
+            // Refresh the questionnaire list
+            fetchQuestionnaires();
+            
+            // Redirect to the questionnaire answers page
+            router.push(`/questionnaires/answers?id=${existingQuestionnaireId}`);
+            
+            setIsSubmitting(false);
+            return;
+          }
+        } catch (e) {
+          console.error('Error parsing stored questionnaires:', e);
+        }
+      }
+      
       // Store the new questionnaire with AI answers
       const newQuestionnaire: Questionnaire & { answers?: QuestionAnswer[] } = {
         id: `q${Date.now()}`,  
@@ -366,18 +660,6 @@ const QuestionnairesPage = () => {
         progress: 0,
         answers: finalAnswers.length > 0 ? finalAnswers : questions.map(q => ({ question: q, answer: 'AI answer will be generated' })),
       };
-      
-      // Get existing questionnaires from local storage
-      const storedQuestionnaires = localStorage.getItem('user_questionnaires');
-      let userQuestionnaires: Array<Questionnaire & { answers?: QuestionAnswer[] }> = [];
-      
-      if (storedQuestionnaires) {
-        try {
-          userQuestionnaires = JSON.parse(storedQuestionnaires);
-        } catch (e) {
-          console.error('Error parsing stored questionnaires:', e);
-        }
-      }
       
       // Add the new questionnaire
       userQuestionnaires.push(newQuestionnaire);
@@ -635,9 +917,9 @@ const QuestionnairesPage = () => {
       
       <main id="main-content" className="container mx-auto py-8 px-4">
         {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-800 flex items-center">
+            <h1 className="text-2xl font-bold text-gray-800 flex items-center">
               <ClipboardList className="mr-3 h-7 w-7 text-primary" />
               Questionnaires
             </h1>
@@ -646,7 +928,7 @@ const QuestionnairesPage = () => {
           
           <div className="flex items-center">
             <button 
-              className="bg-primary text-white hover:bg-primary/90 px-4 py-2 rounded-md flex items-center transition-colors"
+              className="garnet-button garnet-button-gradient flex items-center"
               onClick={handleNewQuestionnaire}
             >
               <Plus className="h-5 w-5 mr-2" />
@@ -659,18 +941,21 @@ const QuestionnairesPage = () => {
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center overflow-auto p-4">
             <div 
               ref={modalRef}
-              className="bg-white dark:bg-card-bg rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col"
+              className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col animate-fade-in"
               role="dialog"
               aria-modal="true"
               aria-labelledby="questionnaire-modal-title"
             >
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                <h2 id="questionnaire-modal-title" className="text-xl font-semibold text-gray-800 dark:text-white">
-                  Create Questionnaire with AI Assistance
+              <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-primary/5 to-secondary/5">
+                <h2 id="questionnaire-modal-title" className="text-xl font-bold text-gray-800 flex items-center">
+                  <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                    Create Questionnaire
+                  </span>
+                  <span className="ml-2">with AI Assistance</span>
                 </h2>
                 <button 
                   onClick={closeQuestionnaireInput}
-                  className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
                   aria-label="Close"
                 >
                   <X className="h-5 w-5" />
@@ -680,14 +965,14 @@ const QuestionnairesPage = () => {
               <div className="p-6 overflow-auto flex-grow">
                 <form onSubmit={handleSubmitQuestionnaire}>
                   {/* Title input */}
-                  <div className="mb-4">
-                    <label htmlFor="questionnaire-title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <div className="mb-5">
+                    <label htmlFor="questionnaire-title" className="block text-sm font-medium text-gray-700 mb-1">
                       Questionnaire Title
                     </label>
                     <input
                       type="text"
                       id="questionnaire-title"
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                      className="garnet-input"
                       placeholder="Enter title for this questionnaire"
                       value={questionnaireTitle}
                       onChange={(e) => setQuestionnaireTitle(e.target.value)}
@@ -698,16 +983,16 @@ const QuestionnairesPage = () => {
 
                   {!showPreview && !showAIAssistant && (
                     <>
-                      <div className="mb-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <h3 className="text-lg font-medium text-gray-800 dark:text-white">Questions</h3>
+                      <div className="mb-5">
+                        <div className="flex justify-between items-center mb-3">
+                          <h3 className="text-lg font-semibold text-gray-800">Questions</h3>
                           
                           <div className="flex space-x-2">
                             <button 
                               type="button"
                               onClick={handleGenerateAnswersClick}
                               disabled={isGeneratingAnswers || questionCount === 0}
-                              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-md hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm transition-all"
+                              className="btn-gradient px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm transition-all"
                             >
                               <Sparkles className="h-4 w-4 mr-1" />
                               {isGeneratingAnswers ? 'Generating...' : 'Generate AI Answers'}
@@ -739,35 +1024,35 @@ const QuestionnairesPage = () => {
                           </div>
                         </div>
                         
-                        <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">
+                        <p className="text-gray-600 text-sm mb-4">
                           Type or paste each question on its own line. Click "Generate AI Answers" to get compliance-based responses.
                         </p>
                         
                         {/* Find and replace section */}
                         {findReplaceMode && (
-                          <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
+                          <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               <div>
-                                <label htmlFor="find-text" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                <label htmlFor="find-text" className="block text-sm font-medium text-gray-700 mb-1">
                                   Find
                                 </label>
                                 <input
                                   type="text"
                                   id="find-text"
-                                  className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary"
+                                  className="garnet-input"
                                   value={findText}
                                   onChange={(e) => setFindText(e.target.value)}
                                   placeholder="Text to find"
                                 />
                               </div>
                               <div>
-                                <label htmlFor="replace-text" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                <label htmlFor="replace-text" className="block text-sm font-medium text-gray-700 mb-1">
                                   Replace
                                 </label>
                                 <input
                                   type="text"
                                   id="replace-text"
-                                  className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary"
+                                  className="garnet-input"
                                   value={replaceText}
                                   onChange={(e) => setReplaceText(e.target.value)}
                                   placeholder="Replacement text"
@@ -777,7 +1062,7 @@ const QuestionnairesPage = () => {
                             <div className="mt-2 flex justify-end">
                               <button
                                 type="button"
-                                className="px-3 py-1.5 text-sm bg-primary text-white rounded-md hover:bg-primary/90 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+                                className="garnet-button garnet-button-primary text-sm"
                                 onClick={handleFindReplace}
                                 disabled={!findText}
                               >
@@ -790,10 +1075,10 @@ const QuestionnairesPage = () => {
                         {/* File upload area */}
                         <div 
                           ref={dropZoneRef}
-                          className={`mb-4 border-2 border-dashed rounded-md p-6 text-center transition-colors ${
+                          className={`mb-5 border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
                             dragActive 
                               ? 'border-primary bg-primary/5' 
-                              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                              : 'border-gray-300 hover:border-gray-400'
                           }`}
                           onDragEnter={handleDrag}
                           onDragOver={handleDrag}
@@ -801,11 +1086,11 @@ const QuestionnairesPage = () => {
                           onDrop={handleDrop}
                         >
                           <div className="flex flex-col items-center justify-center">
-                            <Upload className="h-10 w-10 text-gray-400 dark:text-gray-500 mb-2" />
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                            <Upload className="h-12 w-12 text-primary/40 mb-3" />
+                            <p className="text-gray-600 mb-2 font-medium">
                               {dragActive ? 'Drop file here' : 'Drag and drop a file here, or click to browse'}
                             </p>
-                            <div className="flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 mb-3">
+                            <div className="flex items-center justify-center text-xs text-gray-500 mb-4">
                               <div className="flex items-center mr-3">
                                 <FileText className="h-4 w-4 mr-1" />
                                 <span>.TXT</span>
@@ -819,7 +1104,7 @@ const QuestionnairesPage = () => {
                                 <span>.MD</span>
                               </div>
                             </div>
-                            <label className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                            <label className="garnet-button garnet-button-secondary text-sm cursor-pointer">
                               Browse Files
                               <input
                                 type="file"
@@ -835,7 +1120,7 @@ const QuestionnairesPage = () => {
                         </div>
                         
                         {isUploading && (
-                          <div className="mb-4 text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center">
+                          <div className="mb-4 text-sm text-gray-600 flex items-center justify-center">
                             <svg className="animate-spin h-4 w-4 mr-2 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -845,16 +1130,16 @@ const QuestionnairesPage = () => {
                         )}
                         
                         {uploadError && (
-                          <p className="mb-4 text-sm text-red-600 dark:text-red-400">
+                          <p className="mb-4 text-sm text-red-600">
                             {uploadError}
                           </p>
                         )}
                       </div>
                     
-                      <div className="relative mb-4">
+                      <div className="relative mb-5">
                         <textarea
                           ref={textareaRef}
-                          className="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-md resize-none text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary min-h-[200px] max-h-[400px]"
+                          className="garnet-input min-h-[200px] max-h-[400px] resize-none"
                           placeholder="Type or paste each question on its own line (e.g. 'Do you encrypt data at rest?')."
                           value={questionnaireInput}
                           onChange={(e) => {
@@ -869,7 +1154,7 @@ const QuestionnairesPage = () => {
                           <button
                             type="button"
                             onClick={handleClearTextarea}
-                            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md"
                             aria-label="Clear questions"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -883,13 +1168,18 @@ const QuestionnairesPage = () => {
                   {showPreview && (
                     <div className="mb-4">
                       <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium text-gray-800 dark:text-white">Question Preview</h3>
+                        <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                          <span className="w-8 h-8 rounded-full bg-primary-light text-primary flex items-center justify-center mr-3">
+                            <Files className="h-4 w-4" />
+                          </span>
+                          Question Preview
+                        </h3>
                         <div className="flex space-x-2">
                           <button 
                             type="button"
                             onClick={handleGenerateAnswersClick}
                             disabled={isGeneratingAnswers || questionCount === 0}
-                            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-md hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm transition-all"
+                            className="btn-gradient px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm transition-all"
                           >
                             <Sparkles className="h-4 w-4 mr-1" />
                             {isGeneratingAnswers ? 'Generating...' : 'Generate AI Answers'}
@@ -904,17 +1194,17 @@ const QuestionnairesPage = () => {
                         </div>
                       </div>
                       
-                      <div className="border border-gray-200 dark:border-gray-700 rounded-md p-4 max-h-[400px] overflow-y-auto">
+                      <div className="border border-gray-200 rounded-lg p-5 max-h-[400px] overflow-y-auto bg-gray-50">
                         {getParsedQuestions().length > 0 ? (
-                          <ol className="list-decimal pl-5 space-y-2">
+                          <ol className="list-decimal pl-5 space-y-3">
                             {getParsedQuestions().map((question, index) => (
-                              <li key={index} className="text-gray-800 dark:text-gray-200">
+                              <li key={index} className="text-gray-800">
                                 {question}
                               </li>
                             ))}
                           </ol>
                         ) : (
-                          <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                          <p className="text-gray-500 text-center py-8">
                             No questions added yet. Go back to edit and add some questions.
                           </p>
                         )}
@@ -926,8 +1216,10 @@ const QuestionnairesPage = () => {
                   {showAIAssistant && generatedAnswers.length > 0 && (
                     <div className="mb-4">
                       <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium text-gray-800 dark:text-white flex items-center">
-                          <MessageSquare className="h-5 w-5 mr-2 text-purple-500" />
+                        <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                          <span className="w-8 h-8 rounded-full bg-secondary-light text-secondary flex items-center justify-center mr-3">
+                            <MessageSquare className="h-4 w-4" />
+                          </span>
                           AI-Generated Answers
                         </h3>
                         <button
@@ -939,20 +1231,47 @@ const QuestionnairesPage = () => {
                         </button>
                       </div>
                       
-                      <div className="border border-gray-200 dark:border-gray-700 rounded-md max-h-[500px] overflow-y-auto">
+                      <div className="border border-gray-200 rounded-lg overflow-hidden max-h-[500px] overflow-y-auto shadow-sm">
                         {generatedAnswers.map((qa, index) => (
-                          <div key={index} className={`p-4 ${index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-800' : 'bg-white dark:bg-gray-900'}`}>
-                            <div className="mb-2">
-                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Q{index + 1}:</span>
-                              <p className="font-medium text-gray-800 dark:text-gray-200">{qa.question}</p>
+                          <div key={index} className={`p-5 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'} border-b border-gray-200 last:border-0`}>
+                            <div className="mb-3">
+                              <span className="text-sm font-bold text-gray-500 uppercase tracking-wider">Q{index + 1}:</span>
+                              <p className="font-medium text-gray-800 mt-1">{qa.question}</p>
                             </div>
                             <div>
-                              <span className="text-sm font-medium text-purple-600 dark:text-purple-400">AI Answer:</span>
-                              <div className="mt-1 text-gray-700 dark:text-gray-300 prose prose-sm max-w-none">
-                                {qa.answer.split('\n').map((paragraph, pIndex) => (
-                                  <p key={pIndex} className="mb-2">{paragraph}</p>
-                                ))}
-                              </div>
+                              <span className="text-sm font-bold text-primary uppercase tracking-wider">Answer:</span>
+                              {qa.isLoading ? (
+                                <div className="mt-4 flex items-center justify-center py-6 text-sm text-gray-500">
+                                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-primary mr-3"></div>
+                                  <span>Generating answer...</span>
+                                </div>
+                              ) : (
+                                <div className="mt-2 text-gray-700 prose prose-sm max-w-none">
+                                  {qa.answer.split('\n').map((paragraph, pIndex) => (
+                                    <p key={pIndex} className="mb-2">{paragraph}</p>
+                                  ))}
+                                  <div className="mt-4 flex justify-end">
+                                    <button 
+                                      className="garnet-button-small bg-gray-100 text-primary hover:bg-gray-200 flex items-center"
+                                      onClick={() => {
+                                        // Create temp textarea to copy text
+                                        const textarea = document.createElement('textarea');
+                                        textarea.value = qa.answer;
+                                        document.body.appendChild(textarea);
+                                        textarea.select();
+                                        document.execCommand('copy');
+                                        document.body.removeChild(textarea);
+                                        
+                                        // Show feedback (could use a toast here)
+                                        alert('Answer copied to clipboard');
+                                      }}
+                                    >
+                                      <ClipboardCopy className="h-3 w-3 mr-1" />
+                                      Copy
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -961,7 +1280,7 @@ const QuestionnairesPage = () => {
                   )}
                   
                   <div className="flex justify-between items-center">
-                    <div id="question-counter" className="text-sm text-gray-600 dark:text-gray-400">
+                    <div id="question-counter" className="text-sm text-gray-600">
                       {questionCount > 0 ? (
                         <>You've entered {questionCount} question{questionCount !== 1 ? 's' : ''}</>
                       ) : (
@@ -973,7 +1292,7 @@ const QuestionnairesPage = () => {
                         </span>
                       )}
                       {generatedAnswers.length > 0 && (
-                        <span className="text-purple-600 ml-2">
+                        <span className="text-primary ml-2">
                           • {generatedAnswers.length} AI answers generated
                         </span>
                       )}
@@ -981,7 +1300,7 @@ const QuestionnairesPage = () => {
                     
                     {/* Validation errors */}
                     {validationError && (
-                      <p className="text-sm text-red-600 dark:text-red-400">
+                      <p className="text-sm text-red-600">
                         {validationError}
                       </p>
                     )}
@@ -991,18 +1310,14 @@ const QuestionnairesPage = () => {
                     <button
                       type="button"
                       onClick={closeQuestionnaireInput}
-                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      className="garnet-button garnet-button-secondary"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={!questionnaireInput.trim() || !questionnaireTitle.trim() || isSubmitting || questionCount > MAX_QUESTIONS}
-                      className={`py-2 px-6 rounded-md transition-colors ${
-                        questionnaireInput.trim() && questionnaireTitle.trim() && !isSubmitting && questionCount <= MAX_QUESTIONS
-                          ? 'bg-primary text-white hover:bg-primary/90' 
-                          : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                      }`}
+                      className="garnet-button garnet-button-gradient"
                       aria-live="polite"
                     >
                       {isSubmitting ? (
@@ -1030,7 +1345,6 @@ const QuestionnairesPage = () => {
           isLoading={isLoading}
           error={error}
           onRetry={fetchQuestionnaires}
-          onAddQuestionnaire={handleNewQuestionnaire}
           onViewQuestionnaire={handleViewQuestionnaire}
           onEditQuestionnaire={handleEditQuestionnaire}
           onDeleteQuestionnaire={handleDeleteQuestionnaire}
