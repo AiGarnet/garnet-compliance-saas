@@ -16,7 +16,8 @@
     "test": "jest",
     "migrate": "node src/db/migrations/create_users_table.js",
     "waitlist": "node src/waitlist-server.js",
-    "test-db": "node src/test-db-connection.js"
+    "test-db": "node src/test-db-connection.js",
+    "create-waitlist-table": "node src/create-waitlist-table.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
