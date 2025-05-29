@@ -16,6 +16,7 @@ const pool = new Pool({
 async function testConnection() {
   console.log('Testing database connection...');
   console.log('Connection string (masked):', connectionString.replace(/\/\/.+?@/, '//****:****@'));
+  console.log('Connected to Railway deployment: https://garnet-compliance-saas-production.up.railway.app/');
   
   const client = await pool.connect();
   
@@ -64,6 +65,7 @@ async function testConnection() {
     }
     
     console.log('\nDatabase connection test completed successfully!');
+    console.log('The waitlist API is deployed at: https://garnet-compliance-saas-production.up.railway.app/join-waitlist');
     
   } catch (error) {
     console.error('Error testing database connection:', error);

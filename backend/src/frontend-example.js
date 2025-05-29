@@ -13,10 +13,11 @@ async function submitToWaitlist(formData) {
       throw new Error('Please enter a valid email address');
     }
     
-    // API endpoint - adjust based on your deployment
-    const apiUrl = 'http://localhost:3001/join-waitlist';
-    // For production with Railway deployment, use the Railway URL:
-    // const apiUrl = 'https://your-railway-app-name.up.railway.app/join-waitlist';
+    // API endpoint - production Railway URL
+    const apiUrl = 'https://garnet-compliance-saas-production.up.railway.app/join-waitlist';
+    
+    // For local development, use:
+    // const apiUrl = 'http://localhost:3001/join-waitlist';
     
     // Make the API request
     const response = await fetch(apiUrl, {
@@ -131,7 +132,8 @@ const WaitlistForm = () => {
     setMessage({ text: '', type: '' });
     
     try {
-      const apiUrl = 'http://localhost:3001/join-waitlist';
+      // Use production Railway URL
+      const apiUrl = 'https://garnet-compliance-saas-production.up.railway.app/join-waitlist';
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
