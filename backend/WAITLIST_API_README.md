@@ -7,6 +7,13 @@ The waitlist API is now deployed and available at:
 
 This API allows users to join the GARNET waitlist by submitting their information through a form on the landing page.
 
+## Live Implementation
+
+The API is integrated with the Netlify landing page at:
+**https://testinggarnet.netlify.app/**
+
+When users click the "Join Waitlist" button on the landing page, their information is submitted to the Railway backend, and the data is stored in the PostgreSQL database.
+
 ## API Endpoints
 
 ### Health Check
@@ -120,5 +127,6 @@ curl -X POST https://garnet-compliance-saas-production.up.railway.app/join-waitl
 - The API automatically creates and modifies the database table structure based on the form fields you submit
 - Email validation is performed on the server side
 - Duplicate emails are rejected with a 409 Conflict status
+- CORS is configured to allow requests from the Netlify site
 
 For more detailed documentation, please refer to the [full API documentation](./WAITLIST_SERVER.md). 

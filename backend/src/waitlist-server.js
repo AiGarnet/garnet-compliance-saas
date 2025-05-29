@@ -18,7 +18,8 @@ app.use(cors({
   origin: [
     'http://localhost:3000', 
     'https://garnetai.netlify.app',
-    'https://garnet-compliance-saas-production.up.railway.app'
+    'https://garnet-compliance-saas-production.up.railway.app',
+    'https://testinggarnet.netlify.app'
   ],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -228,6 +229,7 @@ app.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Waitlist API is available at: http://localhost:${PORT}/join-waitlist`);
     console.log('For production: https://garnet-compliance-saas-production.up.railway.app/join-waitlist');
+    console.log('Netlify site: https://testinggarnet.netlify.app/');
   } catch (error) {
     console.error('Failed to setup database on startup:', error);
   }
