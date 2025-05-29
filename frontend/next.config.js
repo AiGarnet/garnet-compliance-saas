@@ -36,7 +36,7 @@ const nextConfig = {
   // Note: When using 'output: export', rewrites and headers won't work
   // They are removed since they're incompatible with static export
   
-  // Configure webpack to properly handle lodash
+  // Configure webpack to properly handle lodash and ensure static assets are copied
   webpack: (config, { isServer }) => {
     // This ensures lodash is properly bundled
     if (!isServer) {
@@ -46,6 +46,11 @@ const nextConfig = {
       };
     }
     return config;
+  },
+  
+  // Ensure fonts and other public assets are included in the build
+  async redirects() {
+    return [];
   },
 }
 

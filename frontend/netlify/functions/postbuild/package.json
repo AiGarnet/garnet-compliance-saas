@@ -1,0 +1,12 @@
+{
+  "name": "netlify-plugin-font-verification",
+  "version": "1.0.0",
+  "description": "Netlify plugin to verify font assets are correctly included in the build",
+  "main": "index.js",
+  "keywords": [
+    "netlify",
+    "netlify-plugin"
+  ],
+  "author": "GARNET Team",
+  "license": "MIT"
+} 
