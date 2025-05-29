@@ -1008,19 +1008,75 @@ const GarnetLandingPage = () => {
               We've Got the Answers 
               <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> You're Looking For</span>
             </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Quick answers to your AI-powered compliance automation questions.
+            </p>
           </motion.div>
 
-          <div className="text-center">
-            <motion.a 
-              href="/faq"
-              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:shadow-lg transition-all inline-flex items-center"
+          <div className="space-y-4">
+            {faqs.map((faq, index) => (
+              <motion.div
+                key={index}
+                className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+              >
+                <motion.button
+                  className="w-full px-6 py-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  onClick={() => toggleFaq(index)}
+                  whileHover={{ backgroundColor: "rgba(249, 250, 251, 0.8)" }}
+                >
+                  <span className="text-lg font-semibold text-gray-900 pr-8">{faq.question}</span>
+                  <motion.div
+                    animate={{ rotate: activeFaq === index ? 45 : 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="flex-shrink-0"
+                  >
+                    {activeFaq === index ? (
+                      <Minus className="h-6 w-6 text-purple-600" />
+                    ) : (
+                      <Plus className="h-6 w-6 text-gray-400" />
+                    )}
+                  </motion.div>
+                </motion.button>
+                
+                <motion.div
+                  initial={false}
+                  animate={{
+                    height: activeFaq === index ? "auto" : 0,
+                    opacity: activeFaq === index ? 1 : 0
+                  }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="px-6 pb-6">
+                    <div className="w-full h-px bg-gradient-to-r from-purple-200 via-pink-200 to-purple-200 mb-4"></div>
+                    <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
+                  </div>
+                </motion.div>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div 
+            className="text-center mt-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+          >
+            <p className="text-gray-600 mb-6">Still have questions? We're here to help!</p>
+            <motion.button 
+              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all inline-flex items-center"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              FAQ
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </motion.a>
-          </div>
+              Contact Support
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </motion.button>
+          </motion.div>
         </div>
       </section>
 
