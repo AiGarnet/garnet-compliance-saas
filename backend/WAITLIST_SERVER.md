@@ -2,6 +2,28 @@
 
 This is a Node.js Express backend server that handles the waitlist functionality for the GARNET AI platform.
 
+## Deployed Instance
+
+The waitlist server is deployed and available at:
+https://garnet-compliance-saas-production.up.railway.app/
+
+To test the deployed API:
+```bash
+curl -X POST https://garnet-compliance-saas-production.up.railway.app/join-waitlist \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "name": "Test User",
+    "company": "Test Company",
+    "role": "Developer"
+  }'
+```
+
+To check the API health:
+```bash
+curl https://garnet-compliance-saas-production.up.railway.app/
+```
+
 ## Features
 
 - Accepts form submissions from the landing page
@@ -48,6 +70,26 @@ The server will start on port 3001 (or the port specified in your `.env` file).
 
 ## API Endpoints
 
+### GET / (Health Check)
+
+Returns information about the API's status.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "message": "Waitlist API is running",
+  "version": "1.0.0",
+  "endpoints": [
+    {
+      "path": "/join-waitlist",
+      "method": "POST",
+      "description": "Add a user to the waitlist"
+    }
+  ]
+}
+```
+
 ### POST /join-waitlist
 
 Adds a new entry to the waitlist.
@@ -86,6 +128,7 @@ Additional fields can be added and will be automatically stored in the database:
 
 You can test the API using curl:
 
+**Local:**
 ```bash
 curl -X POST http://localhost:3001/join-waitlist \
   -H "Content-Type: application/json" \
@@ -96,6 +139,31 @@ curl -X POST http://localhost:3001/join-waitlist \
     "role": "Developer",
     "interests": "AI, Compliance"
   }'
+```
+
+**Production:**
+```bash
+curl -X POST https://garnet-compliance-saas-production.up.railway.app/join-waitlist \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "name": "Test User",
+    "company": "Test Company",
+    "role": "Developer",
+    "interests": "AI, Compliance"
+  }'
+```
+
+## Frontend Integration
+
+Update your frontend code to use the production API endpoint:
+
+```javascript
+// For production
+const apiUrl = 'https://garnet-compliance-saas-production.up.railway.app/join-waitlist';
+
+// For local development
+// const apiUrl = 'http://localhost:3001/join-waitlist';
 ```
 
 ## Deployment to Railway

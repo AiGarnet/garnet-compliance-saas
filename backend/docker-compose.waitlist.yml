@@ -1,5 +1,9 @@
 version: '3.8'
 
+# Note: For production, this service is deployed at:
+# https://garnet-compliance-saas-production.up.railway.app/
+# This docker-compose file is for local development only.
+
 services:
   waitlist-server:
     build:

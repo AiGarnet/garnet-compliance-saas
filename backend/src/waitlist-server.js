@@ -15,7 +15,11 @@ const pool = new Pool({
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://garnetai.netlify.app'], // Add your Netlify domain
+  origin: [
+    'http://localhost:3000', 
+    'https://garnetai.netlify.app',
+    'https://garnet-compliance-saas-production.up.railway.app'
+  ],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -201,11 +205,29 @@ app.post('/join-waitlist', async (req, res) => {
   }
 });
 
+// Add a simple health check endpoint
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    message: 'Waitlist API is running',
+    version: '1.0.0',
+    endpoints: [
+      {
+        path: '/join-waitlist',
+        method: 'POST',
+        description: 'Add a user to the waitlist'
+      }
+    ]
+  });
+});
+
 // Start the server
 app.listen(PORT, async () => {
   try {
     await setupDatabase();
     console.log(`Server running on port ${PORT}`);
+    console.log(`Waitlist API is available at: http://localhost:${PORT}/join-waitlist`);
+    console.log('For production: https://garnet-compliance-saas-production.up.railway.app/join-waitlist');
   } catch (error) {
     console.error('Failed to setup database on startup:', error);
   }
@@ -213,7 +235,7 @@ app.listen(PORT, async () => {
 
 // Sample curl command to test the endpoint:
 /*
-curl -X POST http://localhost:3001/join-waitlist \
+curl -X POST https://garnet-compliance-saas-production.up.railway.app/join-waitlist \
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
