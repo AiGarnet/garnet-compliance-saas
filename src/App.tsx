@@ -1,11 +1,27 @@
 import { useState } from 'react'
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
 import './App.css'
 import { formatDate } from './utils/date-utils'
+import GarnetLandingPage from './components/GarnetLandingPage'
+import FAQPage from './components/FAQPage'
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const today = formatDate(new Date())
 
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<GarnetLandingPage />} />
+        <Route path="/faq" element={<FAQPage />} />
+        <Route path="/app" element={<AppDashboard activeTab={activeTab} setActiveTab={setActiveTab} today={today} />} />
+      </Routes>
+    </Router>
+  )
+}
+
+// Dashboard component extracted from the original App component
+function AppDashboard({ activeTab, setActiveTab, today }: { activeTab: string, setActiveTab: (tab: string) => void, today: string }) {
   return (
     <div className="app-container">
       <header className="app-header">
@@ -29,6 +45,8 @@ function App() {
           >
             Settings
           </button>
+          <Link to="/" className="nav-link">Landing Page</Link>
+          <Link to="/faq" className="nav-link">FAQ</Link>
         </nav>
       </header>
 
@@ -87,7 +105,7 @@ function App() {
       </main>
 
       <footer className="app-footer">
-        <p>© 2023 Garnet AI. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} Garnet AI. All rights reserved.</p>
       </footer>
     </div>
   )

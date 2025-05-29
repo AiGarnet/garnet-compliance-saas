@@ -43,6 +43,7 @@ import {
   Network,
   Gauge
 } from 'lucide-react';
+import Link from 'next/link';
 
 // Counter component for animated statistics
 const AnimatedCounter = ({ end, duration = 2, suffix = '' }: { end: number; duration?: number; suffix?: string }) => {
@@ -621,6 +622,12 @@ const GarnetLandingPage = () => {
               {/* <a href="#demo" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Demo</a> */}
               <a href="#stats" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Impact</a>
               {/* <a href="#testimonials" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Testimonials</a> */}
+              <Link 
+                href="/faq" 
+                className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base"
+              >
+                FAQ
+              </Link>
               <motion.button 
                 className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 lg:px-6 py-2 rounded-full hover:shadow-lg transition-all text-sm lg:text-base"
                 whileHover={{ scale: 1.05 }}
@@ -1019,11 +1026,11 @@ const GarnetLandingPage = () => {
         </div>
       </section> */}
 
-      {/* FAQ Section */}
+      {/* FAQ Section - Modified to link to dedicated FAQ page */}
       <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
-            className="text-center mb-16"
+            className="text-center mb-12"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -1033,74 +1040,31 @@ const GarnetLandingPage = () => {
               We've Got the Answers 
               <span className="block sm:inline bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> You're Looking For</span>
             </h2>
-            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto mb-8">
               Quick answers to your AI-powered compliance automation questions.
             </p>
-          </motion.div>
-
-          <div className="space-y-4">
-            {faqs.map((faq, index) => (
-              <motion.div
-                key={index}
-                className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
-              >
-                <motion.button
-                  className="w-full px-4 sm:px-6 py-4 sm:py-6 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
-                  onClick={() => toggleFaq(index)}
-                  whileHover={{ backgroundColor: "rgba(249, 250, 251, 0.8)" }}
-                >
-                  <span className="text-base sm:text-lg font-semibold text-gray-900 pr-4 sm:pr-8">{faq.question}</span>
-                  <motion.div
-                    animate={{ rotate: activeFaq === index ? 45 : 0 }}
-                    transition={{ duration: 0.3, ease: "easeInOut" }}
-                    className="flex-shrink-0"
-                  >
-                    {activeFaq === index ? (
-                      <Minus className="h-6 w-6 text-purple-600" />
-                    ) : (
-                      <Plus className="h-6 w-6 text-gray-400" />
-                    )}
-                  </motion.div>
-                </motion.button>
-                
-                <motion.div
-                  initial={false}
-                  animate={{
-                    height: activeFaq === index ? "auto" : 0,
-                    opacity: activeFaq === index ? 1 : 0
-                  }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className="overflow-hidden"
-                >
-                  <div className="px-4 sm:px-6 pb-4 sm:pb-6">
-                    <div className="w-full h-px bg-gradient-to-r from-purple-200 via-pink-200 to-purple-200 mb-4"></div>
-                    <p className="text-gray-600 leading-relaxed text-sm sm:text-base">{faq.answer}</p>
-                  </div>
-                </motion.div>
-              </motion.div>
-            ))}
-          </div>
-
-          <motion.div 
-            className="text-center mt-12"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.8 }}
-          >
-            <p className="text-gray-600 mb-6">Still have questions? We're here to help!</p>
-            <motion.button 
-              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 sm:px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all inline-flex items-center group"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            
+            <motion.div
+              className="mt-8"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.3 }}
             >
-              Contact Support
-              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </motion.button>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Link 
+                  href="/faq"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:shadow-lg transition-all inline-flex items-center group"
+                  style={{ display: 'inline-flex' }}
+                >
+                  Visit Our FAQ Page
+                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </motion.div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
