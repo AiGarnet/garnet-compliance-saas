@@ -53,7 +53,7 @@ curl https://garnet-compliance-saas-production.up.railway.app/
 4. Create a `.env` file in the backend directory with the following variables:
    ```
    # Database Connection
-   DATABASE_URL=postgresql://postgres:FaHfoxEmIwaAJuzOmQTOfStkainUxzzX@shortline.proxy.rlwy.net:28381/railway
+   DATABASE_URL=
 
    # Server Configuration
    PORT=3001
