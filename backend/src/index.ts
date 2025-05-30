@@ -55,11 +55,9 @@ try {
 }
 
 // Clean up API key - remove any whitespace and newlines
-// const apiKey = process.env.OPENAI_API_KEY?.replace(/\s+/g, '');
-// Use fixed API key instead of environment variable
 const apiKey = process.env.OPENAI_API_KEY?.replace(/\s+/g, '');
 console.log('API Key configured:', apiKey ? 'Yes (length: ' + apiKey.length + ')' : 'No');
-console.log('API Key first 20 chars:', apiKey ? apiKey.substring(0, 20) + '...' : 'None');
+console.log('API Key first 20 chars:', apiKey ? apiKey.substring(0, 3) + '...' : 'None');
 
 // Initialize OpenAI client
 const openai = new OpenAI({
