@@ -16,8 +16,6 @@ const pool = new Pool({
 // Middleware
 app.use(cors({
   origin: [
-    'http://localhost:3000', 
-    'https://garnetai.netlify.app',
     'https://garnet-compliance-saas-production.up.railway.app',
     'https://testinggarnet.netlify.app'
   ],
@@ -25,6 +23,16 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
+
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log('Headers:', JSON.stringify(req.headers));
+  if (req.method !== 'GET') {
+    console.log('Request Body:', JSON.stringify(req.body, null, 2));
+  }
+  next();
+});
 
 // Check database connection and create table if it doesn't exist
 async function setupDatabase() {
@@ -48,6 +56,10 @@ async function setupDatabase() {
         CREATE TABLE waitlist (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
           email TEXT UNIQUE NOT NULL,
+          full_name TEXT NOT NULL,
+          password TEXT NOT NULL,
+          role TEXT NOT NULL,
+          organization TEXT,
           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
         
@@ -55,6 +67,17 @@ async function setupDatabase() {
       `);
       console.log('Waitlist table created successfully!');
     }
+
+    // Check the table structure to ensure it has the required fields
+    const columnsResult = await client.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'waitlist'
+      ORDER BY ordinal_position;
+    `);
+    
+    console.log('Waitlist table structure:');
+    console.table(columnsResult.rows);
   } catch (error) {
     console.error('Database setup error:', error);
   } finally {
@@ -64,9 +87,14 @@ async function setupDatabase() {
 
 // API Endpoint to join waitlist
 app.post('/join-waitlist', async (req, res) => {
-  console.log('Received waitlist request:', req.body);
+  console.log('==================================================');
+  console.log('Received waitlist request at:', new Date().toISOString());
+  console.log('Request body:', req.body);
+  console.log('Request headers:', req.headers);
   
-  if (!req.body) {
+  // Handle empty request
+  if (!req.body || Object.keys(req.body).length === 0) {
+    console.error('Empty request body received');
     return res.status(400).json({ error: 'No request body provided' });
   }
 
@@ -74,7 +102,7 @@ app.post('/join-waitlist', async (req, res) => {
   const client = await pool.connect();
   
   try {
-    // First check if waitlist table exists, if not create it
+    // First check if waitlist table exists
     const tableCheckResult = await client.query(`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
@@ -83,28 +111,26 @@ app.post('/join-waitlist', async (req, res) => {
     `);
     
     const tableExists = tableCheckResult.rows[0].exists;
+    console.log('Waitlist table exists:', tableExists);
     
     if (!tableExists) {
       console.log('Creating waitlist table dynamically based on the request...');
       
       // Get all fields from the request body to create columns
       const fields = Object.keys(req.body);
+      console.log('Fields from request:', fields);
       
       // Generate column definitions from the fields
       // Always include id, email and created_at as required fields
       let columnDefinitions = [
         'id UUID PRIMARY KEY DEFAULT gen_random_uuid()',
         'email TEXT UNIQUE NOT NULL',
+        'full_name TEXT NOT NULL',
+        'password TEXT NOT NULL',
+        'role TEXT NOT NULL',
+        'organization TEXT',
         'created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP'
       ];
-      
-      // Add other fields from the request
-      fields.forEach(field => {
-        if (field !== 'email') { // Skip email as we already added it
-          // For simplicity, all fields are stored as TEXT
-          columnDefinitions.push(`${field} TEXT`);
-        }
-      });
       
       // Create the table
       await client.query(`
@@ -127,14 +153,16 @@ app.post('/join-waitlist', async (req, res) => {
       `);
       
       const existingColumns = columnQuery.rows.map(row => row.column_name);
+      console.log('Existing columns:', existingColumns);
+      
       const requestFields = Object.keys(req.body);
+      console.log('Request fields:', requestFields);
       
       // Find missing columns
       const missingColumns = requestFields.filter(
         field => !existingColumns.includes(field) && field !== 'id' && field !== 'created_at'
       );
       
-      // Add any missing columns
       if (missingColumns.length > 0) {
         console.log('Adding missing columns to waitlist table:', missingColumns);
         
@@ -149,20 +177,55 @@ app.post('/join-waitlist', async (req, res) => {
       }
     }
     
+    // Map form field names if they don't match table column names
+    const formData = { ...req.body };
+    
+    // Check if we have expected fields, otherwise try to map them
+    if (!formData.full_name && formData.name) {
+      formData.full_name = formData.name;
+      delete formData.name;
+    }
+
+    if (!formData.organization && formData.company) {
+      formData.organization = formData.company;
+      delete formData.company;
+    }
+    
+    // Log the processed data
+    console.log('Processed form data for insertion:', formData);
+    
     // Verify email is provided
-    if (!req.body.email) {
+    if (!formData.email) {
+      console.error('Email is missing in the request');
       return res.status(400).json({ error: 'Email is required' });
     }
     
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(req.body.email)) {
+    if (!emailRegex.test(formData.email)) {
+      console.error('Invalid email format:', formData.email);
       return res.status(400).json({ error: 'Invalid email format' });
     }
     
+    // Verify other required fields
+    if (!formData.full_name) {
+      console.error('Full name is missing in the request');
+      return res.status(400).json({ error: 'Full name is required' });
+    }
+    
+    if (!formData.password) {
+      console.error('Password is missing in the request');
+      return res.status(400).json({ error: 'Password is required' });
+    }
+    
+    if (!formData.role) {
+      console.error('Role is missing in the request');
+      return res.status(400).json({ error: 'Role is required' });
+    }
+    
     // Prepare fields and values for insertion
-    const fields = Object.keys(req.body);
-    const values = Object.values(req.body);
+    const fields = Object.keys(formData);
+    const values = Object.values(formData);
     
     // Create placeholders for the query
     const placeholders = fields.map((_, index) => `$${index + 1}`).join(', ');
@@ -174,10 +237,14 @@ app.post('/join-waitlist', async (req, res) => {
       RETURNING *;
     `;
     
+    console.log('Executing SQL:', insertQuery);
+    console.log('With values:', values);
+    
     // Execute the query
     const result = await client.query(insertQuery, values);
     
-    console.log('Successfully added to waitlist:', result.rows[0]);
+    console.log('Successfully added to waitlist. Rows returned:', result.rowCount);
+    console.log('Inserted data:', result.rows[0]);
     
     // Return success response
     return res.status(201).json({
@@ -203,6 +270,8 @@ app.post('/join-waitlist', async (req, res) => {
     });
   } finally {
     client.release();
+    console.log('Database connection released');
+    console.log('==================================================');
   }
 });
 
@@ -241,10 +310,10 @@ curl -X POST https://garnet-compliance-saas-production.up.railway.app/join-waitl
   -H "Content-Type: application/json" \
   -d '{
     "email": "test@example.com",
-    "name": "Test User",
-    "company": "Test Company",
+    "full_name": "Test User",
+    "password": "password123",
     "role": "Developer",
-    "interests": "AI, Compliance"
+    "organization": "Test Company"
   }'
 */
 
