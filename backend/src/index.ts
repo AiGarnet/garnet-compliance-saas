@@ -57,7 +57,7 @@ try {
 // Clean up API key - remove any whitespace and newlines
 // const apiKey = process.env.OPENAI_API_KEY?.replace(/\s+/g, '');
 // Use fixed API key instead of environment variable
-const apiKey = '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';
+const apiKey = process.env.OPENAI_API_KEY?.replace(/\s+/g, '');
 console.log('API Key configured:', apiKey ? 'Yes (length: ' + apiKey.length + ')' : 'No');
 console.log('API Key first 20 chars:', apiKey ? apiKey.substring(0, 20) + '...' : 'None');
 
