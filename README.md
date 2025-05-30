@@ -466,3 +466,178 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## API Endpoints
+
+### Question Answering
+
+#### Generate Answers for Multiple Questions
+
+```
+POST /api/generate-answers
+```
+
+This endpoint accepts a list of questions and returns answers for each question.
+
+**Request Body:**
+
+```json
+{
+  "questions": [
+    "Does your company have a data protection policy?",
+    "How do you handle data breaches?",
+    "What is your data retention policy?"
+  ]
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "answers": [
+      {
+        "question": "Does your company have a data protection policy?",
+        "answer": "Yes, our company maintains a comprehensive data protection policy that outlines how we collect, process, store, and secure all types of data within our organization. Our policy is reviewed annually and updated as needed to comply with changing regulations and best practices in data protection."
+      },
+      {
+        "question": "How do you handle data breaches?",
+        "answer": "We have a formal incident response plan that includes specific procedures for data breaches. Our approach includes immediate containment, assessment of impact and scope, notification to affected parties within 72 hours as required by GDPR, and a thorough post-incident review to prevent future occurrences."
+      },
+      {
+        "question": "What is your data retention policy?",
+        "answer": "Our data retention policy specifies that we keep personal data only as long as necessary for the purposes for which it was collected. Customer data is retained for the duration of the business relationship plus 2 years, while financial records are kept for 7 years to comply with tax regulations. We have automated processes to securely delete data once retention periods expire."
+      }
+    ],
+    "metadata": {
+      "totalQuestions": 3,
+      "processingTimeMs": 2543,
+      "timestamp": "2023-06-15T14:23:45.123Z"
+    }
+  }
+}
+```
+
+#### Generate Answer for a Single Question
+
+For a single question, you can use the same endpoint with just one question in the array, or use the frontend service helper:
+
+```typescript
+import { QuestionnaireService } from '../lib/services/questionnaireService';
+
+async function getAnswer() {
+  const result = await QuestionnaireService.generateAnswer(
+    "Does your company have a data protection policy?"
+  );
+  
+  if (result.success && result.data) {
+    console.log(result.data.answer);
+  }
+}
+```
+
+### Frontend Services
+
+The frontend provides a `QuestionnaireService` to interact with the API:
+
+```typescript
+// Generate answers for multiple questions
+const result = await QuestionnaireService.generateAnswers([
+  "How do you handle data breaches?",
+  "What is your data retention policy?"
+]);
+
+// Generate answer for a single question
+const singleResult = await QuestionnaireService.generateAnswer(
+  "Does your company comply with GDPR?"
+);
+```
+
+For examples, see `frontend/lib/examples/questionnaireExample.ts`.
+
+## Vendor Questionnaire System
+
+The Vendor Questionnaire System allows you to:
+
+1. Generate answers to compliance and security questions using AI
+2. Save these Q&A results to an existing vendor record or create a new vendor
+3. View the questionnaire answers in the vendor detail page
+
+### Using the Vendor Questionnaire Feature
+
+#### Saving Q&A Results to a Vendor
+
+When working with the questionnaire system, you can save the results in two ways:
+
+1. **Existing Vendor**: Select an existing vendor from the dropdown and the answers will be saved to that vendor's record.
+2. **New Vendor**: Create a new vendor entry by providing a name, and the system will create a new vendor with the questionnaire answers.
+
+```typescript
+// Import the necessary services
+import { QuestionnaireService } from './lib/services/questionnaireService';
+
+// Generate answers for questions
+const result = await QuestionnaireService.generateAnswers([
+  "Does your company have a data protection policy?",
+  "How do you handle data breaches?"
+]);
+
+// Save to an existing vendor
+if (result.success && result.data) {
+  const saveResult = await QuestionnaireService.saveQuestionnaireToVendor(
+    "vendor-id-123",  // Existing vendor ID
+    null,             // No name needed for existing vendor
+    result.data.answers
+  );
+  
+  if (saveResult.success) {
+    console.log(`Saved to vendor ID: ${saveResult.vendorId}`);
+  }
+}
+
+// Create a new vendor with the answers
+if (result.success && result.data) {
+  const saveResult = await QuestionnaireService.saveQuestionnaireToVendor(
+    null,                 // No ID for new vendor
+    "New Vendor Name",    // Name for the new vendor
+    result.data.answers
+  );
+  
+  if (saveResult.success) {
+    console.log(`Created new vendor with ID: ${saveResult.vendorId}`);
+  }
+}
+```
+
+#### Viewing Vendor Questionnaire Answers
+
+Questionnaire answers are stored in the vendor's data structure and can be accessed through:
+
+1. The vendor detail page, which displays all questionnaire answers
+2. The vendor service API:
+
+```typescript
+import { VendorService } from './lib/services/vendorService';
+
+// Get a vendor with their questionnaire answers
+const vendor = VendorService.getVendorById("vendor-id-123");
+
+if (vendor) {
+  // Access the questionnaire answers
+  vendor.questionnaireAnswers.forEach(answer => {
+    console.log(`Q: ${answer.question}`);
+    console.log(`A: ${answer.answer}`);
+  });
+}
+```
+
+### Vendor Status Updates
+
+When questionnaire answers are saved:
+
+1. For existing vendors, the status is updated to "In Review"
+2. For new vendors, they are created with the status "In Review" (since they already have answers)
+
+The system automatically handles these status updates when saving questionnaire results.

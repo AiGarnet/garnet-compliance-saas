@@ -1,27 +1,49 @@
-import { Vendor, RiskLevel, VendorStatus } from '../types/vendor.types';
-import { getAllVendors, getVendorById } from '../data/vendors';
+import { Vendor, RiskLevel, VendorStatus, QuestionnaireAnswer } from '../types/vendor.types';
+import { apiClient } from './api';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Vendor Service
- * Contains utility functions for working with vendor data
+ * Contains utility functions for working with vendor data via API
  */
 export const VendorService = {
   /**
    * Get all vendors
    */
-  getAllVendors,
+  async getAllVendors(): Promise<Vendor[]> {
+    try {
+      const response = await apiClient.get<{ vendors: Vendor[] }>('/api/vendors');
+      return response.vendors;
+    } catch (error) {
+      console.error('Error fetching vendors:', error);
+      return [];
+    }
+  },
   
   /**
    * Get a vendor by ID
    */
-  getVendorById,
+  async getVendorById(id: string): Promise<Vendor | null> {
+    try {
+      const response = await apiClient.get<{ vendor: Vendor }>(`/api/vendors/${id}`);
+      return response.vendor;
+    } catch (error) {
+      console.error(`Error fetching vendor ${id}:`, error);
+      return null;
+    }
+  },
   
   /**
    * Get vendors filtered by status
-   * @param status - The status to filter by
    */
-  getVendorsByStatus(status: VendorStatus): Vendor[] {
-    return getAllVendors().filter(vendor => vendor.status === status);
+  async getVendorsByStatus(status: VendorStatus): Promise<Vendor[]> {
+    try {
+      const response = await apiClient.get<{ vendors: Vendor[] }>(`/api/vendors/status/${status}`);
+      return response.vendors;
+    } catch (error) {
+      console.error(`Error fetching vendors with status ${status}:`, error);
+      return [];
+    }
   },
   
   /**
@@ -35,8 +57,14 @@ export const VendorService = {
   /**
    * Get high risk vendors (convenience method)
    */
-  getHighRiskVendors(): Vendor[] {
-    return this.getVendorsByRiskLevel(RiskLevel.HIGH);
+  async getHighRiskVendors(): Promise<Vendor[]> {
+    try {
+      const vendors = await this.getAllVendors();
+      return vendors.filter(vendor => vendor.riskLevel === RiskLevel.HIGH);
+    } catch (error) {
+      console.error('Error fetching high risk vendors:', error);
+      return [];
+    }
   },
   
   /**
@@ -68,5 +96,96 @@ export const VendorService = {
     });
     
     return counts;
+  },
+  
+  /**
+   * Get vendor statistics
+   */
+  async getVendorStats(): Promise<any> {
+    try {
+      const response = await apiClient.get<{ stats: any }>('/api/vendors/stats');
+      return response.stats;
+    } catch (error) {
+      console.error('Error fetching vendor stats:', error);
+      return null;
+    }
+  },
+  
+  /**
+   * Create a new vendor
+   */
+  async createVendor(vendorData: Partial<Vendor>): Promise<Vendor | null> {
+    try {
+      const response = await apiClient.post<{ vendor: Vendor }>('/api/vendors', vendorData);
+      return response.vendor;
+    } catch (error) {
+      console.error('Error creating vendor:', error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Update a vendor
+   */
+  async updateVendor(id: string, vendorData: Partial<Vendor>): Promise<Vendor | null> {
+    try {
+      const response = await apiClient.put<{ vendor: Vendor }>(`/api/vendors/${id}`, vendorData);
+      return response.vendor;
+    } catch (error) {
+      console.error(`Error updating vendor ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Delete a vendor
+   */
+  async deleteVendor(id: string): Promise<boolean> {
+    try {
+      await apiClient.delete<{ message: string }>(`/api/vendors/${id}`);
+      return true;
+    } catch (error) {
+      console.error(`Error deleting vendor ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Save questionnaire answers for a vendor
+   */
+  async saveVendorQuestionnaire(
+    vendorId: string, 
+    answers: Array<{ questionId: string; question: string; answer: string }>
+  ): Promise<Vendor | null> {
+    try {
+      const response = await apiClient.post<{ vendor: Vendor }>(`/api/vendors/${vendorId}/answers`, { answers });
+      return response.vendor;
+    } catch (error) {
+      console.error(`Error saving questionnaire for vendor ${vendorId}:`, error);
+      throw error;
+    }
+  },
+  
+  /**
+   * Create a new vendor with questionnaire answers
+   */
+  async createVendorWithQuestionnaire(
+    vendorName: string,
+    answers: Array<{ questionId: string; question: string; answer: string }>,
+    vendorData: Partial<Omit<Vendor, 'id' | 'name'>> = {}
+  ): Promise<Vendor | null> {
+    try {
+      const data = {
+        name: vendorName,
+        ...vendorData,
+        answers
+      };
+      
+      const response = await apiClient.post<{ vendor: Vendor }>('/api/vendors/with-answers', data);
+      return response.vendor;
+    } catch (error) {
+      console.error('Error creating vendor with questionnaire:', error);
+      throw error;
+    }
   }
 }; 

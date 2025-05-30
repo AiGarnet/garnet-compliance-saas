@@ -4,16 +4,20 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:with-api": "node scripts/start-questionnaire-service.js && next dev",
     "build": "next build",
     "export": "next export",
     "build:optimized": "NODE_ENV=production next build && npm run css-stats",
     "start": "next start",
+    "start:with-api": "node scripts/start-questionnaire-service.js && next start",
     "lint": "next lint",
     "test": "jest",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "css-stats": "node lib/css-stats.js",
-    "_postinstall": "cd ../netlify && npm install"
+    "_postinstall": "cd ../netlify && npm install",
+    "questionnaire-service:start": "node scripts/start-questionnaire-service.js",
+    "questionnaire-service:check": "curl -s http://localhost:5001/health || npm run questionnaire-service:start"
   },
   "dependencies": {
     "clsx": "^2.1.1",

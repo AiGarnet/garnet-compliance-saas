@@ -1,0 +1,41 @@
+2025-05-30 14:23:43,378 - questionnaire_service - WARNING - Backend health check failed with status code: 404
+2025-05-30 14:23:43,379 - questionnaire_service - WARNING - Backend at http://localhost:5000 is not accessible. Service will use fallback answers.
+2025-05-30 14:23:43,380 - questionnaire_service - INFO - Starting questionnaire service on port 5001, connecting to backend at http://localhost:5000
+2025-05-30 14:23:47,470 - questionnaire_service - INFO - Questionnaire service started successfully at http://localhost:5001
+2025-05-30 14:23:47,472 - questionnaire_service - INFO - [Service Output] * Serving Flask app 'app'
+2025-05-30 14:23:47,473 - questionnaire_service - ERROR - [Service Error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+2025-05-30 14:23:47,573 - questionnaire_service - INFO - [Service Output] * Debug mode: off
+2025-05-30 14:23:47,573 - questionnaire_service - ERROR - [Service Error] * Running on all addresses (0.0.0.0)
+2025-05-30 14:51:55,027 - questionnaire_service - INFO - Questionnaire service is already running at http://localhost:5001
+2025-05-30 15:07:55,310 - questionnaire_service - WARNING - Backend health check failed with status code: 404
+2025-05-30 15:07:55,311 - questionnaire_service - WARNING - Backend at http://localhost:5000 is not accessible. Service will use fallback answers.
+2025-05-30 15:07:55,312 - questionnaire_service - INFO - Starting questionnaire service on port 5001, connecting to backend at http://localhost:5000
+2025-05-30 15:07:59,368 - questionnaire_service - INFO - Questionnaire service started successfully at http://localhost:5001
+2025-05-30 15:07:59,370 - questionnaire_service - INFO - [Service Output] * Serving Flask app 'app'
+2025-05-30 15:07:59,370 - questionnaire_service - ERROR - [Service Error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+2025-05-30 15:07:59,471 - questionnaire_service - INFO - [Service Output] * Debug mode: off
+2025-05-30 15:07:59,471 - questionnaire_service - ERROR - [Service Error] * Running on all addresses (0.0.0.0)
+2025-05-30 15:14:59,658 - questionnaire_service - WARNING - Backend health check failed with status code: 404
+2025-05-30 15:14:59,659 - questionnaire_service - WARNING - Backend at http://localhost:5000 is not accessible. Service will use fallback answers.
+2025-05-30 15:14:59,659 - questionnaire_service - INFO - Starting questionnaire service on port 5001, connecting to backend at http://localhost:5000
+2025-05-30 15:15:03,720 - questionnaire_service - INFO - Questionnaire service started successfully at http://localhost:5001
+2025-05-30 15:15:03,721 - questionnaire_service - INFO - [Service Output] * Serving Flask app 'app'
+2025-05-30 15:15:03,721 - questionnaire_service - ERROR - [Service Error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+2025-05-30 15:15:03,822 - questionnaire_service - INFO - [Service Output] * Debug mode: off
+2025-05-30 15:15:03,822 - questionnaire_service - ERROR - [Service Error] * Running on all addresses (0.0.0.0)
+2025-05-30 15:21:38,647 - questionnaire_service - WARNING - Backend health check failed with status code: 404
+2025-05-30 15:21:38,651 - questionnaire_service - WARNING - Backend at http://localhost:5000 is not accessible. Service will use fallback answers.
+2025-05-30 15:21:38,651 - questionnaire_service - INFO - Starting questionnaire service on port 5001, connecting to backend at http://localhost:5000
+2025-05-30 15:21:42,838 - questionnaire_service - INFO - Questionnaire service started successfully at http://localhost:5001
+2025-05-30 15:21:42,839 - questionnaire_service - INFO - [Service Output] * Serving Flask app 'app'
+2025-05-30 15:21:42,840 - questionnaire_service - ERROR - [Service Error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+2025-05-30 15:21:42,941 - questionnaire_service - INFO - [Service Output] * Debug mode: off
+2025-05-30 15:21:42,942 - questionnaire_service - ERROR - [Service Error] * Running on all addresses (0.0.0.0)
+2025-05-30 18:39:10,020 - questionnaire_service - WARNING - Backend health check failed with status code: 404
+2025-05-30 18:39:10,020 - questionnaire_service - WARNING - Backend at http://localhost:5000 is not accessible. Service will use fallback answers.
+2025-05-30 18:39:10,020 - questionnaire_service - INFO - Starting questionnaire service on port 5001, connecting to backend at http://localhost:5000
+2025-05-30 18:39:14,077 - questionnaire_service - INFO - Questionnaire service started successfully at http://localhost:5001
+2025-05-30 18:39:14,083 - questionnaire_service - INFO - [Service Output] * Serving Flask app 'app'
+2025-05-30 18:39:14,084 - questionnaire_service - ERROR - [Service Error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+2025-05-30 18:39:14,185 - questionnaire_service - INFO - [Service Output] * Debug mode: off
+2025-05-30 18:39:14,185 - questionnaire_service - ERROR - [Service Error] * Running on all addresses (0.0.0.0)

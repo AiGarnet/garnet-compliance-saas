@@ -1,10 +1,10 @@
-import { Vendor, VendorStatus, RiskLevel, VendorsSchema } from '../types/vendor.types';
+import { Vendor, VendorStatus, RiskLevel, VendorsSchema, VendorSchema } from '../types/vendor.types';
 
 /**
  * Sample vendor data
  * In a real application, this would be fetched from an API
  */
-export const vendorsData: Vendor[] = [
+export let vendorsData: Vendor[] = [
   {
     id: "1",
     name: "Acme Payments",
@@ -112,4 +112,41 @@ export function getAllVendors(): Vendor[] {
  */
 export function getVendorById(id: string): Vendor | undefined {
   return getAllVendors().find(vendor => vendor.id === id);
+}
+
+/**
+ * Save an updated vendor
+ * @param vendor - The vendor to save
+ * @returns The saved vendor
+ */
+export function saveVendor(vendor: Vendor): Vendor {
+  // Find the vendor index
+  const index = vendorsData.findIndex(v => v.id === vendor.id);
+  
+  if (index === -1) {
+    throw new Error(`Vendor with ID ${vendor.id} not found`);
+  }
+  
+  // Update the vendor
+  vendorsData[index] = {
+    ...vendor,
+    updatedAt: new Date() // Ensure updatedAt is current
+  };
+  
+  return vendorsData[index];
+}
+
+/**
+ * Add a new vendor
+ * @param vendor - The vendor to add
+ * @returns The added vendor
+ */
+export function addVendor(vendor: Vendor): Vendor {
+  // Validate the vendor
+  const validVendor = VendorSchema.parse(vendor);
+  
+  // Add to vendors array
+  vendorsData.push(validVendor);
+  
+  return validVendor;
 } 

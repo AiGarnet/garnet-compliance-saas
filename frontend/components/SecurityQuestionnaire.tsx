@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { QuestionnaireAnswer, Vendor, VendorStatus } from '@/lib/types/vendor.types';
+import { v4 as uuidv4 } from 'uuid';
+
+interface SaveQuestionnaireProps {
+  vendorId?: string;
+  vendorName?: string;
+  answers: QuestionnaireAnswer[];
+}
 
 export function SecurityQuestionnaire() {
   const [question, setQuestion] = useState('');
@@ -8,6 +16,10 @@ export function SecurityQuestionnaire() {
   const [error, setError] = useState('');
   const [metadata, setMetadata] = useState<any>(null);
   const [serverStatus, setServerStatus] = useState<'unknown' | 'online' | 'offline'>('unknown');
+  const [currentQA, setCurrentQA] = useState<QuestionnaireAnswer[]>([]);
+  const [vendorId, setVendorId] = useState<string>('');
+  const [vendorName, setVendorName] = useState<string>('');
+  const [savedMessage, setSavedMessage] = useState<string>('');
 
   // Check server status on component mount
   useEffect(() => {
@@ -54,6 +66,7 @@ export function SecurityQuestionnaire() {
     setLoading(true);
     setError('');
     setMetadata(null);
+    setSavedMessage('');
     
     // Try the main endpoint first
     const success = await tryMainEndpoint();
@@ -104,6 +117,15 @@ export function SecurityQuestionnaire() {
       const data = await response.json();
       setAnswer(data.answer || 'No answer received');
       setMetadata(data.metadata);
+      
+      // Add the Q&A to the current session
+      const newQA: QuestionnaireAnswer = {
+        questionId: uuidv4(),
+        question: question,
+        answer: data.answer || 'No answer received'
+      };
+      
+      setCurrentQA(prev => [...prev, newQA]);
       return true;
     } catch (err: any) {
       console.error("Error in main chatbot request:", err);
@@ -140,12 +162,69 @@ export function SecurityQuestionnaire() {
       setAnswer(data.answer || 'No answer received from fallback');
       setMetadata(data.metadata);
       setError(''); // Clear any previous errors since fallback succeeded
+      
+      // Add the Q&A to the current session
+      const newQA: QuestionnaireAnswer = {
+        questionId: uuidv4(),
+        question: question,
+        answer: data.answer || 'No answer received from fallback'
+      };
+      
+      setCurrentQA(prev => [...prev, newQA]);
       return true;
     } catch (err: any) {
       console.error("Error in fallback request:", err);
       setError(prev => `${prev} Fallback also failed: ${err.message}`);
       return false;
     }
+  };
+
+  // Save the current Q&A session to a vendor
+  const saveToVendor = () => {
+    if (currentQA.length === 0) {
+      setError('No questions and answers to save');
+      return;
+    }
+
+    try {
+      // Access the functions exported by the vendors page
+      const vendorFunctions = (window as any).vendorQuestionnaireFunctions;
+      
+      if (!vendorFunctions) {
+        setError('Vendor functions not available. Please navigate to the vendors page first.');
+        return;
+      }
+
+      if (vendorId) {
+        // Save to existing vendor
+        vendorFunctions.saveQuestionnaireForVendor(vendorId, currentQA);
+        setSavedMessage(`Successfully saved ${currentQA.length} questions and answers to vendor ${vendorName || vendorId}`);
+      } else if (vendorName) {
+        // Create new vendor
+        vendorFunctions.createVendorWithQuestionnaire(vendorName, currentQA);
+        setSavedMessage(`Successfully created new vendor "${vendorName}" with ${currentQA.length} questions and answers`);
+      } else {
+        setError('Please enter either a vendor ID or a new vendor name');
+        return;
+      }
+      
+      // Clear the form fields but keep the current Q&A session
+      setVendorId('');
+      setVendorName('');
+    } catch (error: any) {
+      console.error('Error saving to vendor:', error);
+      setError(`Failed to save to vendor: ${error.message}`);
+    }
+  };
+
+  // Reset the current Q&A session
+  const resetSession = () => {
+    setCurrentQA([]);
+    setQuestion('');
+    setAnswer('');
+    setMetadata(null);
+    setError('');
+    setSavedMessage('');
   };
 
   return (
@@ -191,6 +270,12 @@ export function SecurityQuestionnaire() {
         </div>
       )}
 
+      {savedMessage && (
+        <div className="p-4 mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-md">
+          <p><strong>Success:</strong> {savedMessage}</p>
+        </div>
+      )}
+
       {answer && (
         <div className="border border-gray-300 rounded-md p-6 bg-white shadow-sm">
           <h2 className="text-xl font-semibold mb-4 text-gray-800">Answer:</h2>
@@ -209,6 +294,77 @@ export function SecurityQuestionnaire() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Q&A Session Summary */}
+      {currentQA.length > 0 && (
+        <div className="mt-8 border border-gray-300 rounded-md p-6 bg-white shadow-sm">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-800">Current Session ({currentQA.length} Questions)</h2>
+            <button 
+              onClick={resetSession}
+              className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+            >
+              Reset Session
+            </button>
+          </div>
+          
+          <div className="mb-6">
+            <p className="text-sm text-gray-600 mb-2">
+              Save these questions and answers to a vendor:
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+              <div className="flex-1">
+                <label htmlFor="existingVendorId" className="block text-sm font-medium mb-1">
+                  Existing Vendor ID:
+                </label>
+                <input
+                  type="text"
+                  id="existingVendorId"
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  value={vendorId}
+                  onChange={(e) => setVendorId(e.target.value)}
+                  placeholder="Enter vendor ID"
+                />
+              </div>
+              
+              <div className="flex-1">
+                <label htmlFor="newVendorName" className="block text-sm font-medium mb-1">
+                  New Vendor Name:
+                </label>
+                <input
+                  type="text"
+                  id="newVendorName"
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  value={vendorName}
+                  onChange={(e) => setVendorName(e.target.value)}
+                  placeholder="Or create new vendor"
+                />
+              </div>
+              
+              <div className="flex items-end">
+                <button
+                  onClick={saveToVendor}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                >
+                  Save to Vendor
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {currentQA.map((qa, index) => (
+              <div key={qa.questionId} className="border-b border-gray-200 pb-4">
+                <h3 className="font-medium text-gray-800">Q{index + 1}: {qa.question}</h3>
+                <div className="mt-2 text-gray-600 text-sm">
+                  <ReactMarkdown>{qa.answer}</ReactMarkdown>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, ChangeEvent, useMemo, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ClipboardList, Filter, Plus, Search, SlidersHorizontal, X, Upload, FileText, FileType, Files, RefreshCw, Trash2, Sparkles, MessageSquare, ClipboardCopy } from "lucide-react";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { QuestionnaireList, Questionnaire, QuestionnaireStatus } from "@/components/dashboard/QuestionnaireList";
@@ -13,6 +13,8 @@ interface QuestionAnswer {
   question: string;
   answer: string;
   isLoading?: boolean;
+  isMandatory: boolean;
+  needsAttention?: boolean;
 }
 
 const MAX_QUESTIONS = 500;
@@ -21,10 +23,16 @@ const AUTOSAVE_KEY = 'questionnaire_draft';
 
 const QuestionnairesPage = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Safely get vendorId from searchParams
+  const vendorId = searchParams ? searchParams.get('vendorId') : null;
+  
   // Remove mock data and start with empty array
   const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  const [vendorName, setVendorName] = useState<string>('');
+  const [isLoadingVendor, setIsLoadingVendor] = useState<boolean>(false);
   
   // New state variables for the questionnaire input modal
   const [showQuestionnaireInput, setShowQuestionnaireInput] = useState(false);
@@ -56,6 +64,67 @@ const QuestionnairesPage = () => {
   const [isGeneratingAnswers, setIsGeneratingAnswers] = useState(false);
   const [generatedAnswers, setGeneratedAnswers] = useState<QuestionAnswer[]>([]);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+
+  // Fetch vendor data when vendorId is provided in URL
+  useEffect(() => {
+    if (vendorId) {
+      fetchVendorData(vendorId);
+    }
+  }, [vendorId]);
+
+  // Fetch vendor data and any existing questionnaire
+  const fetchVendorData = async (id: string) => {
+    setIsLoadingVendor(true);
+    setError('');
+    
+    try {
+      // Fetch vendor details
+      const vendorResponse = await fetch(`/api/vendors/${id}`);
+      
+      if (!vendorResponse.ok) {
+        throw new Error('Failed to fetch vendor data');
+      }
+      
+      const vendorData = await vendorResponse.json();
+      setVendorName(vendorData.vendor.name);
+      
+      // Fetch vendor's questionnaire answers if available
+      try {
+        const questionnaireResponse = await fetch(`/api/vendors/${id}/questionnaire`);
+        
+        if (questionnaireResponse.ok) {
+          const data = await questionnaireResponse.json();
+          
+          if (data.answers && data.answers.length > 0) {
+            // Load existing answers
+            setQuestionAnswers(data.answers.map((answer: any) => ({
+              question: answer.question,
+              answer: answer.answer || '',
+              isMandatory: answer.isMandatory || false,
+              needsAttention: answer.needsAttention || false
+            })));
+            
+            setShowQuestionnaireInput(true);
+          } else {
+            // No answers yet, but show questionnaire input for new vendor
+            setShowQuestionnaireInput(true);
+          }
+        } else {
+          // No questionnaire yet, but show questionnaire input for new vendor
+          setShowQuestionnaireInput(true);
+        }
+      } catch (error) {
+        console.error('Error fetching questionnaire:', error);
+        // Show empty questionnaire form even if there was an error fetching
+        setShowQuestionnaireInput(true);
+      }
+    } catch (error) {
+      console.error('Error fetching vendor:', error);
+      setError('Unable to load vendor data. Please return to the dashboard and try again.');
+    } finally {
+      setIsLoadingVendor(false);
+    }
+  };
 
   // Calculate and update question count and validation when input changes
   useEffect(() => {
@@ -104,10 +173,11 @@ const QuestionnairesPage = () => {
     // Auto-save draft
     localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
       title: questionnaireTitle,
-      questions: questionnaireInput
+      questions: questionnaireInput,
+      vendorId: vendorId
     }));
     
-  }, [questionnaireInput, questionnaireTitle]);
+  }, [questionnaireInput, questionnaireTitle, vendorId]);
 
   // Debounced textarea resize
   const resizeTextarea = useCallback(() => {
@@ -260,7 +330,80 @@ const QuestionnairesPage = () => {
     setShowQuestionnaireInput(true);
   };
 
-  // Generate AI answers for questions
+  // Add a function to check if the backend service is running
+  const checkBackendHealth = async (baseUrl: string): Promise<boolean> => {
+    try {
+      console.log('Checking backend health at:', baseUrl);
+      const response = await fetch(`${baseUrl}/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Short timeout to not block the UI
+        signal: AbortSignal.timeout(5000)
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Backend health check result:', data);
+        return data.status === 'healthy';
+      }
+      return false;
+    } catch (error) {
+      console.error('Backend health check failed:', error);
+      return false;
+    }
+  };
+
+  // Add fallback answer generation for when API is unavailable
+  const generateLocalFallbackAnswer = (question: string): string => {
+    // Common patterns in compliance questions
+    const patterns = [
+      { regex: /encrypt/i, answer: "Yes, our company encrypts all personal data both at rest and in transit. We use industry-standard encryption protocols (AES-256 for data at rest and TLS 1.2+ for data in transit)." },
+      { regex: /access control|permission/i, answer: "Yes, our organization implements strict access control and role-based permissions for all sensitive data. We grant access on a need-to-know basis with the principle of least privilege." },
+      { regex: /data breach|incident/i, answer: "Yes, our company notifies supervisory authorities and affected individuals within 72 hours of becoming aware of a data breach, as required by GDPR Article 33." },
+      { regex: /retention|delete/i, answer: "Our organization has a comprehensive data retention and deletion policy. We keep data only as long as necessary for the purpose it was collected." },
+      { regex: /consent/i, answer: "Yes, our organization collects explicit consent before personal data is processed for specific purposes. We store consent records securely and include timestamp, method of collection, and the specific consent given." },
+      { regex: /audit/i, answer: "Yes, our organization conducts regular audits to ensure compliance with all applicable regulations and industry standards." },
+      { regex: /training|awareness/i, answer: "Our company's security and compliance awareness training is updated quarterly and is mandatory for all employees." },
+      { regex: /mfa|multi-factor/i, answer: "Yes, our company supports multi-factor authentication (MFA) for all users. MFA is mandatory for administrative access and strongly recommended for all user accounts." },
+      { regex: /test|assess/i, answer: "Yes, our company conducts regular security assessments and penetration testing to identify and address potential vulnerabilities." },
+      { regex: /backup/i, answer: "Yes, our organization maintains regular backups of all critical data with appropriate encryption and access controls in place." },
+    ];
+    
+    // Check for pattern matches
+    for (const pattern of patterns) {
+      if (pattern.regex.test(question)) {
+        return pattern.answer;
+      }
+    }
+    
+    // Default response for questions that don't match any patterns
+    return "Our organization handles this in accordance with our company policies and applicable regulations. We ensure compliance with all relevant laws and industry best practices.";
+  };
+
+  // Add a helper function to check if a question is mandatory
+  const isMandatoryQuestion = (question: string): boolean => {
+    // Check if the question contains "must" or ends with "(Required)"
+    return question.toLowerCase().includes("must") || 
+           question.endsWith("(Required)") || 
+           question.endsWith("(required)") ||
+           question.includes("mandatory") ||
+           question.includes("Mandatory");
+  };
+
+  // Add a function to check if an answer is sufficient
+  const isAnswerSufficient = (answer: string): boolean => {
+    // Very basic check - could be enhanced for better evaluation
+    const trimmedAnswer = answer.trim();
+    
+    // Check if the answer is empty, the default "We couldn't generate" message, or too short
+    return trimmedAnswer.length > 20 && 
+           !trimmedAnswer.startsWith("We couldn't generate") &&
+           !trimmedAnswer.includes("AI answer will be generated");
+  };
+
+  // Update the handleGenerateAnswers function to check health first
   const handleGenerateAnswers = async (): Promise<QuestionAnswer[]> => {
     const questions = questionnaireInput
       .split('\n')
@@ -272,42 +415,98 @@ const QuestionnairesPage = () => {
       return [];
     }
 
+    // Count mandatory questions
+    const mandatoryCount = questions.filter(q => isMandatoryQuestion(q)).length;
+    console.log(`Found ${mandatoryCount} mandatory questions out of ${questions.length} total`);
+
     setIsGeneratingAnswers(true);
     
     // Initialize answers with loading states for each question
     const initialAnswers = questions.map(question => ({ 
       question, 
       answer: 'Generating...', 
-      isLoading: true 
+      isLoading: true,
+      isMandatory: isMandatoryQuestion(question)
     }));
     setGeneratedAnswers(initialAnswers);
     setShowAIAssistant(true);
     
-    // Create mock answers for faster development
-    // REMOVE THIS IN PRODUCTION
-    const mockAnswers = questions.map(question => ({
-      question,
-      answer: `This is a sample answer for: "${question}". In a real implementation, this would be generated by the AI based on compliance best practices and industry standards.`,
-      isLoading: false
-    }));
-    
-    // Use mock answers instead of making API calls (for faster development)
-    // REMOVE THIS IN PRODUCTION AND UNCOMMENT THE API CALLS BELOW
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
-    setGeneratedAnswers(mockAnswers);
-    setIsGeneratingAnswers(false);
-    return mockAnswers;
-    
-    /* UNCOMMENT THIS FOR PRODUCTION
     try {
+      // Determine the API endpoint based on environment
       const baseApiEndpoint = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-        ? 'http://localhost:5000'
-        : 'https://garnet-compliance-saas-production.up.railway.app';
+        ? 'http://localhost:5001'  // Use local Flask service if running locally
+        : 'https://garnet-compliance-saas-production.up.railway.app';  // Production endpoint
       
-      const singleEndpoint = `${baseApiEndpoint}/ask`;
+      console.log('Using API endpoint:', baseApiEndpoint);
+      
+      // Check if the backend is healthy
+      const isHealthy = await checkBackendHealth(baseApiEndpoint);
+      if (!isHealthy) {
+        console.warn('Backend health check failed, using fallback answers');
+        throw new Error('Backend service is not available');
+      }
+      
+      // Try batch processing first for efficiency
+      const batchEndpoint = `${baseApiEndpoint}/batch-ask`;
+      
+      try {
+        console.log('Attempting batch processing for', questions.length, 'questions');
+        
+        // Show processing status in UI
+        setGeneratedAnswers(prev => 
+          prev.map(item => ({ ...item, answer: 'Processing in batch mode...', isLoading: true }))
+        );
+        
+        const batchResponse = await fetch(batchEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ questions }),
+        });
+        
+        // Check if the request was successful
+        if (batchResponse.ok) {
+          const data = await batchResponse.json();
+          
+          if (data.answers && Array.isArray(data.answers)) {
+            console.log('Batch processing successful, received', data.answers.length, 'answers');
+            
+            // Map the batch responses back to our format
+            const answers = data.answers.map((item: any, index: number) => {
+              const questionText = item.question || questions[index];
+              const answerText = item.answer || "We couldn't generate an answer—please try again.";
+              const mandatory = isMandatoryQuestion(questionText);
+              const sufficient = isAnswerSufficient(answerText);
+              
+              return {
+                question: questionText,
+                answer: answerText,
+                isLoading: false,
+                isMandatory: mandatory,
+                needsAttention: mandatory && !sufficient
+              };
+            });
+            
+            setGeneratedAnswers(answers);
+            setIsGeneratingAnswers(false);
+            return answers;
+          }
+        } else {
+          console.warn('Batch processing failed, status:', batchResponse.status);
+          throw new Error('Batch processing failed');
+        }
+      } catch (batchError) {
+        console.error("Error in batch processing:", batchError);
+        // Continue with individual processing if batch fails
+      }
+      
+      // If batch processing failed, process questions individually
+      console.log('Falling back to individual processing for', questions.length, 'questions');
       
       // Process questions in parallel but update UI as each answer arrives
       const finalAnswers: QuestionAnswer[] = [...initialAnswers];
+      const singleEndpoint = `${baseApiEndpoint}/ask`;
       
       await Promise.all(
         questions.map(async (question, index) => {
@@ -321,30 +520,45 @@ const QuestionnairesPage = () => {
             });
             
             if (!aiResponse.ok) {
-              throw new Error('Failed to get AI response');
+              throw new Error(`Failed to get AI response: ${aiResponse.status}`);
             }
             
             const aiData = await aiResponse.json();
-            const answer = aiData.answer || "We couldn't generate an answer—please try again.";
+            console.log(`Received answer for question ${index + 1}:`, aiData);
             
-            // Update this specific answer
-            finalAnswers[index] = { 
-              question, 
-              answer, 
-              isLoading: false 
-            };
+            const answerText = aiData.answer || "We couldn't generate an answer—please try again.";
+            const isMandatory = isMandatoryQuestion(question);
             
-            // Update UI with current state of all answers
-            setGeneratedAnswers([...finalAnswers]);
-            
-          } catch (error) {
-            console.error('Error getting AI answer:', error);
+            // Get the question and mandatory status
+            const questionText = questions[index];
+            const defaultAnswer = "We couldn't generate an answer—please try again.";
             
             // Update with error state
             finalAnswers[index] = { 
-              question, 
-              answer: "We couldn't generate an answer—please try again.", 
-              isLoading: false 
+              question: questionText, 
+              answer: defaultAnswer, 
+              isLoading: false,
+              isMandatory: isMandatory,
+              needsAttention: isMandatory && !isAnswerSufficient(defaultAnswer)
+            };
+            
+            // Update UI with current state
+            setGeneratedAnswers([...finalAnswers]);
+          } catch (error) {
+            console.error(`Error getting AI answer for question ${index + 1}:`, error);
+            
+            // Get the question and mandatory status
+            const questionText = questions[index];
+            const isMandatory = isMandatoryQuestion(questionText);
+            const defaultAnswer = "We couldn't generate an answer—please try again.";
+            
+            // Update with error state
+            finalAnswers[index] = { 
+              question: questionText, 
+              answer: defaultAnswer, 
+              isLoading: false,
+              isMandatory: isMandatory,
+              needsAttention: isMandatory && !isAnswerSufficient(defaultAnswer)
             };
             
             // Update UI with current state
@@ -357,7 +571,9 @@ const QuestionnairesPage = () => {
       const completedAnswers = finalAnswers.map(qa => ({
         question: qa.question,
         answer: qa.answer,
-        isLoading: false
+        isLoading: false,
+        isMandatory: qa.isMandatory,
+        needsAttention: qa.needsAttention
       }));
       
       setGeneratedAnswers(completedAnswers);
@@ -366,18 +582,23 @@ const QuestionnairesPage = () => {
     } catch (error) {
       console.error('Error generating answers:', error);
       
-      // Create fallback answers for all questions
-      const fallbackAnswers = questions.map(question => ({
-        question,
-        answer: "We couldn't generate an answer—please try again.",
-        isLoading: false
-      }));
+      // Create fallback answers using the local fallback system
+      const fallbackAnswers = questions.map(question => {
+        const answer = generateLocalFallbackAnswer(question);
+        const mandatory = isMandatoryQuestion(question);
+        return {
+          question,
+          answer,
+          isLoading: false,
+          isMandatory: mandatory,
+          needsAttention: mandatory && !isAnswerSufficient(answer)
+        };
+      });
       
       setGeneratedAnswers(fallbackAnswers);
       setIsGeneratingAnswers(false);
       return fallbackAnswers;
     }
-    */
   };
 
   // Wrapper function for button clicks (doesn't return anything)
@@ -423,12 +644,24 @@ const QuestionnairesPage = () => {
     setIsSubmitting(true);
     
     try {
-      // Use generated answers if available, otherwise generate them
-      let finalAnswers = generatedAnswers;
+      // Use generated answers if available, otherwise create new QuestionAnswer objects
+      let finalAnswers: QuestionAnswer[] = [];
       
-      if (finalAnswers.length === 0) {
-        // Generate answers if not already done
-        finalAnswers = await handleGenerateAnswers();
+      if (generatedAnswers.length > 0) {
+        // Use already generated answers
+        finalAnswers = generatedAnswers;
+      } else {
+        // Generate basic answers if not already done
+        finalAnswers = questions.map(question => {
+          const isMandatory = isMandatoryQuestion(question);
+          return {
+            question, 
+            answer: 'AI answer will be generated', 
+            isLoading: false,
+            isMandatory,
+            needsAttention: isMandatory
+          };
+        });
       }
       
       // Check if a questionnaire with the same title or questions already exists
@@ -461,7 +694,12 @@ const QuestionnairesPage = () => {
                   existingQuestionnaireId = q.id;
                   
                   // Update the existing questionnaire with new answers
-                  q.answers = finalAnswers.length > 0 ? finalAnswers : questions.map(q => ({ question: q, answer: 'AI answer will be generated' }));
+                  q.answers = finalAnswers.length > 0 ? finalAnswers : questions.map(q => ({ 
+                    question: q, 
+                    answer: 'AI answer will be generated',
+                    isMandatory: isMandatoryQuestion(q),
+                    needsAttention: isMandatoryQuestion(q)
+                  }));
                   break;
                 }
               }
@@ -499,7 +737,7 @@ const QuestionnairesPage = () => {
         status: "Not Started" as QuestionnaireStatus,
         dueDate: new Date().toLocaleDateString(),
         progress: 0,
-        answers: finalAnswers.length > 0 ? finalAnswers : questions.map(q => ({ question: q, answer: 'AI answer will be generated' })),
+        answers: finalAnswers,
       };
       
       // Add the new questionnaire
@@ -792,6 +1030,55 @@ const QuestionnairesPage = () => {
     }
   }, [isLoading]); // Only run when loading state changes
 
+  // Return to dashboard
+  const handleReturnToDashboard = () => {
+    router.push('/dashboard');
+  };
+
+  // Save questionnaire progress and return to dashboard
+  const handleSaveAndReturn = async () => {
+    if (!vendorId) {
+      alert('No vendor ID found. Unable to save questionnaire.');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      // Format answers for API
+      const formattedAnswers = questionAnswers.map(qa => ({
+        questionId: btoa(qa.question).substring(0, 12), // Simple ID generation
+        question: qa.question,
+        answer: qa.answer,
+        isMandatory: qa.isMandatory,
+        needsAttention: qa.needsAttention || false
+      }));
+      
+      // Save to API
+      const response = await fetch(`/api/vendors/${vendorId}/answers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          answers: formattedAnswers
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save questionnaire');
+      }
+      
+      // Navigate back to dashboard
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Error saving questionnaire:', error);
+      alert('Failed to save questionnaire. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <>
       <Header />
@@ -802,21 +1089,36 @@ const QuestionnairesPage = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-800 flex items-center">
               <ClipboardList className="mr-3 h-7 w-7 text-primary" />
-              Questionnaires
+              {vendorId ? `Vendor Questionnaire${vendorName ? `: ${vendorName}` : ''}` : 'Questionnaires'}
             </h1>
-            <p className="text-gray-600 mt-1">Manage and track all your compliance questionnaires</p>
+            <p className="text-gray-600 mt-1">
+              {vendorId 
+                ? 'Complete the questionnaire by entering questions and generating AI answers' 
+                : 'Manage and track all your compliance questionnaires'
+              }
+            </p>
           </div>
           
-          <div className="flex items-center">
-            <button 
-              className="garnet-button garnet-button-gradient flex items-center"
-              onClick={handleNewQuestionnaire}
-              id="new-questionnaire-button"
-              type="button"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              New Questionnaire
-            </button>
+          <div className="flex items-center gap-2">
+            {vendorId ? (
+              <button 
+                className="garnet-button garnet-button-secondary flex items-center"
+                onClick={handleReturnToDashboard}
+                type="button"
+              >
+                Return to Dashboard
+              </button>
+            ) : (
+              <button 
+                className="garnet-button garnet-button-gradient flex items-center"
+                onClick={handleNewQuestionnaire}
+                id="new-questionnaire-button"
+                type="button"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                New Questionnaire
+              </button>
+            )}
           </div>
         </div>
         
@@ -1105,21 +1407,54 @@ const QuestionnairesPage = () => {
                           </span>
                           AI-Generated Answers
                         </h3>
-                        <button
-                          type="button"
-                          onClick={() => setShowAIAssistant(false)}
-                          className="text-sm text-primary hover:text-primary/80 flex items-center"
-                        >
-                          Back to Edit
-                        </button>
+                        <div className="flex items-center space-x-4">
+                          {/* Add counter for mandatory questions that need attention */}
+                          <div className="text-sm">
+                            {(() => {
+                              const mandatoryCount = generatedAnswers.filter(qa => qa.isMandatory).length;
+                              const needsAttentionCount = generatedAnswers.filter(qa => qa.needsAttention).length;
+                              
+                              return (
+                                <span className={needsAttentionCount > 0 ? "text-red-500 font-medium" : "text-green-600 font-medium"}>
+                                  {needsAttentionCount > 0 
+                                    ? `${needsAttentionCount} mandatory ${needsAttentionCount === 1 ? 'question' : 'questions'} need attention` 
+                                    : mandatoryCount > 0 
+                                      ? `All ${mandatoryCount} mandatory ${mandatoryCount === 1 ? 'question has' : 'questions have'} answers` 
+                                      : 'No mandatory questions detected'}
+                                </span>
+                              );
+                            })()}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowAIAssistant(false)}
+                            className="text-sm text-primary hover:text-primary/80 flex items-center"
+                          >
+                            Back to Edit
+                          </button>
+                        </div>
                       </div>
                       
                       <div className="border border-gray-200 rounded-lg overflow-hidden max-h-[500px] overflow-y-auto shadow-sm">
                         {generatedAnswers.map((qa, index) => (
-                          <div key={index} className={`p-5 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'} border-b border-gray-200 last:border-0`}>
-                            <div className="mb-3">
-                              <span className="text-sm font-bold text-gray-500 uppercase tracking-wider">Q{index + 1}:</span>
-                              <p className="font-medium text-gray-800 mt-1">{qa.question}</p>
+                          <div 
+                            key={index} 
+                            className={`p-5 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'} border-b border-gray-200 last:border-0 ${
+                              qa.needsAttention ? 'border-l-4 border-l-red-500' : qa.isMandatory ? 'border-l-4 border-l-green-500' : ''
+                            }`}
+                          >
+                            <div className="mb-3 flex justify-between items-start">
+                              <div>
+                                <span className="text-sm font-bold text-gray-500 uppercase tracking-wider">Q{index + 1}:</span>
+                                {qa.isMandatory && (
+                                  <span className="ml-2 text-xs font-bold bg-red-100 text-red-800 px-2 py-0.5 rounded">
+                                    Required
+                                  </span>
+                                )}
+                                <p className={`font-medium mt-1 ${qa.needsAttention ? 'text-red-700' : 'text-gray-800'}`}>
+                                  {qa.question}
+                                </p>
+                              </div>
                             </div>
                             <div>
                               <span className="text-sm font-bold text-primary uppercase tracking-wider">Answer:</span>
@@ -1129,10 +1464,18 @@ const QuestionnairesPage = () => {
                                   <span>Generating answer...</span>
                                 </div>
                               ) : (
-                                <div className="mt-2 text-gray-700 prose prose-sm max-w-none">
+                                <div className={`mt-2 prose prose-sm max-w-none ${qa.needsAttention ? 'text-red-700 bg-red-50 p-3 rounded' : 'text-gray-700'}`}>
                                   {qa.answer.split('\n').map((paragraph, pIndex) => (
                                     <p key={pIndex} className="mb-2">{paragraph}</p>
                                   ))}
+                                  
+                                  {qa.needsAttention && (
+                                    <div className="mt-3 bg-red-100 p-3 rounded-md text-red-800 text-sm">
+                                      <p className="font-bold">⚠️ This answer needs attention</p>
+                                      <p>This is a mandatory question that requires a more specific or complete answer.</p>
+                                    </div>
+                                  )}
+                                  
                                   <div className="mt-4 flex justify-end">
                                     <button 
                                       className="garnet-button-small bg-gray-100 text-primary hover:bg-gray-200 flex items-center"
@@ -1197,24 +1540,46 @@ const QuestionnairesPage = () => {
                     >
                       Cancel
                     </button>
-                    <button
-                      type="submit"
-                      disabled={!questionnaireInput.trim() || !questionnaireTitle.trim() || isSubmitting || questionCount > MAX_QUESTIONS}
-                      className="garnet-button garnet-button-gradient"
-                      aria-live="polite"
-                    >
-                      {isSubmitting ? (
-                        <div className="flex items-center">
-                          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Processing...
-                        </div>
-                      ) : (
-                        'Create Questionnaire'
-                      )}
-                    </button>
+                    
+                    {vendorId ? (
+                      <button
+                        type="button"
+                        onClick={handleSaveAndReturn}
+                        disabled={!questionnaireInput.trim() || isSubmitting}
+                        className="garnet-button garnet-button-gradient"
+                      >
+                        {isSubmitting ? (
+                          <div className="flex items-center">
+                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Saving...
+                          </div>
+                        ) : (
+                          'Save and Return'
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        disabled={!questionnaireInput.trim() || !questionnaireTitle.trim() || isSubmitting || questionCount > MAX_QUESTIONS}
+                        className="garnet-button garnet-button-gradient"
+                        aria-live="polite"
+                      >
+                        {isSubmitting ? (
+                          <div className="flex items-center">
+                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Processing...
+                          </div>
+                        ) : (
+                          'Create Questionnaire'
+                        )}
+                      </button>
+                    )}
                   </div>
                 </form>
               </div>

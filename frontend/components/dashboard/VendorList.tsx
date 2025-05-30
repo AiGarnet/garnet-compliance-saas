@@ -45,6 +45,7 @@ export interface VendorListProps {
   error?: string;
   onRetry?: () => void;
   locale?: string;
+  onViewQuestionnaire?: (vendorId: string) => void;
 }
 
 export function VendorList({ 
@@ -53,7 +54,8 @@ export function VendorList({
   isLoading = false,
   error = '',
   onRetry,
-  locale = 'en'
+  locale = 'en',
+  onViewQuestionnaire
 }: VendorListProps) {
   // Access translations based on locale
   const t = translations[locale as keyof typeof translations]?.vendorList || translations.en.vendorList;
@@ -142,6 +144,20 @@ export function VendorList({
   // Status filter handler to convert string to correct type
   const handleStatusFilterChange = (option: string) => {
     setStatusFilter(option as VendorStatus | 'All');
+  };
+
+  // Get the appropriate action button text based on vendor status
+  const getQuestionnaireActionText = (status: VendorStatus): string => {
+    switch(status) {
+      case 'Questionnaire Pending':
+        return 'Start Questionnaire';
+      case 'In Review':
+        return 'Continue Questionnaire';
+      case 'Approved':
+        return 'View Questionnaire';
+      default:
+        return 'Start Questionnaire';
+    }
   };
 
   // Render filter pills
@@ -258,7 +274,7 @@ export function VendorList({
             <TableHeader>
               <TableRow>
                 <TableHead 
-                  className="cursor-pointer hover:bg-gray-50 transition-colors w-3/5"
+                  className="cursor-pointer hover:bg-gray-50 transition-colors w-2/5"
                   onClick={() => handleSort('name')}
                   aria-sort={sortField === 'name' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
                   scope="col"
@@ -279,7 +295,7 @@ export function VendorList({
                     <ArrowUpDown className="ml-2 h-4 w-4" aria-hidden="true" />
                   </div>
                 </TableHead>
-                <TableHead className="w-1/5 text-right" scope="col">{t.table.actions}</TableHead>
+                <TableHead className="w-2/5 text-right" scope="col">{t.table.actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -287,7 +303,7 @@ export function VendorList({
                 <TableRow 
                   key={vendor.id}
                   id={`vendor-row-${index}`}
-                  className="hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="hover:bg-gray-50 transition-colors"
                   tabIndex={0}
                   onKeyDown={(e) => handleTableKeyDown(e, vendor, index)}
                   aria-label={`${vendor.name}, Status: ${getStatusI18nKey(vendor.status as VendorStatus)}`}
@@ -296,7 +312,7 @@ export function VendorList({
                   <TableCell>
                     <StatusBadge status={vendor.status} />
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right flex justify-end items-center gap-3">
                     <Link 
                       href={`/vendors/${vendor.id}`}
                       className="text-sm text-purple-600 hover:text-purple-800 focus:outline-none focus:ring-2 focus:ring-primary/30 py-1 px-2 rounded"
@@ -304,6 +320,15 @@ export function VendorList({
                     >
                       {t.table.viewDetails}
                     </Link>
+                    {onViewQuestionnaire && (
+                      <button
+                        onClick={() => onViewQuestionnaire(vendor.id)}
+                        className="text-sm bg-primary text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/30 py-1 px-3 rounded"
+                        aria-label={`${getQuestionnaireActionText(vendor.status as VendorStatus)} for ${vendor.name}`}
+                      >
+                        {getQuestionnaireActionText(vendor.status as VendorStatus)}
+                      </button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -318,7 +343,7 @@ export function VendorList({
               <li 
                 key={vendor.id}
                 id={`vendor-card-${index}`}
-                className="flex flex-col p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer shadow-sm"
+                className="flex flex-col p-4 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'ArrowDown' && index < filteredAndSortedVendors.length - 1) {
@@ -335,7 +360,7 @@ export function VendorList({
                   <span className="text-gray-800 font-medium">{vendor.name}</span>
                   <StatusBadge status={vendor.status} />
                 </div>
-                <div className="flex justify-end mt-4">
+                <div className="flex justify-end mt-4 gap-2">
                   <Link
                     href={`/vendors/${vendor.id}`}
                     className="text-sm text-purple-600 hover:text-purple-800 focus:outline-none focus:ring-2 focus:ring-primary/30 py-1 px-2 rounded"
@@ -343,6 +368,15 @@ export function VendorList({
                   >
                     {t.table.viewDetails}
                   </Link>
+                  {onViewQuestionnaire && (
+                    <button
+                      onClick={() => onViewQuestionnaire(vendor.id)}
+                      className="text-sm bg-primary text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/30 py-1 px-3 rounded"
+                      aria-label={`${getQuestionnaireActionText(vendor.status as VendorStatus)} for ${vendor.name}`}
+                    >
+                      {getQuestionnaireActionText(vendor.status as VendorStatus)}
+                    </button>
+                  )}
                 </div>
               </li>
             ))}
