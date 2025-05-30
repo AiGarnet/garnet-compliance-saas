@@ -16,20 +16,24 @@ export function VendorDetail({ vendorId }: VendorDetailProps) {
   
   useEffect(() => {
     // Fetch vendor data
-    try {
-      const vendorData = VendorService.getVendorById(vendorId);
-      
-      if (!vendorData) {
-        setError(`Vendor with ID ${vendorId} not found`);
-      } else {
-        setVendor(vendorData);
+    const fetchVendor = async () => {
+      try {
+        const vendorData = await VendorService.getVendorById(vendorId);
+        
+        if (!vendorData) {
+          setError(`Vendor with ID ${vendorId} not found`);
+        } else {
+          setVendor(vendorData);
+        }
+      } catch (err: any) {
+        setError(err.message || 'An error occurred while fetching vendor data');
+        console.error('Error fetching vendor:', err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred while fetching vendor data');
-      console.error('Error fetching vendor:', err);
-    } finally {
-      setLoading(false);
-    }
+    };
+    
+    fetchVendor();
   }, [vendorId]);
   
   if (loading) {
