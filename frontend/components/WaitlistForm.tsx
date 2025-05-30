@@ -234,6 +234,7 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
                       }`}
                       placeholder="Enter your full name"
                       disabled={isSubmitting}
+                      autoComplete="name"
                     />
                   </div>
                   {errors.full_name && (
@@ -260,6 +261,7 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
                       }`}
                       placeholder="Enter your email"
                       disabled={isSubmitting}
+                      autoComplete="email"
                     />
                   </div>
                   {errors.email && (
@@ -286,6 +288,7 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
                       }`}
                       placeholder="Create a password"
                       disabled={isSubmitting}
+                      autoComplete="new-password"
                     />
                   </div>
                   {errors.password && (
@@ -310,6 +313,7 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
                         errors.role ? 'border-red-500' : 'border-gray-300'
                       }`}
                       disabled={isSubmitting}
+                      autoComplete="organization-title"
                     >
                       <option value="">Select your role</option>
                       {roleOptions.map((role) => (
@@ -343,6 +347,7 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
                       }`}
                       placeholder="Your company name (optional)"
                       disabled={isSubmitting}
+                      autoComplete="organization"
                     />
                   </div>
                 </div>
