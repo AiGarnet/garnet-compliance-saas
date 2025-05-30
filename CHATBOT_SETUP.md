@@ -104,10 +104,10 @@ PORT=5000
 NEXT_PUBLIC_API_URL=http://localhost:5000
 
 # OpenAI API Key - REQUIRED
-OPENAI_API_KEY=sk-your_actual_openai_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-**⚠️ IMPORTANT**: Replace `sk-your_actual_openai_api_key_here` with your actual OpenAI API key.
+**⚠️ IMPORTANT**: Replace `your_openai_api_key_here` with your actual OpenAI API key.
 
 ### 2. Install Dependencies
 
