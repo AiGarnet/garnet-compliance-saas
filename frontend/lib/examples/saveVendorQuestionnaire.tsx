@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { QuestionnaireService } from '../services/questionnaireService';
 import { VendorService } from '../services/vendorService';
+import { Vendor } from '../types/vendor.types';
 
 /**
  * Component that demonstrates how to generate answers to questions
@@ -19,9 +20,21 @@ export function VendorQuestionnaireExample() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   
-  // Get all vendors for dropdown
-  const vendors = VendorService.getAllVendors();
+  // Fetch vendors when component mounts
+  useEffect(() => {
+    const fetchVendors = async () => {
+      try {
+        const vendorData = await VendorService.getAllVendors();
+        setVendors(vendorData);
+      } catch (err) {
+        console.error("Error fetching vendors:", err);
+      }
+    };
+    
+    fetchVendors();
+  }, []);
   
   // Handle toggling between existing and new vendor
   const toggleVendorMode = () => {
@@ -96,7 +109,7 @@ export function VendorQuestionnaireExample() {
       }
       
       // Step 3: Get the updated/created vendor
-      const updatedVendor = VendorService.getVendorById(saveResult.vendorId!);
+      const updatedVendor = await VendorService.getVendorById(saveResult.vendorId!);
       
       setResult({
         vendor: updatedVendor,
