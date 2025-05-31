@@ -30,7 +30,7 @@ const nextConfig = {
   // Experimental features for better Netlify compatibility
   experimental: {
     // Enable server components
-    serverComponentsExternalPackages: ['lodash'],
+    serverComponentsExternalPackages: ['lodash', 'uuid'],
   },
 
   // Note: When using 'output: export', rewrites and headers won't work
@@ -43,6 +43,7 @@ const nextConfig = {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         lodash: require.resolve('lodash'),
+        uuid: require.resolve('uuid'),
       };
     }
     return config;

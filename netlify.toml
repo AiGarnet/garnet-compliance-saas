@@ -1,6 +1,6 @@
 [build]
   base = "/"
-  command = "cd frontend && npm install --ignore-scripts && npm install lodash @types/lodash --save && npm run build && cd ../netlify/functions && npm install"
+  command = "bash ./netlify/build-debug.sh"
   publish = "frontend/out"
   functions = "netlify/functions"
   

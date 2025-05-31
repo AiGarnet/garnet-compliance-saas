@@ -5,6 +5,9 @@ import { v4 as uuidv4 } from 'uuid';
 // Base API URL - adjust based on environment
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+// Check if we're in development/test mode
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
 /**
  * Questionnaire Service
  * Handles interactions with the question answering API
@@ -33,8 +36,8 @@ export const QuestionnaireService = {
   }> {
     try {
       // If we're in a dev/test environment with no API available, generate mock data
-      if (!API_BASE_URL || API_BASE_URL === 'http://localhost:5000') {
-        console.log('Using mock data for question answers');
+      if (isDevelopment) {
+        console.log('Using mock data for question answers (development mode)');
         return {
           success: true,
           data: {

@@ -34,6 +34,6 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['lodash'],
+    include: ['lodash', 'uuid'],
   },
 }); 
