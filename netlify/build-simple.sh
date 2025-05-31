@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "============ STARTING FINAL BUILD PROCESS ============"
+echo "============ STARTING PRODUCTION BUILD PROCESS ============"
 
 # Go to frontend directory
 cd frontend
@@ -12,22 +12,6 @@ echo "optional=true" > .npmrc
 echo "fund=false" >> .npmrc
 echo "audit=false" >> .npmrc
 
-# Remove conflicting directories
-echo "Removing app directory to avoid conflicts with pages..."
-if [ -d "app" ]; then
-  mv app app.bak
-fi
-
-# Ensure we have the pages directory and the minimal files we need
-echo "Ensuring pages directory exists with minimal files..."
-mkdir -p pages
-if [ ! -f "pages/index.js" ]; then
-  echo "export default function Home() { return <div>Welcome to Garnet AI</div>; }" > pages/index.js
-fi
-if [ ! -f "pages/_app.js" ]; then
-  echo "export default function App({ Component, pageProps }) { return <Component {...pageProps} />; }" > pages/_app.js
-fi
-
 # Clean install of dependencies
 echo "Installing dependencies..."
 npm install --legacy-peer-deps
@@ -36,7 +20,10 @@ npm install --legacy-peer-deps
 echo "Installing critical packages explicitly..."
 npm install --save lodash uuid react react-dom next
 
-# Update next.config.js to fix experimental options
+# Make a backup of next.config.js 
+cp next.config.js next.config.js.bak
+
+# Update next.config.js to fix experimental options but preserve most settings
 echo "Updating next.config.js..."
 cat > next.config.js << 'EOL'
 /** @type {import("next").NextConfig} */
@@ -54,12 +41,34 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  experimental: {
+    serverExternalPackages: ['lodash', 'uuid'],
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        lodash: require.resolve('lodash'),
+        uuid: require.resolve('uuid'),
+      };
+    }
+    return config;
+  },
 }
 
 module.exports = nextConfig
 EOL
 
-# Build with our simplified pages
+# Remove pages directory if app directory exists
+if [ -d "app" ]; then
+  echo "Using App Router (app directory)..."
+  if [ -d "pages" ]; then
+    echo "Removing pages directory to avoid conflicts..."
+    rm -rf pages
+  fi
+fi
+
+# Build with production settings
 echo "Building Next.js app..."
 NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 npm run build
 
