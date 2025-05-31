@@ -6,6 +6,7 @@
     "dev": "next dev",
     "dev:with-api": "node scripts/start-questionnaire-service.js && next dev",
     "build": "next build",
+    "build:skip-types": "next build --no-check",
     "export": "next export",
     "build:optimized": "NODE_ENV=production next build && npm run css-stats",
     "start": "next start",
