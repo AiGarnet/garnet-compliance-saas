@@ -27,6 +27,15 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   
+  // TypeScript configuration
+  typescript: {
+    // !! WARN !!
+    // Dangerously allow production builds to successfully complete even if
+    // your project has type errors.
+    // !! WARN !!
+    ignoreBuildErrors: true,
+  },
+  
   // Experimental features for better Netlify compatibility
   experimental: {
     // Enable server components

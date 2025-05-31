@@ -1,6 +1,6 @@
 [build]
   base = "/"
-  command = "bash ./netlify/build-debug.sh"
+  command = "bash ./netlify/build-simple.sh"
   publish = "frontend/out"
   functions = "netlify/functions"
   
