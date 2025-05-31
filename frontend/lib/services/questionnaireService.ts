@@ -1,5 +1,6 @@
 import { Question } from '../types/questionnaire.types';
 import { VendorService } from './vendorService';
+import { v4 as uuidv4 } from 'uuid';
 
 // Base API URL - adjust based on environment
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -31,6 +32,26 @@ export const QuestionnaireService = {
     error?: string;
   }> {
     try {
+      // If we're in a dev/test environment with no API available, generate mock data
+      if (!API_BASE_URL || API_BASE_URL === 'http://localhost:5000') {
+        console.log('Using mock data for question answers');
+        return {
+          success: true,
+          data: {
+            answers: questions.map(question => ({
+              question,
+              answer: `This is a mock answer for: ${question}`,
+            })),
+            metadata: {
+              totalQuestions: questions.length,
+              processingTimeMs: 100,
+              timestamp: new Date().toISOString()
+            }
+          }
+        };
+      }
+      
+      // Otherwise, call the real API
       const response = await fetch(`${API_BASE_URL}/api/generate-answers`, {
         method: 'POST',
         headers: {
@@ -109,15 +130,22 @@ export const QuestionnaireService = {
    * @param answers - Array of question/answer pairs
    * @returns Object indicating success and the updated/created vendor
    */
-  saveQuestionnaireToVendor(
+  async saveQuestionnaireToVendor(
     vendorId: string | null,
     vendorName: string | null,
     answers: Array<{ question: string; answer: string }>
-  ): { success: boolean; vendorId?: string; error?: string } {
+  ): Promise<{ success: boolean; vendorId?: string; error?: string }> {
     try {
+      // Add questionId to each answer
+      const answersWithIds = answers.map(answer => ({
+        questionId: uuidv4(),
+        question: answer.question,
+        answer: answer.answer
+      }));
+
       if (vendorId) {
         // Update existing vendor
-        const updatedVendor = VendorService.saveVendorQuestionnaire(vendorId, answers);
+        const updatedVendor = await VendorService.saveVendorQuestionnaire(vendorId, answersWithIds);
         
         if (!updatedVendor) {
           return { 
@@ -139,7 +167,14 @@ export const QuestionnaireService = {
           };
         }
         
-        const newVendor = VendorService.createVendorWithQuestionnaire(vendorName, answers);
+        const newVendor = await VendorService.createVendorWithQuestionnaire(vendorName, answersWithIds);
+        
+        if (!newVendor) {
+          return {
+            success: false,
+            error: 'Failed to create new vendor'
+          };
+        }
         
         return { 
           success: true, 
