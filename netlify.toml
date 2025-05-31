@@ -11,6 +11,7 @@
   NEXT_PUBLIC_CHATBOT_URL = "https://garnet-compliance-saas-production.up.railway.app"
   # Add the Netlify URL as an environment variable that will be available at build time
   NETLIFY_URL = "https://testinggarnet.netlify.app"
+  NEXT_TELEMETRY_DISABLED = "1"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
