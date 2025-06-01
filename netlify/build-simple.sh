@@ -55,6 +55,33 @@ NEXT_STATIC_EXPORT=true
 NEXT_PUBLIC_API_BASE_URL=/api
 EOL
 
+# Check for conflicts between app directory and pages directory
+echo "Checking for conflicts between app/ and pages/ directories..."
+if [ -d "app" ] && [ -d "pages" ]; then
+  # Remove conflicting page routes
+  if [ -f "pages/index.js" ] && [ -f "app/page.tsx" ]; then
+    echo "Found conflicting route: pages/index.js and app/page.tsx - removing pages/index.js"
+    rm -f pages/index.js
+  fi
+  
+  if [ -f "pages/index.tsx" ] && [ -f "app/page.tsx" ]; then
+    echo "Found conflicting route: pages/index.tsx and app/page.tsx - removing pages/index.tsx"
+    rm -f pages/index.tsx
+  fi
+  
+  # Add any other potential conflicts here as needed
+  for pagefile in pages/*; do
+    if [[ "$pagefile" != "pages/_app.tsx" && "$pagefile" != "pages/_document.tsx" ]]; then
+      pagename=$(basename "$pagefile" | sed 's/\.[^.]*$//')
+      if [ -d "app/$pagename" ] || [ -f "app/$pagename.tsx" ] || [ -f "app/$pagename/page.tsx" ]; then
+        echo "Found potential conflict: $pagefile conflicts with app directory - backing up"
+        mkdir -p _conflict_backup
+        mv "$pagefile" _conflict_backup/
+      fi
+    fi
+  done
+fi
+
 # Check for duplicate page files and clean them up
 echo "Checking for duplicate page files..."
 if [ -d "pages" ]; then
