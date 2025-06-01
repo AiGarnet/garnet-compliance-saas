@@ -15,6 +15,10 @@ rm -rf .next out node_modules/.cache
 echo "Installing dependencies..."
 npm install --legacy-peer-deps
 
+# Ensure critical dependencies are installed
+echo "Ensuring critical dependencies are installed..."
+npm install --save framer-motion@latest react-markdown tailwind-merge lodash
+
 # Create simplified Next.js config
 echo "Creating simplified Next.js config..."
 cat > next.config.js << 'EOL'
@@ -119,6 +123,19 @@ if [ ! -d "out" ]; then
     echo "Found .next/out directory, using that..."
     mkdir -p out
     cp -r .next/out/* out/
+  elif [ -d ".next/export" ]; then
+    echo "Found .next/export directory, using that..."
+    mkdir -p out
+    cp -r .next/export/* out/
+  elif [ -d ".next" ]; then
+    echo "Running export command to generate static output..."
+    NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 npx next export
+    if [ -d "out" ]; then
+      echo "Export successful!"
+    else
+      echo "ERROR: Export failed to create output directory."
+      exit 1
+    fi
   else
     echo "ERROR: Could not find output directory."
     exit 1
