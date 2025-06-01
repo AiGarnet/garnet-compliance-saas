@@ -1,7 +1,7 @@
 [build]
   base = "/"
   command = "bash ./netlify/build-simple.sh"
-  publish = "frontend/.next/out"
+  publish = "frontend/out"
   functions = "netlify/functions"
   
 [build.environment]
