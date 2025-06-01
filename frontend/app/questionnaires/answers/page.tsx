@@ -1,20 +1,32 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import ReactMarkdown from 'react-markdown';
 import { ArrowLeft, Check, Edit2, Save, Trash2 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 interface QuestionAnswer {
   question: string;
   answer: string;
 }
 
+// Client component that uses useSearchParams
+function SearchParamsHandler({ setId }: { setId: (id: string | null) => void }) {
+  const searchParams = useSearchParams();
+  
+  useEffect(() => {
+    const id = searchParams?.get('id') || null;
+    setId(id);
+  }, [searchParams, setId]);
+  
+  return null;
+}
+
 function QuestionnairesAnswersContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const id = searchParams?.get('id');
+  const [id, setId] = useState<string | null>(null);
   
   const [questionnaire, setQuestionnaire] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -140,6 +152,7 @@ function QuestionnairesAnswersContent() {
   
   return (
     <>
+      <SearchParamsHandler setId={setId} />
       <Header />
       <main className="container mx-auto py-8 px-4">
         {/* Navigation */}

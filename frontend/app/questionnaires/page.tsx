@@ -1,13 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, useRef, ChangeEvent, useMemo, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useEffect, useRef, ChangeEvent, useMemo, useCallback, Suspense } from "react";
+import { useRouter } from "next/navigation";
 import { ClipboardList, Filter, Plus, Search, SlidersHorizontal, X, Upload, FileText, FileType, Files, RefreshCw, Trash2, Sparkles, MessageSquare, ClipboardCopy } from "lucide-react";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { QuestionnaireList, Questionnaire, QuestionnaireStatus } from "@/components/dashboard/QuestionnaireList";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Header from '@/components/Header';
 import { debounce } from 'lodash';
+
+// Create a client component for search params
+import SearchParamsProvider from '@/components/SearchParamsProvider';
 
 interface QuestionAnswer {
   question: string;
@@ -23,9 +26,6 @@ const AUTOSAVE_KEY = 'questionnaire_draft';
 
 const QuestionnairesPage = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  // Safely get vendorId from searchParams
-  const vendorId = searchParams ? searchParams.get('vendorId') : null;
   
   // Remove mock data and start with empty array
   const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
@@ -33,6 +33,7 @@ const QuestionnairesPage = () => {
   const [error, setError] = useState<string>('');
   const [vendorName, setVendorName] = useState<string>('');
   const [isLoadingVendor, setIsLoadingVendor] = useState<boolean>(false);
+  const [vendorId, setVendorId] = useState<string | null>(null);
   
   // New state variables for the questionnaire input modal
   const [showQuestionnaireInput, setShowQuestionnaireInput] = useState(false);
@@ -1080,98 +1081,288 @@ const QuestionnairesPage = () => {
   };
 
   return (
-    <>
-      <Header />
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <SearchParamsProvider setVendorId={setVendorId} />
       
-      <main id="main-content" className="container mx-auto py-8 px-4">
-        {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800 flex items-center">
-              <ClipboardList className="mr-3 h-7 w-7 text-primary" />
-              {vendorId ? `Vendor Questionnaire${vendorName ? `: ${vendorName}` : ''}` : 'Questionnaires'}
-            </h1>
-            <p className="text-gray-600 mt-1">
-              {vendorId 
-                ? 'Complete the questionnaire by entering questions and generating AI answers' 
-                : 'Manage and track all your compliance questionnaires'
-              }
-            </p>
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        
+        <main id="main-content" className="container mx-auto py-8 px-4">
+          {/* Page Header */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800 flex items-center">
+                <ClipboardList className="mr-3 h-7 w-7 text-primary" />
+                {vendorId ? `Vendor Questionnaire${vendorName ? `: ${vendorName}` : ''}` : 'Questionnaires'}
+              </h1>
+              <p className="text-gray-600 mt-1">
+                {vendorId 
+                  ? 'Complete the questionnaire by entering questions and generating AI answers' 
+                  : 'Manage and track all your compliance questionnaires'
+                }
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {vendorId ? (
+                <button 
+                  className="garnet-button garnet-button-secondary flex items-center"
+                  onClick={handleReturnToDashboard}
+                  type="button"
+                >
+                  Return to Dashboard
+                </button>
+              ) : (
+                <button 
+                  className="garnet-button garnet-button-gradient flex items-center"
+                  onClick={handleNewQuestionnaire}
+                  id="new-questionnaire-button"
+                  type="button"
+                >
+                  <Plus className="h-5 w-5 mr-2" />
+                  New Questionnaire
+                </button>
+              )}
+            </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            {vendorId ? (
-              <button 
-                className="garnet-button garnet-button-secondary flex items-center"
-                onClick={handleReturnToDashboard}
-                type="button"
+          {showQuestionnaireInput ? (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center overflow-auto p-4">
+              <div 
+                ref={modalRef}
+                className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col animate-fade-in"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="questionnaire-modal-title"
               >
-                Return to Dashboard
-              </button>
-            ) : (
-              <button 
-                className="garnet-button garnet-button-gradient flex items-center"
-                onClick={handleNewQuestionnaire}
-                id="new-questionnaire-button"
-                type="button"
-              >
-                <Plus className="h-5 w-5 mr-2" />
-                New Questionnaire
-              </button>
-            )}
-          </div>
-        </div>
-        
-        {showQuestionnaireInput ? (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center overflow-auto p-4">
-            <div 
-              ref={modalRef}
-              className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col animate-fade-in"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="questionnaire-modal-title"
-            >
-              <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-primary/5 to-secondary/5">
-                <h2 id="questionnaire-modal-title" className="text-xl font-bold text-gray-800 flex items-center">
-                  <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                    Create Questionnaire
-                  </span>
-                  <span className="ml-2">with AI Assistance</span>
-                </h2>
-                <button 
-                  onClick={closeQuestionnaireInput}
-                  className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
-                  aria-label="Close"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              
-              <div className="p-6 overflow-auto flex-grow">
-                <form onSubmit={handleSubmitQuestionnaire}>
-                  {/* Title input */}
-                  <div className="mb-5">
-                    <label htmlFor="questionnaire-title" className="block text-sm font-medium text-gray-700 mb-1">
-                      Questionnaire Title
-                    </label>
-                    <input
-                      type="text"
-                      id="questionnaire-title"
-                      className="garnet-input"
-                      placeholder="Enter title for this questionnaire"
-                      value={questionnaireTitle}
-                      onChange={(e) => setQuestionnaireTitle(e.target.value)}
-                      required
-                      aria-label="Questionnaire title"
-                    />
-                  </div>
+                <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-primary/5 to-secondary/5">
+                  <h2 id="questionnaire-modal-title" className="text-xl font-bold text-gray-800 flex items-center">
+                    <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                      Create Questionnaire
+                    </span>
+                    <span className="ml-2">with AI Assistance</span>
+                  </h2>
+                  <button 
+                    onClick={closeQuestionnaireInput}
+                    className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
+                    aria-label="Close"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                
+                <div className="p-6 overflow-auto flex-grow">
+                  <form onSubmit={handleSubmitQuestionnaire}>
+                    {/* Title input */}
+                    <div className="mb-5">
+                      <label htmlFor="questionnaire-title" className="block text-sm font-medium text-gray-700 mb-1">
+                        Questionnaire Title
+                      </label>
+                      <input
+                        type="text"
+                        id="questionnaire-title"
+                        className="garnet-input"
+                        placeholder="Enter title for this questionnaire"
+                        value={questionnaireTitle}
+                        onChange={(e) => setQuestionnaireTitle(e.target.value)}
+                        required
+                        aria-label="Questionnaire title"
+                      />
+                    </div>
 
-                  {!showPreview && !showAIAssistant && (
-                    <>
-                      <div className="mb-5">
-                        <div className="flex justify-between items-center mb-3">
-                          <h3 className="text-lg font-semibold text-gray-800">Questions</h3>
+                    {!showPreview && !showAIAssistant && (
+                      <>
+                        <div className="mb-5">
+                          <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-lg font-semibold text-gray-800">Questions</h3>
+                            
+                            <div className="flex space-x-2">
+                              <button 
+                                type="button"
+                                onClick={handleGenerateAnswersClick}
+                                disabled={isGeneratingAnswers || questionCount === 0}
+                                className="btn-gradient px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm transition-all"
+                              >
+                                <Sparkles className="h-4 w-4 mr-1" />
+                                {isGeneratingAnswers ? 'Generating...' : 'Generate AI Answers'}
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={() => setFindReplaceMode(!findReplaceMode)}
+                                className="text-sm text-primary hover:text-primary/80 flex items-center"
+                                aria-label="Find and replace"
+                              >
+                                Find & Replace
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={handleRemoveEmptyLines}
+                                className="text-sm text-primary hover:text-primary/80 flex items-center"
+                                aria-label="Remove empty lines"
+                              >
+                                Remove Empty Lines
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={handleTogglePreview}
+                                className="text-sm text-primary hover:text-primary/80 flex items-center"
+                                aria-label="Preview questions"
+                              >
+                                Preview
+                              </button>
+                            </div>
+                          </div>
                           
+                          <p className="text-gray-600 text-sm mb-4">
+                            Type or paste each question on its own line. Click "Generate AI Answers" to get compliance-based responses.
+                          </p>
+                          
+                          {/* Find and replace section */}
+                          {findReplaceMode && (
+                            <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                  <label htmlFor="find-text" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Find
+                                  </label>
+                                  <input
+                                    type="text"
+                                    id="find-text"
+                                    className="garnet-input"
+                                    value={findText}
+                                    onChange={(e) => setFindText(e.target.value)}
+                                    placeholder="Text to find"
+                                  />
+                                </div>
+                                <div>
+                                  <label htmlFor="replace-text" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Replace
+                                  </label>
+                                  <input
+                                    type="text"
+                                    id="replace-text"
+                                    className="garnet-input"
+                                    value={replaceText}
+                                    onChange={(e) => setReplaceText(e.target.value)}
+                                    placeholder="Replacement text"
+                                  />
+                                </div>
+                              </div>
+                              <div className="mt-2 flex justify-end">
+                                <button
+                                  type="button"
+                                  className="garnet-button garnet-button-primary text-sm"
+                                  onClick={handleFindReplace}
+                                  disabled={!findText}
+                                >
+                                  Replace All
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* File upload area */}
+                          <div 
+                            ref={dropZoneRef}
+                            className={`mb-5 border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                              dragActive 
+                                ? 'border-primary bg-primary/5' 
+                                : 'border-gray-300 hover:border-gray-400'
+                            }`}
+                            onDragEnter={handleDrag}
+                            onDragOver={handleDrag}
+                            onDragLeave={handleDrag}
+                            onDrop={handleDrop}
+                          >
+                            <div className="flex flex-col items-center justify-center">
+                              <Upload className="h-12 w-12 text-primary/40 mb-3" />
+                              <p className="text-gray-600 mb-2 font-medium">
+                                {dragActive ? 'Drop file here' : 'Drag and drop a file here, or click to browse'}
+                              </p>
+                              <div className="flex items-center justify-center text-xs text-gray-500 mb-4">
+                                <div className="flex items-center mr-3">
+                                  <FileText className="h-4 w-4 mr-1" />
+                                  <span>.TXT</span>
+                                </div>
+                                <div className="flex items-center mr-3">
+                                  <FileType className="h-4 w-4 mr-1" />
+                                  <span>.CSV</span>
+                                </div>
+                                <div className="flex items-center">
+                                  <Files className="h-4 w-4 mr-1" />
+                                  <span>.MD</span>
+                                </div>
+                              </div>
+                              <label className="garnet-button garnet-button-secondary text-sm cursor-pointer">
+                                Browse Files
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  accept=".txt,.csv,.md"
+                                  onChange={handleFileUpload}
+                                  ref={fileInputRef}
+                                  disabled={isUploading}
+                                  aria-label="Upload questions file"
+                                />
+                              </label>
+                            </div>
+                          </div>
+                          
+                          {isUploading && (
+                            <div className="mb-4 text-sm text-gray-600 flex items-center justify-center">
+                              <svg className="animate-spin h-4 w-4 mr-2 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Uploading...
+                            </div>
+                          )}
+                          
+                          {uploadError && (
+                            <p className="mb-4 text-sm text-red-600">
+                              {uploadError}
+                            </p>
+                          )}
+                        </div>
+                      
+                        <div className="relative mb-5">
+                          <textarea
+                            ref={textareaRef}
+                            className="garnet-input min-h-[200px] max-h-[400px] resize-none"
+                            placeholder="Type or paste each question on its own line (e.g. 'Do you encrypt data at rest?')."
+                            value={questionnaireInput}
+                            onChange={(e) => {
+                              setQuestionnaireInput(e.target.value);
+                              debouncedResize();
+                            }}
+                            aria-label="Questionnaire input"
+                            aria-describedby="question-counter"
+                          />
+                          
+                          <div className="absolute bottom-3 right-3 flex items-center">
+                            <button
+                              type="button"
+                              onClick={handleClearTextarea}
+                              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md"
+                              aria-label="Clear questions"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    
+                    {/* Preview Panel */}
+                    {showPreview && (
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                            <span className="w-8 h-8 rounded-full bg-primary-light text-primary flex items-center justify-center mr-3">
+                              <Files className="h-4 w-4" />
+                            </span>
+                            Question Preview
+                          </h3>
                           <div className="flex space-x-2">
                             <button 
                               type="button"
@@ -1182,423 +1373,237 @@ const QuestionnairesPage = () => {
                               <Sparkles className="h-4 w-4 mr-1" />
                               {isGeneratingAnswers ? 'Generating...' : 'Generate AI Answers'}
                             </button>
-                            <button 
-                              type="button"
-                              onClick={() => setFindReplaceMode(!findReplaceMode)}
-                              className="text-sm text-primary hover:text-primary/80 flex items-center"
-                              aria-label="Find and replace"
-                            >
-                              Find & Replace
-                            </button>
-                            <button 
-                              type="button"
-                              onClick={handleRemoveEmptyLines}
-                              className="text-sm text-primary hover:text-primary/80 flex items-center"
-                              aria-label="Remove empty lines"
-                            >
-                              Remove Empty Lines
-                            </button>
-                            <button 
+                            <button
                               type="button"
                               onClick={handleTogglePreview}
                               className="text-sm text-primary hover:text-primary/80 flex items-center"
-                              aria-label="Preview questions"
                             >
-                              Preview
+                              Back to Edit
                             </button>
                           </div>
                         </div>
                         
-                        <p className="text-gray-600 text-sm mb-4">
-                          Type or paste each question on its own line. Click "Generate AI Answers" to get compliance-based responses.
-                        </p>
-                        
-                        {/* Find and replace section */}
-                        {findReplaceMode && (
-                          <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <div>
-                                <label htmlFor="find-text" className="block text-sm font-medium text-gray-700 mb-1">
-                                  Find
-                                </label>
-                                <input
-                                  type="text"
-                                  id="find-text"
-                                  className="garnet-input"
-                                  value={findText}
-                                  onChange={(e) => setFindText(e.target.value)}
-                                  placeholder="Text to find"
-                                />
-                              </div>
-                              <div>
-                                <label htmlFor="replace-text" className="block text-sm font-medium text-gray-700 mb-1">
-                                  Replace
-                                </label>
-                                <input
-                                  type="text"
-                                  id="replace-text"
-                                  className="garnet-input"
-                                  value={replaceText}
-                                  onChange={(e) => setReplaceText(e.target.value)}
-                                  placeholder="Replacement text"
-                                />
-                              </div>
-                            </div>
-                            <div className="mt-2 flex justify-end">
-                              <button
-                                type="button"
-                                className="garnet-button garnet-button-primary text-sm"
-                                onClick={handleFindReplace}
-                                disabled={!findText}
-                              >
-                                Replace All
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* File upload area */}
-                        <div 
-                          ref={dropZoneRef}
-                          className={`mb-5 border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                            dragActive 
-                              ? 'border-primary bg-primary/5' 
-                              : 'border-gray-300 hover:border-gray-400'
-                          }`}
-                          onDragEnter={handleDrag}
-                          onDragOver={handleDrag}
-                          onDragLeave={handleDrag}
-                          onDrop={handleDrop}
-                        >
-                          <div className="flex flex-col items-center justify-center">
-                            <Upload className="h-12 w-12 text-primary/40 mb-3" />
-                            <p className="text-gray-600 mb-2 font-medium">
-                              {dragActive ? 'Drop file here' : 'Drag and drop a file here, or click to browse'}
+                        <div className="border border-gray-200 rounded-lg p-5 max-h-[400px] overflow-y-auto bg-gray-50">
+                          {getParsedQuestions().length > 0 ? (
+                            <ol className="list-decimal pl-5 space-y-3">
+                              {getParsedQuestions().map((question, index) => (
+                                <li key={index} className="text-gray-800">
+                                  {question}
+                                </li>
+                              ))}
+                            </ol>
+                          ) : (
+                            <p className="text-gray-500 text-center py-8">
+                              No questions added yet. Go back to edit and add some questions.
                             </p>
-                            <div className="flex items-center justify-center text-xs text-gray-500 mb-4">
-                              <div className="flex items-center mr-3">
-                                <FileText className="h-4 w-4 mr-1" />
-                                <span>.TXT</span>
-                              </div>
-                              <div className="flex items-center mr-3">
-                                <FileType className="h-4 w-4 mr-1" />
-                                <span>.CSV</span>
-                              </div>
-                              <div className="flex items-center">
-                                <Files className="h-4 w-4 mr-1" />
-                                <span>.MD</span>
-                              </div>
-                            </div>
-                            <label className="garnet-button garnet-button-secondary text-sm cursor-pointer">
-                              Browse Files
-                              <input
-                                type="file"
-                                className="hidden"
-                                accept=".txt,.csv,.md"
-                                onChange={handleFileUpload}
-                                ref={fileInputRef}
-                                disabled={isUploading}
-                                aria-label="Upload questions file"
-                              />
-                            </label>
-                          </div>
-                        </div>
-                        
-                        {isUploading && (
-                          <div className="mb-4 text-sm text-gray-600 flex items-center justify-center">
-                            <svg className="animate-spin h-4 w-4 mr-2 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Uploading...
-                          </div>
-                        )}
-                        
-                        {uploadError && (
-                          <p className="mb-4 text-sm text-red-600">
-                            {uploadError}
-                          </p>
-                        )}
-                      </div>
-                    
-                      <div className="relative mb-5">
-                        <textarea
-                          ref={textareaRef}
-                          className="garnet-input min-h-[200px] max-h-[400px] resize-none"
-                          placeholder="Type or paste each question on its own line (e.g. 'Do you encrypt data at rest?')."
-                          value={questionnaireInput}
-                          onChange={(e) => {
-                            setQuestionnaireInput(e.target.value);
-                            debouncedResize();
-                          }}
-                          aria-label="Questionnaire input"
-                          aria-describedby="question-counter"
-                        />
-                        
-                        <div className="absolute bottom-3 right-3 flex items-center">
-                          <button
-                            type="button"
-                            onClick={handleClearTextarea}
-                            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md"
-                            aria-label="Clear questions"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          )}
                         </div>
                       </div>
-                    </>
-                  )}
-                  
-                  {/* Preview Panel */}
-                  {showPreview && (
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                          <span className="w-8 h-8 rounded-full bg-primary-light text-primary flex items-center justify-center mr-3">
-                            <Files className="h-4 w-4" />
-                          </span>
-                          Question Preview
-                        </h3>
-                        <div className="flex space-x-2">
-                          <button 
-                            type="button"
-                            onClick={handleGenerateAnswersClick}
-                            disabled={isGeneratingAnswers || questionCount === 0}
-                            className="btn-gradient px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm transition-all"
-                          >
-                            <Sparkles className="h-4 w-4 mr-1" />
-                            {isGeneratingAnswers ? 'Generating...' : 'Generate AI Answers'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleTogglePreview}
-                            className="text-sm text-primary hover:text-primary/80 flex items-center"
-                          >
-                            Back to Edit
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <div className="border border-gray-200 rounded-lg p-5 max-h-[400px] overflow-y-auto bg-gray-50">
-                        {getParsedQuestions().length > 0 ? (
-                          <ol className="list-decimal pl-5 space-y-3">
-                            {getParsedQuestions().map((question, index) => (
-                              <li key={index} className="text-gray-800">
-                                {question}
-                              </li>
-                            ))}
-                          </ol>
-                        ) : (
-                          <p className="text-gray-500 text-center py-8">
-                            No questions added yet. Go back to edit and add some questions.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* AI Assistant Panel */}
-                  {showAIAssistant && generatedAnswers.length > 0 && (
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                          <span className="w-8 h-8 rounded-full bg-secondary-light text-secondary flex items-center justify-center mr-3">
-                            <MessageSquare className="h-4 w-4" />
-                          </span>
-                          AI-Generated Answers
-                        </h3>
-                        <div className="flex items-center space-x-4">
-                          {/* Add counter for mandatory questions that need attention */}
-                          <div className="text-sm">
-                            {(() => {
-                              const mandatoryCount = generatedAnswers.filter(qa => qa.isMandatory).length;
-                              const needsAttentionCount = generatedAnswers.filter(qa => qa.needsAttention).length;
-                              
-                              return (
-                                <span className={needsAttentionCount > 0 ? "text-red-500 font-medium" : "text-green-600 font-medium"}>
-                                  {needsAttentionCount > 0 
-                                    ? `${needsAttentionCount} mandatory ${needsAttentionCount === 1 ? 'question' : 'questions'} need attention` 
-                                    : mandatoryCount > 0 
-                                      ? `All ${mandatoryCount} mandatory ${mandatoryCount === 1 ? 'question has' : 'questions have'} answers` 
-                                      : 'No mandatory questions detected'}
-                                </span>
-                              );
-                            })()}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setShowAIAssistant(false)}
-                            className="text-sm text-primary hover:text-primary/80 flex items-center"
-                          >
-                            Back to Edit
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <div className="border border-gray-200 rounded-lg overflow-hidden max-h-[500px] overflow-y-auto shadow-sm">
-                        {generatedAnswers.map((qa, index) => (
-                          <div 
-                            key={index} 
-                            className={`p-5 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'} border-b border-gray-200 last:border-0 ${
-                              qa.needsAttention ? 'border-l-4 border-l-red-500' : qa.isMandatory ? 'border-l-4 border-l-green-500' : ''
-                            }`}
-                          >
-                            <div className="mb-3 flex justify-between items-start">
-                              <div>
-                                <span className="text-sm font-bold text-gray-500 uppercase tracking-wider">Q{index + 1}:</span>
-                                {qa.isMandatory && (
-                                  <span className="ml-2 text-xs font-bold bg-red-100 text-red-800 px-2 py-0.5 rounded">
-                                    Required
-                                  </span>
-                                )}
-                                <p className={`font-medium mt-1 ${qa.needsAttention ? 'text-red-700' : 'text-gray-800'}`}>
-                                  {qa.question}
-                                </p>
-                              </div>
-                            </div>
-                            <div>
-                              <span className="text-sm font-bold text-primary uppercase tracking-wider">Answer:</span>
-                              {qa.isLoading ? (
-                                <div className="mt-4 flex items-center justify-center py-6 text-sm text-gray-500">
-                                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-primary mr-3"></div>
-                                  <span>Generating answer...</span>
-                                </div>
-                              ) : (
-                                <div className={`mt-2 prose prose-sm max-w-none ${qa.needsAttention ? 'text-red-700 bg-red-50 p-3 rounded' : 'text-gray-700'}`}>
-                                  {qa.answer.split('\n').map((paragraph, pIndex) => (
-                                    <p key={pIndex} className="mb-2">{paragraph}</p>
-                                  ))}
-                                  
-                                  {qa.needsAttention && (
-                                    <div className="mt-3 bg-red-100 p-3 rounded-md text-red-800 text-sm">
-                                      <p className="font-bold">⚠️ This answer needs attention</p>
-                                      <p>This is a mandatory question that requires a more specific or complete answer.</p>
-                                    </div>
-                                  )}
-                                  
-                                  <div className="mt-4 flex justify-end">
-                                    <button 
-                                      className="garnet-button-small bg-gray-100 text-primary hover:bg-gray-200 flex items-center"
-                                      onClick={() => {
-                                        // Create temp textarea to copy text
-                                        const textarea = document.createElement('textarea');
-                                        textarea.value = qa.answer;
-                                        document.body.appendChild(textarea);
-                                        textarea.select();
-                                        document.execCommand('copy');
-                                        document.body.removeChild(textarea);
-                                        
-                                        // Show feedback (could use a toast here)
-                                        alert('Answer copied to clipboard');
-                                      }}
-                                    >
-                                      <ClipboardCopy className="h-3 w-3 mr-1" />
-                                      Copy
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="flex justify-between items-center">
-                    <div id="question-counter" className="text-sm text-gray-600">
-                      {questionCount > 0 ? (
-                        <>You've entered {questionCount} question{questionCount !== 1 ? 's' : ''}</>
-                      ) : (
-                        <>No questions entered yet</>
-                      )}
-                      {questionCount > MAX_QUESTIONS && (
-                        <span className="text-red-500 ml-1">
-                          (exceeds maximum of {MAX_QUESTIONS})
-                        </span>
-                      )}
-                      {generatedAnswers.length > 0 && (
-                        <span className="text-primary ml-2">
-                          • {generatedAnswers.length} AI answers generated
-                        </span>
-                      )}
-                    </div>
-                    
-                    {/* Validation errors */}
-                    {validationError && (
-                      <p className="text-sm text-red-600">
-                        {validationError}
-                      </p>
                     )}
-                  </div>
-                  
-                  <div className="mt-6 flex justify-end space-x-3">
-                    <button
-                      type="button"
-                      onClick={closeQuestionnaireInput}
-                      className="garnet-button garnet-button-secondary"
-                    >
-                      Cancel
-                    </button>
+
+                    {/* AI Assistant Panel */}
+                    {showAIAssistant && generatedAnswers.length > 0 && (
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="text-lg font-semibold text-gray-800 flex items-center">
+                            <span className="w-8 h-8 rounded-full bg-secondary-light text-secondary flex items-center justify-center mr-3">
+                              <MessageSquare className="h-4 w-4" />
+                            </span>
+                            AI-Generated Answers
+                          </h3>
+                          <div className="flex items-center space-x-4">
+                            {/* Add counter for mandatory questions that need attention */}
+                            <div className="text-sm">
+                              {(() => {
+                                const mandatoryCount = generatedAnswers.filter(qa => qa.isMandatory).length;
+                                const needsAttentionCount = generatedAnswers.filter(qa => qa.needsAttention).length;
+                                
+                                return (
+                                  <span className={needsAttentionCount > 0 ? "text-red-500 font-medium" : "text-green-600 font-medium"}>
+                                    {needsAttentionCount > 0 
+                                      ? `${needsAttentionCount} mandatory ${needsAttentionCount === 1 ? 'question' : 'questions'} need attention` 
+                                      : mandatoryCount > 0 
+                                        ? `All ${mandatoryCount} mandatory ${mandatoryCount === 1 ? 'question has' : 'questions have'} answers` 
+                                        : 'No mandatory questions detected'}
+                                  </span>
+                                );
+                              })()}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setShowAIAssistant(false)}
+                              className="text-sm text-primary hover:text-primary/80 flex items-center"
+                            >
+                              Back to Edit
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="border border-gray-200 rounded-lg overflow-hidden max-h-[500px] overflow-y-auto shadow-sm">
+                          {generatedAnswers.map((qa, index) => (
+                            <div 
+                              key={index} 
+                              className={`p-5 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'} border-b border-gray-200 last:border-0 ${
+                                qa.needsAttention ? 'border-l-4 border-l-red-500' : qa.isMandatory ? 'border-l-4 border-l-green-500' : ''
+                              }`}
+                            >
+                              <div className="mb-3 flex justify-between items-start">
+                                <div>
+                                  <span className="text-sm font-bold text-gray-500 uppercase tracking-wider">Q{index + 1}:</span>
+                                  {qa.isMandatory && (
+                                    <span className="ml-2 text-xs font-bold bg-red-100 text-red-800 px-2 py-0.5 rounded">
+                                      Required
+                                    </span>
+                                  )}
+                                  <p className={`font-medium mt-1 ${qa.needsAttention ? 'text-red-700' : 'text-gray-800'}`}>
+                                    {qa.question}
+                                  </p>
+                                </div>
+                              </div>
+                              <div>
+                                <span className="text-sm font-bold text-primary uppercase tracking-wider">Answer:</span>
+                                {qa.isLoading ? (
+                                  <div className="mt-4 flex items-center justify-center py-6 text-sm text-gray-500">
+                                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-primary mr-3"></div>
+                                    <span>Generating answer...</span>
+                                  </div>
+                                ) : (
+                                  <div className={`mt-2 prose prose-sm max-w-none ${qa.needsAttention ? 'text-red-700 bg-red-50 p-3 rounded' : 'text-gray-700'}`}>
+                                    {qa.answer.split('\n').map((paragraph, pIndex) => (
+                                      <p key={pIndex} className="mb-2">{paragraph}</p>
+                                    ))}
+                                    
+                                    {qa.needsAttention && (
+                                      <div className="mt-3 bg-red-100 p-3 rounded-md text-red-800 text-sm">
+                                        <p className="font-bold">⚠️ This answer needs attention</p>
+                                        <p>This is a mandatory question that requires a more specific or complete answer.</p>
+                                      </div>
+                                    )}
+                                    
+                                    <div className="mt-4 flex justify-end">
+                                      <button 
+                                        className="garnet-button-small bg-gray-100 text-primary hover:bg-gray-200 flex items-center"
+                                        onClick={() => {
+                                          // Create temp textarea to copy text
+                                          const textarea = document.createElement('textarea');
+                                          textarea.value = qa.answer;
+                                          document.body.appendChild(textarea);
+                                          textarea.select();
+                                          document.execCommand('copy');
+                                          document.body.removeChild(textarea);
+                                          
+                                          // Show feedback (could use a toast here)
+                                          alert('Answer copied to clipboard');
+                                        }}
+                                      >
+                                        <ClipboardCopy className="h-3 w-3 mr-1" />
+                                        Copy
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     
-                    {vendorId ? (
+                    <div className="flex justify-between items-center">
+                      <div id="question-counter" className="text-sm text-gray-600">
+                        {questionCount > 0 ? (
+                          <>You've entered {questionCount} question{questionCount !== 1 ? 's' : ''}</>
+                        ) : (
+                          <>No questions entered yet</>
+                        )}
+                        {questionCount > MAX_QUESTIONS && (
+                          <span className="text-red-500 ml-1">
+                            (exceeds maximum of {MAX_QUESTIONS})
+                          </span>
+                        )}
+                        {generatedAnswers.length > 0 && (
+                          <span className="text-primary ml-2">
+                            • {generatedAnswers.length} AI answers generated
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Validation errors */}
+                      {validationError && (
+                        <p className="text-sm text-red-600">
+                          {validationError}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div className="mt-6 flex justify-end space-x-3">
                       <button
                         type="button"
-                        onClick={handleSaveAndReturn}
-                        disabled={!questionnaireInput.trim() || isSubmitting}
-                        className="garnet-button garnet-button-gradient"
+                        onClick={closeQuestionnaireInput}
+                        className="garnet-button garnet-button-secondary"
                       >
-                        {isSubmitting ? (
-                          <div className="flex items-center">
-                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Saving...
-                          </div>
-                        ) : (
-                          'Save and Return'
-                        )}
+                        Cancel
                       </button>
-                    ) : (
-                      <button
-                        type="submit"
-                        disabled={!questionnaireInput.trim() || !questionnaireTitle.trim() || isSubmitting || questionCount > MAX_QUESTIONS}
-                        className="garnet-button garnet-button-gradient"
-                        aria-live="polite"
-                      >
-                        {isSubmitting ? (
-                          <div className="flex items-center">
-                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Processing...
-                          </div>
-                        ) : (
-                          'Create Questionnaire'
-                        )}
-                      </button>
-                    )}
-                  </div>
-                </form>
+                      
+                      {vendorId ? (
+                        <button
+                          type="button"
+                          onClick={handleSaveAndReturn}
+                          disabled={!questionnaireInput.trim() || isSubmitting}
+                          className="garnet-button garnet-button-gradient"
+                        >
+                          {isSubmitting ? (
+                            <div className="flex items-center">
+                              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Saving...
+                            </div>
+                          ) : (
+                            'Save and Return'
+                          )}
+                        </button>
+                      ) : (
+                        <button
+                          type="submit"
+                          disabled={!questionnaireInput.trim() || !questionnaireTitle.trim() || isSubmitting || questionCount > MAX_QUESTIONS}
+                          className="garnet-button garnet-button-gradient"
+                          aria-live="polite"
+                        >
+                          {isSubmitting ? (
+                            <div className="flex items-center">
+                              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Processing...
+                            </div>
+                          ) : (
+                            'Create Questionnaire'
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                </div>
               </div>
             </div>
-          </div>
-        ) : null}
-        
-        {/* Questionnaire List Component */}
-        <QuestionnaireList 
-          questionnaires={questionnaires} 
-          isLoading={isLoading}
-          error={error}
-          onRetry={fetchQuestionnaires}
-          onViewQuestionnaire={handleViewQuestionnaire}
-          onEditQuestionnaire={handleEditQuestionnaire}
-          onDeleteQuestionnaire={handleDeleteQuestionnaire}
-        />
-      </main>
-    </>
+          ) : null}
+          
+          {/* Questionnaire List Component */}
+          <QuestionnaireList 
+            questionnaires={questionnaires} 
+            isLoading={isLoading}
+            error={error}
+            onRetry={fetchQuestionnaires}
+            onViewQuestionnaire={handleViewQuestionnaire}
+            onEditQuestionnaire={handleEditQuestionnaire}
+            onDeleteQuestionnaire={handleDeleteQuestionnaire}
+          />
+        </main>
+      </div>
+    </Suspense>
   );
 };
 
