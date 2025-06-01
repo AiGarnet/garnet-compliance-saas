@@ -39,17 +39,6 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
-  },
-  // Skip problematic pages
-  exportPathMap: async function () {
-    return {
-      '/': { page: '/' },
-      '/login': { page: '/login' },
-      '/dashboard': { page: '/dashboard' },
-      // Skip problematic pages that use useSearchParams
-      // '/questionnaires': { page: '/questionnaires' },
-      '/404': { page: '/404' }
-    };
   }
 }
 
@@ -214,16 +203,5 @@ if [ ! -f "next-env.d.ts" ]; then
 // see https://nextjs.org/docs/basic-features/typescript for more information.
 EOL
 fi
-
-# Create a temporary fix for next/navigation import issues
-echo "Creating temporary patches for navigation imports..."
-mkdir -p node_modules/next/navigation
-cat > node_modules/next/navigation/index.js << 'EOL'
-// Compatibility patch for next/navigation
-const navigation = require('next/dist/client/components/navigation');
-
-// Export all navigation functions
-module.exports = navigation;
-EOL
 
 echo "============ BUILD PROCESS COMPLETED ============" 
