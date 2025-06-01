@@ -1,28 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = "force-static";
 
-export async function GET(request: NextRequest) {
-  try {
-    // Forward request to backend server
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
-    const response = await fetch(`${backendUrl}/api/waitlist/users`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+import { NextResponse } from 'next/server';
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
-    }
-
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('API proxy error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch waitlist users' },
-      { status: 500 }
-    );
-  }
+// For static export we need to provide a static response
+export async function GET() {
+  // Return mock data for static export
+  return NextResponse.json({
+    users: [
+      { id: '1', name: 'Demo User', email: 'demo@example.com', status: 'Active' },
+      { id: '2', name: 'Test User', email: 'test@example.com', status: 'Pending' }
+    ]
+  });
 } 
