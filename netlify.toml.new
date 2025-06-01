@@ -3,7 +3,7 @@
   command = "bash ./netlify/build-simple.sh"
   publish = "frontend/out"
   functions = "netlify/functions"
-
+  
 [build.environment]
   NODE_VERSION = "20"
   NPM_VERSION = "10"
@@ -55,4 +55,4 @@
 [[redirects]]
   from = "/*"
   to = "/index.html"
-  status = 200
+  status = 200 
