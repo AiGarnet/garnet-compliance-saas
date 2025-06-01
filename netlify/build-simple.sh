@@ -7,7 +7,7 @@ echo "============ STARTING COMPLETE FRONTEND BUILD PROCESS ============"
 cd frontend
 echo "Current directory: $(pwd)"
 
-# Completely clean the environment
+# Cleaning environment
 echo "Cleaning environment..."
 rm -rf .next out node_modules/.cache
 
@@ -17,16 +17,20 @@ cp package.json package.json.bak
 cp next.config.js next.config.js.bak
 cp tsconfig.json tsconfig.json.bak
 
-# Install dependencies properly
+# Fix API routes for static export
+echo "Fixing API routes for static export..."
+find app/api -type f -name "route.ts" -exec sed -i.bak '1s/^/export const dynamic = "force-static";\n/' {} \;
+
+# Install dependencies
 echo "Installing dependencies..."
 npm install --legacy-peer-deps
 
-# Ensure required packages are installed
+# Install critical packages
 echo "Installing critical packages..."
 npm install --save react react-dom next@latest
 npm install --save uuid lodash framer-motion tailwind-merge
 
-# Create optimized configuration files
+# Create optimized Next.js config
 echo "Creating optimized Next.js config..."
 cat > next.config.js << 'EOL'
 /** @type {import("next").NextConfig} */
@@ -43,8 +47,10 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  webpack: (config) => {
-    return config;
+  // Skip API routes completely in static export
+  experimental: {
+    skipTrailingSlashRedirect: true,
+    skipMiddlewareUrlNormalize: true,
   },
 }
 
@@ -84,14 +90,20 @@ cat > tsconfig.json << 'EOL'
 }
 EOL
 
-# Fix the pages/app conflict by removing pages directory if it exists
+# Fix the pages/app conflict
 if [ -d "pages" ]; then
   echo "Moving pages directory to avoid conflict..."
   mkdir -p _backup
   mv pages _backup/
 fi
 
-# Build the Next.js app with production settings
+# Check if we need to remove API routes completely for static export
+echo "Making API routes compatible with static export..."
+# We've already edited the route.ts file directly, so we don't need this anymore
+# mkdir -p _backup/api
+# mv app/api _backup/api || true
+
+# Build the Next.js app
 echo "Building Next.js app with production settings..."
 NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 npm run build
 

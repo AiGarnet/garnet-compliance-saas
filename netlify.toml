@@ -12,6 +12,8 @@
   # Add the Netlify URL as an environment variable that will be available at build time
   NETLIFY_URL = "https://testinggarnet.netlify.app"
   NEXT_TELEMETRY_DISABLED = "1"
+  NEXT_PUBLIC_API_BASE_URL = "https://garnet-compliance-saas-production.up.railway.app/api"
+  NEXT_STATIC_EXPORT = "true"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
