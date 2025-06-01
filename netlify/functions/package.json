@@ -6,6 +6,15 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "functions": {
+    "chatbot-fallback": { "handler": "chatbot-fallback.js" },
+    "list-waitlist": { "handler": "list-waitlist.js" },
+    "manual-db-setup": { "handler": "manual-db-setup.js" },
+    "questionnaire": { "handler": "questionnaire.js" },
+    "setup-db": { "handler": "setup-db.js" },
+    "waitlist-admin": { "handler": "waitlist-admin.js" },
+    "waitlist-signup": { "handler": "waitlist-signup.js" }
+  },
   "keywords": [],
   "author": "GARNET Team",
   "license": "MIT",

@@ -105,10 +105,16 @@ echo "Installing Netlify functions dependencies..."
 cd ../netlify/functions
 npm install
 
+# Check for and remove next-env.d.ts file in functions directory if it exists
+if [ -f "next-env.d.ts" ]; then
+  echo "Found next-env.d.ts in functions directory, removing..."
+  rm next-env.d.ts
+fi
+
 # Create next-env.d.ts if it doesn't exist (sometimes needed for types)
-if [ ! -f "next-env.d.ts" ]; then
-  echo "Creating next-env.d.ts file..."
-  cat > next-env.d.ts << 'EOL'
+if [ ! -f "../frontend/next-env.d.ts" ]; then
+  echo "Creating next-env.d.ts file in the frontend directory..."
+  cat > ../frontend/next-env.d.ts << 'EOL'
 /// <reference types="next" />
 /// <reference types="next/navigation" />
 /// <reference types="next/image-types/global" />

@@ -15,6 +15,12 @@
   NEXT_PUBLIC_API_BASE_URL = "https://garnet-compliance-saas-production.up.railway.app/api"
   NEXT_STATIC_EXPORT = "true"
 
+# Define the specific functions to deploy
+[functions]
+  directory = "netlify/functions"
+  included_files = ["netlify/functions/*.js", "netlify/functions/package.json"]
+  excluded_files = ["netlify/functions/node_modules/**", "netlify/functions/*.ts"]
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
