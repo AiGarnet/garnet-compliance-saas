@@ -100,6 +100,19 @@ cat > out/_redirects << 'EOL'
 /*    /index.html   200
 EOL
 
+# Create next-env.d.ts if it doesn't exist (sometimes needed for types)
+if [ ! -f "next-env.d.ts" ]; then
+  echo "Creating next-env.d.ts file in the frontend directory..."
+  cat > next-env.d.ts << 'EOL'
+/// <reference types="next" />
+/// <reference types="next/navigation" />
+/// <reference types="next/image-types/global" />
+
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/basic-features/typescript for more information.
+EOL
+fi
+
 # Install Netlify functions dependencies
 echo "Installing Netlify functions dependencies..."
 cd ../netlify/functions
@@ -109,19 +122,6 @@ npm install
 if [ -f "next-env.d.ts" ]; then
   echo "Found next-env.d.ts in functions directory, removing..."
   rm next-env.d.ts
-fi
-
-# Create next-env.d.ts if it doesn't exist (sometimes needed for types)
-if [ ! -f "../frontend/next-env.d.ts" ]; then
-  echo "Creating next-env.d.ts file in the frontend directory..."
-  cat > ../frontend/next-env.d.ts << 'EOL'
-/// <reference types="next" />
-/// <reference types="next/navigation" />
-/// <reference types="next/image-types/global" />
-
-// NOTE: This file should not be edited
-// see https://nextjs.org/docs/basic-features/typescript for more information.
-EOL
 fi
 
 echo "============ BUILD PROCESS COMPLETED ============" 
