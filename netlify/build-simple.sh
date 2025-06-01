@@ -55,6 +55,25 @@ NEXT_STATIC_EXPORT=true
 NEXT_PUBLIC_API_BASE_URL=/api
 EOL
 
+# Check for duplicate page files and clean them up
+echo "Checking for duplicate page files..."
+if [ -d "pages" ]; then
+  if [ -f "pages/_app.js" ] && [ -f "pages/_app.tsx" ]; then
+    echo "Found duplicate _app files, removing pages/_app.js"
+    rm -f pages/_app.js
+  fi
+  
+  if [ -f "pages/_document.js" ] && [ -f "pages/_document.tsx" ]; then
+    echo "Found duplicate _document files, removing pages/_document.js"
+    rm -f pages/_document.js
+  fi
+  
+  if [ -f "pages/index.js" ] && [ -f "pages/index.tsx" ]; then
+    echo "Found duplicate index files, removing pages/index.js"
+    rm -f pages/index.js
+  fi
+fi
+
 # Check and handle pages directory if it exists and might conflict
 if [ -d "pages" ]; then
   echo "Moving pages directory to avoid conflicts..."
