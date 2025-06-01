@@ -16,7 +16,6 @@
 [functions]
   directory = "netlify/functions"
   included_files = ["netlify/functions/*.js", "netlify/functions/package.json"]
-  excluded_files = ["netlify/functions/node_modules/**", "netlify/functions/*.ts"]
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
