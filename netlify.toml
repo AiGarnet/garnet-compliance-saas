@@ -27,24 +27,11 @@
 [[headers]]
   for = "/*"
   [headers.values]
-    Access-Control-Allow-Origin = "https://garnet-compliance-saas-production.up.railway.app"
-    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
-    Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept"
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept, Authorization"
 
-[[redirects]]
-  from = "/ask"
-  to = "https://garnet-compliance-saas-production.up.railway.app/ask"
-  status = 200
-  force = true
-  headers = {Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET, POST, OPTIONS", Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept"}
-  conditions = {Role = ["visitor"]}
-
-[[redirects]]
-  from = "/ask-fallback"
-  to = "/.netlify/functions/chatbot-fallback"
-  status = 200
-  force = true
-
+# Proxy all /api requests to the Railway backend
 [[redirects]]
   from = "/api/*"
   to = "https://garnet-compliance-saas-production.up.railway.app/api/:splat"
@@ -52,6 +39,21 @@
   force = true
   headers = {Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET, POST, OPTIONS", Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept"}
 
+# Proxy specific endpoints
+[[redirects]]
+  from = "/ask"
+  to = "https://garnet-compliance-saas-production.up.railway.app/ask"
+  status = 200
+  force = true
+  headers = {Access-Control-Allow-Origin = "*", Access-Control-Allow-Methods = "GET, POST, OPTIONS", Access-Control-Allow-Headers = "Origin, X-Requested-With, Content-Type, Accept"}
+
+[[redirects]]
+  from = "/ask-fallback"
+  to = "/.netlify/functions/chatbot-fallback"
+  status = 200
+  force = true
+
+# SPA fallback
 [[redirects]]
   from = "/*"
   to = "/index.html"
