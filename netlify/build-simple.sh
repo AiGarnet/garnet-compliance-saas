@@ -17,7 +17,11 @@ npm install --legacy-peer-deps
 
 # Ensure critical dependencies are installed
 echo "Ensuring critical dependencies are installed..."
-npm install --save framer-motion@latest react-markdown tailwind-merge lodash
+npm install --save --legacy-peer-deps framer-motion@latest react-markdown tailwind-merge lodash next-navigation
+
+# Install all potential missing dependencies from common imports
+echo "Installing additional dependencies that might be missing..."
+npm install --save --legacy-peer-deps react react-dom @types/react @types/react-dom lucide-react uuid @types/uuid
 
 # Create simplified Next.js config
 echo "Creating simplified Next.js config..."
@@ -196,6 +200,30 @@ cat > out/404.html << 'EOL'
   <p>Page not found. Redirecting to home page...</p>
 </body>
 </html>
+EOL
+
+# Create next-env.d.ts if it doesn't exist (sometimes needed for types)
+if [ ! -f "next-env.d.ts" ]; then
+  echo "Creating next-env.d.ts file..."
+  cat > next-env.d.ts << 'EOL'
+/// <reference types="next" />
+/// <reference types="next/navigation" />
+/// <reference types="next/image-types/global" />
+
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/basic-features/typescript for more information.
+EOL
+fi
+
+# Create a temporary fix for next/navigation import issues
+echo "Creating temporary patches for navigation imports..."
+mkdir -p node_modules/next/navigation
+cat > node_modules/next/navigation/index.js << 'EOL'
+// Compatibility patch for next/navigation
+const navigation = require('next/dist/client/components/navigation');
+
+// Export all navigation functions
+module.exports = navigation;
 EOL
 
 echo "============ BUILD PROCESS COMPLETED ============" 
