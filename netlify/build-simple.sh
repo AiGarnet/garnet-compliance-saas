@@ -3,6 +3,14 @@ set -e
 
 echo "============ STARTING SIMPLE BUILD PROCESS ============"
 
+# Print environment information
+echo "Environment information:"
+echo "Node version: $(node -v)"
+echo "NPM version: $(npm -v)"
+
+# Try to use Node 18 if available (for better compatibility)
+export NODE_VERSION=18
+
 # Go to frontend directory
 cd frontend
 echo "Current directory: $(pwd)"
@@ -17,11 +25,11 @@ npm install --legacy-peer-deps
 
 # Ensure critical dependencies are installed
 echo "Ensuring critical dependencies are installed..."
-npm install --save --legacy-peer-deps framer-motion@latest react-markdown tailwind-merge lodash next-navigation
+npm install --save --legacy-peer-deps framer-motion@latest react-markdown tailwind-merge lodash next-navigation@latest date-fns
 
 # Install all potential missing dependencies from common imports
 echo "Installing additional dependencies that might be missing..."
-npm install --save --legacy-peer-deps react react-dom @types/react @types/react-dom lucide-react uuid @types/uuid
+npm install --save --legacy-peer-deps react react-dom @types/react @types/react-dom lucide-react uuid @types/uuid next clsx
 
 # Create simplified Next.js config
 echo "Creating simplified Next.js config..."
@@ -104,6 +112,17 @@ if [ -d "pages" ]; then
   mkdir -p _backup
   mv pages _backup/pages
 fi
+
+# Set Node options to avoid compatibility issues
+echo "Setting Node options for compatibility..."
+export NODE_OPTIONS="--max-old-space-size=4096 --openssl-legacy-provider"
+
+# Add a .env file for consistency
+echo "Creating .env file with required settings..."
+cat > .env << 'EOL'
+NEXT_TELEMETRY_DISABLED=1
+NODE_ENV=production
+EOL
 
 # Build the app
 echo "Building Next.js app..."
