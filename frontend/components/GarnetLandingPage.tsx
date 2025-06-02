@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useInView, useScroll, useTransform } from 'framer-motion';
 import WaitlistForm from './WaitlistForm';
+import IndustryRequestForm from './IndustryRequestForm';
 import { 
   Shield, 
   Zap, 
@@ -41,7 +42,8 @@ import {
   Upload,
   Sliders,
   Network,
-  Gauge
+  Gauge,
+  Home
 } from 'lucide-react';
 
 // Counter component for animated statistics
@@ -499,6 +501,7 @@ const GarnetLandingPage = () => {
   const [activeFeature, setActiveFeature] = useState(0);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+  const [isIndustryFormOpen, setIsIndustryFormOpen] = useState(false);
 
   const openWaitlist = () => {
     setIsWaitlistOpen(true);
@@ -506,6 +509,14 @@ const GarnetLandingPage = () => {
 
   const closeWaitlist = () => {
     setIsWaitlistOpen(false);
+  };
+  
+  const openIndustryForm = () => {
+    setIsIndustryFormOpen(true);
+  };
+  
+  const closeIndustryForm = () => {
+    setIsIndustryFormOpen(false);
   };
 
   const features = [
@@ -848,6 +859,42 @@ const GarnetLandingPage = () => {
                 icon: <Briefcase className="h-8 w-8" />,
                 description: "Professional services and client data handling",
                 frameworks: ["SOC 2", "GDPR", "ISO 27001"]
+              },
+              {
+                name: "Government",
+                icon: <Building2 className="h-8 w-8" />,
+                description: "Ensuring compliance for public institutions and government agencies",
+                frameworks: ["FISMA", "FedRAMP", "NIST 800-53"]
+              },
+              {
+                name: "Education",
+                icon: <Layers className="h-8 w-8" />,
+                description: "Compliance with data privacy laws for students and academic institutions",
+                frameworks: ["FERPA", "COPPA", "ISO 27001"]
+              },
+              {
+                name: "Legal",
+                icon: <FileCheck className="h-8 w-8" />,
+                description: "Securing sensitive client data and adhering to confidentiality regulations",
+                frameworks: ["GDPR", "ABA Model Rules", "ISO 27701"]
+              },
+              {
+                name: "Real Estate",
+                icon: <Home className="h-8 w-8" />,
+                description: "Handling of sensitive financial and identity data in property transactions",
+                frameworks: ["AML", "GDPR", "CCPA"]
+              },
+              {
+                name: "Energy & Utilities",
+                icon: <Gauge className="h-8 w-8" />,
+                description: "Protecting infrastructure and operational data in critical industries",
+                frameworks: ["NERC CIP", "ISO 27001", "NIST"]
+              },
+              {
+                name: "Insurance",
+                icon: <Shield className="h-8 w-8" />,
+                description: "Compliance with financial, fraud, and customer data protection laws",
+                frameworks: ["GLBA", "GDPR", "SOC 2"]
               }
             ].map((industry, index) => (
               <motion.div
@@ -916,6 +963,7 @@ const GarnetLandingPage = () => {
               className="bg-white text-purple-600 border-2 border-purple-200 px-8 py-3 rounded-full font-semibold hover:bg-purple-50 hover:border-purple-300 transition-all inline-flex items-center group"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={openIndustryForm}
             >
               Explore All Use Cases
               <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -1139,15 +1187,15 @@ const GarnetLandingPage = () => {
                 Schedule Demo
               </motion.button> */}
             </div>
-            <p className="text-purple-200 text-sm mt-6">
-              No credit card required • 14-day free trial • Cancel anytime
-            </p>
           </motion.div>
         </div>
       </section>
 
       {/* Waitlist Form Modal */}
       <WaitlistForm isOpen={isWaitlistOpen} onClose={closeWaitlist} />
+
+      {/* Industry Request Form Modal */}
+      <IndustryRequestForm isOpen={isIndustryFormOpen} onClose={closeIndustryForm} />
     </div>
   );
 };
