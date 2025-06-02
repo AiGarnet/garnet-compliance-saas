@@ -618,9 +618,9 @@ const GarnetLandingPage = () => {
             </div>
             <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
               <a href="#features" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Features</a>
-              {/* <a href="#demo" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Demo</a> */}
+              <a href="#demo" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Demo</a>
               <a href="#stats" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Impact</a>
-              {/* <a href="#testimonials" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Testimonials</a> */}
+              <a href="#testimonials" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Testimonials</a>
               <motion.button 
                 className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 lg:px-6 py-2 rounded-full hover:shadow-lg transition-all text-sm lg:text-base"
                 whileHover={{ scale: 1.05 }}
@@ -785,12 +785,12 @@ const GarnetLandingPage = () => {
       </section>
 
       {/* Interactive Demo Section */}
-      {/* <div id="demo">
+      <div id="demo">
         <InteractiveDemo />
-      </div> */}
+      </div>
 
       {/* Integration Showcase */}
-      {/* <IntegrationShowcase /> */}
+      <IntegrationShowcase />
 
       {/* All in One Solution Section */}
       <section className="py-20 bg-white">
@@ -928,7 +928,7 @@ const GarnetLandingPage = () => {
       <SecurityTrustSection />
 
       {/* Interactive Statistics Section */}
-      {/* <section id="stats" className="py-20 bg-gradient-to-br from-gray-50 to-white">
+      <section id="stats" className="py-20 bg-gradient-to-br from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             className="text-center mb-16"
@@ -965,10 +965,10 @@ const GarnetLandingPage = () => {
             ))}
           </div>
         </div>
-      </section> */}
+      </section>
 
       {/* Testimonials Section */}
-      {/* <section id="testimonials" className="py-20 bg-gradient-to-br from-purple-50 to-pink-50">
+      <section id="testimonials" className="py-20 bg-gradient-to-br from-purple-50 to-pink-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             className="text-center mb-16"
@@ -1017,7 +1017,7 @@ const GarnetLandingPage = () => {
             ))}
           </div>
         </div>
-      </section> */}
+      </section>
 
       {/* FAQ Section */}
       <section className="py-20 bg-white">

@@ -1,3 +1,9 @@
+"""
+Start service script for Flask Questionnaire Service.
+
+This script provides a convenient way to start the Flask Questionnaire Service
+with proper logging and error handling.
+"""
 import os
 import subprocess
 import sys
@@ -11,7 +17,7 @@ log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
 os.makedirs(log_dir, exist_ok=True)
 
 # Set up logging
-logger = logging.getLogger('questionnaire_service')
+logger = logging.getLogger('questionnaire_service_starter')
 logger.setLevel(logging.INFO)
 
 # Console handler
@@ -23,7 +29,7 @@ logger.addHandler(console_handler)
 
 # File handler with rotation
 file_handler = RotatingFileHandler(
-    os.path.join(log_dir, 'questionnaire_service.log'),
+    os.path.join(log_dir, 'service_starter.log'),
     maxBytes=5*1024*1024,  # 5MB
     backupCount=3
 )
@@ -55,6 +61,16 @@ def check_backend_connection(backend_url):
         logger.error(f"Could not connect to backend at {backend_url}: {e}")
     return False
 
+def check_openai_key():
+    """Check if the OpenAI API key is set"""
+    api_key = os.environ.get('OPENAI_API_KEY')
+    if api_key:
+        logger.info("OpenAI API key is set")
+        return True
+    else:
+        logger.warning("OpenAI API key is not set. Embedding functionality will be disabled.")
+        return False
+
 def start_service():
     """Start the Flask questionnaire service"""
     
@@ -66,10 +82,14 @@ def start_service():
     # Get environment variables or use defaults
     port = os.environ.get('PORT', '5001')
     backend_url = os.environ.get('BACKEND_API_URL', 'http://localhost:5000')
+    flask_env = os.environ.get('FLASK_ENV', 'development')
     
     # Verify backend connection
     if not check_backend_connection(backend_url):
         logger.warning(f"Backend at {backend_url} is not accessible. Service will use fallback answers.")
+    
+    # Check OpenAI API key
+    check_openai_key()
     
     # Prepare the command
     try:
@@ -79,11 +99,24 @@ def start_service():
         
         # Log the start attempt
         logger.info(f"Starting questionnaire service on port {port}, connecting to backend at {backend_url}")
+        logger.info(f"Environment: {flask_env}")
         
         # Start the service in a subprocess
+        env_vars = {
+            **os.environ,
+            'PORT': port,
+            'BACKEND_API_URL': backend_url,
+            'FLASK_ENV': flask_env
+        }
+        
+        # Set a default SECRET_KEY if not provided
+        if 'SECRET_KEY' not in env_vars:
+            env_vars['SECRET_KEY'] = 'dev-key-only-for-development'
+            logger.warning("No SECRET_KEY provided. Using a default key - not secure for production!")
+        
         process = subprocess.Popen(
             [python_path, app_path],
-            env={**os.environ, 'PORT': port, 'BACKEND_API_URL': backend_url},
+            env=env_vars,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
@@ -136,11 +169,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Start the Flask Questionnaire Service')
     parser.add_argument('--port', type=int, default=5001, help='Port to run the service on')
     parser.add_argument('--backend', type=str, default='http://localhost:5000', help='Backend API URL')
+    parser.add_argument('--env', type=str, default='development', choices=['development', 'production'], help='Environment mode')
+    parser.add_argument('--key', type=str, help='OpenAI API key (optional)')
     args = parser.parse_args()
     
     # Set environment variables
     os.environ['PORT'] = str(args.port)
     os.environ['BACKEND_API_URL'] = args.backend
+    os.environ['FLASK_ENV'] = args.env
+    
+    if args.key:
+        os.environ['OPENAI_API_KEY'] = args.key
     
     # Start the service
     if start_service():
