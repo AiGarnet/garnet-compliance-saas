@@ -822,130 +822,277 @@ const GarnetLandingPage = () => {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-            {[
-              {
-                name: "FinTech",
-                icon: <Building2 className="h-8 w-8" />,
-                description: "Banking, payments, and financial services compliance",
-                frameworks: ["PCI DSS", "SOX", "GDPR"]
-              },
-              {
-                name: "Healthcare",
-                icon: <Heart className="h-8 w-8" />,
-                description: "Medical data protection and patient privacy",
-                frameworks: ["HIPAA", "HITECH", "FDA"]
-              },
-              {
-                name: "SaaS/Tech",
-                icon: <Code className="h-8 w-8" />,
-                description: "Technology companies and software platforms",
-                frameworks: ["SOC 2", "ISO 27001", "GDPR"]
-              },
-              {
-                name: "E-Commerce",
-                icon: <ShoppingCart className="h-8 w-8" />,
-                description: "Online retail and payment processing",
-                frameworks: ["PCI DSS", "CCPA", "GDPR"]
-              },
-              {
-                name: "Manufacturing",
-                icon: <Settings className="h-8 w-8" />,
-                description: "Industrial and manufacturing operations",
-                frameworks: ["ISO 27001", "NIST", "SOC 2"]
-              },
-              {
-                name: "Consulting",
-                icon: <Briefcase className="h-8 w-8" />,
-                description: "Professional services and client data handling",
-                frameworks: ["SOC 2", "GDPR", "ISO 27001"]
-              },
-              {
-                name: "Government",
-                icon: <Building2 className="h-8 w-8" />,
-                description: "Ensuring compliance for public institutions and government agencies",
-                frameworks: ["FISMA", "FedRAMP", "NIST 800-53"]
-              },
-              {
-                name: "Education",
-                icon: <Layers className="h-8 w-8" />,
-                description: "Compliance with data privacy laws for students and academic institutions",
-                frameworks: ["FERPA", "COPPA", "ISO 27001"]
-              },
-              {
-                name: "Legal",
-                icon: <FileCheck className="h-8 w-8" />,
-                description: "Securing sensitive client data and adhering to confidentiality regulations",
-                frameworks: ["GDPR", "ABA Model Rules", "ISO 27701"]
-              },
-              {
-                name: "Real Estate",
-                icon: <Home className="h-8 w-8" />,
-                description: "Handling of sensitive financial and identity data in property transactions",
-                frameworks: ["AML", "GDPR", "CCPA"]
-              },
-              {
-                name: "Energy & Utilities",
-                icon: <Gauge className="h-8 w-8" />,
-                description: "Protecting infrastructure and operational data in critical industries",
-                frameworks: ["NERC CIP", "ISO 27001", "NIST"]
-              },
-              {
-                name: "Insurance",
-                icon: <Shield className="h-8 w-8" />,
-                description: "Compliance with financial, fraud, and customer data protection laws",
-                frameworks: ["GLBA", "GDPR", "SOC 2"]
-              }
-            ].map((industry, index) => (
-              <motion.div
-                key={index}
-                className="group relative"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                whileHover={{ y: -8 }}
+          {/* Horizontal scrolling animation container */}
+          <div className="relative overflow-hidden py-4">
+            {/* Row 1 */}
+            <div className="mb-8 relative">
+              <motion.div 
+                className="flex space-x-6"
+                animate={{ 
+                  x: [0, -1800],
+                }}
+                transition={{
+                  x: {
+                    duration: 40,
+                    repeat: Infinity,
+                    repeatType: "loop",
+                    ease: "linear"
+                  }
+                }}
               >
-                <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 text-center relative overflow-hidden border border-gray-100 h-full">
-                  {/* Background gradient blob */}
-                  <div className="absolute -top-10 -right-10 w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
-                  
-                  {/* Icon container */}
-                  <motion.div 
-                    className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center text-white relative z-10"
-                    whileHover={{ scale: 1.1, rotate: 5 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                {/* First set of cards */}
+                {[
+                  {
+                    name: "FinTech",
+                    icon: <Building2 className="h-8 w-8" />,
+                    description: "Banking, payments, and financial services compliance",
+                    frameworks: ["PCI DSS", "SOX", "GDPR"]
+                  },
+                  {
+                    name: "Healthcare",
+                    icon: <Heart className="h-8 w-8" />,
+                    description: "Medical data protection and patient privacy",
+                    frameworks: ["HIPAA", "HITECH", "FDA"]
+                  },
+                  {
+                    name: "SaaS/Tech",
+                    icon: <Code className="h-8 w-8" />,
+                    description: "Technology companies and software platforms",
+                    frameworks: ["SOC 2", "ISO 27001", "GDPR"]
+                  },
+                  {
+                    name: "E-Commerce",
+                    icon: <ShoppingCart className="h-8 w-8" />,
+                    description: "Online retail and payment processing",
+                    frameworks: ["PCI DSS", "CCPA", "GDPR"]
+                  },
+                  {
+                    name: "Manufacturing",
+                    icon: <Settings className="h-8 w-8" />,
+                    description: "Industrial and manufacturing operations",
+                    frameworks: ["ISO 27001", "NIST", "SOC 2"]
+                  },
+                  {
+                    name: "Consulting",
+                    icon: <Briefcase className="h-8 w-8" />,
+                    description: "Professional services and client data handling",
+                    frameworks: ["SOC 2", "GDPR", "ISO 27001"]
+                  },
+                  // Duplicate the first set to create continuous loop
+                  {
+                    name: "FinTech",
+                    icon: <Building2 className="h-8 w-8" />,
+                    description: "Banking, payments, and financial services compliance",
+                    frameworks: ["PCI DSS", "SOX", "GDPR"]
+                  },
+                  {
+                    name: "Healthcare",
+                    icon: <Heart className="h-8 w-8" />,
+                    description: "Medical data protection and patient privacy",
+                    frameworks: ["HIPAA", "HITECH", "FDA"]
+                  },
+                  {
+                    name: "SaaS/Tech",
+                    icon: <Code className="h-8 w-8" />,
+                    description: "Technology companies and software platforms",
+                    frameworks: ["SOC 2", "ISO 27001", "GDPR"]
+                  },
+                  {
+                    name: "E-Commerce",
+                    icon: <ShoppingCart className="h-8 w-8" />,
+                    description: "Online retail and payment processing",
+                    frameworks: ["PCI DSS", "CCPA", "GDPR"]
+                  }
+                ].map((industry, index) => (
+                  <motion.div
+                    key={index}
+                    className="group relative w-64 flex-shrink-0"
+                    whileHover={{ 
+                      y: -15,
+                      scale: 1.05,
+                      zIndex: 10,
+                      transition: { type: "spring", stiffness: 300, damping: 15 }
+                    }}
                   >
-                    {industry.icon}
-                  </motion.div>
-                  
-                  {/* Industry name */}
-                  <h3 className="text-lg font-bold text-gray-900 mb-2 relative z-10">
-                    {industry.name}
-                  </h3>
-                  
-                  {/* Description */}
-                  <p className="text-sm text-gray-600 mb-3 leading-relaxed relative z-10">
-                    {industry.description}
-                  </p>
-                  
-                  {/* Frameworks */}
-                  <div className="flex flex-wrap justify-center gap-1 relative z-10">
-                    {industry.frameworks.map((framework, fIndex) => (
-                      <span 
-                        key={fIndex}
-                        className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full"
+                    <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 text-center relative overflow-hidden border border-gray-100 h-full">
+                      {/* Background gradient blob */}
+                      <div className="absolute -top-10 -right-10 w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
+                      
+                      {/* Icon container */}
+                      <motion.div 
+                        className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center text-white relative z-10"
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
                       >
-                        {framework}
-                      </span>
-                    ))}
-                  </div>
-                  
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
-                </div>
+                        {industry.icon}
+                      </motion.div>
+                      
+                      {/* Industry name */}
+                      <h3 className="text-lg font-bold text-gray-900 mb-2 relative z-10">
+                        {industry.name}
+                      </h3>
+                      
+                      {/* Description */}
+                      <p className="text-sm text-gray-600 mb-3 leading-relaxed relative z-10">
+                        {industry.description}
+                      </p>
+                      
+                      {/* Frameworks */}
+                      <div className="flex flex-wrap justify-center gap-1 relative z-10">
+                        {industry.frameworks.map((framework, fIndex) => (
+                          <span 
+                            key={fIndex}
+                            className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full"
+                          >
+                            {framework}
+                          </span>
+                        ))}
+                      </div>
+                      
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
+                    </div>
+                  </motion.div>
+                ))}
               </motion.div>
-            ))}
+            </div>
+
+            {/* Row 2 - moves in opposite direction */}
+            <div className="relative">
+              <motion.div 
+                className="flex space-x-6"
+                animate={{ 
+                  x: [-1800, 0],
+                }}
+                transition={{
+                  x: {
+                    duration: 45, // Slightly different speed for visual interest
+                    repeat: Infinity,
+                    repeatType: "loop",
+                    ease: "linear"
+                  }
+                }}
+              >
+                {/* Second set of cards */}
+                {[
+                  {
+                    name: "Government",
+                    icon: <Building2 className="h-8 w-8" />,
+                    description: "Ensuring compliance for public institutions and government agencies",
+                    frameworks: ["FISMA", "FedRAMP", "NIST 800-53"]
+                  },
+                  {
+                    name: "Education",
+                    icon: <Layers className="h-8 w-8" />,
+                    description: "Compliance with data privacy laws for students and academic institutions",
+                    frameworks: ["FERPA", "COPPA", "ISO 27001"]
+                  },
+                  {
+                    name: "Legal",
+                    icon: <FileCheck className="h-8 w-8" />,
+                    description: "Securing sensitive client data and adhering to confidentiality regulations",
+                    frameworks: ["GDPR", "ABA Model Rules", "ISO 27701"]
+                  },
+                  {
+                    name: "Real Estate",
+                    icon: <Home className="h-8 w-8" />,
+                    description: "Handling of sensitive financial and identity data in property transactions",
+                    frameworks: ["AML", "GDPR", "CCPA"]
+                  },
+                  {
+                    name: "Energy & Utilities",
+                    icon: <Gauge className="h-8 w-8" />,
+                    description: "Protecting infrastructure and operational data in critical industries",
+                    frameworks: ["NERC CIP", "ISO 27001", "NIST"]
+                  },
+                  {
+                    name: "Insurance",
+                    icon: <Shield className="h-8 w-8" />,
+                    description: "Compliance with financial, fraud, and customer data protection laws",
+                    frameworks: ["GLBA", "GDPR", "SOC 2"]
+                  },
+                  // Duplicate the second set to create continuous loop
+                  {
+                    name: "Government",
+                    icon: <Building2 className="h-8 w-8" />,
+                    description: "Ensuring compliance for public institutions and government agencies",
+                    frameworks: ["FISMA", "FedRAMP", "NIST 800-53"]
+                  },
+                  {
+                    name: "Education",
+                    icon: <Layers className="h-8 w-8" />,
+                    description: "Compliance with data privacy laws for students and academic institutions",
+                    frameworks: ["FERPA", "COPPA", "ISO 27001"]
+                  },
+                  {
+                    name: "Legal",
+                    icon: <FileCheck className="h-8 w-8" />,
+                    description: "Securing sensitive client data and adhering to confidentiality regulations",
+                    frameworks: ["GDPR", "ABA Model Rules", "ISO 27701"]
+                  },
+                  {
+                    name: "Real Estate",
+                    icon: <Home className="h-8 w-8" />,
+                    description: "Handling of sensitive financial and identity data in property transactions",
+                    frameworks: ["AML", "GDPR", "CCPA"]
+                  }
+                ].map((industry, index) => (
+                  <motion.div
+                    key={index}
+                    className="group relative w-64 flex-shrink-0"
+                    whileHover={{ 
+                      y: -15,
+                      scale: 1.05,
+                      zIndex: 10,
+                      transition: { type: "spring", stiffness: 300, damping: 15 }
+                    }}
+                  >
+                    <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 text-center relative overflow-hidden border border-gray-100 h-full">
+                      {/* Background gradient blob */}
+                      <div className="absolute -top-10 -right-10 w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
+                      
+                      {/* Icon container */}
+                      <motion.div 
+                        className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center text-white relative z-10"
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      >
+                        {industry.icon}
+                      </motion.div>
+                      
+                      {/* Industry name */}
+                      <h3 className="text-lg font-bold text-gray-900 mb-2 relative z-10">
+                        {industry.name}
+                      </h3>
+                      
+                      {/* Description */}
+                      <p className="text-sm text-gray-600 mb-3 leading-relaxed relative z-10">
+                        {industry.description}
+                      </p>
+                      
+                      {/* Frameworks */}
+                      <div className="flex flex-wrap justify-center gap-1 relative z-10">
+                        {industry.frameworks.map((framework, fIndex) => (
+                          <span 
+                            key={fIndex}
+                            className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full"
+                          >
+                            {framework}
+                          </span>
+                        ))}
+                      </div>
+                      
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </div>
+
+            {/* Gradient overlay on edges */}
+            <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-white to-transparent z-10"></div>
+            <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-white to-transparent z-10"></div>
           </div>
 
           {/* Bottom CTA */}
