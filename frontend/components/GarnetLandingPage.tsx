@@ -428,33 +428,141 @@ const IntegrationShowcase = () => {
           </p>
         </motion.div>
 
-        {/* Integration Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 mb-12">
-          {integrations.map((integration, index) => (
-            <motion.div
-              key={index}
-              className="group relative"
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.05 }}
-              whileHover={{ y: -5, scale: 1.05 }}
-            >
-              <div className="bg-gray-50 rounded-2xl p-6 text-center hover:bg-white hover:shadow-lg transition-all duration-300 border border-gray-100">
-                <div className="text-3xl mb-3">{integration.logo}</div>
-                <h3 className="font-semibold text-gray-900 mb-1">{integration.name}</h3>
-                <p className="text-xs text-gray-500">{integration.category}</p>
-              </div>
-              
-              {/* Connection line effect */}
+        {/* Floating Integration Grid - Top Row */}
+        <div className="relative overflow-hidden mb-10 py-4">
+          <motion.div 
+            className="flex space-x-8"
+            animate={{ 
+              x: [-1200, 0],
+            }}
+            transition={{
+              x: {
+                duration: 25,
+                repeat: Infinity,
+                repeatType: "loop",
+                ease: "linear"
+              }
+            }}
+          >
+            {/* First set - moving right to left */}
+            {[...integrations.slice(0, 6), ...integrations.slice(0, 6)].map((integration, index) => (
               <motion.div
-                className="absolute inset-0 border-2 border-purple-500 rounded-2xl opacity-0 group-hover:opacity-100"
-                initial={{ scale: 0.8 }}
-                whileHover={{ scale: 1 }}
-                transition={{ duration: 0.2 }}
-              />
-            </motion.div>
-          ))}
+                key={`top-${index}`}
+                className="relative flex-shrink-0 w-24 sm:w-32 h-32 sm:h-40"
+                initial={{ opacity: 0, scale: 0.9, rotate: -5 }}
+                animate={{ 
+                  opacity: 1, 
+                  scale: 1,
+                  rotate: 0,
+                  y: [0, -10, 0],
+                  transition: {
+                    y: {
+                      duration: 3 + index % 2,
+                      repeat: Infinity,
+                      repeatType: "reverse",
+                      ease: "easeInOut",
+                    },
+                    opacity: { duration: 0.8 },
+                    scale: { duration: 0.8 },
+                    rotate: { duration: 0.8 }
+                  }
+                }}
+                whileHover={{ 
+                  scale: 1.15, 
+                  rotate: 5, 
+                  zIndex: 10,
+                  transition: { type: "spring", stiffness: 400, damping: 10 }
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/10 to-pink-500/10 rounded-2xl transform rotate-3 scale-105 opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
+                <div className="h-full bg-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-lg border border-gray-100 z-10 backdrop-blur-sm">
+                  <div className="text-4xl mb-3 transform transition-transform group-hover:scale-110">{integration.logo}</div>
+                  <h3 className="font-semibold text-gray-900 text-center">{integration.name}</h3>
+                  <p className="text-xs text-gray-500 mt-1">{integration.category}</p>
+                  
+                  <motion.div 
+                    className="absolute inset-x-0 -bottom-1 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
+                    initial={{ scaleX: 0, opacity: 0 }}
+                    whileHover={{ scaleX: 1, opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+          
+          {/* Gradient overlays */}
+          <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-white to-transparent z-10"></div>
+          <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-white to-transparent z-10"></div>
+        </div>
+        
+        {/* Floating Integration Grid - Bottom Row (opposite direction) */}
+        <div className="relative overflow-hidden mb-10 py-4">
+          <motion.div 
+            className="flex space-x-8"
+            animate={{ 
+              x: [0, -1200],
+            }}
+            transition={{
+              x: {
+                duration: 30,
+                repeat: Infinity,
+                repeatType: "loop",
+                ease: "linear"
+              }
+            }}
+          >
+            {/* Second set - moving left to right */}
+            {[...integrations.slice(6), ...integrations.slice(6)].map((integration, index) => (
+              <motion.div
+                key={`bottom-${index}`}
+                className="relative flex-shrink-0 w-24 sm:w-32 h-32 sm:h-40"
+                initial={{ opacity: 0, scale: 0.9, rotate: 5 }}
+                animate={{ 
+                  opacity: 1, 
+                  scale: 1,
+                  rotate: 0,
+                  y: [0, -10, 0],
+                  transition: {
+                    y: {
+                      duration: 4 + index % 3,
+                      repeat: Infinity,
+                      repeatType: "reverse",
+                      ease: "easeInOut",
+                      delay: index * 0.1
+                    },
+                    opacity: { duration: 0.8 },
+                    scale: { duration: 0.8 },
+                    rotate: { duration: 0.8 }
+                  }
+                }}
+                whileHover={{ 
+                  scale: 1.15, 
+                  rotate: -5, 
+                  zIndex: 10,
+                  transition: { type: "spring", stiffness: 400, damping: 10 }
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl transform -rotate-3 scale-105 opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
+                <div className="h-full bg-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-lg border border-gray-100 z-10 backdrop-blur-sm">
+                  <div className="text-4xl mb-3 transform transition-transform group-hover:scale-110">{integration.logo}</div>
+                  <h3 className="font-semibold text-gray-900 text-center">{integration.name}</h3>
+                  <p className="text-xs text-gray-500 mt-1">{integration.category}</p>
+                  
+                  <motion.div 
+                    className="absolute inset-x-0 -bottom-1 h-1 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full"
+                    initial={{ scaleX: 0, opacity: 0 }}
+                    whileHover={{ scaleX: 1, opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+          
+          {/* Gradient overlays */}
+          <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-white to-transparent z-10"></div>
+          <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-white to-transparent z-10"></div>
         </div>
 
         {/* API Documentation CTA */}
