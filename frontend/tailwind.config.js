@@ -7,6 +7,9 @@ module.exports = {
   ],
   theme: {
     extend: {
+      animation: {
+        'spin-slow': 'spin 3s linear infinite',
+      },
       fontSize: {
         '2xs': 'var(--font-size-2xs)',
         'xs': 'var(--font-size-xs)',

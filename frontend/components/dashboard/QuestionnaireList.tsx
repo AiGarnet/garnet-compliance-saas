@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { PlusCircle, ArrowUpDown, AlertTriangle, Loader2 } from 'lucide-react';
+import { PlusCircle, ArrowUpDown, AlertTriangle, Loader2, Eye, Edit, Trash, AlertCircle, FileEdit, Check, X, RefreshCw } from 'lucide-react';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { FilterPills } from '@/components/ui/FilterPills';
 import { 
@@ -24,6 +24,7 @@ export interface Questionnaire {
   status: QuestionnaireStatus;
   dueDate: string;
   progress: number;
+  answers?: any[];
 }
 
 export interface QuestionnaireListProps {
@@ -62,6 +63,9 @@ export function QuestionnaireList({
   // State for search
   const [searchTerm, setSearchTerm] = useState('');
   
+  // State for delete confirmation
+  const [deletingQuestionnaire, setDeletingQuestionnaire] = useState<Questionnaire | null>(null);
+  
   // Handle sorting logic
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -69,6 +73,27 @@ export function QuestionnaireList({
     } else {
       setSortField(field);
       setSortDirection('asc');
+    }
+  };
+  
+  // Handle delete confirmation
+  const handleDeleteClick = (questionnaire: Questionnaire, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeletingQuestionnaire(questionnaire);
+  };
+  
+  // Handle delete confirmation cancel
+  const handleDeleteCancel = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeletingQuestionnaire(null);
+  };
+  
+  // Handle delete confirmation confirm
+  const handleDeleteConfirm = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (deletingQuestionnaire && onDeleteQuestionnaire) {
+      onDeleteQuestionnaire(deletingQuestionnaire);
+      setDeletingQuestionnaire(null);
     }
   };
   
@@ -134,27 +159,146 @@ export function QuestionnaireList({
   const getStatusBadgeStyle = (status: QuestionnaireStatus) => {
     switch (status) {
       case 'Completed':
-        return "badge-success";
+        return "bg-green-100 text-green-800 border border-green-200";
       case 'In Review':
-        return "badge-secondary";
+        return "bg-purple-100 text-purple-800 border border-purple-200";
       case 'In Progress':
-        return "badge-primary";
+        return "bg-blue-100 text-blue-800 border border-blue-200";
       case 'Draft':
-        return "badge-warning";
+        return "bg-yellow-100 text-yellow-800 border border-yellow-200";
       case 'Not Started':
-        return "badge-primary bg-opacity-10";
+        return "bg-gray-100 text-gray-800 border border-gray-200";
       default:
-        return "bg-gray-100 text-gray-600";
+        return "bg-gray-100 text-gray-600 border border-gray-200";
+    }
+  };
+  
+  // Get status icon based on status
+  const getStatusIcon = (status: QuestionnaireStatus) => {
+    switch (status) {
+      case 'Completed':
+        return <Check className="h-3 w-3 mr-1" />;
+      case 'In Review':
+        return <AlertCircle className="h-3 w-3 mr-1" />;
+      case 'In Progress':
+        return <RefreshCw className="h-3 w-3 mr-1 animate-spin-slow" />;
+      case 'Draft':
+        return <FileEdit className="h-3 w-3 mr-1" />;
+      case 'Not Started':
+        return <X className="h-3 w-3 mr-1" />;
+      default:
+        return null;
     }
   };
   
   // Get progress bar styling based on progress
   const getProgressBarStyle = (progress: number) => {
-    if (progress === 100) return "progress-bar-fill-success";
-    if (progress > 75) return "progress-bar-fill-primary";
-    if (progress > 30) return "progress-bar-fill-primary";
-    if (progress > 0) return "progress-bar-fill-warning";
+    if (progress === 100) return "bg-green-500";
+    if (progress >= 75) return "bg-blue-500";
+    if (progress >= 50) return "bg-blue-400";
+    if (progress >= 25) return "bg-yellow-500";
+    if (progress > 0) return "bg-yellow-400";
     return "bg-gray-300";
+  };
+  
+  // Get progress text color based on progress
+  const getProgressTextColor = (progress: number) => {
+    if (progress === 100) return "text-green-600";
+    if (progress > 75) return "text-blue-600";
+    if (progress > 30) return "text-blue-600";
+    if (progress > 0) return "text-yellow-600";
+    return "text-gray-500";
+  };
+  
+  // Get status tooltip based on status and progress
+  const getStatusTooltip = (questionnaire: Questionnaire) => {
+    let tooltip = '';
+    
+    // Add status information
+    switch (questionnaire.status) {
+      case 'Completed':
+        tooltip = 'All questions have been answered';
+        break;
+      case 'In Review':
+        tooltip = 'Most questions have been answered, pending final review';
+        break;
+      case 'In Progress':
+        tooltip = 'Some questions have been answered, more work needed';
+        break;
+      case 'Draft':
+        tooltip = 'Just getting started, few questions answered';
+        break;
+      case 'Not Started':
+        tooltip = 'No questions have been answered yet';
+        break;
+      default:
+        tooltip = 'Unknown status';
+    }
+    
+    // Add progress information if answers are available
+    if (questionnaire.answers) {
+      const totalQuestions = questionnaire.answers.length;
+      
+      // Count questions with actual answers (not placeholders or failures)
+      const answeredQuestions = questionnaire.answers.filter((a: any) => {
+        const answer = a.answer || '';
+        return answer.trim() !== '' && 
+          !answer.includes('AI answer will be generated') &&
+          !answer.includes('Generating...') &&
+          !answer.includes('We couldn\'t generate an answer') &&
+          answer !== 'Processing in batch mode...';
+      }).length;
+      
+      // Count questions that failed to generate answers
+      const failedQuestions = questionnaire.answers.filter((a: any) => {
+        const answer = a.answer || '';
+        return answer.includes('We couldn\'t generate an answer');
+      }).length;
+      
+      tooltip += ` - ${answeredQuestions}/${totalQuestions} questions answered`;
+      
+      if (failedQuestions > 0) {
+        tooltip += ` (${failedQuestions} failed to generate)`;
+      }
+      
+      tooltip += ` - ${questionnaire.progress}% complete`;
+      
+      // Add information about mandatory questions if any
+      const mandatoryQuestions = questionnaire.answers.filter((a: any) => a.isMandatory).length;
+      const mandatoryAnswered = questionnaire.answers.filter((a: any) => 
+        a.isMandatory && a.answer && a.answer.trim() !== '' && !a.needsAttention
+      ).length;
+      
+      if (mandatoryQuestions > 0) {
+        tooltip += ` - ${mandatoryAnswered}/${mandatoryQuestions} required questions complete`;
+      }
+    }
+    
+    return tooltip;
+  };
+  
+  // Helper function to get count of successfully answered questions
+  const getAnsweredCount = (questionnaire: Questionnaire): number => {
+    if (!questionnaire.answers || questionnaire.answers.length === 0) return 0;
+    
+    return questionnaire.answers.filter((a: any) => {
+      const answer = a.answer || '';
+      return answer.trim() !== '' && 
+        !answer.includes('AI answer will be generated') &&
+        !answer.includes('Generating...') &&
+        !answer.includes('We couldn\'t generate an answer') &&
+        answer !== 'Processing in batch mode...';
+    }).length;
+  };
+  
+  // Helper function to get count of failed generations
+  const getFailedCount = (questionnaire: Questionnaire): number => {
+    if (!questionnaire.answers || questionnaire.answers.length === 0) return 0;
+    
+    return questionnaire.answers.filter((a: any) => {
+      const answer = a.answer || '';
+      return answer.includes('We couldn\'t generate an answer');
+    }).length;
   };
   
   // Render filter pills
@@ -312,10 +456,14 @@ export function QuestionnaireList({
                 >
                   <TableCell className="font-medium">{questionnaire.name}</TableCell>
                   <TableCell>
-                    <span className={cn(
-                      "badge",
-                      getStatusBadgeStyle(questionnaire.status)
-                    )}>
+                    <span 
+                      className={cn(
+                        "px-2 py-1 rounded-full text-xs font-medium flex items-center inline-flex cursor-help",
+                        getStatusBadgeStyle(questionnaire.status)
+                      )}
+                      title={getStatusTooltip(questionnaire)}
+                    >
+                      {getStatusIcon(questionnaire.status)}
                       {questionnaire.status}
                     </span>
                   </TableCell>
@@ -323,37 +471,91 @@ export function QuestionnaireList({
                     {questionnaire.dueDate}
                   </TableCell>
                   <TableCell>
-                    <div className="progress-bar">
-                      <div 
-                        className={cn(
-                          "progress-bar-fill",
-                          getProgressBarStyle(questionnaire.progress)
+                    <div className="flex flex-col">
+                      <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className={cn(
+                            "h-full rounded-full transition-all duration-500",
+                            getProgressBarStyle(questionnaire.progress)
+                          )}
+                          style={{ width: `${questionnaire.progress}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex justify-between items-center mt-1">
+                        <span className={cn(
+                          "text-xs font-medium",
+                          getProgressTextColor(questionnaire.progress)
+                        )}>
+                          {questionnaire.progress}%
+                        </span>
+                        {questionnaire.answers && (
+                          <span className="text-xs text-gray-500">
+                            {getAnsweredCount(questionnaire)} / {questionnaire.answers.length}
+                            {getFailedCount(questionnaire) > 0 && (
+                              <span className="text-red-500 ml-1">
+                                ({getFailedCount(questionnaire)} failed)
+                              </span>
+                            )}
+                          </span>
                         )}
-                        style={{ width: `${questionnaire.progress}%` }}
-                      ></div>
+                      </div>
                     </div>
-                    <span className="text-xs text-gray-500 mt-1 block">{questionnaire.progress}%</span>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <button 
-                        className="text-primary hover:text-primary-dark transition-colors"
-                        onClick={() => onViewQuestionnaire && onViewQuestionnaire(questionnaire)}
-                      >
-                        View
-                      </button>
-                      <button 
-                        className="text-primary hover:text-primary-dark transition-colors"
-                        onClick={() => onEditQuestionnaire && onEditQuestionnaire(questionnaire)}
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        className="text-danger hover:text-danger-dark transition-colors"
-                        onClick={() => onDeleteQuestionnaire && onDeleteQuestionnaire(questionnaire)}
-                      >
-                        Delete
-                      </button>
+                      {deletingQuestionnaire?.id === questionnaire.id ? (
+                        <div className="flex items-center bg-red-50 p-1 rounded-md">
+                          <span className="text-xs text-red-600 mr-2">Confirm delete?</span>
+                          <button 
+                            className="p-1 bg-red-100 text-red-600 rounded hover:bg-red-200"
+                            onClick={handleDeleteConfirm}
+                            aria-label="Confirm delete"
+                          >
+                            <Check className="h-4 w-4" />
+                          </button>
+                          <button 
+                            className="p-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 ml-1"
+                            onClick={handleDeleteCancel}
+                            aria-label="Cancel delete"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <button 
+                            className="p-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors flex items-center"
+                            onClick={() => {
+                              if (onViewQuestionnaire) {
+                                onViewQuestionnaire(questionnaire);
+                              } else {
+                                // Direct navigation as fallback
+                                window.location.href = `/questionnaires/${questionnaire.id}/chat`;
+                              }
+                            }}
+                            aria-label={`View ${questionnaire.name}`}
+                          >
+                            <Eye className="h-4 w-4" />
+                            <span className="ml-1">View</span>
+                          </button>
+                          <button 
+                            className="p-2 bg-green-50 text-green-600 rounded-md hover:bg-green-100 transition-colors flex items-center"
+                            onClick={() => onEditQuestionnaire && onEditQuestionnaire(questionnaire)}
+                            aria-label={`Edit ${questionnaire.name}`}
+                          >
+                            <Edit className="h-4 w-4" />
+                            <span className="ml-1">Edit</span>
+                          </button>
+                          <button 
+                            className="p-2 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors flex items-center"
+                            onClick={(e) => handleDeleteClick(questionnaire, e)}
+                            aria-label={`Delete ${questionnaire.name}`}
+                          >
+                            <Trash className="h-4 w-4" />
+                            <span className="ml-1">Delete</span>
+                          </button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -372,10 +574,14 @@ export function QuestionnaireList({
               >
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-lg font-semibold text-gray-800">{questionnaire.name}</h3>
-                  <span className={cn(
-                    "badge",
-                    getStatusBadgeStyle(questionnaire.status)
-                  )}>
+                  <span 
+                    className={cn(
+                      "px-2 py-1 rounded-full text-xs font-medium flex items-center cursor-help",
+                      getStatusBadgeStyle(questionnaire.status)
+                    )}
+                    title={getStatusTooltip(questionnaire)}
+                  >
+                    {getStatusIcon(questionnaire.status)}
                     {questionnaire.status}
                   </span>
                 </div>
@@ -387,38 +593,92 @@ export function QuestionnaireList({
                 <div className="mb-4">
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-600">Progress:</span>
-                    <span className="font-medium">{questionnaire.progress}%</span>
+                    <span className={cn(
+                      "font-medium",
+                      getProgressTextColor(questionnaire.progress)
+                    )}>
+                      {questionnaire.progress}%
+                    </span>
                   </div>
-                  <div className="progress-bar">
+                  <div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden">
                     <div 
                       className={cn(
-                        "progress-bar-fill",
+                        "h-full rounded-full transition-all duration-500",
                         getProgressBarStyle(questionnaire.progress)
                       )}
                       style={{ width: `${questionnaire.progress}%` }}
                     ></div>
                   </div>
+                  {questionnaire.answers && (
+                    <div className="mt-1 text-right">
+                      <span className="text-xs text-gray-500">
+                        {getAnsweredCount(questionnaire)} / {questionnaire.answers.length}
+                        {getFailedCount(questionnaire) > 0 && (
+                          <span className="text-red-500 ml-1">
+                            ({getFailedCount(questionnaire)} failed)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 
-                <div className="flex justify-end gap-3 mt-4 border-t pt-4 border-gray-100">
-                  <button 
-                    className="garnet-button-small text-primary hover:text-primary-dark transition-colors"
-                    onClick={() => onViewQuestionnaire && onViewQuestionnaire(questionnaire)}
-                  >
-                    View
-                  </button>
-                  <button 
-                    className="garnet-button-small text-primary hover:text-primary-dark transition-colors"
-                    onClick={() => onEditQuestionnaire && onEditQuestionnaire(questionnaire)}
-                  >
-                    Edit
-                  </button>
-                  <button 
-                    className="garnet-button-small text-danger hover:text-danger-dark transition-colors"
-                    onClick={() => onDeleteQuestionnaire && onDeleteQuestionnaire(questionnaire)}
-                  >
-                    Delete
-                  </button>
+                <div className="mt-4 border-t pt-4 border-gray-100">
+                  {deletingQuestionnaire?.id === questionnaire.id ? (
+                    <div className="flex items-center justify-between bg-red-50 p-3 rounded-md">
+                      <span className="text-sm text-red-600">Confirm delete?</span>
+                      <div className="flex gap-2">
+                        <button 
+                          className="p-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200"
+                          onClick={handleDeleteConfirm}
+                          aria-label="Confirm delete"
+                        >
+                          <Check className="h-4 w-4" />
+                        </button>
+                        <button 
+                          className="p-2 bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200"
+                          onClick={handleDeleteCancel}
+                          aria-label="Cancel delete"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button 
+                        className="flex-1 p-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors flex items-center justify-center"
+                        onClick={() => {
+                          if (onViewQuestionnaire) {
+                            onViewQuestionnaire(questionnaire);
+                          } else {
+                            // Direct navigation as fallback
+                            window.location.href = `/questionnaires/${questionnaire.id}/chat`;
+                          }
+                        }}
+                        aria-label={`View ${questionnaire.name}`}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </button>
+                      <button 
+                        className="flex-1 p-2 bg-green-50 text-green-600 rounded-md hover:bg-green-100 transition-colors flex items-center justify-center"
+                        onClick={() => onEditQuestionnaire && onEditQuestionnaire(questionnaire)}
+                        aria-label={`Edit ${questionnaire.name}`}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </button>
+                      <button 
+                        className="flex-1 p-2 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors flex items-center justify-center"
+                        onClick={(e) => handleDeleteClick(questionnaire, e)}
+                        aria-label={`Delete ${questionnaire.name}`}
+                      >
+                        <Trash className="h-4 w-4 mr-1" />
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
               </li>
             ))}

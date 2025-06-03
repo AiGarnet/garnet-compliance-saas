@@ -65,3 +65,33 @@ CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 4. Copy `.env.local.example` to `.env.local` and update the `DATABASE_URL` with your PostgreSQL connection string
 
 With this setup, the waitlist form will directly insert user data into the PostgreSQL database. If the database connection fails or is not configured, it will fall back to storing users in a JSON file in the public directory.
+
+# Questionnaire Chat Interface
+
+## Overview
+
+This update adds a chatbot-style interface for interacting with questionnaires. The system now includes:
+
+1. A form for creating questionnaires that submits to `/api/questionnaires` and redirects to a chat interface
+2. A chat interface at `/questionnaires/[id]/chat` for viewing and interacting with questionnaires
+3. Updated navigation in the QuestionnaireList component to link to the chat interface
+
+## Key Files Modified
+
+- `app/questionnaires/page.tsx` - Updated the form submission handler to send POST requests to the API and redirect to the chat page
+- `app/questionnaires/[id]/chat/page.tsx` - Created a new chat interface for interacting with questionnaires
+- `app/api/questionnaires/route.ts` - Added API endpoint for creating questionnaires
+- `app/api/questionnaires/[id]/route.ts` - Added API endpoint for fetching questionnaire data
+- `components/dashboard/QuestionnaireList.tsx` - Updated the View button to navigate to the chat interface
+
+## API Endpoints
+
+- `POST /api/questionnaires` - Create a new questionnaire with title and questions
+- `GET /api/questionnaires/[id]` - Fetch a questionnaire by ID
+
+## Next Steps
+
+- Implement saving answers in the chat interface
+- Add AI-powered assistance for generating responses
+- Add support for editing and deleting questions in the chat interface
+- Implement real database storage for questionnaires instead of mocked responses

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, ChangeEvent, useMemo, useCallback, Suspense } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList, Filter, Plus, Search, SlidersHorizontal, X, Upload, FileText, FileType, Files, RefreshCw, Trash2, Sparkles, MessageSquare, ClipboardCopy } from "lucide-react";
+import { ClipboardList, Filter, Plus, Search, SlidersHorizontal, X, Upload, FileText, FileType, Files, RefreshCw, Trash2, Sparkles, MessageSquare, ClipboardCopy, ArrowLeft } from "lucide-react";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { QuestionnaireList, Questionnaire, QuestionnaireStatus } from "@/components/dashboard/QuestionnaireList";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -280,7 +280,71 @@ const QuestionnairesPage = () => {
       
       if (storedQuestionnaires) {
         try {
-          userQuestionnaires = JSON.parse(storedQuestionnaires);
+          const parsedQuestionnaires = JSON.parse(storedQuestionnaires);
+          
+          // Process each questionnaire to calculate dynamic status and progress
+          userQuestionnaires = parsedQuestionnaires.map((q: any) => {
+            // Default values if no answers
+            let progress = 0;
+            let status: QuestionnaireStatus = "Not Started";
+            
+            // Calculate progress and status based on answers if available
+            if (q.answers && q.answers.length > 0) {
+              const totalQuestions = q.answers.length;
+              
+              // Count questions that have actual answers (not placeholders or failures)
+              const answeredQuestions = q.answers.filter((a: any) => {
+                const answer = a.answer || '';
+                return answer.trim() !== '' && 
+                  !answer.includes('AI answer will be generated') &&
+                  !answer.includes('Generating...') &&
+                  !answer.includes('We couldn\'t generate an answer') &&
+                  answer !== 'Processing in batch mode...';
+              }).length;
+              
+              // If a questionnaire has been viewed but not all answers were generated
+              // Count it as at least "Draft" status regardless of progress percentage
+              if (answeredQuestions > 0) {
+                // Calculate progress percentage with a more forgiving algorithm
+                // If total questions is more than 10, we consider it successful if
+                // at least 80% of questions have answers
+                const minimumProgress = Math.max(10, answeredQuestions > 0 ? 10 : 0);
+                progress = Math.round((answeredQuestions / totalQuestions) * 100);
+                
+                // Determine status based on progress
+                if (progress === 0) {
+                  status = "Not Started";
+                } else if (progress === 100) {
+                  status = "Completed";
+                } else if (progress >= 75) {
+                  status = "In Review";
+                } else if (progress >= 25) {
+                  status = "In Progress";
+                } else {
+                  status = "Draft";
+                }
+                
+                // If at least one question is answered, it's at minimum a draft
+                if (answeredQuestions > 0 && status === "Not Started") {
+                  status = "Draft";
+                  progress = Math.max(progress, minimumProgress);
+                }
+                
+                // Override status if there are mandatory questions that need attention
+                const needsAttentionCount = q.answers.filter((a: any) => a.needsAttention).length;
+                if (needsAttentionCount > 0 && status === "Completed") {
+                  status = "In Review";
+                }
+              }
+            }
+            
+            // Return questionnaire with calculated values
+            return {
+              ...q,
+              progress,
+              status
+            };
+          });
         } catch (e) {
           console.error('Error parsing stored questionnaires:', e);
         }
@@ -289,7 +353,10 @@ const QuestionnairesPage = () => {
       // Only use user-created questionnaires
       setQuestionnaires(userQuestionnaires);
       
-      // Remove the artificial delay completely
+      // Save the updated questionnaires back to localStorage
+      if (userQuestionnaires.length > 0) {
+        localStorage.setItem('user_questionnaires', JSON.stringify(userQuestionnaires));
+      }
     } catch (err) {
       console.error('Error fetching questionnaires:', err);
       setError('Failed to load questionnaires. Please try again.');
@@ -645,107 +712,23 @@ const QuestionnairesPage = () => {
     setIsSubmitting(true);
     
     try {
-      // Use generated answers if available, otherwise create new QuestionAnswer objects
-      let finalAnswers: QuestionAnswer[] = [];
+      // Send POST request to the API
+      const response = await fetch('/api/questionnaires', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: questionnaireTitle,
+          questions: questions
+        }),
+      });
       
-      if (generatedAnswers.length > 0) {
-        // Use already generated answers
-        finalAnswers = generatedAnswers;
-      } else {
-        // Generate basic answers if not already done
-        finalAnswers = questions.map(question => {
-          const isMandatory = isMandatoryQuestion(question);
-          return {
-            question, 
-            answer: 'AI answer will be generated', 
-            isLoading: false,
-            isMandatory,
-            needsAttention: isMandatory
-          };
-        });
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
       }
       
-      // Check if a questionnaire with the same title or questions already exists
-      const storedQuestionnaires = localStorage.getItem('user_questionnaires');
-      let userQuestionnaires: Array<Questionnaire & { answers?: QuestionAnswer[] }> = [];
-      let existingQuestionnaireId: string | null = null;
-      
-      if (storedQuestionnaires) {
-        try {
-          userQuestionnaires = JSON.parse(storedQuestionnaires);
-          
-          // Check for duplicate by comparing title and questions
-          const normalizedTitle = questionnaireTitle.trim().toLowerCase();
-          
-          for (const q of userQuestionnaires) {
-            // Check if title matches
-            const qTitle = q.name.trim().toLowerCase();
-            if (qTitle === normalizedTitle) {
-              // Check if questions match (at least 80% match)
-              if (q.answers && q.answers.length === questions.length) {
-                let matchCount = 0;
-                for (let i = 0; i < questions.length; i++) {
-                  if (q.answers[i].question.trim().toLowerCase() === questions[i].trim().toLowerCase()) {
-                    matchCount++;
-                  }
-                }
-                
-                // If more than 80% of questions match, consider it a duplicate
-                if (matchCount / questions.length >= 0.8) {
-                  existingQuestionnaireId = q.id;
-                  
-                  // Update the existing questionnaire with new answers
-                  q.answers = finalAnswers.length > 0 ? finalAnswers : questions.map(q => ({ 
-                    question: q, 
-                    answer: 'AI answer will be generated',
-                    isMandatory: isMandatoryQuestion(q),
-                    needsAttention: isMandatoryQuestion(q)
-                  }));
-                  break;
-                }
-              }
-            }
-          }
-          
-          // If a duplicate was found, update it
-          if (existingQuestionnaireId) {
-            localStorage.setItem('user_questionnaires', JSON.stringify(userQuestionnaires));
-            
-            // Clear autosaved draft
-            localStorage.removeItem(AUTOSAVE_KEY);
-            
-            // Close modal
-            closeQuestionnaireInput();
-            
-            // Refresh the questionnaire list
-            fetchQuestionnaires();
-            
-            // Redirect to the questionnaire answers page
-            router.push(`/questionnaires/answers?id=${existingQuestionnaireId}`);
-            
-            setIsSubmitting(false);
-            return;
-          }
-        } catch (e) {
-          console.error('Error parsing stored questionnaires:', e);
-        }
-      }
-      
-      // Store the new questionnaire with AI answers
-      const newQuestionnaire: Questionnaire & { answers?: QuestionAnswer[] } = {
-        id: `q${Date.now()}`,  
-        name: questionnaireTitle,
-        status: "Not Started" as QuestionnaireStatus,
-        dueDate: new Date().toLocaleDateString(),
-        progress: 0,
-        answers: finalAnswers,
-      };
-      
-      // Add the new questionnaire
-      userQuestionnaires.push(newQuestionnaire);
-      
-      // Save back to local storage
-      localStorage.setItem('user_questionnaires', JSON.stringify(userQuestionnaires));
+      const data = await response.json();
       
       // Clear autosaved draft
       localStorage.removeItem(AUTOSAVE_KEY);
@@ -753,11 +736,8 @@ const QuestionnairesPage = () => {
       // Close modal
       closeQuestionnaireInput();
       
-      // Refresh the questionnaire list
-      fetchQuestionnaires();
-      
-      // Redirect to the questionnaire answers page
-      router.push(`/questionnaires/answers?id=${newQuestionnaire.id}`);
+      // Navigate to the chat page with the returned questionnaireId
+      router.push(`/questionnaires/${data.id}/chat`);
       
     } catch (error) {
       console.error('Error submitting questionnaire:', error);
@@ -776,6 +756,14 @@ const QuestionnairesPage = () => {
     setFindReplaceMode(false);
     setGeneratedAnswers([]);
     setShowAIAssistant(false);
+    setIsGeneratingAnswers(false);
+    setValidationError(null);
+    setUploadError(null);
+    setIsSubmitting(false);
+    setDragActive(false);
+    // Reset find/replace state
+    setFindText('');
+    setReplaceText('');
   };
 
   // Process file regardless of upload method
@@ -947,7 +935,17 @@ const QuestionnairesPage = () => {
 
   // Add handling for viewing a questionnaire
   const handleViewQuestionnaire = (questionnaire: Questionnaire) => {
-    router.push(`/questionnaires/answers?id=${questionnaire.id}`);
+    console.log('View questionnaire clicked:', questionnaire.id);
+    
+    // Use direct navigation for better reliability
+    try {
+      console.log('Navigating to:', `/questionnaires/${questionnaire.id}/chat`);
+      window.location.href = `/questionnaires/${questionnaire.id}/chat`;
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // Fallback to router push
+      router.push(`/questionnaires/${questionnaire.id}/chat`);
+    }
   };
   
   // Add handling for editing a questionnaire
@@ -967,26 +965,25 @@ const QuestionnairesPage = () => {
   
   // Add handling for deleting a questionnaire
   const handleDeleteQuestionnaire = (questionnaire: Questionnaire) => {
-    if (confirm(`Are you sure you want to delete the questionnaire "${questionnaire.name}"?`)) {
-      // Get existing questionnaires from local storage
-      const storedQuestionnaires = localStorage.getItem('user_questionnaires');
-      if (storedQuestionnaires) {
-        try {
-          const userQuestionnaires = JSON.parse(storedQuestionnaires);
-          
-          // Filter out the questionnaire to delete
-          const updatedQuestionnaires = userQuestionnaires.filter(
-            (q: Questionnaire) => q.id !== questionnaire.id
-          );
-          
-          // Save back to local storage
-          localStorage.setItem('user_questionnaires', JSON.stringify(updatedQuestionnaires));
-          
-          // Refresh the questionnaire list
-          fetchQuestionnaires();
-        } catch (e) {
-          console.error('Error deleting questionnaire:', e);
-        }
+    // No need for browser confirm dialog since we're using our own UI confirmation
+    // Get existing questionnaires from local storage
+    const storedQuestionnaires = localStorage.getItem('user_questionnaires');
+    if (storedQuestionnaires) {
+      try {
+        const userQuestionnaires = JSON.parse(storedQuestionnaires);
+        
+        // Filter out the questionnaire to delete
+        const updatedQuestionnaires = userQuestionnaires.filter(
+          (q: Questionnaire) => q.id !== questionnaire.id
+        );
+        
+        // Save back to local storage
+        localStorage.setItem('user_questionnaires', JSON.stringify(updatedQuestionnaires));
+        
+        // Refresh the questionnaire list
+        fetchQuestionnaires();
+      } catch (e) {
+        console.error('Error deleting questionnaire:', e);
       }
     }
   };
@@ -1135,7 +1132,7 @@ const QuestionnairesPage = () => {
                 aria-modal="true"
                 aria-labelledby="questionnaire-modal-title"
               >
-                <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-primary/5 to-secondary/5">
+                <div className="py-3 px-5 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-primary/5 to-secondary/5">
                   <h2 id="questionnaire-modal-title" className="text-xl font-bold text-gray-800 flex items-center">
                     <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                       Create Questionnaire
@@ -1173,7 +1170,7 @@ const QuestionnairesPage = () => {
                     {!showPreview && !showAIAssistant && (
                       <>
                         <div className="mb-5">
-                          <div className="flex justify-between items-center mb-3">
+                          <div className="flex justify-between items-center mb-1">
                             <h3 className="text-lg font-semibold text-gray-800">Questions</h3>
                             
                             <div className="flex space-x-2">
@@ -1205,7 +1202,7 @@ const QuestionnairesPage = () => {
                               <button 
                                 type="button"
                                 onClick={handleTogglePreview}
-                                className="text-sm text-primary hover:text-primary/80 flex items-center"
+                                className="text-sm text-primary hover:text-primary/80 flex items-center transition-all hover:bg-gray-100 px-2 py-1 rounded"
                                 aria-label="Preview questions"
                               >
                                 Preview
@@ -1376,9 +1373,10 @@ const QuestionnairesPage = () => {
                             <button
                               type="button"
                               onClick={handleTogglePreview}
-                              className="text-sm text-primary hover:text-primary/80 flex items-center"
+                              className="text-sm text-primary hover:text-primary/80 flex items-center transition-all hover:bg-gray-100 px-2 py-1 rounded"
+                              aria-label="Preview questions"
                             >
-                              Back to Edit
+                              Preview
                             </button>
                           </div>
                         </div>
@@ -1432,9 +1430,9 @@ const QuestionnairesPage = () => {
                             <button
                               type="button"
                               onClick={() => setShowAIAssistant(false)}
-                              className="text-sm text-primary hover:text-primary/80 flex items-center"
+                              className="text-sm text-primary hover:text-primary/80 flex items-center underline transition-all hover:bg-gray-100 px-2 py-1 rounded"
                             >
-                              Back to Edit
+                              <ArrowLeft className="h-3 w-3 mr-1" /> Back to Edit
                             </button>
                           </div>
                         </div>

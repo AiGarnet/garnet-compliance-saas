@@ -1,14 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Use export output for static site generation
-  output: 'export',
+  // Removed: output: 'export' to support dynamic routes
   trailingSlash: true,
   distDir: '.next',
   // This option is no longer supported in Next.js 14+
   // outDir: 'out',
   images: {
-    unoptimized: true,
+    // Using remotePatterns instead of unoptimized for production builds
+    unoptimized: process.env.NODE_ENV === 'development',
   },
   swcMinify: true,
   

@@ -9,6 +9,9 @@ export function generateStaticParams() {
   }));
 }
 
+// Use dynamic rendering instead of static generation
+export const dynamic = 'force-dynamic';
+
 // Server Component
 export default function VendorDetailPage({ params }: { params: { id: string } }) {
   return <VendorDetailView vendorId={params.id} />;
