@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// For static export, we cannot use dynamic API routes
+// Client-side should handle this limitation by using local storage or Netlify functions
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

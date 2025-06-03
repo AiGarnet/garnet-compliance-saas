@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
+// For static export, we use static data instead of dynamic API routes
+// Remove 'force-dynamic' and implement static alternatives
 
 export async function GET(
   req: Request,

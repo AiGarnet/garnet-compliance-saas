@@ -1,8 +1,16 @@
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic';
+// For static export, we use static data instead of dynamic API routes
+// Remove 'force-dynamic' and implement static alternatives
 
 export async function POST(req: Request) {
+  // For static builds, you would typically:
+  // 1. Use client-side state management instead of API routes
+  // 2. Or use Netlify functions for dynamic functionality
+  
+  // This API function will be pre-rendered at build time
+  // Client-side code should handle this limitation
+
   try {
     const body = await req.json();
     const { title, questions } = body;

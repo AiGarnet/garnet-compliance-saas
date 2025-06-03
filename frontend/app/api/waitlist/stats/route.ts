@@ -1,5 +1,3 @@
-export const dynamic = "force-static";
-
 import { NextResponse } from 'next/server';
 
 // For static export we need to provide a static response
