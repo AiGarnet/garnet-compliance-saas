@@ -3,9 +3,9 @@ import { VendorDetailView } from '@/components/vendors/VendorDetailView';
 
 // This function generates the static paths at build time
 export function generateStaticParams() {
-  // Return a list of possible values for id
+  // Make sure each id is explicitly cast as a string
   return vendors.map((vendor) => ({
-    id: vendor.id,
+    id: String(vendor.id),
   }));
 }
 

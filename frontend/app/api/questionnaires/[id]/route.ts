@@ -6,21 +6,24 @@ import { NextResponse } from 'next/server';
 // Add generateStaticParams to support static export
 export async function generateStaticParams() {
   // Return all possible IDs that this API route needs to handle
-  return [
-    { id: 'demo_1' },
-    { id: 'demo_2' },
-    { id: 'demo_3' },
-    { id: 'q_100' },
-    { id: 'q_101' },
-    { id: 'q_102' },
-    { id: 'q_security_assessment' },
-    { id: 'q_vendor_onboarding' },
-    { id: 'q_compliance_review' },
-    { id: 'q_risk_assessment' },
-    { id: 'q_data_protection' },
-    { id: 'q_2023_audit' },
-    { id: 'q_2024_audit' }
-  ].map(id => ({ id }));
+  const ids = [
+    'demo_1',
+    'demo_2', 
+    'demo_3',
+    'q_100',
+    'q_101',
+    'q_102',
+    'q_security_assessment',
+    'q_vendor_onboarding',
+    'q_compliance_review',
+    'q_risk_assessment',
+    'q_data_protection',
+    'q_2023_audit',
+    'q_2024_audit'
+  ];
+  
+  // Make sure each id is returned as a string in the proper format
+  return ids.map(id => ({ id: String(id) }));
 }
 
 export async function GET(

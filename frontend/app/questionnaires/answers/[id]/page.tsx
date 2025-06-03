@@ -19,7 +19,8 @@ export function generateStaticParams() {
     'q_2024_audit'
   ];
   
-  return ids.map(id => ({ id }));
+  // Make sure each id is explicitly cast as a string
+  return ids.map(id => ({ id: String(id) }));
 }
 
 export default function QuestionnairesAnswersPage({ params }: { params: { id: string } }) {

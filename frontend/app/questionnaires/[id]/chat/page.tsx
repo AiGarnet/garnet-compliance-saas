@@ -24,7 +24,8 @@ export async function generateStaticParams() {
   // For local development or server-side rendering, we could fetch from an API
   // But for static export, we need to pre-define all possible IDs
   
-  return commonIds.map(id => ({ id }));
+  // Make sure each id is explicitly cast as a string
+  return commonIds.map(id => ({ id: String(id) }));
 }
 
 // Server component that passes params to client component
