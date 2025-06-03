@@ -6,7 +6,13 @@ import { MessageSquare, Send, RefreshCw, User, Bot } from 'lucide-react';
 import Header from '@/components/Header';
 
 // Prevent Next.js from expecting generateStaticParams()
-export const dynamic = 'force-dynamic';
+export async function generateStaticParams() {
+  // TODO: Replace with real logic to get all questionnaire IDs
+  // Example: fetch from your API or read from a file
+  const ids = ['q_123', 'q_456']; // <-- Replace with real IDs
+
+  return ids.map(id => ({ id }));
+}
 
 interface Question {
   id: string;
