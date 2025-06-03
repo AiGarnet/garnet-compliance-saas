@@ -8,7 +8,7 @@
     "build": "next build",
     "build:skip-types": "next build --no-check",
     "export": "next export",
-    "build:export": "next build && next export -o .next/out",
+    "build:export": "next build && next export -o out",
     "build:optimized": "NODE_ENV=production next build && npm run css-stats",
     "start": "next start",
     "start:with-api": "node scripts/start-questionnaire-service.js && next start",

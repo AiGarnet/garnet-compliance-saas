@@ -1,14 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Removed: output: 'export' to support dynamic routes
+  output: 'export',
   trailingSlash: true,
   distDir: '.next',
-  // This option is no longer supported in Next.js 14+
-  // outDir: 'out',
   images: {
-    // Using remotePatterns instead of unoptimized for production builds
-    unoptimized: process.env.NODE_ENV === 'development',
+    unoptimized: true,
   },
   swcMinify: true,
   
@@ -42,9 +39,6 @@ const nextConfig = {
     serverComponentsExternalPackages: ['lodash', 'uuid', 'react-icons'],
   },
 
-  // Note: When using 'output: export', rewrites and headers won't work
-  // They are removed since they're incompatible with static export
-  
   // Configure webpack to properly handle dependencies
   webpack: (config, { isServer }) => {
     // This ensures dependencies are properly bundled

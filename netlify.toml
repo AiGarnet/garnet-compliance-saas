@@ -16,8 +16,9 @@
   directory = "netlify/functions"
   included_files = ["netlify/functions/*.js", "netlify/functions/package.json"]
 
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
+# Remove Next.js plugin as we're doing a static export
+# [[plugins]]
+#  package = "@netlify/plugin-nextjs"
 
 [[plugins]]
   package = "@netlify/plugin-functions-install-core"
