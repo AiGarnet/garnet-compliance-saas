@@ -1,24 +1,24 @@
 [build]
-  base = "."
+  base = "/"
   command = "bash ./netlify/build-simple.sh"
   publish = "frontend/out"
+  functions = "netlify/functions"
 
 [build.environment]
-  NODE_VERSION = "18.20.8"
-  NPM_VERSION = "10.9.2"
+  NODE_VERSION = "20"
+  NPM_VERSION = "10"
   NEXT_PUBLIC_CHATBOT_URL = "https://garnet-compliance-saas-production.up.railway.app"
   NETLIFY_URL = "https://testinggarnet.netlify.app"
   NEXT_TELEMETRY_DISABLED = "1"
+  NEXT_PUBLIC_API_BASE_URL = "https://garnet-compliance-saas-production.up.railway.app/api"
   NEXT_STATIC_EXPORT = "true"
-  NEXT_PUBLIC_API_BASE_URL = "/api"
 
 [functions]
   directory = "netlify/functions"
   included_files = ["netlify/functions/*.js", "netlify/functions/package.json"]
 
-# Remove Next.js plugin as we're doing a static export
-# [[plugins]]
-#  package = "@netlify/plugin-nextjs"
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 [[plugins]]
   package = "@netlify/plugin-functions-install-core"

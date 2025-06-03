@@ -1,11 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  output: 'export',
+  // Removed: output: 'export' to support dynamic routes
   trailingSlash: true,
   distDir: '.next',
+  // This option is no longer supported in Next.js 14+
+  // outDir: 'out',
   images: {
-    unoptimized: true,
+    // Using remotePatterns instead of unoptimized for production builds
+    unoptimized: process.env.NODE_ENV === 'development',
   },
   swcMinify: true,
   
@@ -36,19 +39,20 @@ const nextConfig = {
   // Experimental features for better Netlify compatibility
   experimental: {
     // Enable server components
-    serverComponentsExternalPackages: ['lodash', 'uuid', 'react-icons'],
+    serverComponentsExternalPackages: ['lodash', 'uuid'],
   },
 
-  // Configure webpack to properly handle dependencies
+  // Note: When using 'output: export', rewrites and headers won't work
+  // They are removed since they're incompatible with static export
+  
+  // Configure webpack to properly handle lodash
   webpack: (config, { isServer }) => {
-    // This ensures dependencies are properly bundled
+    // This ensures lodash is properly bundled
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         lodash: require.resolve('lodash'),
         uuid: require.resolve('uuid'),
-        'react-icons': require.resolve('react-icons'),
-        'react-icons/fa': require.resolve('react-icons/fa'),
       };
     }
     return config;

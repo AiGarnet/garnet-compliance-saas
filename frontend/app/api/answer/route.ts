@@ -2,42 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
-// Set to static generation compatibility
-// export const dynamic = 'force-dynamic';
-
-// Create mock data for static export
-const mockComplianceData = [
-  {
-    title: "Data Protection",
-    description: "Measures taken to safeguard important information from corruption, compromise or loss.",
-    requirements: "Implement encryption, access controls, and regular backups."
-  },
-  {
-    title: "Access Management",
-    description: "Controls and policies for authorizing access to information systems.",
-    requirements: "Use principle of least privilege, implement MFA, and conduct regular access reviews."
-  },
-  {
-    title: "Security Monitoring",
-    description: "Continuous observation of systems to detect security incidents.",
-    requirements: "Deploy IDS/IPS, implement log management, and establish incident response procedures."
-  }
-];
-
 // Load the compliance data
-let complianceData: any[] = mockComplianceData;
+let complianceData: any[] = [];
 try {
-  if (typeof process !== 'undefined' && process.cwd) {
-    const dataPath = path.join(process.cwd(), 'public', 'data_new.json');
-    if (fs.existsSync(dataPath)) {
-      const rawData = fs.readFileSync(dataPath, 'utf-8');
-      complianceData = JSON.parse(rawData);
-      console.log(`Loaded ${complianceData.length} compliance records`);
-    }
+  const dataPath = path.join(process.cwd(), 'public', 'data_new.json');
+  if (fs.existsSync(dataPath)) {
+    const rawData = fs.readFileSync(dataPath, 'utf-8');
+    complianceData = JSON.parse(rawData);
+    console.log(`Loaded ${complianceData.length} compliance records`);
   }
 } catch (error) {
   console.error('Error loading compliance data:', error);
-  // Fall back to mock data
 }
 
 export async function POST(request: NextRequest) {
@@ -52,7 +27,7 @@ export async function POST(request: NextRequest) {
     // Simple keyword matching for demonstration
     // In a real implementation, you'd use a more sophisticated matching algorithm
     const relevantData = complianceData.filter(item => {
-      const searchText = `${item.title} ${item.description} ${item.requirements || ''}`.toLowerCase();
+      const searchText = `${item.title} ${item.description} ${item.requirements}`.toLowerCase();
       const questionWords = question.toLowerCase().split(' ');
       return questionWords.some((word: string) => word.length > 3 && searchText.includes(word));
     });
