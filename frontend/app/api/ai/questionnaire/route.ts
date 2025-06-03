@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Set to static generation compatibility
+// export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -9,14 +12,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Title and questions array are required' }, { status: 400 });
     }
     
-    // Generate a random ID
-    const id = `q${Date.now().toString(36)}${Math.random().toString(36).substr(2, 5)}`;
+    // Use a deterministic ID for static generation
+    const id = `q_${title.replace(/\s+/g, '_').toLowerCase().substring(0, 10)}_${questions.length}`;
     
-    // Create questionnaire object
+    // Create questionnaire object with static data for export compatibility
     const questionnaire = {
       id,
       name: title,
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
+      dueDate: '2023-12-31', // Static date for export
       status: 'In Progress',
       answers: questions.map((question: string) => ({
         question,

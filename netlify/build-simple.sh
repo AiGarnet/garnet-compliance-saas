@@ -14,6 +14,11 @@ cd frontend
 echo "Installing frontend dependencies..."
 npm install
 
+echo "Setting environment variables to force static generation..."
+export NEXT_STATIC_EXPORT=true
+export NEXT_PUBLIC_FORCE_STATIC=true
+export NODE_ENV=production
+
 echo "Building frontend with static export..."
 npm run build:export
 
