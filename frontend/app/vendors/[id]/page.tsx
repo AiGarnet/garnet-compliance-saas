@@ -1,18 +1,15 @@
-import { vendors } from '@/lib/vendors';
-import { VendorDetailView } from '@/components/vendors/VendorDetailView';
+import { VendorDetailClient } from './client';
 
-// This function generates the static paths at build time
-export function generateStaticParams() {
-  // Return a list of possible values for id
-  return vendors.map((vendor) => ({
-    id: vendor.id,
-  }));
-}
-
-// Use dynamic rendering instead of static generation
+// For static site generation in Next.js
 export const dynamic = 'force-dynamic';
 
-// Server Component
+// Add generateStaticParams for static export
+export async function generateStaticParams() {
+  // Return an empty array since this is a dynamic route that will be 
+  // handled client-side and doesn't need pre-rendered paths
+  return [];
+}
+
 export default function VendorDetailPage({ params }: { params: { id: string } }) {
-  return <VendorDetailView vendorId={params.id} />;
+  return <VendorDetailClient id={params.id} />;
 } 

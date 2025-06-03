@@ -2,13 +2,6 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-// Add generateStaticParams for static export
-export async function generateStaticParams() {
-  // Return an empty array since this is a dynamic route that will be 
-  // handled client-side and doesn't need pre-rendered paths
-  return [];
-}
-
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
