@@ -39,20 +39,22 @@ const nextConfig = {
   // Experimental features for better Netlify compatibility
   experimental: {
     // Enable server components
-    serverComponentsExternalPackages: ['lodash', 'uuid'],
+    serverComponentsExternalPackages: ['lodash', 'uuid', 'react-icons'],
   },
 
   // Note: When using 'output: export', rewrites and headers won't work
   // They are removed since they're incompatible with static export
   
-  // Configure webpack to properly handle lodash
+  // Configure webpack to properly handle dependencies
   webpack: (config, { isServer }) => {
-    // This ensures lodash is properly bundled
+    // This ensures dependencies are properly bundled
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         lodash: require.resolve('lodash'),
         uuid: require.resolve('uuid'),
+        'react-icons': require.resolve('react-icons'),
+        'react-icons/fa': require.resolve('react-icons/fa'),
       };
     }
     return config;

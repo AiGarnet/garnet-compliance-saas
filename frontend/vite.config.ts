@@ -29,11 +29,18 @@ export default defineConfig({
         'react-markdown',
         'sharp',
         'tailwind-merge',
-        '@next/font'
+        '@next/font',
+        'react-icons',
+        'react-icons/fa',
+        'react-icons/fa6',
+        'react-icons/md',
+        'react-icons/ai',
+        'react-icons/fi',
+        'react-icons/bs'
       ],
     },
   },
   optimizeDeps: {
-    include: ['lodash', 'uuid'],
+    include: ['lodash', 'uuid', 'react-icons'],
   },
 }); 
