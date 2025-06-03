@@ -3,6 +3,26 @@ import { NextResponse } from 'next/server';
 // For static export, we use static data instead of dynamic API routes
 // Remove 'force-dynamic' and implement static alternatives
 
+// Add generateStaticParams to support static export
+export async function generateStaticParams() {
+  // Return all possible IDs that this API route needs to handle
+  return [
+    { id: 'demo_1' },
+    { id: 'demo_2' },
+    { id: 'demo_3' },
+    { id: 'q_100' },
+    { id: 'q_101' },
+    { id: 'q_102' },
+    { id: 'q_security_assessment' },
+    { id: 'q_vendor_onboarding' },
+    { id: 'q_compliance_review' },
+    { id: 'q_risk_assessment' },
+    { id: 'q_data_protection' },
+    { id: 'q_2023_audit' },
+    { id: 'q_2024_audit' }
+  ].map(id => ({ id }));
+}
+
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
