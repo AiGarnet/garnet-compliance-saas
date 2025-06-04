@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import OpenAI from 'openai';
 import { UserService } from './services/userService';
+import { WaitlistService, CreateWaitlistEntryRequest } from './services/waitlistService';
 import { WaitlistSignupRequest } from './types/user';
 
 // Load environment variables
@@ -15,7 +16,10 @@ import vendorRoutes from './routes/vendorRoutes';
 
 const app = express();
 const port = process.env.PORT || 5000;
+
+// Initialize services
 const userService = new UserService();
+const waitlistService = new WaitlistService();
 
 // Configure CORS with specific options
 const corsOptions = {
@@ -83,12 +87,12 @@ app.get('/api/status', (req: Request, res: Response) => {
 // Waitlist signup endpoint
 app.post('/api/waitlist/signup', async (req: Request, res: Response) => {
   try {
-    const { email, password, full_name, role, organization }: WaitlistSignupRequest = req.body;
+    const { email, password, full_name, role, organization, source }: WaitlistSignupRequest = req.body;
     
     // Validate required fields
-    if (!email || !password || !full_name || !role) {
+    if (!email || !full_name) {
       return res.status(400).json({ 
-        error: 'Missing required fields: email, password, full_name, and role are required' 
+        error: 'Missing required fields: email and full_name are required' 
       });
     }
     
@@ -98,20 +102,21 @@ app.post('/api/waitlist/signup', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid email format' });
     }
     
-    // Validate password strength
-    if (password.length < 8) {
+    // Validate password strength if provided
+    if (password && password.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters long' });
     }
     
-    // Create user
-    const user = await userService.createUser({
+    // Create waitlist user
+    const user = await userService.createWaitlistUser({
       email,
       password,
       full_name,
-      role,
+      role: role || 'User',
       organization,
+      source: source || 'landing_page',
       metadata: {
-        signup_source: 'landing_page',
+        signup_source: source || 'landing_page',
         signup_date: new Date().toISOString()
       }
     });
@@ -135,7 +140,7 @@ app.post('/api/waitlist/signup', async (req: Request, res: Response) => {
 // Get waitlist stats (admin endpoint)
 app.get('/api/waitlist/stats', async (req: Request, res: Response) => {
   try {
-    const stats = await userService.getWaitlistStats();
+    const stats = await waitlistService.getWaitlistStats();
     res.json(stats);
   } catch (error: any) {
     console.error('Error fetching waitlist stats:', error);
@@ -146,10 +151,10 @@ app.get('/api/waitlist/stats', async (req: Request, res: Response) => {
 // Get all waitlist users (admin endpoint)
 app.get('/api/waitlist/users', async (req: Request, res: Response) => {
   try {
-    const users = await userService.getAllWaitlistUsers();
-    res.json({ users });
+    const entries = await waitlistService.getAllWaitlistEntries();
+    res.json({ entries });
   } catch (error: any) {
-    console.error('Error fetching waitlist users:', error);
+    console.error('Error fetching waitlist entries:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -519,6 +524,54 @@ app.post('/ask', async (req: Request, res: Response) => {
     res.status(500).json({ 
       error: error.message || 'Internal server error',
       answer: "We couldn't generate an answer—please try again."
+    });
+  }
+});
+
+// Landing page waitlist signup endpoint
+app.post('/join-waitlist', async (req: Request, res: Response) => {
+  try {
+    const { email, full_name, role, organization }: CreateWaitlistEntryRequest & { full_name: string } = req.body;
+    
+    // Validate required fields
+    if (!email || !full_name) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: email and full_name are required' 
+      });
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+    
+    // Create waitlist entry
+    const entry = await waitlistService.addToWaitlist({
+      name: full_name,
+      email,
+      role: role || undefined,
+      organization: organization || undefined
+    });
+    
+    // Return success response
+    res.status(201).json({
+      success: true,
+      message: 'Successfully joined the waitlist!',
+      data: entry
+    });
+    
+  } catch (error: any) {
+    console.error('Landing page waitlist signup error:', error);
+    if (error.message === 'Email already exists in waitlist') {
+      return res.status(409).json({ 
+        success: false,
+        error: 'Email already registered in waitlist' 
+      });
+    }
+    res.status(500).json({ 
+      success: false,
+      error: 'Internal server error' 
     });
   }
 });

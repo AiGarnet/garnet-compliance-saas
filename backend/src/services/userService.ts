@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import pool from '../config/database';
-import { User, CreateUserRequest } from '../types/user';
+import { User, CreateUserRequest, WaitlistSignupRequest } from '../types/user';
 
 export class UserService {
   async createUser(userData: CreateUserRequest): Promise<User> {
@@ -25,6 +25,62 @@ export class UserService {
         userData.role,
         userData.organization || null,
         userData.metadata || {},
+        true // is_active default to true for waitlist users
+      ];
+      
+      const result = await client.query(query, values);
+      return result.rows[0];
+    } catch (error: any) {
+      if (error.code === '23505') { // Unique constraint violation
+        throw new Error('User with this email already exists');
+      }
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+  
+  async createWaitlistUser(userData: WaitlistSignupRequest): Promise<User> {
+    const client = await pool.connect();
+    
+    try {
+      // Insert user into database without requiring a password
+      const query = `
+        INSERT INTO users (
+          email, 
+          password_hash, 
+          full_name, 
+          role, 
+          organization, 
+          source, 
+          signup_date, 
+          metadata, 
+          is_active
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING *
+      `;
+      
+      // If password is provided, hash it, otherwise use null
+      let hashedPassword = null;
+      if (userData.password) {
+        const saltRounds = 10;
+        hashedPassword = await bcrypt.hash(userData.password, saltRounds);
+      }
+      
+      const values = [
+        userData.email.toLowerCase(),
+        hashedPassword,
+        userData.full_name,
+        userData.role || 'User',
+        userData.organization || null,
+        userData.source || 'landing_page',
+        new Date(),
+        {
+          signup_source: userData.source || 'landing_page',
+          signup_date: new Date().toISOString(),
+          ...userData.metadata
+        },
         true // is_active default to true for waitlist users
       ];
       

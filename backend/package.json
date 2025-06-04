@@ -13,7 +13,9 @@
     "dev:alt": "ts-node src/index.ts",
     "lint": "eslint src --ext .ts",
     "test": "jest",
-    "migrate": "node src/db/migrations/create_users_table.js"
+    "migrate": "node src/db/migrations/create_users_table.js",
+    "migrate:waitlist": "node src/db/migrations/update_users_table.js",
+    "migrate:waitlist-clean": "node src/db/migrations/create_waitlist_table.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
