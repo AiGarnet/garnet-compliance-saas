@@ -70,57 +70,130 @@ const AnimatedCounter = ({ end, duration = 2, suffix = '' }: { end: number; dura
   return <span ref={ref}>{count}{suffix}</span>;
 };
 
-// Floating Scroll Indicator Component
-const FloatingScrollIndicator = () => {
-  const { scrollYProgress } = useScroll();
-  const [isVisible, setIsVisible] = useState(true);
+// Dynamic Navigation Hook
+const useDynamicNavbar = () => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
-    const unsubscribe = scrollYProgress.onChange((latest) => {
-      setIsVisible(latest < 0.1);
-    });
-    return unsubscribe;
-  }, [scrollYProgress]);
+    const controlNavbar = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Show navbar when scrolling down past 100px
+      if (currentScrollY > 100) {
+        // Show navbar when scrolling up or when past threshold
+        if (currentScrollY < lastScrollY || currentScrollY > 200) {
+          setIsVisible(true);
+        }
+        // Hide navbar when scrolling down fast
+        else if (currentScrollY > lastScrollY && currentScrollY > 300) {
+          setIsVisible(false);
+        }
+      } else {
+        // Hide navbar when at top
+        setIsVisible(false);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
 
-  if (!isVisible) return null;
+    window.addEventListener('scroll', controlNavbar);
+    return () => window.removeEventListener('scroll', controlNavbar);
+  }, [lastScrollY]);
+
+  return isVisible;
+};
+
+// Security Trust Section
+const SecurityTrustSection = () => {
+  const securityFeatures = [
+    {
+      icon: <Shield className="h-8 w-8" />,
+      title: "SOC 2 Type II Compliant",
+      description: "Enterprise-grade security controls audited by third-party firms",
+      badge: "Certified"
+    },
+    {
+      icon: <Lock className="h-8 w-8" />,
+      title: "End-to-End Encryption",
+      description: "AES-256 encryption for data at rest and in transit",
+      badge: "Military Grade"
+    },
+    {
+      icon: <Eye className="h-8 w-8" />,
+      title: "Zero Data Retention",
+      description: "Your sensitive data is processed and never stored permanently",
+      badge: "Privacy First"
+    },
+    {
+      icon: <Server className="h-8 w-8" />,
+      title: "Infrastructure Security",
+      description: "Hosted on AWS with advanced DDoS protection and monitoring",
+      badge: "Enterprise"
+    }
+  ];
 
   return (
-    <motion.div
-      className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
-      transition={{ duration: 0.6, delay: 2 }}
-    >
-      <div className="flex flex-col items-center space-y-2 text-gray-600">
-        <MousePointer2 className="h-5 w-5" />
-        <motion.div
-          className="text-sm font-mono tracking-wider"
-          animate={{ opacity: [0.5, 1, 0.5] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          scroll to explore
-          <motion.span
-            className="inline-block ml-1"
-            animate={{ opacity: [0, 1, 0] }}
-            transition={{ duration: 1, repeat: Infinity, delay: 0.5 }}
-          >
-            |
-          </motion.span>
-        </motion.div>
-        <motion.div
-          className="w-6 h-10 border-2 border-gray-300 rounded-full p-1"
-          animate={{ y: [0, 5, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          <motion.div
-            className="w-1 h-3 bg-gradient-to-b from-purple-600 to-pink-600 rounded-full"
-            animate={{ y: [0, 16, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
-        </motion.div>
+    <section id="security" className="py-20 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='1.5'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+        }} />
       </div>
-    </motion.div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <motion.div 
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
+            Enterprise-Grade
+            <span className="block sm:inline bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> Security</span>
+          </h2>
+          <p className="text-lg sm:text-xl text-purple-100 max-w-3xl mx-auto">
+            Your compliance data deserves the highest level of protection. We've built Garnet with security as our foundation.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+          {securityFeatures.map((feature, index) => (
+            <motion.div
+              key={index}
+              className="relative group h-full"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              whileHover={{ y: -5 }}
+            >
+              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 h-full flex flex-col">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                    {feature.icon}
+                  </div>
+                  <span className="px-3 py-1 bg-purple-500/30 text-purple-200 text-xs font-medium rounded-full whitespace-nowrap">
+                    {feature.badge}
+                  </span>
+                </div>
+                <div className="flex-1 flex flex-col">
+                <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
+                  <p className="text-purple-100 leading-relaxed text-sm sm:text-base flex-1">{feature.description}</p>
+                </div>
+              </div>
+              
+              {/* Hover glow effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Security documentation button removed as requested */}
+      </div>
+    </section>
   );
 };
 
@@ -303,261 +376,14 @@ const InteractiveDemo = () => {
 //   return <></>;
 // };
 
-// Security Trust Section
-const SecurityTrustSection = () => {
-  const securityFeatures = [
-    {
-      icon: <Shield className="h-8 w-8" />,
-      title: "SOC 2 Type II Compliant",
-      description: "Enterprise-grade security controls audited by third-party firms",
-      badge: "Certified"
-    },
-    {
-      icon: <Lock className="h-8 w-8" />,
-      title: "End-to-End Encryption",
-      description: "AES-256 encryption for data at rest and in transit",
-      badge: "Military Grade"
-    },
-    {
-      icon: <Eye className="h-8 w-8" />,
-      title: "Zero Data Retention",
-      description: "Your sensitive data is processed and never stored permanently",
-      badge: "Privacy First"
-    },
-    {
-      icon: <Server className="h-8 w-8" />,
-      title: "Infrastructure Security",
-      description: "Hosted on AWS with advanced DDoS protection and monitoring",
-      badge: "Enterprise"
-    }
-  ];
-
-  return (
-    <section id="security" className="py-20 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white relative overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='1.5'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }} />
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <motion.div 
-          className="text-center mb-16"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-            Enterprise-Grade
-            <span className="block sm:inline bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> Security</span>
-          </h2>
-          <p className="text-lg sm:text-xl text-purple-100 max-w-3xl mx-auto">
-            Your compliance data deserves the highest level of protection. We've built Garnet with security as our foundation.
-          </p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-          {securityFeatures.map((feature, index) => (
-            <motion.div
-              key={index}
-              className="relative group h-full"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              whileHover={{ y: -5 }}
-            >
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 h-full flex flex-col">
-                <div className="flex items-start justify-between mb-6">
-                  <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
-                    {feature.icon}
-                  </div>
-                  <span className="px-3 py-1 bg-purple-500/30 text-purple-200 text-xs font-medium rounded-full whitespace-nowrap">
-                    {feature.badge}
-                  </span>
-                </div>
-                <div className="flex-1 flex flex-col">
-                <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
-                  <p className="text-purple-100 leading-relaxed text-sm sm:text-base flex-1">{feature.description}</p>
-                </div>
-              </div>
-              
-              {/* Hover glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
-            </motion.div>
-          ))}
-        </div>
-
-        <motion.div 
-          className="text-center mt-16"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-        >
-          <motion.button 
-            className="inline-flex items-center bg-white text-purple-900 px-6 sm:px-8 py-3 rounded-full font-semibold hover:bg-purple-50 transition-all group"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            View Security Documentation
-            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </motion.button>
-        </motion.div>
-      </div>
-    </section>
-  );
-};
-
-// Integration Showcase Section
-const IntegrationShowcase = () => {
-  /* Commented out to hide this section
-  const integrations = [
-    { name: "AWS", logo: "🔗", category: "Cloud" },
-    { name: "Azure", logo: "☁️", category: "Cloud" },
-    { name: "Google Cloud", logo: "🌐", category: "Cloud" },
-    { name: "Slack", logo: "💬", category: "Communication" },
-    { name: "Jira", logo: "📋", category: "Project Management" },
-    { name: "GitHub", logo: "🐙", category: "Development" },
-    { name: "Office 365", logo: "📄", category: "Productivity" },
-    { name: "Salesforce", logo: "⚡", category: "CRM" },
-    { name: "Okta", logo: "🔐", category: "Identity" },
-    { name: "DocuSign", logo: "✍️", category: "Documents" },
-    { name: "Zoom", logo: "📹", category: "Communication" },
-    { name: "Kubernetes", logo: "⚙️", category: "Infrastructure" },
-  ];
-
-  return (
-    <section className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div 
-          className="text-center mb-16"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Seamless
-            <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> Integrations</span>
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Connect with your existing tools and automatically sync evidence from across your tech stack.
-          </p>
-        </motion.div>
-
-        {/* Single Floating Integration Row with staggered items */}
-//         <div className="relative overflow-hidden py-6 mb-12">
-//           <motion.div 
-//             className="flex space-x-8"
-//             initial={{ x: 0 }}
-//             animate={{ 
-//               x: [0, -2800],
-//             }}
-//             transition={{
-//               x: {
-//                 duration: 60,
-//                 repeat: Infinity,
-//                 repeatType: "loop",
-//                 ease: "linear",
-//                 repeatDelay: 0
-//               }
-//             }}
-//           >
-//             {/* Combine all integrations with duplicates for seamless looping */}
-//             {[...integrations, ...integrations.reverse(), ...integrations, ...integrations.reverse()].map((integration, index) => {
-//               // Create staggered vertical positions
-//               const yOffset = index % 3 === 0 ? 0 : (index % 3 === 1 ? -30 : -15);
-//               const scale = index % 4 === 0 ? 1.1 : (index % 5 === 0 ? 0.9 : 1);
-              
-//               return (
-//                 <motion.div
-//                   key={`integration-${index}`}
-//                   className="relative flex-shrink-0 w-28 sm:w-36 h-36 sm:h-44"
-//                   initial={{ 
-//                     opacity: 0, 
-//                     scale: 0.9, 
-//                     rotate: index % 2 === 0 ? -3 : 3,
-//                     y: yOffset 
-//                   }}
-//                   animate={{ 
-//                     opacity: 1, 
-//                     scale,
-//                     rotate: 0,
-//                     y: [
-//                       yOffset, 
-//                       yOffset - 10, 
-//                       yOffset
-//                     ],
-//                     transition: {
-//                       y: {
-//                         duration: 3 + (index % 4),
-//                         repeat: Infinity,
-//                         repeatType: "reverse",
-//                         ease: "easeInOut",
-//                         delay: index * 0.1 % 2
-//                       },
-//                       opacity: { duration: 0.8 },
-//                       scale: { duration: 0.8 },
-//                       rotate: { duration: 0.8 }
-//                     }
-//                   }}
-//                   whileHover={{ 
-//                     scale: 1.15, 
-//                     rotate: index % 2 === 0 ? -2 : 2,
-//                     zIndex: 20,
-//                     transition: { 
-//                       type: "spring", 
-//                       stiffness: 300, 
-//                       damping: 15 
-//                     }
-//                   }}
-//                 >
-//                   <div className="h-full w-full p-2 sm:p-3">
-//                     <div className="h-full w-full bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col items-center justify-center p-3 sm:p-5 border border-gray-100">
-//                       <div className="text-2xl sm:text-4xl mb-2">{integration.logo}</div>
-//                       <div className="font-semibold text-gray-900 text-center">{integration.name}</div>
-//                       <div className="text-xs text-gray-500 mt-1">{integration.category}</div>
-//                     </div>
-//                   </div>
-//                 </motion.div>
-//               );
-//             })}
-//           </motion.div>
-//         </div>
-
-//         <motion.div 
-//           className="text-center mt-4"
-//           initial={{ opacity: 0, y: 20 }}
-//           whileInView={{ opacity: 1, y: 0 }}
-//           viewport={{ once: true }}
-//           transition={{ duration: 0.6, delay: 0.8 }}
-//         >
-//           <motion.button 
-//             className="inline-flex items-center bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 sm:px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all group"
-//             whileHover={{ scale: 1.05 }}
-//             whileTap={{ scale: 0.95 }}
-//           >
-//             View All Integrations
-//             <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-//           </motion.button>
-//         </motion.div>
-//       </div>
-//     </section>
-//   );
-//   */
-  
-//   // Return an empty fragment instead
-//   return <></>;
-// };
-
 const GarnetLandingPage = () => {
   const [activeFeature, setActiveFeature] = useState(0);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
   const [isIndustryFormOpen, setIsIndustryFormOpen] = useState(false);
+  
+  // Use the dynamic navbar hook
+  const isNavVisible = useDynamicNavbar();
 
   const openWaitlist = () => {
     setIsWaitlistOpen(true);
@@ -599,6 +425,12 @@ const GarnetLandingPage = () => {
       title: "Trust Portal Sharing",
       description: "Share your compliance status securely with customers through branded trust portals.",
       color: "from-teal-500 to-blue-600"
+    },
+    {
+      icon: <Briefcase className="h-8 w-8" />,
+      title: "Vendor Onboarding Workflows",
+      description: "Streamline vendor assessments with automated workflows designed for sales teams.",
+      color: "from-indigo-500 to-purple-600"
     }
   ];
 
@@ -666,22 +498,46 @@ const GarnetLandingPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Floating Scroll Indicator */}
-      <FloatingScrollIndicator />
-
       {/* Navigation */}
       <motion.nav 
-        className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100"
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+        className={`fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 transition-shadow duration-300 ${
+          isNavVisible ? 'shadow-lg' : ''
+        }`}
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ 
+          y: isNavVisible ? 0 : -100, 
+          opacity: isNavVisible ? 1 : 0 
+        }}
+        transition={{ 
+          duration: 0.3, 
+          ease: "easeInOut" 
+        }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
+              <div className="flex items-center space-x-3">
+                <img 
+                  src="/IconOnly_Transparent_NoBuffer.png" 
+                  alt="Garnet Logo" 
+                  className="w-8 h-8 object-contain"
+                  onError={(e) => {
+                    // Fallback to gradient logo if image fails to load
+                    const img = e.currentTarget;
+                    const fallback = img.nextElementSibling as HTMLElement;
+                    if (fallback) {
+                      img.style.display = 'none';
+                      fallback.style.display = 'flex';
+                    }
+                  }}
+                />
+                <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg items-center justify-center hidden">
+                  <span className="text-white font-bold text-sm">G</span>
+                </div>
               <span className="text-xl sm:text-2xl font-bold">
                 <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Garnet</span>
               </span>
+              </div>
             </div>
             <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
               <a href="#features" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Features</a>
@@ -713,8 +569,8 @@ const GarnetLandingPage = () => {
       </motion.nav>
 
       {/* Hero Section */}
-      <section className="relative pt-24 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
+      <section className="relative pt-8 pb-20 px-4 sm:px-6 lg:px-8 min-h-screen flex items-center">
+        <div className="max-w-7xl mx-auto w-full">
         <div className="text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -723,17 +579,23 @@ const GarnetLandingPage = () => {
             className="mb-8"
           >
             <span className="inline-block px-4 py-2 bg-purple-100 text-purple-800 rounded-full text-sm font-medium mb-6">
-              AI-Powered Compliance Platform
+              AI-Powered Vendor Onboarding for Sales Teams
             </span>
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
+            
+            {/* Global Compliance Banner */}
+            <div className="inline-flex items-center space-x-2 bg-gray-50 rounded-full px-4 py-2 mb-6">
+              <Globe className="h-4 w-4 text-gray-600" />
+              <span className="text-sm text-gray-700 font-medium">Built for US, EU, UK, Canada, Asia, Latin America, Australia, and NZ</span>
+            </div>
+            
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
               Accelerate Your
               <span className="block bg-gradient-to-r from-purple-600 via-pink-600 to-red-500 bg-clip-text text-transparent">
-                Compliance Journey
+                Vendor Onboarding
               </span>
             </h1>
-              <p className="text-lg sm:text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto mb-10 leading-relaxed">
-              Transform weeks of manual work into hours with AI-powered compliance automation. 
-              Close deals faster and build trust with automated questionnaire responses.
+            <p className="text-lg sm:text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto mb-10 leading-relaxed">
+              Transform weeks of vendor compliance questionnaires into hours with AI-powered automation. Close deals 50% faster and eliminate back-and-forth with automated, accurate responses that build trust.
             </p>
           </motion.div>
 
@@ -772,7 +634,7 @@ const GarnetLandingPage = () => {
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 sm:p-8 shadow-2xl border border-purple-100">
                 <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg">
                 <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Compliance Dashboard</h3>
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Vendor Onboarding Dashboard</h3>
                     <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Live</span>
                 </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -781,14 +643,16 @@ const GarnetLandingPage = () => {
                         <FileCheck className="h-6 sm:h-8 w-6 sm:w-8 text-blue-600" />
                         <span className="text-xl sm:text-2xl font-bold text-gray-800">24</span>
                     </div>
-                    <p className="text-sm text-gray-600 mt-2">Active Assessments</p>
+                    <p className="text-sm text-gray-600 mt-2">Active Vendor Assessments</p>
+                    <p className="text-xs text-blue-600 mt-1">→ No more waiting on legal teams</p>
                   </div>
                   <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg">
                     <div className="flex items-center justify-between">
                         <Shield className="h-6 sm:h-8 w-6 sm:w-8 text-purple-600" />
                         <span className="text-xl sm:text-2xl font-bold text-gray-800">95%</span>
                     </div>
-                    <p className="text-sm text-gray-600 mt-2">Compliance Score</p>
+                    <p className="text-sm text-gray-600 mt-2">Response Accuracy</p>
+                    <p className="text-xs text-purple-600 mt-1">→ Stay audit-ready, reduce back-and-forth</p>
                   </div>
                     <div className="bg-gradient-to-br from-pink-50 to-pink-100 p-4 rounded-lg sm:col-span-2 lg:col-span-1">
                     <div className="flex items-center justify-between">
@@ -796,6 +660,7 @@ const GarnetLandingPage = () => {
                         <span className="text-xl sm:text-2xl font-bold text-gray-800">2.5h</span>
                     </div>
                     <p className="text-sm text-gray-600 mt-2">Avg. Response Time</p>
+                    <p className="text-xs text-pink-600 mt-1">→ Close deals 50% faster</p>
                   </div>
                 </div>
               </div>
@@ -816,48 +681,296 @@ const GarnetLandingPage = () => {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Powerful Features for 
-              <span className="block sm:inline bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> Modern Compliance</span>
+              Everything Sales Teams Need for 
+              <span className="block sm:inline bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> Faster Vendor Onboarding</span>
             </h2>
             <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
-              Everything you need to streamline compliance, build trust, and accelerate your business growth.
+              Streamline compliance, build trust, and accelerate deal closure with AI-powered automation.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6 lg:gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
-                className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer border border-gray-100"
-                initial={{ opacity: 0, y: 20 }}
+                className={`group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 hover:border-purple-200 ${
+                  index === 4 ? 'md:col-span-2 xl:col-span-1' : ''
+                }`}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                whileHover={{ y: -5 }}
+                whileHover={{ 
+                  y: -8,
+                  scale: 1.02,
+                  transition: { type: "spring", stiffness: 300, damping: 20 }
+                }}
                 onHoverStart={() => setActiveFeature(index)}
               >
-                <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center text-white mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                {/* Background gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-purple-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                
+                {/* Content */}
+                <div className="relative p-6 h-full flex flex-col">
+                  {/* Icon with animated background */}
+                  <div className="relative mb-6">
+                    <motion.div 
+                      className={`w-16 h-16 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center text-white shadow-lg`}
+                      whileHover={{ 
+                        scale: 1.1, 
+                        rotate: [0, -5, 5, 0],
+                        transition: { duration: 0.5 }
+                      }}
+                    >
                   {feature.icon}
+                    </motion.div>
+                    {/* Animated ring */}
+                    <motion.div 
+                      className={`absolute inset-0 w-16 h-16 rounded-xl bg-gradient-to-br ${feature.color} opacity-20`}
+                      initial={{ scale: 1 }}
+                      animate={{ 
+                        scale: [1, 1.2, 1],
+                        opacity: [0.2, 0.1, 0.2]
+                      }}
+                      transition={{ 
+                        duration: 3,
+                        repeat: Infinity,
+                        delay: index * 0.5
+                      }}
+                    />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3>
-                <p className="text-gray-600 leading-relaxed mb-4">{feature.description}</p>
-                <div className="flex items-center text-purple-600 group-hover:translate-x-2 transition-transform duration-300">
-                  <span className="text-sm font-medium">Learn more</span>
+                  
+                  {/* Title */}
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-purple-700 transition-colors duration-300">
+                    {feature.title}
+                  </h3>
+                  
+                  {/* Description */}
+                  <p className="text-gray-600 leading-relaxed mb-6 flex-grow text-sm">
+                    {feature.description}
+                  </p>
+                  
+                  {/* Learn more link with animated arrow */}
+                  <motion.div 
+                    className="flex items-center text-purple-600 font-medium text-sm"
+                    whileHover={{ x: 4 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  >
+                    <span>Learn more</span>
+                    <motion.div
+                      animate={{ x: activeFeature === index ? 4 : 0 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    >
                   <ChevronRight className="h-4 w-4 ml-1" />
+                    </motion.div>
+                  </motion.div>
                 </div>
+                
+                {/* Hover glow effect */}
+                <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${feature.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500 pointer-events-none`} />
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Interactive Demo Section - Commented Out */}
-      {/* <div id="demo">
-        <InteractiveDemo />
-      </div> */}
+      {/* Multi-Region Compliance Section */}
+      <section className="py-20 bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0">
+          <motion.div 
+            className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-xl"
+            animate={{ 
+              x: [0, 100, 0],
+              y: [0, -50, 0],
+              scale: [1, 1.2, 1]
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div 
+            className="absolute top-32 right-20 w-32 h-32 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-xl"
+            animate={{ 
+              x: [0, -80, 0],
+              y: [0, 60, 0],
+              scale: [1, 0.8, 1]
+            }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div 
+            className="absolute bottom-20 left-1/4 w-24 h-24 bg-gradient-to-r from-pink-400/20 to-purple-400/20 rounded-full blur-xl"
+            animate={{ 
+              x: [0, 60, 0],
+              y: [0, -40, 0],
+              scale: [1, 1.1, 1]
+            }}
+            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
 
-      {/* Integration Showcase - Commented Out */}
-      {/* <IntegrationShowcase /> */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              whileInView={{ scale: 1, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <span className="inline-block px-4 py-2 bg-white/80 backdrop-blur-sm text-purple-700 rounded-full text-sm font-semibold mb-6 shadow-lg">
+                🌍 Global Coverage
+              </span>
+            </motion.div>
+            
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Worldwide Compliance 
+              <span className="block sm:inline bg-gradient-to-r from-purple-600 via-blue-600 to-pink-600 bg-clip-text text-transparent"> Coverage</span>
+            </h2>
+            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
+              Built to handle compliance requirements across all major regions and frameworks with real-time updates and local expertise.
+            </p>
+          </motion.div>
+
+          {/* Interactive world map style layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+            {[
+              { 
+                region: "United States", 
+                frameworks: ["SOC 2", "CCPA", "NIST"], 
+                flag: "🇺🇸",
+                color: "from-blue-500 to-blue-600",
+                description: "Comprehensive US compliance frameworks"
+              },
+              { 
+                region: "European Union", 
+                frameworks: ["GDPR", "ISO 27001", "NIS2"], 
+                flag: "🇪🇺",
+                color: "from-purple-500 to-purple-600",
+                description: "Complete EU regulatory compliance"
+              },
+              { 
+                region: "Asia Pacific", 
+                frameworks: ["PDPA", "PIPEDA", "Privacy Act"], 
+                flag: "🌏",
+                color: "from-green-500 to-green-600",
+                description: "APAC data protection standards"
+              },
+              { 
+                region: "Latin America", 
+                frameworks: ["LGPD", "Local Privacy Laws"], 
+                flag: "🌎",
+                color: "from-pink-500 to-pink-600",
+                description: "LATAM privacy regulations"
+              }
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                className="group relative"
+                initial={{ opacity: 0, y: 50, rotateY: -15 }}
+                whileInView={{ opacity: 1, y: 0, rotateY: 0 }}
+                viewport={{ once: true }}
+                transition={{ 
+                  duration: 0.8, 
+                  delay: index * 0.2,
+                  type: "spring",
+                  stiffness: 100
+                }}
+                whileHover={{ 
+                  y: -10,
+                  scale: 1.05,
+                  rotateY: 5,
+                  transition: { duration: 0.3 }
+                }}
+              >
+                {/* Card */}
+                <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-500 border border-white/50 overflow-hidden h-full">
+                  {/* Animated background gradient */}
+                  <motion.div 
+                    className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}
+                    initial={{ scale: 0, rotate: 45 }}
+                    whileHover={{ scale: 1.5, rotate: 0 }}
+                    transition={{ duration: 0.6 }}
+                  />
+                  
+                  {/* Flag with floating animation */}
+                  <motion.div 
+                    className="text-5xl mb-4 inline-block"
+                    animate={{ 
+                      y: [0, -8, 0],
+                      rotate: [0, 2, -2, 0]
+                    }}
+                    transition={{ 
+                      duration: 4,
+                      repeat: Infinity,
+                      delay: index * 0.5,
+                      ease: "easeInOut"
+                    }}
+                    whileHover={{ 
+                      scale: 1.2,
+                      rotate: [0, 10, -10, 0],
+                      transition: { duration: 0.5 }
+                    }}
+                  >
+                    {item.flag}
+                  </motion.div>
+                  
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-purple-700 transition-colors duration-300">
+                    {item.region}
+                  </h3>
+                  
+                  <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                    {item.description}
+                  </p>
+                  
+                  {/* Frameworks with staggered animation */}
+                  <div className="space-y-2">
+                    {item.frameworks.map((framework, fIndex) => (
+                      <motion.span 
+                        key={fIndex}
+                        className={`inline-block bg-gradient-to-r ${item.color} text-white px-3 py-1.5 rounded-full text-xs font-semibold mr-2 mb-2 shadow-md`}
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ 
+                          duration: 0.5, 
+                          delay: index * 0.2 + fIndex * 0.1 
+                        }}
+                        whileHover={{ 
+                          scale: 1.1
+                        }}
+                      >
+                        {framework}
+                      </motion.span>
+                    ))}
+                  </div>
+                  
+                  {/* Hover indicator */}
+                  <motion.div 
+                    className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    initial={{ scale: 0 }}
+                    whileHover={{ scale: 1 }}
+                  >
+                    <ChevronRight className="h-5 w-5 text-purple-600" />
+                  </motion.div>
+                </div>
+                
+                {/* Glow effect */}
+                <motion.div 
+                  className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500 -z-10`}
+                  initial={{ scale: 0.8 }}
+                  whileHover={{ scale: 1.1 }}
+                />
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Bottom stats with animated counters - REMOVED as requested */}
+        </div>
+      </section>
 
       {/* All in One Solution Section */}
       <section className="py-20 bg-white">
@@ -1168,7 +1281,7 @@ const GarnetLandingPage = () => {
               whileTap={{ scale: 0.95 }}
               onClick={openIndustryForm}
             >
-              Explore All Use Cases
+              Add yours
               <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </motion.button>
           </motion.div>
@@ -1177,48 +1290,6 @@ const GarnetLandingPage = () => {
 
       {/* Security Trust Section */}
       <SecurityTrustSection />
-
-      {/* Interactive Statistics Section - Now hidden */}
-      {/* 
-      <section id="stats" className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div 
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Proven Results That 
-              <span className="block sm:inline bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Drive Growth</span>
-            </h2>
-            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
-              See how Garnet transforms compliance workflows and accelerates business outcomes.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-            {stats.map((stat, index) => (
-              <motion.div
-                key={index}
-                className="text-center bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 lg:p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100"
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                whileHover={{ y: -5 }}
-              >
-                <div className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-                  <AnimatedCounter end={stat.value} suffix={stat.suffix} />
-                </div>
-                <p className="text-gray-600 font-medium text-sm sm:text-base">{stat.label}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-      */}
 
       {/* Testimonials Section - Commented Out */}
       {/* 
@@ -1248,7 +1319,7 @@ const GarnetLandingPage = () => {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
                 whileHover={{ y: -5 }}
               >
                 <div className="flex items-center mb-4">
@@ -1348,14 +1419,15 @@ const GarnetLandingPage = () => {
             transition={{ duration: 0.6, delay: 0.8 }}
           >
             <p className="text-gray-600 mb-6">Still have questions? We're here to help!</p>
-            <motion.button 
+            <motion.a 
+              href="mailto:rusha@garnetai.net"
               className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 sm:px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all inline-flex items-center group"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               Contact Support
               <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </motion.button>
+            </motion.a>
           </motion.div>
         </div>
       </section>
@@ -1403,6 +1475,80 @@ const GarnetLandingPage = () => {
 
       {/* Industry Request Form Modal */}
       <IndustryRequestForm isOpen={isIndustryFormOpen} onClose={closeIndustryForm} />
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Company Info */}
+            <div className="lg:col-span-2">
+              <div className="flex items-center mb-4 space-x-3">
+                <img 
+                  src="/IconOnly_Transparent_NoBuffer.png" 
+                  alt="Garnet Logo" 
+                  className="w-8 h-8 object-contain filter brightness-0 invert"
+                />
+                <span className="text-2xl font-bold">
+                  <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Garnet</span>
+                </span>
+              </div>
+              <p className="text-gray-300 mb-4 max-w-md">
+                AI-powered vendor onboarding platform that helps sales teams close deals 50% faster with automated compliance responses.
+              </p>
+              <div className="flex space-x-4">
+                {/* Social Links - Optional */}
+                <a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">
+                  <span className="sr-only">LinkedIn</span>
+                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Product</h3>
+              <ul className="space-y-2">
+                <li><a href="#features" className="text-gray-300 hover:text-purple-400 transition-colors">Features</a></li>
+                <li><a href="#security" className="text-gray-300 hover:text-purple-400 transition-colors">Security</a></li>
+                <li><a href="/pricing" className="text-gray-300 hover:text-purple-400 transition-colors">Pricing</a></li>
+                <li><a href="/integrations" className="text-gray-300 hover:text-purple-400 transition-colors">Integrations</a></li>
+              </ul>
+            </div>
+
+            {/* Support & Legal */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Support & Legal</h3>
+              <ul className="space-y-2">
+                <li>
+                  <a 
+                    href="mailto:rusha@garnetai.net" 
+                    className="text-gray-300 hover:text-purple-400 transition-colors flex items-center"
+                  >
+                    <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Contact Us
+                  </a>
+                </li>
+                <li><a href="/privacy-policy" className="text-gray-300 hover:text-purple-400 transition-colors">Privacy Policy</a></li>
+                <li><a href="/terms-of-service" className="text-gray-300 hover:text-purple-400 transition-colors">Terms of Service</a></li>
+                <li><a href="/documentation" className="text-gray-300 hover:text-purple-400 transition-colors">Documentation</a></li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-400 text-sm">
+              © 2025 Garnet AI, Inc. All rights reserved.
+            </p>
+            <div className="mt-4 md:mt-0 flex items-center space-x-6">
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
