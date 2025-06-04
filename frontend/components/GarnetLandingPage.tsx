@@ -126,6 +126,7 @@ const FloatingScrollIndicator = () => {
 
 // Interactive Demo Section Component
 const InteractiveDemo = () => {
+  /* Commented out to hide this section
   const [activeStep, setActiveStep] = useState(0);
   
   const demoSteps = [
@@ -258,31 +259,49 @@ const InteractiveDemo = () => {
               </motion.div>
             ))}
           </div>
-
-          <div className="lg:pl-8">
-            <motion.div
-              key={activeStep}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="relative"
+          
+          <div className="relative">
+            <motion.div 
+              className="bg-white p-1 rounded-2xl shadow-lg"
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.4 }}
             >
-              {demoSteps[activeStep].visual}
-              <motion.div
-                className="absolute -inset-4 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-2xl blur-xl -z-10"
-                animate={{ 
-                  scale: [1, 1.05, 1],
-                  opacity: [0.3, 0.5, 0.3]
-                }}
-                transition={{ duration: 3, repeat: Infinity }}
-              />
+              {demoSteps.map((step, index) => (
+                <div key={index} className={activeStep === index ? 'block' : 'hidden'}>
+                  {step.visual}
+                </div>
+              ))}
             </motion.div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-};
+            
+            {/* Decorative elements */}
+//             <motion.div 
+//               className="absolute -top-6 -right-6 w-12 h-12 bg-purple-200 rounded-full opacity-70"
+//               animate={{ 
+//                 y: [0, -8, 0],
+//                 scale: [1, 1.1, 1]
+//               }}
+//               transition={{ duration: 5, repeat: Infinity }}
+//             />
+//             <motion.div 
+//               className="absolute -bottom-8 -left-8 w-16 h-16 bg-pink-200 rounded-full opacity-70"
+//               animate={{ 
+//                 y: [0, 8, 0],
+//                 scale: [1, 1.15, 1]
+//               }}
+//               transition={{ duration: 6, repeat: Infinity }}
+//             />
+//           </div>
+//         </div>
+//       </div>
+//     </section>
+//   );
+//   */
+  
+//   // Return an empty fragment instead
+//   return <></>;
+// };
 
 // Security Trust Section
 const SecurityTrustSection = () => {
@@ -314,7 +333,7 @@ const SecurityTrustSection = () => {
   ];
 
   return (
-    <section className="py-20 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white relative overflow-hidden">
+    <section id="security" className="py-20 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{
@@ -394,6 +413,7 @@ const SecurityTrustSection = () => {
 
 // Integration Showcase Section
 const IntegrationShowcase = () => {
+  /* Commented out to hide this section
   const integrations = [
     { name: "AWS", logo: "🔗", category: "Cloud" },
     { name: "Azure", logo: "☁️", category: "Cloud" },
@@ -429,147 +449,109 @@ const IntegrationShowcase = () => {
         </motion.div>
 
         {/* Single Floating Integration Row with staggered items */}
-        <div className="relative overflow-hidden py-6 mb-12">
-          <motion.div 
-            className="flex space-x-8"
-            initial={{ x: 0 }}
-            animate={{ 
-              x: [0, -2800],
-            }}
-            transition={{
-              x: {
-                duration: 60,
-                repeat: Infinity,
-                repeatType: "loop",
-                ease: "linear",
-                repeatDelay: 0
-              }
-            }}
-          >
-            {/* Combine all integrations with duplicates for seamless looping */}
-            {[...integrations, ...integrations.reverse(), ...integrations, ...integrations.reverse()].map((integration, index) => {
-              // Create staggered vertical positions
-              const yOffset = index % 3 === 0 ? 0 : (index % 3 === 1 ? -30 : -15);
-              const scale = index % 4 === 0 ? 1.1 : (index % 5 === 0 ? 0.9 : 1);
+//         <div className="relative overflow-hidden py-6 mb-12">
+//           <motion.div 
+//             className="flex space-x-8"
+//             initial={{ x: 0 }}
+//             animate={{ 
+//               x: [0, -2800],
+//             }}
+//             transition={{
+//               x: {
+//                 duration: 60,
+//                 repeat: Infinity,
+//                 repeatType: "loop",
+//                 ease: "linear",
+//                 repeatDelay: 0
+//               }
+//             }}
+//           >
+//             {/* Combine all integrations with duplicates for seamless looping */}
+//             {[...integrations, ...integrations.reverse(), ...integrations, ...integrations.reverse()].map((integration, index) => {
+//               // Create staggered vertical positions
+//               const yOffset = index % 3 === 0 ? 0 : (index % 3 === 1 ? -30 : -15);
+//               const scale = index % 4 === 0 ? 1.1 : (index % 5 === 0 ? 0.9 : 1);
               
-              return (
-                <motion.div
-                  key={`integration-${index}`}
-                  className="relative flex-shrink-0 w-28 sm:w-36 h-36 sm:h-44"
-                  initial={{ 
-                    opacity: 0, 
-                    scale: 0.9, 
-                    rotate: index % 2 === 0 ? -3 : 3,
-                    y: yOffset 
-                  }}
-                  animate={{ 
-                    opacity: 1, 
-                    scale,
-                    rotate: 0,
-                    y: [
-                      yOffset, 
-                      yOffset - 10, 
-                      yOffset
-                    ],
-                    transition: {
-                      y: {
-                        duration: 3 + (index % 4),
-                        repeat: Infinity,
-                        repeatType: "reverse",
-                        ease: "easeInOut",
-                        delay: index * 0.1 % 2
-                      },
-                      opacity: { duration: 0.8 },
-                      scale: { duration: 0.8 },
-                      rotate: { duration: 0.8 }
-                    }
-                  }}
-                  whileHover={{ 
-                    scale: scale * 1.15, 
-                    rotate: index % 2 === 0 ? 5 : -5, 
-                    zIndex: 10,
-                    transition: { type: "spring", stiffness: 400, damping: 10 }
-                  }}
-                >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${
-                    index % 4 === 0 
-                      ? 'from-purple-500/10 to-pink-500/10' 
-                      : (index % 4 === 1 
-                        ? 'from-blue-500/10 to-purple-500/10' 
-                        : (index % 4 === 2 
-                          ? 'from-pink-500/10 to-red-500/10' 
-                          : 'from-indigo-500/10 to-purple-500/10'))
-                  } rounded-2xl transform ${index % 2 === 0 ? 'rotate-3' : '-rotate-3'} scale-105 opacity-0 group-hover:opacity-100 transition-all duration-300`}></div>
-                  
-                  <div className="h-full bg-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-lg border border-gray-100 z-10 backdrop-blur-sm">
-                    <div className="text-5xl mb-4 transform transition-transform group-hover:scale-110">{integration.logo}</div>
-                    <h3 className="font-semibold text-gray-900 text-center">{integration.name}</h3>
-                    <p className="text-xs text-gray-500 mt-1">{integration.category}</p>
-                    
-                    <motion.div 
-                      className={`absolute inset-x-0 -bottom-1 h-1 bg-gradient-to-r ${
-                        index % 4 === 0 
-                          ? 'from-purple-500 to-pink-500' 
-                          : (index % 4 === 1 
-                            ? 'from-blue-500 to-purple-500' 
-                            : (index % 4 === 2 
-                              ? 'from-pink-500 to-red-500' 
-                              : 'from-indigo-500 to-purple-500'))
-                      } rounded-full`}
-                      initial={{ scaleX: 0, opacity: 0 }}
-                      whileHover={{ scaleX: 1, opacity: 1 }}
-                      transition={{ duration: 0.3 }}
-                    />
-                  </div>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-          
-          {/* Enhanced gradient overlays for better transition */}
-          <div className="absolute inset-y-0 left-0 w-48 bg-gradient-to-r from-white via-white to-transparent z-10"></div>
-          <div className="absolute inset-y-0 right-0 w-48 bg-gradient-to-l from-white via-white to-transparent z-10"></div>
-        </div>
+//               return (
+//                 <motion.div
+//                   key={`integration-${index}`}
+//                   className="relative flex-shrink-0 w-28 sm:w-36 h-36 sm:h-44"
+//                   initial={{ 
+//                     opacity: 0, 
+//                     scale: 0.9, 
+//                     rotate: index % 2 === 0 ? -3 : 3,
+//                     y: yOffset 
+//                   }}
+//                   animate={{ 
+//                     opacity: 1, 
+//                     scale,
+//                     rotate: 0,
+//                     y: [
+//                       yOffset, 
+//                       yOffset - 10, 
+//                       yOffset
+//                     ],
+//                     transition: {
+//                       y: {
+//                         duration: 3 + (index % 4),
+//                         repeat: Infinity,
+//                         repeatType: "reverse",
+//                         ease: "easeInOut",
+//                         delay: index * 0.1 % 2
+//                       },
+//                       opacity: { duration: 0.8 },
+//                       scale: { duration: 0.8 },
+//                       rotate: { duration: 0.8 }
+//                     }
+//                   }}
+//                   whileHover={{ 
+//                     scale: 1.15, 
+//                     rotate: index % 2 === 0 ? -2 : 2,
+//                     zIndex: 20,
+//                     transition: { 
+//                       type: "spring", 
+//                       stiffness: 300, 
+//                       damping: 15 
+//                     }
+//                   }}
+//                 >
+//                   <div className="h-full w-full p-2 sm:p-3">
+//                     <div className="h-full w-full bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col items-center justify-center p-3 sm:p-5 border border-gray-100">
+//                       <div className="text-2xl sm:text-4xl mb-2">{integration.logo}</div>
+//                       <div className="font-semibold text-gray-900 text-center">{integration.name}</div>
+//                       <div className="text-xs text-gray-500 mt-1">{integration.category}</div>
+//                     </div>
+//                   </div>
+//                 </motion.div>
+//               );
+//             })}
+//           </motion.div>
+//         </div>
 
-        {/* API Documentation CTA */}
-        <motion.div 
-          className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-8 text-center border border-purple-100"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.8 }}
-        >
-          <div className="max-w-3xl mx-auto">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              Don't see your tool? No problem.
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Use our REST API to build custom integrations or request new connectors from our team.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <motion.button 
-                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-full font-semibold hover:shadow-lg transition-all inline-flex items-center justify-center"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Code className="mr-2 h-4 w-4" />
-                API Documentation
-              </motion.button>
-              <motion.button 
-                className="border-2 border-purple-200 text-purple-600 px-6 py-3 rounded-full font-semibold hover:bg-purple-50 transition-all inline-flex items-center justify-center"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Request Integration
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </motion.button>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-};
+//         <motion.div 
+//           className="text-center mt-4"
+//           initial={{ opacity: 0, y: 20 }}
+//           whileInView={{ opacity: 1, y: 0 }}
+//           viewport={{ once: true }}
+//           transition={{ duration: 0.6, delay: 0.8 }}
+//         >
+//           <motion.button 
+//             className="inline-flex items-center bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 sm:px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all group"
+//             whileHover={{ scale: 1.05 }}
+//             whileTap={{ scale: 0.95 }}
+//           >
+//             View All Integrations
+//             <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+//           </motion.button>
+//         </motion.div>
+//       </div>
+//     </section>
+//   );
+//   */
+  
+//   // Return an empty fragment instead
+//   return <></>;
+// };
 
 const GarnetLandingPage = () => {
   const [activeFeature, setActiveFeature] = useState(0);
@@ -703,9 +685,9 @@ const GarnetLandingPage = () => {
             </div>
             <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
               <a href="#features" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Features</a>
-              <a href="#demo" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Demo</a>
-              <a href="#stats" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Impact</a>
-              <a href="#testimonials" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Testimonials</a>
+              {/* <a href="#demo" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Demo</a> */}
+              <a href="#security" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Security</a>
+              {/* <a href="#testimonials" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Testimonials</a> */}
               <motion.button 
                 className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 lg:px-6 py-2 rounded-full hover:shadow-lg transition-all text-sm lg:text-base"
                 whileHover={{ scale: 1.05 }}
@@ -869,13 +851,13 @@ const GarnetLandingPage = () => {
         </div>
       </section>
 
-      {/* Interactive Demo Section */}
-      <div id="demo">
+      {/* Interactive Demo Section - Commented Out */}
+      {/* <div id="demo">
         <InteractiveDemo />
-      </div>
+      </div> */}
 
-      {/* Integration Showcase */}
-      <IntegrationShowcase />
+      {/* Integration Showcase - Commented Out */}
+      {/* <IntegrationShowcase /> */}
 
       {/* All in One Solution Section */}
       <section className="py-20 bg-white">
@@ -1196,8 +1178,9 @@ const GarnetLandingPage = () => {
       {/* Security Trust Section */}
       <SecurityTrustSection />
 
-      {/* Interactive Statistics Section */}
-      <section id="stats" className="py-20 bg-gradient-to-br from-gray-50 to-white">
+      {/* Interactive Statistics Section - Now hidden */}
+      {/* 
+      <section id="stats" className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             className="text-center mb-16"
@@ -1235,8 +1218,10 @@ const GarnetLandingPage = () => {
           </div>
         </div>
       </section>
+      */}
 
-      {/* Testimonials Section */}
+      {/* Testimonials Section - Commented Out */}
+      {/* 
       <section id="testimonials" className="py-20 bg-gradient-to-br from-purple-50 to-pink-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
@@ -1287,6 +1272,7 @@ const GarnetLandingPage = () => {
           </div>
         </div>
       </section>
+      */}
 
       {/* FAQ Section */}
       <section className="py-20 bg-white">

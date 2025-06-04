@@ -11,7 +11,6 @@ interface WaitlistFormProps {
 
 interface FormData {
   email: string;
-  password: string;
   full_name: string;
   role: string;
   organization: string;
@@ -19,7 +18,6 @@ interface FormData {
 
 interface FormErrors {
   email?: string;
-  password?: string;
   full_name?: string;
   role?: string;
   organization?: string;
@@ -28,7 +26,6 @@ interface FormErrors {
 const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState<FormData>({
     email: '',
-    password: '',
     full_name: '',
     role: '',
     organization: ''
@@ -38,19 +35,6 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
-
-  const roleOptions = [
-    'CISO',
-    'Security Engineer',
-    'Compliance Officer',
-    'IT Manager',
-    'DevOps Engineer',
-    'Product Manager',
-    'CTO',
-    'CEO',
-    'Founder',
-    'Other'
-  ];
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -63,13 +47,6 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
       newErrors.email = 'Please enter a valid email address';
     }
 
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters long';
-    }
-
     // Full name validation
     if (!formData.full_name) {
       newErrors.full_name = 'Full name is required';
@@ -77,10 +54,7 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
       newErrors.full_name = 'Please enter your full name';
     }
 
-    // Role validation
-    if (!formData.role) {
-      newErrors.role = 'Please select your role';
-    }
+    // Role validation removed as it's now optional
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -128,7 +102,6 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
         // Reset form
         setFormData({
           email: '',
-          password: '',
           full_name: '',
           role: '',
           organization: ''
@@ -272,56 +245,24 @@ const WaitlistForm: React.FC<WaitlistFormProps> = ({ isOpen, onClose }) => {
                   )}
                 </div>
 
-                {/* Password */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Password *
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) => handleInputChange('password', e.target.value)}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
-                        errors.password ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      placeholder="Create a password"
-                      disabled={isSubmitting}
-                      autoComplete="new-password"
-                    />
-                  </div>
-                  {errors.password && (
-                    <p className="text-red-500 text-sm mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.password}
-                    </p>
-                  )}
-                </div>
-
                 {/* Role */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Your Role *
+                    Your Role
                   </label>
                   <div className="relative">
                     <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <select
+                    <input
+                      type="text"
                       value={formData.role}
                       onChange={(e) => handleInputChange('role', e.target.value)}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors appearance-none bg-white ${
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
                         errors.role ? 'border-red-500' : 'border-gray-300'
                       }`}
+                      placeholder="Enter your role (optional)"
                       disabled={isSubmitting}
                       autoComplete="organization-title"
-                    >
-                      <option value="">Select your role</option>
-                      {roleOptions.map((role) => (
-                        <option key={role} value={role}>
-                          {role}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
                   {errors.role && (
                     <p className="text-red-500 text-sm mt-1 flex items-center">
