@@ -118,13 +118,13 @@ exports.handler = async function(event, context) {
     console.log('Received signup request for:', userData.email);
 
     // Check if user data is valid
-    if (!userData.email || !userData.password || !userData.full_name || !userData.role) {
+    if (!userData.email || !userData.full_name) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({ 
           error: 'Missing required fields',
-          details: 'Email, password, full_name, and role are required' 
+          details: 'Email and full_name are required' 
         })
       };
     }
@@ -139,8 +139,8 @@ exports.handler = async function(event, context) {
       };
     }
     
-    // Validate password
-    if (userData.password.length < 8) {
+    // Validate password if provided
+    if (userData.password && userData.password.length < 8) {
       return {
         statusCode: 400,
         headers,
