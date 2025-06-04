@@ -1,12 +1,14 @@
 // Netlify serverless function to handle waitlist signup
-// This will directly insert data into PostgreSQL database
+// This will forward the request to our Railway backend
 
 const fetch = require('node-fetch');
 const fs = require('fs');
 const path = require('path');
-const { Client } = require('pg');
 
-// Helper function to store waitlist data in the filesystem
+// The API endpoint for our Railway backend
+const WAITLIST_API_URL = process.env.RAILWAY_API_URL || 'https://garnet-compliance-saas-production.up.railway.app/join-waitlist';
+
+// Helper function to store waitlist data in the filesystem as a backup
 async function storeWaitlistData(userData) {
   try {
     // Create a data object with timestamp
@@ -46,153 +48,39 @@ async function storeWaitlistData(userData) {
   }
 }
 
-// Helper function to store data directly in PostgreSQL
-async function storeInPostgres(userData) {
-  // Get database connection string from environment variables
-  const connectionString = process.env.DATABASE_URL;
-  
-  // Log connection attempt (mask sensitive info)
-  const maskedConnectionString = connectionString ? 
-    connectionString.replace(/\/\/(.+?)@/, '//****:****@') : 'not set';
-  console.log('Database connection string:', maskedConnectionString);
-  
-  // Log connection attempt (without exposing full credentials)
-  console.log('Database connection string available:', !!connectionString);
-  
-  if (!connectionString) {
-    console.error('DATABASE_URL environment variable not set');
-    return {
-      success: false,
-      error: 'Database connection string not configured'
-    };
-  }
-  
-  // Create a new client with your connection string
-  const client = new Client({
-    connectionString,
-    ssl: {
-      rejectUnauthorized: false // Required for some Postgres providers
-    }
-  });
-  
+// Function to send data to the Railway backend
+async function sendToRailwayAPI(userData) {
+  console.log('Sending data to Railway backend:', WAITLIST_API_URL);
+  console.log('Data being sent:', JSON.stringify(userData, null, 2));
+
   try {
-    console.log('Attempting to connect to PostgreSQL database...');
-    await client.connect();
-    console.log('Successfully connected to PostgreSQL database!');
+    const response = await fetch(WAITLIST_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Netlify-Function'
+      },
+      body: JSON.stringify(userData),
+    });
     
-    // Log database version to verify connection
-    const versionResult = await client.query('SELECT version()');
-    console.log('PostgreSQL version:', versionResult.rows[0].version);
+    console.log('Railway API Response Status:', response.status);
     
-    // Check if users table exists
-    console.log('Checking if users table exists...');
-    const tableCheckResult = await client.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_name = 'users'
-      );
-    `);
-    
-    const tableExists = tableCheckResult.rows[0].exists;
-    console.log('Users table exists:', tableExists);
-    
-    // Create users table if it doesn't exist
-    if (!tableExists) {
-      console.log('Creating users table...');
-      await client.query(`
-        CREATE TABLE users (
-          id UUID PRIMARY KEY,
-          email TEXT UNIQUE NOT NULL,
-          password_hash TEXT NOT NULL,
-          full_name TEXT NOT NULL,
-          role TEXT NOT NULL,
-          organization TEXT,
-          metadata JSONB DEFAULT '{}'::jsonb,
-          is_active BOOLEAN DEFAULT TRUE,
-          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        );
-        
-        CREATE INDEX idx_users_email ON users(email);
-      `);
-      console.log('Users table created successfully!');
-    }
-    
-    // Generate a UUID for the user
-    const userId = require('crypto').randomUUID();
-    
-    // Hash the password (in a real app, use bcrypt or similar)
-    const passwordHash = Buffer.from(userData.password).toString('base64');
-    
-    // Check if user with this email already exists
-    console.log('Checking if email already exists:', userData.email);
-    const userCheckResult = await client.query(
-      'SELECT id FROM users WHERE email = $1',
-      [userData.email.toLowerCase()]
-    );
-    
-    if (userCheckResult.rows.length > 0) {
-      console.log('User with this email already exists:', userData.email);
-      await client.end();
-      return {
-        success: false,
-        error: 'Email already registered'
-      };
-    }
-    
-    // Create metadata
-    const metadata = {
-      signup_source: 'landing_page',
-      signup_date: new Date().toISOString()
-    };
-    
-    // Insert user
-    console.log('Inserting new user into database:', userData.email);
-    const result = await client.query(
-      `INSERT INTO users (
-        id, email, password_hash, full_name, role, organization, metadata
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING id, email, full_name, role, organization, metadata, is_active, created_at, updated_at`,
-      [
-        userId,
-        userData.email.toLowerCase(),
-        passwordHash,
-        userData.full_name,
-        userData.role,
-        userData.organization || null,
-        JSON.stringify(metadata)
-      ]
-    );
-    
-    console.log('Database insert successful! Rows returned:', result.rows.length);
-    
-    await client.end();
-    console.log('Database connection closed');
-    
-    if (result.rows.length > 0) {
-      console.log('User successfully inserted into PostgreSQL:', userData.email);
-      return {
-        success: true,
-        user: result.rows[0]
-      };
-    } else {
-      return {
-        success: false,
-        error: 'Failed to insert user'
-      };
-    }
-  } catch (error) {
-    console.error('PostgreSQL Error:', error);
-    console.error('Error details:', error.stack);
-    
+    let data;
     try {
-      await client.end();
-      console.log('Database connection closed after error');
+      data = await response.json();
+      console.log('Railway API Response Data:', JSON.stringify(data, null, 2));
     } catch (e) {
-      // Ignore error on connection close
-      console.log('Error closing connection:', e.message);
+      console.error('Error parsing response JSON:', e);
+      data = { error: 'Could not parse server response' };
     }
     
+    return {
+      success: response.ok,
+      statusCode: response.status,
+      data: data
+    };
+  } catch (error) {
+    console.error('Error sending data to Railway API:', error);
     return {
       success: false,
       error: error.message
@@ -204,6 +92,7 @@ exports.handler = async function(event, context) {
   // Log the request for debugging
   console.log('Function invoked: waitlist-signup');
   console.log('Request path:', event.path);
+  console.log('Request method:', event.httpMethod);
   
   // Add CORS headers for all responses
   const headers = {
@@ -238,13 +127,13 @@ exports.handler = async function(event, context) {
     console.log('Received signup request for:', userData.email);
 
     // Check if user data is valid
-    if (!userData.email || !userData.password || !userData.full_name || !userData.role) {
+    if (!userData.email || !userData.full_name) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({ 
           error: 'Missing required fields',
-          details: 'Email, password, full_name, and role are required' 
+          details: 'Email and full_name are required' 
         })
       };
     }
@@ -258,62 +147,48 @@ exports.handler = async function(event, context) {
         body: JSON.stringify({ error: 'Invalid email format' })
       };
     }
-    
-    // Validate password
-    if (userData.password.length < 8) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Password must be at least 8 characters long' })
-      };
-    }
 
     // Store the waitlist data locally as backup
     await storeWaitlistData(userData);
     
-    // Try to store in PostgreSQL directly
-    const pgResult = await storeInPostgres(userData);
+    // Send to our Railway backend
+    const apiResult = await sendToRailwayAPI(userData);
     
-    if (pgResult.success) {
-      // Successfully stored in PostgreSQL
+    if (apiResult.success) {
+      // Successfully sent to Railway backend
       return {
-        statusCode: 201,
+        statusCode: apiResult.statusCode || 201,
         headers,
-        body: JSON.stringify({
-          message: 'Successfully joined the waitlist!',
-          user: pgResult.user
-        })
+        body: JSON.stringify(apiResult.data)
       };
-    } else if (pgResult.error === 'Email already registered') {
+    } else if (apiResult.statusCode === 409) {
       // Email already exists
       return {
         statusCode: 409,
         headers,
-        body: JSON.stringify({ error: 'Email already registered' })
+        body: JSON.stringify({ 
+          success: false,
+          error: 'Email already registered in waitlist' 
+        })
       };
     }
     
-    // If PostgreSQL fails, use the mock response as fallback
+    // If Railway API call fails, use the mock response as fallback
     console.log('Using mock waitlist signup response as fallback');
     
     // Generate a unique user ID for the mock response
     const mockUserId = require('crypto').randomUUID();
     
     const mockResponse = {
+      success: true,
       message: 'Successfully joined the waitlist!',
-      user: {
+      data: {
         id: mockUserId,
         email: userData.email,
-        full_name: userData.full_name,
-        role: userData.role,
+        name: userData.full_name,
+        role: userData.role || null,
         organization: userData.organization || null,
-        metadata: {
-          signup_source: 'landing_page',
-          signup_date: new Date().toISOString()
-        },
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        created_at: new Date().toISOString()
       }
     };
     
