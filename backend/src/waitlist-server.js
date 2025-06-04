@@ -3,7 +3,7 @@ const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8080;
 
 // Database connection
 const pool = new Pool({
@@ -17,7 +17,9 @@ const pool = new Pool({
 app.use(cors({
   origin: [
     'https://garnet-compliance-saas-production.up.railway.app',
-    'https://testinggarnet.netlify.app'
+    'https://testinggarnet.netlify.app',
+    'http://localhost:3000',
+    'http://localhost:5000'
   ],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -31,14 +33,16 @@ app.use((req, res, next) => {
   if (req.method !== 'GET') {
     console.log('Request Body:', JSON.stringify(req.body, null, 2));
   }
+  console.log('==================================================');
   next();
 });
 
-// Check database connection and create table if it doesn't exist
+// Check database connection and ensure proper table structure
 async function setupDatabase() {
   const client = await pool.connect();
   try {
     console.log('Checking database connection...');
+    
     // Check if waitlist table exists
     const tableCheckResult = await client.query(`
       SELECT EXISTS (
@@ -51,24 +55,25 @@ async function setupDatabase() {
     console.log('Waitlist table exists:', tableExists);
     
     if (!tableExists) {
-      console.log('Creating waitlist table as it does not exist...');
+      console.log('Creating waitlist table...');
       await client.query(`
         CREATE TABLE waitlist (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          email TEXT UNIQUE NOT NULL,
-          full_name TEXT NOT NULL,
-          password TEXT NOT NULL,
-          role TEXT NOT NULL,
-          organization TEXT,
-          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          role VARCHAR(100),
+          organization VARCHAR(255),
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
         
-        CREATE INDEX idx_waitlist_email ON waitlist(email);
+        CREATE INDEX waitlist_email_idx ON waitlist(email);
+        CREATE INDEX waitlist_created_at_idx ON waitlist(created_at);
+        CREATE INDEX waitlist_role_idx ON waitlist(role);
       `);
       console.log('Waitlist table created successfully!');
     }
 
-    // Check the table structure to ensure it has the required fields
+    // Check the table structure
     const columnsResult = await client.query(`
       SELECT column_name, data_type 
       FROM information_schema.columns 
@@ -87,7 +92,6 @@ async function setupDatabase() {
 
 // API Endpoint to join waitlist
 app.post('/join-waitlist', async (req, res) => {
-  console.log('==================================================');
   console.log('Received waitlist request at:', new Date().toISOString());
   console.log('Request body:', req.body);
   console.log('Request headers:', req.headers);
@@ -98,149 +102,45 @@ app.post('/join-waitlist', async (req, res) => {
     return res.status(400).json({ error: 'No request body provided' });
   }
 
-  // Get the first client request to check/create fields dynamically
   const client = await pool.connect();
   
   try {
-    // First check if waitlist table exists
-    const tableCheckResult = await client.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_name = 'waitlist'
-      );
-    `);
+    const { email, full_name, role, organization } = req.body;
     
-    const tableExists = tableCheckResult.rows[0].exists;
-    console.log('Waitlist table exists:', tableExists);
-    
-    if (!tableExists) {
-      console.log('Creating waitlist table dynamically based on the request...');
-      
-      // Get all fields from the request body to create columns
-      const fields = Object.keys(req.body);
-      console.log('Fields from request:', fields);
-      
-      // Generate column definitions from the fields
-      // Always include id, email and created_at as required fields
-      let columnDefinitions = [
-        'id UUID PRIMARY KEY DEFAULT gen_random_uuid()',
-        'email TEXT UNIQUE NOT NULL',
-        'full_name TEXT NOT NULL',
-        'password TEXT NOT NULL',
-        'role TEXT NOT NULL',
-        'organization TEXT',
-        'created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP'
-      ];
-      
-      // Create the table
-      await client.query(`
-        CREATE TABLE waitlist (
-          ${columnDefinitions.join(',\n          ')}
-        );
-        
-        CREATE INDEX idx_waitlist_email ON waitlist(email);
-      `);
-      
-      console.log('Waitlist table created with columns:', columnDefinitions);
-    } else {
-      // If table exists, check if all fields in the request exist as columns
-      console.log('Checking if all fields exist in waitlist table...');
-      
-      const columnQuery = await client.query(`
-        SELECT column_name 
-        FROM information_schema.columns 
-        WHERE table_name = 'waitlist';
-      `);
-      
-      const existingColumns = columnQuery.rows.map(row => row.column_name);
-      console.log('Existing columns:', existingColumns);
-      
-      const requestFields = Object.keys(req.body);
-      console.log('Request fields:', requestFields);
-      
-      // Find missing columns
-      const missingColumns = requestFields.filter(
-        field => !existingColumns.includes(field) && field !== 'id' && field !== 'created_at'
-      );
-      
-      if (missingColumns.length > 0) {
-        console.log('Adding missing columns to waitlist table:', missingColumns);
-        
-        for (const column of missingColumns) {
-          await client.query(`
-            ALTER TABLE waitlist
-            ADD COLUMN ${column} TEXT;
-          `);
-        }
-        
-        console.log('Added new columns successfully');
-      }
-    }
-    
-    // Map form field names if they don't match table column names
-    const formData = { ...req.body };
-    
-    // Check if we have expected fields, otherwise try to map them
-    if (!formData.full_name && formData.name) {
-      formData.full_name = formData.name;
-      delete formData.name;
-    }
-
-    if (!formData.organization && formData.company) {
-      formData.organization = formData.company;
-      delete formData.company;
-    }
-    
-    // Log the processed data
-    console.log('Processed form data for insertion:', formData);
-    
-    // Verify email is provided
-    if (!formData.email) {
-      console.error('Email is missing in the request');
-      return res.status(400).json({ error: 'Email is required' });
+    // Validate required fields
+    if (!email || !full_name) {
+      console.error('Missing required fields');
+      return res.status(400).json({ 
+        error: 'Missing required fields: email and full_name are required' 
+      });
     }
     
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      console.error('Invalid email format:', formData.email);
+    if (!emailRegex.test(email)) {
+      console.error('Invalid email format:', email);
       return res.status(400).json({ error: 'Invalid email format' });
     }
     
-    // Verify other required fields
-    if (!formData.full_name) {
-      console.error('Full name is missing in the request');
-      return res.status(400).json({ error: 'Full name is required' });
-    }
+    console.log('Inserting into waitlist table...');
     
-    if (!formData.password) {
-      console.error('Password is missing in the request');
-      return res.status(400).json({ error: 'Password is required' });
-    }
-    
-    if (!formData.role) {
-      console.error('Role is missing in the request');
-      return res.status(400).json({ error: 'Role is required' });
-    }
-    
-    // Prepare fields and values for insertion
-    const fields = Object.keys(formData);
-    const values = Object.values(formData);
-    
-    // Create placeholders for the query
-    const placeholders = fields.map((_, index) => `$${index + 1}`).join(', ');
-    
-    // Construct the query
+    // Insert into waitlist table
     const insertQuery = `
-      INSERT INTO waitlist (${fields.join(', ')})
-      VALUES (${placeholders})
+      INSERT INTO waitlist (name, email, role, organization)
+      VALUES ($1, $2, $3, $4)
       RETURNING *;
     `;
+    
+    const values = [
+      full_name,
+      email.toLowerCase(),
+      role || null,
+      organization || null
+    ];
     
     console.log('Executing SQL:', insertQuery);
     console.log('With values:', values);
     
-    // Execute the query
     const result = await client.query(insertQuery, values);
     
     console.log('Successfully added to waitlist. Rows returned:', result.rowCount);
@@ -257,15 +157,17 @@ app.post('/join-waitlist', async (req, res) => {
     console.error('Error in join-waitlist endpoint:', error);
     
     // Check for duplicate email
-    if (error.code === '23505' && error.constraint === 'waitlist_email_key') {
+    if (error.code === '23505') {
       return res.status(409).json({ 
-        error: 'Email already registered on the waitlist'
+        success: false,
+        error: 'Email already registered in waitlist'
       });
     }
     
     // General error
     return res.status(500).json({ 
-      error: 'Error processing waitlist registration',
+      success: false,
+      error: 'Internal server error',
       details: error.message
     });
   } finally {
@@ -275,17 +177,83 @@ app.post('/join-waitlist', async (req, res) => {
   }
 });
 
-// Add a simple health check endpoint
+// Get waitlist stats
+app.get('/api/waitlist/stats', async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    // Get total count
+    const totalQuery = 'SELECT COUNT(*) as total FROM waitlist';
+    const totalResult = await client.query(totalQuery);
+    
+    // Get count by role
+    const roleQuery = `
+      SELECT role, COUNT(*) as count 
+      FROM waitlist 
+      WHERE role IS NOT NULL
+      GROUP BY role 
+      ORDER BY count DESC
+    `;
+    const roleResult = await client.query(roleQuery);
+    
+    const byRole = {};
+    roleResult.rows.forEach(row => {
+      byRole[row.role] = parseInt(row.count);
+    });
+    
+    res.json({
+      total: parseInt(totalResult.rows[0].total),
+      byRole
+    });
+  } catch (error) {
+    console.error('Error fetching waitlist stats:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
+  }
+});
+
+// Get all waitlist entries
+app.get('/api/waitlist/users', async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    const query = `
+      SELECT * FROM waitlist 
+      ORDER BY created_at DESC
+    `;
+    const result = await client.query(query);
+    
+    res.json({ entries: result.rows });
+  } catch (error) {
+    console.error('Error fetching waitlist entries:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
+  }
+});
+
+// Health check endpoint
 app.get('/', (req, res) => {
   res.status(200).json({
     status: 'ok',
     message: 'Waitlist API is running',
-    version: '1.0.0',
+    version: '2.0.0',
     endpoints: [
       {
         path: '/join-waitlist',
         method: 'POST',
         description: 'Add a user to the waitlist'
+      },
+      {
+        path: '/api/waitlist/stats',
+        method: 'GET',
+        description: 'Get waitlist statistics'
+      },
+      {
+        path: '/api/waitlist/users',
+        method: 'GET',
+        description: 'Get all waitlist entries'
       }
     ]
   });
