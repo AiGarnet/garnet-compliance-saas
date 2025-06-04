@@ -109,27 +109,21 @@ const SecurityTrustSection = () => {
   const securityFeatures = [
     {
       icon: <Shield className="h-8 w-8" />,
-      title: "SOC 2 Type II Compliant",
-      description: "Enterprise-grade security controls audited by third-party firms",
+      title: "GDPR Compliant",
+      description: "Get enterprise-grade compliance documentation and audit-ready reports that meet GDPR requirements",
       badge: "Certified"
     },
     {
       icon: <Lock className="h-8 w-8" />,
       title: "End-to-End Encryption",
-      description: "AES-256 encryption for data at rest and in transit",
+      description: "Receive military-grade AES-256 encrypted responses and documentation for maximum data protection",
       badge: "Military Grade"
     },
     {
       icon: <Eye className="h-8 w-8" />,
       title: "Zero Data Retention",
-      description: "Your sensitive data is processed and never stored permanently",
+      description: "Enjoy complete privacy with instant processing - your sensitive data is never stored permanently",
       badge: "Privacy First"
-    },
-    {
-      icon: <Server className="h-8 w-8" />,
-      title: "Infrastructure Security",
-      description: "Hosted on AWS with advanced DDoS protection and monitoring",
-      badge: "Enterprise"
     }
   ];
 
@@ -154,12 +148,12 @@ const SecurityTrustSection = () => {
             Enterprise-Grade
             <span className="block sm:inline bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> Security</span>
           </h2>
-          <p className="text-lg sm:text-xl text-purple-100 max-w-3xl mx-auto">
-            Your compliance data deserves the highest level of protection. We've built Garnet with security as our foundation.
+          <p className="text-xl text-purple-100 max-w-3xl mx-auto leading-relaxed">
+            Your compliance data deserves the highest level of protection. We have built Garnet with security as our foundation.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {securityFeatures.map((feature, index) => (
             <motion.div
               key={index}
@@ -181,7 +175,7 @@ const SecurityTrustSection = () => {
                 </div>
                 <div className="flex-1 flex flex-col">
                 <h3 className="text-xl font-bold text-white mb-3">{feature.title}</h3>
-                  <p className="text-purple-100 leading-relaxed text-sm sm:text-base flex-1">{feature.description}</p>
+                  <p className="text-purple-100 leading-relaxed text-base flex-1">{feature.description}</p>
                 </div>
               </div>
               
@@ -467,8 +461,8 @@ const GarnetLandingPage = () => {
 
   const faqs = [
     {
-      question: "How can AI help streamline my compliance process?",
-      answer: "Garnet's AI automation reduces questionnaire response time by up to 80%, automatically analyzing your security posture and suggesting accurate responses. Our AI learns from your previous submissions and adapts to different compliance frameworks, transforming weeks of manual work into hours of intelligent automation."
+      question: "How can Garnet help streamline my compliance process?",
+      answer: "Garnet AI automation reduces questionnaire response time by up to 80%, automatically analyzing your security posture and suggesting accurate responses. Our AI learns from your previous submissions and adapts to different compliance frameworks, transforming weeks of manual work into hours of intelligent automation."
     },
     {
       question: "Is Garnet difficult to integrate with existing systems?",
@@ -481,14 +475,6 @@ const GarnetLandingPage = () => {
     {
       question: "Do I need technical knowledge to use Garnet?",
       answer: "No technical expertise required! Garnet is designed for compliance professionals, not developers. Our intuitive interface guides you through the process, while our AI handles the complex analysis. We also provide comprehensive training and dedicated support to ensure your success."
-    },
-    {
-      question: "What kind of support do you offer?",
-      answer: "We provide comprehensive support including email and chat assistance for all users, priority support for Pro customers, and dedicated account management for Enterprise clients. Our team includes compliance experts who understand the nuances of various frameworks and can provide strategic guidance."
-    },
-    {
-      question: "How secure is my compliance data with Garnet?",
-      answer: "Security is our top priority. Garnet is SOC 2 compliant, ISO 27001 certified, and GDPR-ready. We use enterprise-grade encryption, implement strict access controls, and undergo regular security audits. Your compliance data is protected with the same standards you're working to achieve."
     }
   ];
 
@@ -540,9 +526,7 @@ const GarnetLandingPage = () => {
               </div>
             </div>
             <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Features</a>
               {/* <a href="#demo" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Demo</a> */}
-              <a href="#security" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Security</a>
               {/* <a href="#testimonials" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Testimonials</a> */}
               <motion.button 
                 className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 lg:px-6 py-2 rounded-full hover:shadow-lg transition-all text-sm lg:text-base"
@@ -569,8 +553,39 @@ const GarnetLandingPage = () => {
       </motion.nav>
 
       {/* Hero Section */}
-      <section className="relative pt-8 pb-20 px-4 sm:px-6 lg:px-8 min-h-screen flex items-center">
-        <div className="max-w-7xl mx-auto w-full">
+      <section className="relative pt-8 pb-20 px-4 sm:px-6 lg:px-8 min-h-screen flex items-center bg-gradient-to-br from-purple-50 via-white to-pink-50">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div 
+            className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-r from-purple-300/20 to-pink-300/20 rounded-full blur-3xl"
+            animate={{ 
+              x: [0, 100, 0],
+              y: [0, -50, 0],
+              scale: [1, 1.2, 1]
+            }}
+            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div 
+            className="absolute top-40 right-20 w-96 h-96 bg-gradient-to-r from-blue-300/15 to-purple-300/15 rounded-full blur-3xl"
+            animate={{ 
+              x: [0, -80, 0],
+              y: [0, 60, 0],
+              scale: [1, 0.8, 1]
+            }}
+            transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div 
+            className="absolute bottom-20 left-1/3 w-64 h-64 bg-gradient-to-r from-pink-300/20 to-purple-300/20 rounded-full blur-3xl"
+            animate={{ 
+              x: [0, 60, 0],
+              y: [0, -40, 0],
+              scale: [1, 1.1, 1]
+            }}
+            transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
+
+        <div className="max-w-7xl mx-auto w-full relative z-10">
         <div className="text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -578,25 +593,54 @@ const GarnetLandingPage = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="mb-8"
           >
-            <span className="inline-block px-4 py-2 bg-purple-100 text-purple-800 rounded-full text-sm font-medium mb-6">
-              AI-Powered Vendor Onboarding for Sales Teams
-            </span>
-            
             {/* Global Compliance Banner */}
-            <div className="inline-flex items-center space-x-2 bg-gray-50 rounded-full px-4 py-2 mb-6">
-              <Globe className="h-4 w-4 text-gray-600" />
-              <span className="text-sm text-gray-700 font-medium">Built for US, EU, UK, Canada, Asia, Latin America, Australia, and NZ</span>
-            </div>
-            
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-              Accelerate Your
-              <span className="block bg-gradient-to-r from-purple-600 via-pink-600 to-red-500 bg-clip-text text-transparent">
-                Vendor Onboarding
+            <motion.div 
+              className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 mb-8 shadow-lg border border-purple-100"
+              whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              >
+                <Globe className="h-5 w-5 text-purple-600" />
+              </motion.div>
+              <span className="text-sm font-semibold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Built for US, EU, UK, Canada, Asia, Latin America, Australia, and NZ
               </span>
-            </h1>
-            <p className="text-lg sm:text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto mb-10 leading-relaxed">
-              Transform weeks of vendor compliance questionnaires into hours with AI-powered automation. Close deals 50% faster and eliminate back-and-forth with automated, accurate responses that build trust.
-            </p>
+            </motion.div>
+            
+            <motion.h1 
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.4 }}
+            >
+              <span className="block bg-gradient-to-r from-purple-600 via-pink-600 to-red-500 bg-clip-text text-transparent drop-shadow-sm">
+                AI-Powered Vendor Onboarding
+              </span>
+              <motion.span 
+                className="block bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1, delay: 0.8 }}
+              >
+                for Sales Teams
+              </motion.span>
+            </motion.h1>
+            
+            <motion.p 
+              className="text-xl text-gray-600 max-w-4xl mx-auto mb-10 leading-relaxed"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+            >
+              Transform weeks of vendor compliance questionnaires into hours with{" "}
+              <span className="font-semibold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                AI-powered automation
+              </span>
+              . Close deals 50% faster and eliminate back-and-forth with automated, accurate responses that build trust.
+            </motion.p>
           </motion.div>
 
           <motion.div 
@@ -684,7 +728,7 @@ const GarnetLandingPage = () => {
               Everything Sales Teams Need for 
               <span className="block sm:inline bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> Faster Vendor Onboarding</span>
             </h2>
-            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Streamline compliance, build trust, and accelerate deal closure with AI-powered automation.
             </p>
           </motion.div>
@@ -746,7 +790,7 @@ const GarnetLandingPage = () => {
                   </h3>
                   
                   {/* Description */}
-                  <p className="text-gray-600 leading-relaxed mb-6 flex-grow text-sm">
+                  <p className="text-base text-gray-600 leading-relaxed mb-6 flex-grow">
                     {feature.description}
                   </p>
                   
@@ -830,7 +874,7 @@ const GarnetLandingPage = () => {
               Worldwide Compliance 
               <span className="block sm:inline bg-gradient-to-r from-purple-600 via-blue-600 to-pink-600 bg-clip-text text-transparent"> Coverage</span>
             </h2>
-            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Built to handle compliance requirements across all major regions and frameworks with real-time updates and local expertise.
             </p>
           </motion.div>
@@ -986,7 +1030,7 @@ const GarnetLandingPage = () => {
               Optimized to Serve Every Use Case 
               <span className="block sm:inline bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> Across Industries</span>
             </h2>
-            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Our AI-powered compliance platform adapts to various industries and regulatory requirements.
             </p>
           </motion.div>
@@ -1265,7 +1309,7 @@ const GarnetLandingPage = () => {
           </div>
 
           {/* Bottom CTA */}
-          <motion.div 
+          {/* <motion.div 
             className="text-center mt-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -1284,7 +1328,7 @@ const GarnetLandingPage = () => {
               Add yours
               <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </motion.button>
-          </motion.div>
+          </motion.div> */}
         </div>
       </section>
 
@@ -1356,10 +1400,10 @@ const GarnetLandingPage = () => {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              We've Got the Answers 
-              <span className="block sm:inline bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> You're Looking For</span>
+              We Have Got the Answers 
+              <span className="block sm:inline bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> You Are Looking For</span>
             </h2>
-            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Quick answers to your AI-powered compliance automation questions.
             </p>
           </motion.div>
@@ -1418,7 +1462,7 @@ const GarnetLandingPage = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.8 }}
           >
-            <p className="text-gray-600 mb-6">Still have questions? We're here to help!</p>
+            <p className="text-gray-600 mb-6">Still have questions? We are here to help!</p>
             <motion.a 
               href="mailto:rusha@garnetai.net"
               className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 sm:px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all inline-flex items-center group"
@@ -1445,8 +1489,8 @@ const GarnetLandingPage = () => {
               Ready to Transform Your 
               <span className="block">Compliance Process?</span>
             </h2>
-            <p className="text-lg sm:text-xl text-purple-100 max-w-3xl mx-auto mb-10">
-              Join hundreds of companies already saving time and closing deals faster with Garnet's AI-powered compliance platform.
+            <p className="text-xl text-purple-100 max-w-3xl mx-auto mb-10 leading-relaxed">
+              Join hundreds of companies already saving time and closing deals faster with Garnet AI-powered compliance platform.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <motion.button 
@@ -1479,9 +1523,9 @@ const GarnetLandingPage = () => {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Company Info */}
-            <div className="lg:col-span-2">
+            <div>
               <div className="flex items-center mb-4 space-x-3">
                 <img 
                   src="/IconOnly_Transparent_NoBuffer.png" 
@@ -1495,36 +1539,16 @@ const GarnetLandingPage = () => {
               <p className="text-gray-300 mb-4 max-w-md">
                 AI-powered vendor onboarding platform that helps sales teams close deals 50% faster with automated compliance responses.
               </p>
-              <div className="flex space-x-4">
-                {/* Social Links - Optional */}
-                <a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">
-                  <span className="sr-only">LinkedIn</span>
-                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                  </svg>
-                </a>
-              </div>
             </div>
 
-            {/* Quick Links */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Product</h3>
-              <ul className="space-y-2">
-                <li><a href="#features" className="text-gray-300 hover:text-purple-400 transition-colors">Features</a></li>
-                <li><a href="#security" className="text-gray-300 hover:text-purple-400 transition-colors">Security</a></li>
-                <li><a href="/pricing" className="text-gray-300 hover:text-purple-400 transition-colors">Pricing</a></li>
-                <li><a href="/integrations" className="text-gray-300 hover:text-purple-400 transition-colors">Integrations</a></li>
-              </ul>
-            </div>
-
-            {/* Support & Legal */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Support & Legal</h3>
+            {/* Support */}
+            <div className="md:justify-self-end md:text-right">
+              <h3 className="text-lg font-semibold mb-4">Support</h3>
               <ul className="space-y-2">
                 <li>
                   <a 
                     href="mailto:rusha@garnetai.net" 
-                    className="text-gray-300 hover:text-purple-400 transition-colors flex items-center"
+                    className="text-gray-300 hover:text-purple-400 transition-colors flex items-center md:justify-end"
                   >
                     <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -1532,9 +1556,16 @@ const GarnetLandingPage = () => {
                     Contact Us
                   </a>
                 </li>
-                <li><a href="/privacy-policy" className="text-gray-300 hover:text-purple-400 transition-colors">Privacy Policy</a></li>
-                <li><a href="/terms-of-service" className="text-gray-300 hover:text-purple-400 transition-colors">Terms of Service</a></li>
-                <li><a href="/documentation" className="text-gray-300 hover:text-purple-400 transition-colors">Documentation</a></li>
+                <li className="md:text-right"><a href="/privacy-policy" className="text-gray-300 hover:text-purple-400 transition-colors">Privacy Policy</a></li>
+                <li className="md:text-right"><a href="/terms-of-service" className="text-gray-300 hover:text-purple-400 transition-colors">Terms and Conditions</a></li>
+                <li>
+                  <a href="#" className="text-gray-300 hover:text-purple-400 transition-colors flex items-center md:justify-end">
+                    <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                    </svg>
+                    LinkedIn
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
