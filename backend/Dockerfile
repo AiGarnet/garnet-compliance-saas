@@ -5,7 +5,7 @@ WORKDIR /app
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install dependencies
+# Install ALL dependencies (including devDependencies for building)
 RUN npm install
 
 # Copy the data file explicitly to ensure it's available
@@ -14,14 +14,14 @@ COPY data_new.json ./data_new.json
 # Copy the rest of the application code
 COPY . .
 
-# Build the application
+# Build the TypeScript code
 RUN npm run build
 
-# Set the port explicitly
-ENV PORT=8080
+# Remove devDependencies to reduce image size
+RUN npm prune --production
 
-# Expose the ports the app might run on
-EXPOSE 8080
+# Expose the port the app will run on
+EXPOSE $PORT
 
-# Start the application in production mode - using exec form for proper signal handling
-ENTRYPOINT ["node", "dist/index.js"] 
+# Start the application in production mode
+CMD ["npm", "start"]
