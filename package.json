@@ -23,6 +23,7 @@
     "@types/lodash": "^4.17.17",
     "bcryptjs": "^3.0.2",
     "dotenv": "^16.5.0",
+    "esbuild": "^0.25.5",
     "framer-motion": "^12.12.2",
     "lodash": "^4.17.21",
     "lucide-react": "^0.294.0",

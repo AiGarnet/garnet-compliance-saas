@@ -1,6 +1,6 @@
 [build]
   # Build command for the frontend Next.js app with static export
-  command = "cd frontend && npm ci && npm run build"
+  command = "cd frontend && npm install && npm run build"
   
   # Directory to publish (Next.js static export automatically outputs to 'out')
   publish = "frontend/out"
@@ -10,15 +10,15 @@
     NODE_VERSION = "18"
 
 [context.production]
-  command = "cd frontend && npm ci && npm run build"
+  command = "cd frontend && npm install && npm run build"
   publish = "frontend/out"
 
 [context.deploy-preview]
-  command = "cd frontend && npm ci && npm run build"
+  command = "cd frontend && npm install && npm run build"
   publish = "frontend/out"
 
 [context.branch-deploy]
-  command = "cd frontend && npm ci && npm run build"
+  command = "cd frontend && npm install && npm run build"
   publish = "frontend/out"
 
 # Redirects for SPA routing
