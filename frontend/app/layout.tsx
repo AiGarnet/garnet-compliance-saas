@@ -6,6 +6,15 @@ import { ThemeInitializer } from '@/components/ThemeInitializer'
 export const metadata: Metadata = {
   title: 'GarnetAI - Compliance Platform',
   description: 'Compliance management platform for SOC 2, ISO 27001, and more',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '16x16 32x32', type: 'image/x-icon' },
+      { url: '/IconOnly_Transparent_NoBuffer.png', sizes: '32x32', type: 'image/png' },
+      { url: '/IconOnly_Transparent_NoBuffer.png', sizes: '16x16', type: 'image/png' }
+    ],
+    apple: '/IconOnly_Transparent_NoBuffer.png',
+    shortcut: '/favicon.ico'
+  },
 }
 
 export default function RootLayout({
