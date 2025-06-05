@@ -611,16 +611,40 @@ const GarnetLandingPage = () => {
             </motion.div>
             
             <motion.h1 
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, delay: 0.4 }}
+              style={{ 
+                lineHeight: '1.2', 
+                letterSpacing: '-0.025em',
+                fontFeatureSettings: '"kern" 1, "liga" 1',
+                textRendering: 'optimizeLegibility',
+                paddingBottom: '0.1em'
+              }}
             >
-              <span className="block bg-gradient-to-r from-purple-600 via-pink-600 to-red-500 bg-clip-text text-transparent drop-shadow-sm">
+              <span 
+                className="block mb-2"
+                style={{
+                  background: 'linear-gradient(to right, rgb(147 51 234), rgb(219 39 119), rgb(239 68 68))',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  paddingBottom: '0.05em',
+                  display: 'inline-block'
+                }}
+              >
                 AI-Powered Vendor Onboarding
               </span>
               <motion.span 
-                className="block bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent"
+                className="block"
+                style={{
+                  background: 'linear-gradient(to right, rgb(51 65 85), rgb(15 23 42))',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  display: 'inline-block'
+                }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 1, delay: 0.8 }}
@@ -794,20 +818,7 @@ const GarnetLandingPage = () => {
                     {feature.description}
                   </p>
                   
-                  {/* Learn more link with animated arrow */}
-                  <motion.div 
-                    className="flex items-center text-purple-600 font-medium text-sm"
-                    whileHover={{ x: 4 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  >
-                    <span>Learn more</span>
-                    <motion.div
-                      animate={{ x: activeFeature === index ? 4 : 0 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    >
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                    </motion.div>
-                  </motion.div>
+                  {/* Removed Learn more link for consistency */}
                 </div>
                 
                 {/* Hover glow effect */}
@@ -866,153 +877,201 @@ const GarnetLandingPage = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <span className="inline-block px-4 py-2 bg-white/80 backdrop-blur-sm text-purple-700 rounded-full text-sm font-semibold mb-6 shadow-lg">
-                🌍 Global Coverage
+                🌍 Global AI Platform
               </span>
             </motion.div>
             
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Worldwide Compliance 
-              <span className="block sm:inline bg-gradient-to-r from-purple-600 via-blue-600 to-pink-600 bg-clip-text text-transparent"> Coverage</span>
+              Trusted Worldwide by 
+              <span className="block sm:inline bg-gradient-to-r from-purple-600 via-blue-600 to-pink-600 bg-clip-text text-transparent"> Global Enterprises</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Built to handle compliance requirements across all major regions and frameworks with real-time updates and local expertise.
+              Our AI-powered compliance platform serves organizations across 6 continents with localized expertise and real-time regulatory updates.
             </p>
           </motion.div>
 
-          {/* Interactive world map style layout */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+          {/* Global Statistics */}
+          <motion.div 
+            className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+          >
             {[
-              { 
-                region: "United States", 
-                frameworks: ["SOC 2", "CCPA", "NIST"], 
-                flag: "🇺🇸",
-                color: "from-blue-500 to-blue-600",
-                description: "Comprehensive US compliance frameworks"
-              },
-              { 
-                region: "European Union", 
-                frameworks: ["GDPR", "ISO 27001", "NIS2"], 
-                flag: "🇪🇺",
-                color: "from-purple-500 to-purple-600",
-                description: "Complete EU regulatory compliance"
-              },
-              { 
-                region: "Asia Pacific", 
-                frameworks: ["PDPA", "PIPEDA", "Privacy Act"], 
-                flag: "🌏",
-                color: "from-green-500 to-green-600",
-                description: "APAC data protection standards"
-              },
-              { 
-                region: "Latin America", 
-                frameworks: ["LGPD", "Local Privacy Laws"], 
-                flag: "🌎",
-                color: "from-pink-500 to-pink-600",
-                description: "LATAM privacy regulations"
-              }
-            ].map((item, index) => (
+              { number: "150+", label: "Countries Supported", icon: <Globe className="h-8 w-8" /> },
+              { number: "99%", label: "Global Coverage", icon: <BarChart3 className="h-8 w-8" /> },
+              { number: "6", label: "Continents", icon: <Users className="h-8 w-8" /> },
+              { number: "50+", label: "Compliance Frameworks", icon: <Shield className="h-8 w-8" /> }
+            ].map((stat, index) => (
               <motion.div
                 key={index}
-                className="group relative"
-                initial={{ opacity: 0, y: 50, rotateY: -15 }}
-                whileInView={{ opacity: 1, y: 0, rotateY: 0 }}
+                className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 text-center shadow-lg hover:shadow-xl transition-all duration-300 border border-white/50"
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
-                transition={{ 
-                  duration: 0.8, 
-                  delay: index * 0.2,
-                  type: "spring",
-                  stiffness: 100
-                }}
-                whileHover={{ 
-                  y: -10,
-                  scale: 1.05,
-                  rotateY: 5,
-                  transition: { duration: 0.3 }
-                }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                whileHover={{ scale: 1.05, y: -5 }}
               >
-                {/* Card */}
-                <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-500 border border-white/50 overflow-hidden h-full">
-                  {/* Animated background gradient */}
-                  <motion.div 
-                    className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}
-                    initial={{ scale: 0, rotate: 45 }}
-                    whileHover={{ scale: 1.5, rotate: 0 }}
-                    transition={{ duration: 0.6 }}
-                  />
-                  
-                  {/* Flag with floating animation */}
-                  <motion.div 
-                    className="text-5xl mb-4 inline-block"
-                    animate={{ 
-                      y: [0, -8, 0],
-                      rotate: [0, 2, -2, 0]
-                    }}
-                    transition={{ 
-                      duration: 4,
-                      repeat: Infinity,
-                      delay: index * 0.5,
-                      ease: "easeInOut"
-                    }}
-                    whileHover={{ 
-                      scale: 1.2,
-                      rotate: [0, 10, -10, 0],
-                      transition: { duration: 0.5 }
-                    }}
-                  >
-                    {item.flag}
-                  </motion.div>
-                  
-                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-purple-700 transition-colors duration-300">
-                    {item.region}
-                  </h3>
-                  
-                  <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-                    {item.description}
-                  </p>
-                  
-                  {/* Frameworks with staggered animation */}
-                  <div className="space-y-2">
-                    {item.frameworks.map((framework, fIndex) => (
-                      <motion.span 
-                        key={fIndex}
-                        className={`inline-block bg-gradient-to-r ${item.color} text-white px-3 py-1.5 rounded-full text-xs font-semibold mr-2 mb-2 shadow-md`}
-                        initial={{ opacity: 0, x: -20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ 
-                          duration: 0.5, 
-                          delay: index * 0.2 + fIndex * 0.1 
-                        }}
-                        whileHover={{ 
-                          scale: 1.1
-                        }}
-                      >
-                        {framework}
-                      </motion.span>
-                    ))}
-                  </div>
-                  
-                  {/* Hover indicator */}
-                  <motion.div 
-                    className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                    initial={{ scale: 0 }}
-                    whileHover={{ scale: 1 }}
-                  >
-                    <ChevronRight className="h-5 w-5 text-purple-600" />
-                  </motion.div>
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white mx-auto mb-4">
+                  {stat.icon}
                 </div>
-                
-                {/* Glow effect */}
-                <motion.div 
-                  className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500 -z-10`}
-                  initial={{ scale: 0.8 }}
-                  whileHover={{ scale: 1.1 }}
-                />
+                <div className="text-3xl font-bold text-gray-900 mb-2">
+                  <AnimatedCounter end={parseInt(stat.number.replace(/[^0-9]/g, ''))} suffix={stat.number.replace(/[0-9]/g, '')} />
+                </div>
+                <p className="text-gray-600 font-medium">{stat.label}</p>
               </motion.div>
             ))}
+          </motion.div>
+
+          {/* Comprehensive World Coverage */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+            {/* Americas */}
+            <motion.div
+              className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/60"
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              whileHover={{ scale: 1.02, y: -5 }}
+            >
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white mr-4">
+                  🌎
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900">Americas</h3>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { country: "🇺🇸 United States", frameworks: ["SOC 2", "NIST", "CCPA"] },
+                    { country: "🇨🇦 Canada", frameworks: ["PIPEDA", "SOC 2"] },
+                    { country: "🇧🇷 Brazil", frameworks: ["LGPD", "ISO 27001"] },
+                    { country: "🇲🇽 Mexico", frameworks: ["LFPDPPP", "ISO 27001"] },
+                    { country: "🇦🇷 Argentina", frameworks: ["PDPA", "ISO 27001"] },
+                    { country: "🇨🇱 Chile", frameworks: ["Privacy Laws", "SOC 2"] }
+                  ].map((item, idx) => (
+                    <motion.div 
+                      key={idx}
+                      className="p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+                      whileHover={{ scale: 1.02 }}
+                    >
+                      <div className="text-sm font-semibold text-gray-800 mb-1">{item.country}</div>
+                      <div className="flex flex-wrap gap-1">
+                        {item.frameworks.map((fw, fIdx) => (
+                          <span key={fIdx} className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full">
+                            {fw}
+                          </span>
+                        ))}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="text-center">
+                  <span className="text-sm text-gray-500">+15 more countries</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Europe & Africa */}
+            <motion.div
+              className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/60"
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              whileHover={{ scale: 1.02, y: -5 }}
+            >
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center text-white mr-4">
+                  🌍
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900">Europe & Africa</h3>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { country: "🇬🇧 United Kingdom", frameworks: ["GDPR", "ISO 27001"] },
+                    { country: "🇩🇪 Germany", frameworks: ["GDPR", "BSI"] },
+                    { country: "🇫🇷 France", frameworks: ["GDPR", "ISO 27001"] },
+                    { country: "🇿🇦 South Africa", frameworks: ["POPIA", "ISO 27001"] },
+                    { country: "🇳🇬 Nigeria", frameworks: ["DPA", "ISO 27001"] },
+                    { country: "🇰🇪 Kenya", frameworks: ["DPA", "Privacy Laws"] }
+                  ].map((item, idx) => (
+                    <motion.div 
+                      key={idx}
+                      className="p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors cursor-pointer"
+                      whileHover={{ scale: 1.02 }}
+                    >
+                      <div className="text-sm font-semibold text-gray-800 mb-1">{item.country}</div>
+                      <div className="flex flex-wrap gap-1">
+                        {item.frameworks.map((fw, fIdx) => (
+                          <span key={fIdx} className="text-xs bg-purple-200 text-purple-800 px-2 py-1 rounded-full">
+                            {fw}
+                          </span>
+                        ))}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="text-center">
+                  <span className="text-sm text-gray-500">+40 more countries</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Asia Pacific */}
+            <motion.div
+              className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/60"
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              whileHover={{ scale: 1.02, y: -5 }}
+            >
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-teal-500 rounded-lg flex items-center justify-center text-white mr-4">
+                  🌏
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900">Asia Pacific</h3>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { country: "🇸🇬 Singapore", frameworks: ["PDPA", "ISO 27001"] },
+                    { country: "🇦🇺 Australia", frameworks: ["Privacy Act", "ISO 27001"] },
+                    { country: "🇯🇵 Japan", frameworks: ["APPI", "ISO 27001"] },
+                    { country: "🇰🇷 South Korea", frameworks: ["PIPA", "ISO 27001"] },
+                    { country: "🇮🇳 India", frameworks: ["DPDP", "ISO 27001"] },
+                    { country: "🇳🇿 New Zealand", frameworks: ["Privacy Act", "ISO 27001"] }
+                  ].map((item, idx) => (
+                    <motion.div 
+                      key={idx}
+                      className="p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors cursor-pointer"
+                      whileHover={{ scale: 1.02 }}
+                    >
+                      <div className="text-sm font-semibold text-gray-800 mb-1">{item.country}</div>
+                      <div className="flex flex-wrap gap-1">
+                        {item.frameworks.map((fw, fIdx) => (
+                          <span key={fIdx} className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded-full">
+                            {fw}
+                          </span>
+                        ))}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="text-center">
+                  <span className="text-sm text-gray-500">+25 more countries</span>
+                </div>
+              </div>
+            </motion.div>
           </div>
 
-          {/* Bottom stats with animated counters - REMOVED as requested */}
+          {/* Global Trust Indicators - REMOVED */}
         </div>
       </section>
 

@@ -40,24 +40,10 @@ export async function GET(
       );
     }
 
-    // In a real application, you would fetch this from a database
-    // For now, we'll return mock data
-    
-    // Generate some mock questions based on the ID
-    const questionCount = Math.floor(Math.random() * 10) + 5; // 5-15 questions
-    const questions = Array.from({ length: questionCount }).map((_, index) => ({
-      id: `${id}_q_${index}`,
-      text: `Question ${index + 1}: How does your organization handle security compliance requirements?`,
-      answer: index % 2 === 0 ? 'Our organization maintains strict security protocols in compliance with industry standards like ISO 27001, SOC 2, and GDPR.' : '',
-    }));
+    // Generate realistic questionnaire data based on ID
+    const questionnaire = generateQuestionnaireData(id);
 
-    return NextResponse.json({
-      id,
-      title: `Security Questionnaire #${id.split('_').pop()}`,
-      questions,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    return NextResponse.json(questionnaire);
   } catch (error) {
     console.error('Error fetching questionnaire:', error);
     return NextResponse.json(
@@ -65,4 +51,188 @@ export async function GET(
       { status: 500 }
     );
   }
+}
+
+function generateQuestionnaireData(id: string) {
+  // Different questionnaire templates based on ID
+  const templates = {
+    security: {
+      title: 'Security Assessment Questionnaire',
+      categories: ['Security Policy', 'Access Control', 'Data Protection', 'Incident Response', 'Training'],
+      questions: [
+        {
+          text: "Does your organization have a written information security policy?",
+          category: "Security Policy",
+          isRequired: true,
+          answer: "Yes, our organization maintains a comprehensive information security policy that is reviewed annually and approved by senior management. The policy covers all aspects of information security including data classification, access controls, and incident response procedures."
+        },
+        {
+          text: "How does your organization handle data breach incidents?",
+          category: "Incident Response",
+          isRequired: true,
+          answer: "We have a formal incident response plan that includes immediate containment, assessment, notification procedures, and post-incident review. Our security team is trained to respond within 2 hours of detection."
+        },
+        {
+          text: "What encryption standards does your organization use for data at rest?",
+          category: "Data Protection",
+          isRequired: true,
+          answer: ""
+        },
+        {
+          text: "Describe your organization's access control procedures.",
+          category: "Access Control",
+          isRequired: true,
+          answer: "We implement role-based access control (RBAC) with regular access reviews conducted quarterly. Multi-factor authentication is required for all administrative access and sensitive systems."
+        },
+        {
+          text: "How often does your organization conduct security awareness training?",
+          category: "Training",
+          isRequired: false,
+          answer: "Security awareness training is conducted quarterly for all employees, with additional specialized training for IT staff. We also conduct phishing simulation exercises monthly."
+        },
+        {
+          text: "What measures are in place to protect against unauthorized access to facilities?",
+          category: "Physical Security",
+          isRequired: true,
+          answer: "Our facilities employ multi-layered physical security including badge access, security cameras, visitor management systems, and 24/7 monitoring by security personnel."
+        },
+        {
+          text: "How do you ensure secure disposal of sensitive data?",
+          category: "Data Protection",
+          isRequired: true,
+          answer: ""
+        },
+        {
+          text: "What backup and recovery procedures are in place?",
+          category: "Business Continuity",
+          isRequired: true,
+          answer: "We maintain automated daily backups with offsite storage. Recovery testing is performed quarterly with documented RTO of 4 hours and RPO of 1 hour for critical systems."
+        }
+      ]
+    },
+    compliance: {
+      title: 'Compliance Review Questionnaire',
+      categories: ['Regulatory Compliance', 'Data Privacy', 'Financial Controls', 'Quality Management'],
+      questions: [
+        {
+          text: "Which regulatory frameworks does your organization comply with?",
+          category: "Regulatory Compliance",
+          isRequired: true,
+          answer: "Our organization complies with SOC 2 Type II, GDPR, CCPA, and ISO 27001. We undergo annual audits to maintain these certifications."
+        },
+        {
+          text: "How do you handle personal data processing and storage?",
+          category: "Data Privacy",
+          isRequired: true,
+          answer: "We follow data minimization principles, implement purpose limitation, and maintain detailed data processing records. Personal data is encrypted both in transit and at rest."
+        },
+        {
+          text: "What financial controls are in place for vendor payments?",
+          category: "Financial Controls",
+          isRequired: true,
+          answer: ""
+        },
+        {
+          text: "Describe your quality management processes.",
+          category: "Quality Management",
+          isRequired: false,
+          answer: "We maintain an ISO 9001 certified quality management system with documented procedures, regular internal audits, and continuous improvement processes."
+        },
+        {
+          text: "How do you ensure data subject rights are protected?",
+          category: "Data Privacy",
+          isRequired: true,
+          answer: ""
+        }
+      ]
+    },
+    vendor: {
+      title: 'Vendor Onboarding Questionnaire',
+      categories: ['Company Information', 'Security Practices', 'Compliance', 'Service Delivery'],
+      questions: [
+        {
+          text: "Provide a detailed description of your organization and services.",
+          category: "Company Information",
+          isRequired: true,
+          answer: "We are a cloud-based software provider specializing in enterprise solutions with over 10 years of experience serving Fortune 500 companies."
+        },
+        {
+          text: "What security certifications does your organization hold?",
+          category: "Security Practices",
+          isRequired: true,
+          answer: "We maintain SOC 2 Type II, ISO 27001, and PCI DSS certifications. All certifications are audited annually by independent third parties."
+        },
+        {
+          text: "How do you ensure service availability and uptime?",
+          category: "Service Delivery",
+          isRequired: true,
+          answer: ""
+        },
+        {
+          text: "What is your incident escalation process?",
+          category: "Service Delivery",
+          isRequired: true,
+          answer: "We have a 24/7 support team with defined escalation procedures. Critical incidents are escalated to senior management within 30 minutes."
+        },
+        {
+          text: "How do you handle confidential customer data?",
+          category: "Security Practices",
+          isRequired: true,
+          answer: ""
+        }
+      ]
+    }
+  };
+
+  // Determine template based on ID
+  let template = templates.security; // default
+  if (id.includes('compliance') || id.includes('audit')) {
+    template = templates.compliance;
+  } else if (id.includes('vendor') || id.includes('onboarding')) {
+    template = templates.vendor;
+  }
+
+  // Generate questions with proper structure
+  const questions = template.questions.map((q, index) => ({
+    id: `${id}_q_${index + 1}`,
+    text: q.text,
+    answer: q.answer,
+    category: q.category,
+    isRequired: q.isRequired,
+    status: q.answer ? 'answered' : (Math.random() > 0.7 ? 'needs_attention' : 'pending')
+  }));
+
+  // Calculate progress
+  const answeredQuestions = questions.filter(q => q.answer && q.answer.trim() !== '');
+  const progress = Math.round((answeredQuestions.length / questions.length) * 100);
+
+  // Generate due date (random future date)
+  const dueDate = new Date();
+  dueDate.setDate(dueDate.getDate() + Math.floor(Math.random() * 30) + 7);
+
+  // Determine status based on progress
+  let status = 'Not Started';
+  if (progress === 100) status = 'Completed';
+  else if (progress > 75) status = 'In Review';
+  else if (progress > 25) status = 'In Progress';
+  else if (progress > 0) status = 'Draft';
+
+  return {
+    id,
+    title: template.title,
+    name: `${template.title.split(' ')[0]} #${id.split('_').pop()}`,
+    status,
+    progress,
+    dueDate: dueDate.toISOString().split('T')[0],
+    questions,
+    categories: template.categories,
+    createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date().toISOString(),
+    metadata: {
+      totalQuestions: questions.length,
+      answeredQuestions: answeredQuestions.length,
+      requiredQuestions: questions.filter(q => q.isRequired).length,
+      completionRate: progress / 100
+    }
+  };
 } 

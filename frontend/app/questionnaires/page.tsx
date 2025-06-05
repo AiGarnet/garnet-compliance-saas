@@ -66,6 +66,10 @@ const QuestionnairesPage = () => {
   const [generatedAnswers, setGeneratedAnswers] = useState<QuestionAnswer[]>([]);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
 
+  // New state for individual question management
+  const [questions, setQuestions] = useState<string[]>(['']);
+  const [useTextAreaMode, setUseTextAreaMode] = useState(false);
+
   // Fetch vendor data when vendorId is provided in URL
   useEffect(() => {
     if (vendorId) {
@@ -129,18 +133,18 @@ const QuestionnairesPage = () => {
 
   // Calculate and update question count and validation when input changes
   useEffect(() => {
-    const lines = questionnaireInput
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
+    // Get current questions from either mode
+    const currentQuestions = useTextAreaMode 
+      ? questionnaireInput.split('\n').map(line => line.trim()).filter(line => line.length > 0)
+      : questions.filter(q => q.trim() !== '');
     
-    setQuestionCount(lines.length);
+    setQuestionCount(currentQuestions.length);
     
     // Check for duplicates
     const duplicates: number[] = [];
     const seen = new Set<string>();
     
-    lines.forEach((line, index) => {
+    currentQuestions.forEach((line, index) => {
       if (seen.has(line.toLowerCase())) {
         duplicates.push(index + 1);
       } else {
@@ -152,7 +156,7 @@ const QuestionnairesPage = () => {
     
     // Check for long lines
     const longLinesFound: number[] = [];
-    lines.forEach((line, index) => {
+    currentQuestions.forEach((line, index) => {
       if (line.length > MAX_QUESTION_LENGTH) {
         longLinesFound.push(index + 1);
       }
@@ -161,7 +165,7 @@ const QuestionnairesPage = () => {
     setLongLines(longLinesFound);
     
     // Validate total count
-    if (lines.length > MAX_QUESTIONS) {
+    if (currentQuestions.length > MAX_QUESTIONS) {
       setValidationError(`Exceeded maximum of ${MAX_QUESTIONS} questions. Please reduce the number of questions.`);
     } else if (duplicates.length > 0) {
       setValidationError(`Duplicate questions found on lines: ${duplicates.join(', ')}`);
@@ -174,11 +178,12 @@ const QuestionnairesPage = () => {
     // Auto-save draft
     localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
       title: questionnaireTitle,
-      questions: questionnaireInput,
+      questions: useTextAreaMode ? questionnaireInput : questions.join('\n'),
+      mode: useTextAreaMode ? 'textarea' : 'list',
       vendorId: vendorId
     }));
     
-  }, [questionnaireInput, questionnaireTitle, vendorId]);
+  }, [questionnaireInput, questionnaireTitle, questions, useTextAreaMode, vendorId]);
 
   // Debounced textarea resize
   const resizeTextarea = useCallback(() => {
@@ -349,6 +354,13 @@ const QuestionnairesPage = () => {
           console.error('Error parsing stored questionnaires:', e);
         }
       }
+
+      // If no questionnaires exist, create some sample ones for demo purposes
+      if (userQuestionnaires.length === 0) {
+        userQuestionnaires = createSampleQuestionnaires();
+        // Save sample questionnaires to localStorage
+        localStorage.setItem('user_questionnaires', JSON.stringify(userQuestionnaires));
+      }
       
       // Only use user-created questionnaires
       setQuestionnaires(userQuestionnaires);
@@ -363,6 +375,195 @@ const QuestionnairesPage = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Create sample questionnaires for demo purposes
+  const createSampleQuestionnaires = (): Questionnaire[] => {
+    const now = new Date();
+    const futureDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000); // 2 weeks from now
+    
+    return [
+      {
+        id: 'q_security_assessment',
+        name: 'Security Assessment Questionnaire',
+        status: 'In Progress' as QuestionnaireStatus,
+        dueDate: futureDate.toISOString().split('T')[0],
+        progress: 75,
+        answers: [
+          {
+            question: "Does your organization have a written information security policy that is reviewed annually?",
+            answer: "Yes, our organization maintains a comprehensive information security policy that is reviewed annually and approved by senior management. The policy covers data classification, access controls, incident response, and compliance requirements.",
+            isMandatory: true,
+            needsAttention: false
+          },
+          {
+            question: "How does your organization handle data breach notification and incident response?",
+            answer: "We have a formal incident response plan that includes immediate containment, assessment, notification procedures within 72 hours, and post-incident review. Our security team is trained to respond within 2 hours of detection.",
+            isMandatory: true,
+            needsAttention: false
+          },
+          {
+            question: "What encryption standards does your organization use for data at rest and in transit?",
+            answer: "",
+            isMandatory: true,
+            needsAttention: false
+          },
+          {
+            question: "Describe your organization's access control and authentication procedures.",
+            answer: "We implement role-based access control (RBAC) with regular quarterly access reviews and multi-factor authentication for all administrative access and sensitive systems.",
+            isMandatory: true,
+            needsAttention: false
+          },
+          {
+            question: "How often does your organization conduct security awareness training for employees?",
+            answer: "Security awareness training is conducted quarterly for all employees, with additional specialized training for IT staff and monthly phishing simulation exercises.",
+            isMandatory: false,
+            needsAttention: false
+          },
+          {
+            question: "What measures are in place to protect against unauthorized physical access to facilities?",
+            answer: "",
+            isMandatory: true,
+            needsAttention: false
+          }
+        ]
+      },
+      {
+        id: 'q_compliance_review',
+        name: 'Compliance Review Questionnaire',
+        status: 'Draft' as QuestionnaireStatus,
+        dueDate: new Date(now.getTime() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 3 weeks from now
+        progress: 40,
+        answers: [
+          {
+            question: "Which regulatory frameworks does your organization currently comply with (SOC 2, GDPR, HIPAA, etc.)?",
+            answer: "Our organization complies with SOC 2 Type II, GDPR, CCPA, and ISO 27001. We undergo annual audits to maintain these certifications and have documented compliance procedures.",
+            isMandatory: true,
+            needsAttention: false
+          },
+          {
+            question: "How do you handle personal data processing, storage, and subject rights under GDPR?",
+            answer: "",
+            isMandatory: true,
+            needsAttention: false
+          },
+          {
+            question: "What financial controls and segregation of duties are in place for vendor payments and procurement?",
+            answer: "",
+            isMandatory: true,
+            needsAttention: false
+          },
+          {
+            question: "Describe your data retention and deletion policies for different types of information.",
+            answer: "We maintain a comprehensive data retention policy that specifies retention periods based on data type and regulatory requirements, with automatic deletion processes.",
+            isMandatory: false,
+            needsAttention: false
+          },
+          {
+            question: "How do you ensure compliance monitoring and reporting to relevant authorities?",
+            answer: "",
+            isMandatory: true,
+            needsAttention: false
+          }
+        ]
+      },
+      {
+        id: 'q_vendor_onboarding',
+        name: 'Vendor Onboarding Questionnaire',
+        status: 'Completed' as QuestionnaireStatus,
+        dueDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 week from now
+        progress: 100,
+        answers: [
+          {
+            question: "Provide a detailed description of your organization, services offered, and years in business.",
+            answer: "We are a cloud-based software provider specializing in enterprise solutions with over 10 years of experience serving Fortune 500 companies. We offer SaaS solutions for compliance management, risk assessment, and vendor management.",
+            isMandatory: true,
+            needsAttention: false
+          },
+          {
+            question: "What security certifications and compliance frameworks does your organization maintain?",
+            answer: "We maintain SOC 2 Type II, ISO 27001, PCI DSS Level 1, and GDPR compliance certifications. All certifications are audited annually by independent third-party auditors.",
+            isMandatory: true,
+            needsAttention: false
+          },
+          {
+            question: "How do you ensure service availability, uptime guarantees, and disaster recovery?",
+            answer: "We guarantee 99.9% uptime with redundant systems across multiple data centers, automated failover capabilities, and comprehensive disaster recovery plans tested quarterly.",
+            isMandatory: true,
+            needsAttention: false
+          },
+          {
+            question: "Describe your incident escalation process and support team availability.",
+            answer: "We have a 24/7 support team with defined escalation procedures. Critical incidents are escalated to senior management within 30 minutes and customers are notified within 15 minutes.",
+            isMandatory: true,
+            needsAttention: false
+          },
+          {
+            question: "How do you handle confidential customer data, including access controls and data processing agreements?",
+            answer: "All customer data is encrypted at rest and in transit, with strict access controls based on role and need-to-know basis. We have comprehensive data processing agreements and conduct regular access reviews.",
+            isMandatory: true,
+            needsAttention: false
+          },
+          {
+            question: "What is your approach to software development security, including code reviews and vulnerability management?",
+            answer: "We follow secure development lifecycle practices with mandatory code reviews, automated security testing, regular penetration testing, and vulnerability management programs.",
+            isMandatory: false,
+            needsAttention: false
+          }
+        ]
+      },
+      {
+        id: 'q_data_privacy_gdpr',
+        name: 'Data Privacy & GDPR Assessment',
+        status: 'In Review' as QuestionnaireStatus,
+        dueDate: new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 10 days from now
+        progress: 85,
+        answers: [
+          {
+            question: "Do you have a comprehensive data privacy policy that covers GDPR requirements?",
+            answer: "Yes, we maintain a comprehensive data privacy policy that aligns with GDPR Article 13 and 14, covering data collection, processing, storage, and subject rights.",
+            isMandatory: true,
+            needsAttention: false
+          },
+          {
+            question: "How do you obtain and document consent for personal data processing?",
+            answer: "We implement explicit consent mechanisms with clear opt-in procedures, maintain consent records with timestamps, and provide easy withdrawal options as required by GDPR Article 7.",
+            isMandatory: true,
+            needsAttention: false
+          },
+          {
+            question: "What technical and organizational measures protect personal data in your systems?",
+            answer: "",
+            isMandatory: true,
+            needsAttention: true
+          },
+          {
+            question: "How do you handle data subject access requests (DSAR) under GDPR Article 15?",
+            answer: "We have established procedures to respond to DSARs within 30 days, providing data subjects with information about their data processing and copies of their personal data.",
+            isMandatory: true,
+            needsAttention: false
+          },
+          {
+            question: "Describe your data retention and deletion procedures for different categories of personal data.",
+            answer: "We maintain data retention schedules based on legal requirements and business needs, with automated deletion processes and regular purging of unnecessary data.",
+            isMandatory: true,
+            needsAttention: false
+          },
+          {
+            question: "How do you conduct Data Protection Impact Assessments (DPIA) for high-risk processing?",
+            answer: "",
+            isMandatory: true,
+            needsAttention: true
+          },
+          {
+            question: "What procedures are in place for cross-border data transfers outside the EU?",
+            answer: "We use Standard Contractual Clauses (SCCs) and adequacy decisions for international transfers, ensuring appropriate safeguards are in place.",
+            isMandatory: false,
+            needsAttention: false
+          }
+        ]
+      }
+    ];
   };
 
   // Initial fetch on component mount
@@ -388,6 +589,8 @@ const QuestionnairesPage = () => {
     // Reset all states to ensure a clean start
     setQuestionnaireTitle('');
     setQuestionnaireInput('');
+    setQuestions(['']);
+    setUseTextAreaMode(false);
     setQuestionAnswers([]);
     setGeneratedAnswers([]);
     setShowPreview(false);
@@ -473,24 +676,24 @@ const QuestionnairesPage = () => {
 
   // Update the handleGenerateAnswers function to check health first
   const handleGenerateAnswers = async (): Promise<QuestionAnswer[]> => {
-    const questions = questionnaireInput
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
+    // Get questions from either mode
+    const currentQuestions = useTextAreaMode 
+      ? questionnaireInput.split('\n').map(line => line.trim()).filter(line => line.length > 0)
+      : questions.filter(q => q.trim() !== '');
 
-    if (questions.length === 0) {
+    if (currentQuestions.length === 0) {
       setValidationError("No questions detected – please add questions first.");
       return [];
     }
 
     // Count mandatory questions
-    const mandatoryCount = questions.filter(q => isMandatoryQuestion(q)).length;
-    console.log(`Found ${mandatoryCount} mandatory questions out of ${questions.length} total`);
+    const mandatoryCount = currentQuestions.filter(q => isMandatoryQuestion(q)).length;
+    console.log(`Found ${mandatoryCount} mandatory questions out of ${currentQuestions.length} total`);
 
     setIsGeneratingAnswers(true);
     
     // Initialize answers with loading states for each question
-    const initialAnswers = questions.map(question => ({ 
+    const initialAnswers = currentQuestions.map(question => ({ 
       question, 
       answer: 'Generating...', 
       isLoading: true,
@@ -502,9 +705,9 @@ const QuestionnairesPage = () => {
     try {
       // Determine the API endpoint based on environment
       const baseApiEndpoint = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-        ? 'http://localhost:5001'  // Use local Flask service if running locally
-        : 'https://garnet-compliance-saas-production.up.railway.app';  // Production endpoint
-      
+        ? 'http://localhost:5000'  // Use Node.js backend on port 5000
+        : 'http://localhost:5000';  // Also use local backend for now
+
       console.log('Using API endpoint:', baseApiEndpoint);
       
       // Check if the backend is healthy
@@ -518,7 +721,7 @@ const QuestionnairesPage = () => {
       const batchEndpoint = `${baseApiEndpoint}/batch-ask`;
       
       try {
-        console.log('Attempting batch processing for', questions.length, 'questions');
+        console.log('Attempting batch processing for', currentQuestions.length, 'questions');
         
         // Show processing status in UI
         setGeneratedAnswers(prev => 
@@ -530,7 +733,7 @@ const QuestionnairesPage = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ questions }),
+          body: JSON.stringify({ questions: currentQuestions }),
         });
         
         // Check if the request was successful
@@ -542,7 +745,7 @@ const QuestionnairesPage = () => {
             
             // Map the batch responses back to our format
             const answers = data.answers.map((item: any, index: number) => {
-              const questionText = item.question || questions[index];
+              const questionText = item.question || currentQuestions[index];
               const answerText = item.answer || "We couldn't generate an answer—please try again.";
               const mandatory = isMandatoryQuestion(questionText);
               const sufficient = isAnswerSufficient(answerText);
@@ -570,14 +773,14 @@ const QuestionnairesPage = () => {
       }
       
       // If batch processing failed, process questions individually
-      console.log('Falling back to individual processing for', questions.length, 'questions');
+      console.log('Falling back to individual processing for', currentQuestions.length, 'questions');
       
       // Process questions in parallel but update UI as each answer arrives
       const finalAnswers: QuestionAnswer[] = [...initialAnswers];
       const singleEndpoint = `${baseApiEndpoint}/ask`;
       
       await Promise.all(
-        questions.map(async (question, index) => {
+        currentQuestions.map(async (question, index) => {
           try {
             const aiResponse = await fetch(singleEndpoint, {
               method: 'POST',
@@ -597,17 +800,13 @@ const QuestionnairesPage = () => {
             const answerText = aiData.answer || "We couldn't generate an answer—please try again.";
             const isMandatory = isMandatoryQuestion(question);
             
-            // Get the question and mandatory status
-            const questionText = questions[index];
-            const defaultAnswer = "We couldn't generate an answer—please try again.";
-            
-            // Update with error state
+            // Update with successful AI response
             finalAnswers[index] = { 
-              question: questionText, 
-              answer: defaultAnswer, 
+              question: question, 
+              answer: answerText, 
               isLoading: false,
               isMandatory: isMandatory,
-              needsAttention: isMandatory && !isAnswerSufficient(defaultAnswer)
+              needsAttention: isMandatory && !isAnswerSufficient(answerText)
             };
             
             // Update UI with current state
@@ -616,7 +815,7 @@ const QuestionnairesPage = () => {
             console.error(`Error getting AI answer for question ${index + 1}:`, error);
             
             // Get the question and mandatory status
-            const questionText = questions[index];
+            const questionText = question;
             const isMandatory = isMandatoryQuestion(questionText);
             const defaultAnswer = "We couldn't generate an answer—please try again.";
             
@@ -651,7 +850,7 @@ const QuestionnairesPage = () => {
       console.error('Error generating answers:', error);
       
       // Create fallback answers using the local fallback system
-      const fallbackAnswers = questions.map(question => {
+      const fallbackAnswers = currentQuestions.map(question => {
         const answer = generateLocalFallbackAnswer(question);
         const mandatory = isMandatoryQuestion(question);
         return {
@@ -684,24 +883,18 @@ const QuestionnairesPage = () => {
   const handleSubmitQuestionnaire = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!questionnaireInput.trim()) {
+    // Get questions from either mode
+    const currentQuestions = useTextAreaMode 
+      ? questionnaireInput.split('\n').map(line => line.trim()).filter(line => line.length > 0)
+      : questions.filter(q => q.trim() !== '');
+    
+    if (currentQuestions.length === 0) {
       setValidationError("No questions detected – please add one per line.");
       return;
     }
     
     if (!questionnaireTitle.trim()) {
       setValidationError("Please provide a title for the questionnaire.");
-      return;
-    }
-    
-    // Parse input into separate questions (non-empty lines)
-    const questions = questionnaireInput
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
-    
-    if (questions.length === 0) {
-      setValidationError("No questions detected – please add one per line.");
       return;
     }
     
@@ -720,7 +913,7 @@ const QuestionnairesPage = () => {
         },
         body: JSON.stringify({
           title: questionnaireTitle,
-          questions: questions
+          questions: currentQuestions
         }),
       });
       
@@ -751,6 +944,8 @@ const QuestionnairesPage = () => {
     setShowQuestionnaireInput(false);
     setQuestionnaireTitle('');
     setQuestionnaireInput('');
+    setQuestions(['']);
+    setUseTextAreaMode(false);
     setQuestionAnswers([]);
     setShowPreview(false);
     setFindReplaceMode(false);
@@ -1077,6 +1272,55 @@ const QuestionnairesPage = () => {
     }
   };
 
+  // Add question function
+  const addQuestion = () => {
+    setQuestions([...questions, '']);
+  };
+
+  // Remove question function
+  const removeQuestion = (index: number) => {
+    if (questions.length > 1) {
+      const newQuestions = questions.filter((_, i) => i !== index);
+      setQuestions(newQuestions);
+    }
+  };
+
+  // Update question function
+  const updateQuestion = (index: number, value: string) => {
+    const newQuestions = [...questions];
+    newQuestions[index] = value;
+    setQuestions(newQuestions);
+  };
+
+  // Convert questions array to textarea format
+  const questionsToTextArea = () => {
+    return questions.filter(q => q.trim() !== '').join('\n');
+  };
+
+  // Convert textarea to questions array
+  const textAreaToQuestions = (text: string) => {
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    return lines.length > 0 ? lines : [''];
+  };
+
+  // Sync between question modes
+  useEffect(() => {
+    if (useTextAreaMode) {
+      setQuestionnaireInput(questionsToTextArea());
+    } else {
+      setQuestions(textAreaToQuestions(questionnaireInput));
+    }
+  }, [useTextAreaMode]);
+
+  // Update question count calculation
+  useEffect(() => {
+    const currentQuestions = useTextAreaMode 
+      ? questionnaireInput.split('\n').map(line => line.trim()).filter(line => line.length > 0)
+      : questions.filter(q => q.trim() !== '');
+    
+    setQuestionCount(currentQuestions.length);
+  }, [useTextAreaMode]);
+
   return (
     <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
       <SearchParamsProvider setVendorId={setVendorId} />
@@ -1185,6 +1429,14 @@ const QuestionnairesPage = () => {
                               </button>
                               <button 
                                 type="button"
+                                onClick={() => setUseTextAreaMode(!useTextAreaMode)}
+                                className="text-sm text-primary hover:text-primary/80 flex items-center px-2 py-1 rounded border border-primary/20 hover:bg-primary/5"
+                                aria-label="Toggle input mode"
+                              >
+                                {useTextAreaMode ? 'List Mode' : 'Text Mode'}
+                              </button>
+                              <button 
+                                type="button"
                                 onClick={() => setFindReplaceMode(!findReplaceMode)}
                                 className="text-sm text-primary hover:text-primary/80 flex items-center"
                                 aria-label="Find and replace"
@@ -1211,141 +1463,187 @@ const QuestionnairesPage = () => {
                           </div>
                           
                           <p className="text-gray-600 text-sm mb-4">
-                            Type or paste each question on its own line. Click "Generate AI Answers" to get compliance-based responses.
+                            {useTextAreaMode 
+                              ? 'Type or paste each question on its own line. Click "Generate AI Answers" to get compliance-based responses.'
+                              : 'Add questions one by one using the form below, or switch to text mode for bulk entry.'
+                            }
                           </p>
-                          
-                          {/* Find and replace section */}
-                          {findReplaceMode && (
-                            <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div>
-                                  <label htmlFor="find-text" className="block text-sm font-medium text-gray-700 mb-1">
-                                    Find
-                                  </label>
+
+                          {!useTextAreaMode ? (
+                            // Individual Question Management Mode
+                            <div className="space-y-3 mb-4">
+                              {questions.map((question, index) => (
+                                <div key={index} className="flex gap-2">
+                                  <div className="flex-shrink-0 w-8 h-10 flex items-center justify-center text-sm font-medium text-gray-500 bg-gray-100 rounded">
+                                    {index + 1}
+                                  </div>
                                   <input
                                     type="text"
-                                    id="find-text"
-                                    className="garnet-input"
-                                    value={findText}
-                                    onChange={(e) => setFindText(e.target.value)}
-                                    placeholder="Text to find"
+                                    value={question}
+                                    onChange={(e) => updateQuestion(index, e.target.value)}
+                                    className="garnet-input flex-grow"
+                                    placeholder={`Enter question ${index + 1}...`}
+                                    aria-label={`Question ${index + 1}`}
                                   />
+                                  {questions.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => removeQuestion(index)}
+                                      className="flex-shrink-0 p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
+                                      aria-label={`Remove question ${index + 1}`}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </button>
+                                  )}
                                 </div>
-                                <div>
-                                  <label htmlFor="replace-text" className="block text-sm font-medium text-gray-700 mb-1">
-                                    Replace
-                                  </label>
-                                  <input
-                                    type="text"
-                                    id="replace-text"
-                                    className="garnet-input"
-                                    value={replaceText}
-                                    onChange={(e) => setReplaceText(e.target.value)}
-                                    placeholder="Replacement text"
-                                  />
-                                </div>
-                              </div>
-                              <div className="mt-2 flex justify-end">
-                                <button
-                                  type="button"
-                                  className="garnet-button garnet-button-primary text-sm"
-                                  onClick={handleFindReplace}
-                                  disabled={!findText}
-                                >
-                                  Replace All
-                                </button>
-                              </div>
+                              ))}
+                              
+                              <button
+                                type="button"
+                                onClick={addQuestion}
+                                className="flex items-center justify-center w-full p-3 border-2 border-dashed border-gray-300 text-gray-600 rounded-lg hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors"
+                              >
+                                <Plus className="h-5 w-5 mr-2" />
+                                Add Question
+                              </button>
                             </div>
-                          )}
-                          
-                          {/* File upload area */}
-                          <div 
-                            ref={dropZoneRef}
-                            className={`mb-5 border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                              dragActive 
-                                ? 'border-primary bg-primary/5' 
-                                : 'border-gray-300 hover:border-gray-400'
-                            }`}
-                            onDragEnter={handleDrag}
-                            onDragOver={handleDrag}
-                            onDragLeave={handleDrag}
-                            onDrop={handleDrop}
-                          >
-                            <div className="flex flex-col items-center justify-center">
-                              <Upload className="h-12 w-12 text-primary/40 mb-3" />
-                              <p className="text-gray-600 mb-2 font-medium">
-                                {dragActive ? 'Drop file here' : 'Drag and drop a file here, or click to browse'}
-                              </p>
-                              <div className="flex items-center justify-center text-xs text-gray-500 mb-4">
-                                <div className="flex items-center mr-3">
-                                  <FileText className="h-4 w-4 mr-1" />
-                                  <span>.TXT</span>
+                          ) : (
+                            // Textarea Mode (existing implementation)
+                            <>
+                              {/* Find and replace section */}
+                              {findReplaceMode && (
+                                <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div>
+                                      <label htmlFor="find-text" className="block text-sm font-medium text-gray-700 mb-1">
+                                        Find
+                                      </label>
+                                      <input
+                                        type="text"
+                                        id="find-text"
+                                        className="garnet-input"
+                                        value={findText}
+                                        onChange={(e) => setFindText(e.target.value)}
+                                        placeholder="Text to find"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label htmlFor="replace-text" className="block text-sm font-medium text-gray-700 mb-1">
+                                        Replace
+                                      </label>
+                                      <input
+                                        type="text"
+                                        id="replace-text"
+                                        className="garnet-input"
+                                        value={replaceText}
+                                        onChange={(e) => setReplaceText(e.target.value)}
+                                        placeholder="Replacement text"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="mt-2 flex justify-end">
+                                    <button
+                                      type="button"
+                                      className="garnet-button garnet-button-primary text-sm"
+                                      onClick={handleFindReplace}
+                                      disabled={!findText}
+                                    >
+                                      Replace All
+                                    </button>
+                                  </div>
                                 </div>
-                                <div className="flex items-center mr-3">
-                                  <FileType className="h-4 w-4 mr-1" />
-                                  <span>.CSV</span>
-                                </div>
-                                <div className="flex items-center">
-                                  <Files className="h-4 w-4 mr-1" />
-                                  <span>.MD</span>
+                              )}
+                              
+                              {/* File upload area */}
+                              <div 
+                                ref={dropZoneRef}
+                                className={`mb-5 border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                                  dragActive 
+                                    ? 'border-primary bg-primary/5' 
+                                    : 'border-gray-300 hover:border-gray-400'
+                                }`}
+                                onDragEnter={handleDrag}
+                                onDragOver={handleDrag}
+                                onDragLeave={handleDrag}
+                                onDrop={handleDrop}
+                              >
+                                <div className="flex flex-col items-center justify-center">
+                                  <Upload className="h-12 w-12 text-primary/40 mb-3" />
+                                  <p className="text-gray-600 mb-2 font-medium">
+                                    {dragActive ? 'Drop file here' : 'Drag and drop a file here, or click to browse'}
+                                  </p>
+                                  <div className="flex items-center justify-center text-xs text-gray-500 mb-4">
+                                    <div className="flex items-center mr-3">
+                                      <FileText className="h-4 w-4 mr-1" />
+                                      <span>.TXT</span>
+                                    </div>
+                                    <div className="flex items-center mr-3">
+                                      <FileType className="h-4 w-4 mr-1" />
+                                      <span>.CSV</span>
+                                    </div>
+                                    <div className="flex items-center">
+                                      <Files className="h-4 w-4 mr-1" />
+                                      <span>.MD</span>
+                                    </div>
+                                  </div>
+                                  <label className="garnet-button garnet-button-secondary text-sm cursor-pointer">
+                                    Browse Files
+                                    <input
+                                      type="file"
+                                      className="hidden"
+                                      accept=".txt,.csv,.md"
+                                      onChange={handleFileUpload}
+                                      ref={fileInputRef}
+                                      disabled={isUploading}
+                                      aria-label="Upload questions file"
+                                    />
+                                  </label>
                                 </div>
                               </div>
-                              <label className="garnet-button garnet-button-secondary text-sm cursor-pointer">
-                                Browse Files
-                                <input
-                                  type="file"
-                                  className="hidden"
-                                  accept=".txt,.csv,.md"
-                                  onChange={handleFileUpload}
-                                  ref={fileInputRef}
-                                  disabled={isUploading}
-                                  aria-label="Upload questions file"
+                              
+                              {isUploading && (
+                                <div className="mb-4 text-sm text-gray-600 flex items-center justify-center">
+                                  <svg className="animate-spin h-4 w-4 mr-2 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  Uploading...
+                                </div>
+                              )}
+                              
+                              {uploadError && (
+                                <p className="mb-4 text-sm text-red-600">
+                                  {uploadError}
+                                </p>
+                              )}
+                              
+                              <div className="relative mb-5">
+                                <textarea
+                                  ref={textareaRef}
+                                  className="garnet-input min-h-[200px] max-h-[400px] resize-none"
+                                  placeholder="Type or paste each question on its own line (e.g. 'Do you encrypt data at rest?')."
+                                  value={questionnaireInput}
+                                  onChange={(e) => {
+                                    setQuestionnaireInput(e.target.value);
+                                    debouncedResize();
+                                  }}
+                                  aria-label="Questionnaire input"
+                                  aria-describedby="question-counter"
                                 />
-                              </label>
-                            </div>
-                          </div>
-                          
-                          {isUploading && (
-                            <div className="mb-4 text-sm text-gray-600 flex items-center justify-center">
-                              <svg className="animate-spin h-4 w-4 mr-2 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              Uploading...
-                            </div>
+                                
+                                <div className="absolute bottom-3 right-3 flex items-center">
+                                  <button
+                                    type="button"
+                                    onClick={handleClearTextarea}
+                                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md"
+                                    aria-label="Clear questions"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            </>
                           )}
-                          
-                          {uploadError && (
-                            <p className="mb-4 text-sm text-red-600">
-                              {uploadError}
-                            </p>
-                          )}
-                        </div>
-                      
-                        <div className="relative mb-5">
-                          <textarea
-                            ref={textareaRef}
-                            className="garnet-input min-h-[200px] max-h-[400px] resize-none"
-                            placeholder="Type or paste each question on its own line (e.g. 'Do you encrypt data at rest?')."
-                            value={questionnaireInput}
-                            onChange={(e) => {
-                              setQuestionnaireInput(e.target.value);
-                              debouncedResize();
-                            }}
-                            aria-label="Questionnaire input"
-                            aria-describedby="question-counter"
-                          />
-                          
-                          <div className="absolute bottom-3 right-3 flex items-center">
-                            <button
-                              type="button"
-                              onClick={handleClearTextarea}
-                              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md"
-                              aria-label="Clear questions"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
                         </div>
                       </>
                     )}
@@ -1547,7 +1845,7 @@ const QuestionnairesPage = () => {
                         <button
                           type="button"
                           onClick={handleSaveAndReturn}
-                          disabled={!questionnaireInput.trim() || isSubmitting}
+                          disabled={questionCount === 0 || isSubmitting}
                           className="garnet-button garnet-button-gradient"
                         >
                           {isSubmitting ? (
@@ -1565,7 +1863,7 @@ const QuestionnairesPage = () => {
                       ) : (
                         <button
                           type="submit"
-                          disabled={!questionnaireInput.trim() || !questionnaireTitle.trim() || isSubmitting || questionCount > MAX_QUESTIONS}
+                          disabled={questionCount === 0 || !questionnaireTitle.trim() || isSubmitting || questionCount > MAX_QUESTIONS}
                           className="garnet-button garnet-button-gradient"
                           aria-live="polite"
                         >

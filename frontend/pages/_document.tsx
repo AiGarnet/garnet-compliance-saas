@@ -5,6 +5,9 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
+        {/* Favicon */}
+        <link rel="icon" href="/favicon.jpg" type="image/jpeg" />
+        
         {/* Inline critical CSS for fast initial paint */}
         <CriticalStyleTag />
         
