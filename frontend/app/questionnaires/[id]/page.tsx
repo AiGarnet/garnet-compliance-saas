@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 
 export async function generateStaticParams() {
   // For static export, we need to provide some common questionnaire IDs
+  // that might be pre-rendered. This is for the redirect page.
   const commonIds = [
     'demo_1', 'demo_2', 'demo_3',
     'q_100', 'q_101', 'q_102',
@@ -17,8 +18,7 @@ export async function generateStaticParams() {
   return commonIds.map(id => ({ id }));
 }
 
-export default function ChatPage({ params }: { params: { id: string } }) {
+export default function QuestionnairePage({ params }: { params: { id: string } }) {
   // Redirect to the answers page for this questionnaire
-  // The chat functionality is now integrated into the answers page
   redirect(`/questionnaires/answers/${params.id}`);
 } 

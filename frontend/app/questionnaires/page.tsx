@@ -270,8 +270,8 @@ const QuestionnairesPage = () => {
       // Refresh questionnaires list
       fetchQuestionnaires();
       
-      // Redirect to chat interface for the first question
-      router.push(`/questionnaires/${questionnaireId}/chat`);
+      // Redirect to answers interface for the questionnaire
+      router.push(`/questionnaires/answers/${questionnaireId}`);
       
     } catch (error) {
       console.error('Error creating questionnaire:', error);
@@ -283,13 +283,13 @@ const QuestionnairesPage = () => {
 
   // Handle viewing a questionnaire
   const handleViewQuestionnaire = (questionnaire: Questionnaire) => {
-    router.push(`/questionnaires/${questionnaire.id}/chat`);
+    router.push(`/questionnaires/answers/${questionnaire.id}`);
   };
   
   // Handle editing a questionnaire
   const handleEditQuestionnaire = (questionnaire: Questionnaire) => {
-    // Navigate to chat interface for editing
-    router.push(`/questionnaires/${questionnaire.id}/chat`);
+    // Navigate to answers interface for editing
+    router.push(`/questionnaires/answers/${questionnaire.id}`);
   };
   
   // Handle deleting a questionnaire
