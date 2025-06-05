@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, ChangeEvent, useMemo, useCallback, Suspense } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList, Filter, Plus, Search, SlidersHorizontal, X, Upload, FileText, FileType, Files, RefreshCw, Trash2, Sparkles, MessageSquare, ClipboardCopy, ArrowLeft } from "lucide-react";
+import { ClipboardList, Filter, Plus, Search, SlidersHorizontal, X, Upload, FileText, FileType, Files, RefreshCw, Trash2, Sparkles, MessageSquare, ClipboardCopy, ArrowLeft, ArrowRight, PlusCircle } from "lucide-react";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { QuestionnaireList, Questionnaire, QuestionnaireStatus } from "@/components/dashboard/QuestionnaireList";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -27,236 +27,120 @@ const AUTOSAVE_KEY = 'questionnaire_draft';
 const QuestionnairesPage = () => {
   const router = useRouter();
   
-  // Remove mock data and start with empty array
+  // State management
   const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
-  const [vendorName, setVendorName] = useState<string>('');
-  const [isLoadingVendor, setIsLoadingVendor] = useState<boolean>(false);
-  const [vendorId, setVendorId] = useState<string | null>(null);
-  
-  // New state variables for the questionnaire input modal
-  const [showQuestionnaireInput, setShowQuestionnaireInput] = useState(false);
+  const [showCreateQuestionnaire, setShowCreateQuestionnaire] = useState(false);
+  const [questionnaireTitle, setQuestionnaireTitle] = useState('');
   const [questionnaireInput, setQuestionnaireInput] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [questionAnswers, setQuestionAnswers] = useState<QuestionAnswer[]>([]);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const dropZoneRef = useRef<HTMLDivElement>(null);
-
-  // Add state for file upload
+  const [isCreatingQuestionnaire, setIsCreatingQuestionnaire] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // New states for enhanced features
-  const [questionnaireTitle, setQuestionnaireTitle] = useState('');
-  const [dragActive, setDragActive] = useState(false);
-  const [questionCount, setQuestionCount] = useState(0);
-  const [duplicateLines, setDuplicateLines] = useState<number[]>([]);
-  const [longLines, setLongLines] = useState<number[]>([]);
-  const [showPreview, setShowPreview] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const [findReplaceMode, setFindReplaceMode] = useState(false);
-  const [findText, setFindText] = useState('');
-  const [replaceText, setReplaceText] = useState('');
+  // Refs
+  const modalRef = useRef<HTMLDivElement>(null);
+  const questionsInputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // AI Assistant state for questionnaire creation
-  const [isGeneratingAnswers, setIsGeneratingAnswers] = useState(false);
-  const [generatedAnswers, setGeneratedAnswers] = useState<QuestionAnswer[]>([]);
-  const [showAIAssistant, setShowAIAssistant] = useState(false);
-
-  // New state for individual question management
-  const [questions, setQuestions] = useState<string[]>(['']);
-  const [useTextAreaMode, setUseTextAreaMode] = useState(false);
-
-  // Fetch vendor data when vendorId is provided in URL
+  // Close modal on escape key
   useEffect(() => {
-    if (vendorId) {
-      fetchVendorData(vendorId);
-    }
-  }, [vendorId]);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showCreateQuestionnaire) {
+        setShowCreateQuestionnaire(false);
+      }
+    };
 
-  // Fetch vendor data and any existing questionnaire
-  const fetchVendorData = async (id: string) => {
-    setIsLoadingVendor(true);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showCreateQuestionnaire]);
+
+  // Focus on input when modal opens
+  useEffect(() => {
+    if (showCreateQuestionnaire && questionsInputRef.current) {
+      setTimeout(() => {
+        questionsInputRef.current?.focus();
+      }, 100);
+    }
+  }, [showCreateQuestionnaire]);
+
+  // Fetch questionnaires from localStorage and generate sample data
+  const fetchQuestionnaires = async () => {
+    setIsLoading(true);
     setError('');
     
     try {
-      // Fetch vendor details
-      const vendorResponse = await fetch(`/api/vendors/${id}`);
+      // Get user questionnaires from localStorage
+      let userQuestionnaires: Questionnaire[] = [];
       
-      if (!vendorResponse.ok) {
-        throw new Error('Failed to fetch vendor data');
-      }
-      
-      const vendorData = await vendorResponse.json();
-      setVendorName(vendorData.vendor.name);
-      
-      // Fetch vendor's questionnaire answers if available
-      try {
-        const questionnaireResponse = await fetch(`/api/vendors/${id}/questionnaire`);
+      if (typeof window !== 'undefined') {
+        const storedQuestionnaires = localStorage.getItem('user_questionnaires');
         
-        if (questionnaireResponse.ok) {
-          const data = await questionnaireResponse.json();
-          
-          if (data.answers && data.answers.length > 0) {
-            // Load existing answers
-            setQuestionAnswers(data.answers.map((answer: any) => ({
-              question: answer.question,
-              answer: answer.answer || '',
-              isMandatory: answer.isMandatory || false,
-              needsAttention: answer.needsAttention || false
-            })));
-            
-            setShowQuestionnaireInput(true);
-          } else {
-            // No answers yet, but show questionnaire input for new vendor
-            setShowQuestionnaireInput(true);
+        if (storedQuestionnaires) {
+          try {
+            const parsedQuestionnaires = JSON.parse(storedQuestionnaires);
+            userQuestionnaires = parsedQuestionnaires.map((q: any) => {
+              let progress = 0;
+              let status: QuestionnaireStatus = "Not Started";
+              
+              if (q.answers && Array.isArray(q.answers)) {
+                const totalQuestions = q.answers.length;
+                const answeredQuestions = q.answers.filter((a: any) => a.answer && a.answer.trim() !== '').length;
+                
+                // Calculate progress percentage
+                progress = totalQuestions > 0 ? Math.round((answeredQuestions / totalQuestions) * 100) : 0;
+                
+                // Determine status based on progress
+                if (progress === 0) {
+                  status = "Not Started";
+                } else if (progress === 100) {
+                  status = "Completed";
+                } else if (progress >= 75) {
+                  status = "In Review";
+                } else if (progress >= 25) {
+                  status = "In Progress";
+                } else {
+                  status = "Draft";
+                }
+                
+                // Override status if there are mandatory questions that need attention
+                const needsAttentionCount = q.answers.filter((a: any) => a.needsAttention).length;
+                if (needsAttentionCount > 0 && status === "Completed") {
+                  status = "In Review";
+                }
+              }
+              
+              return {
+                ...q,
+                progress,
+                status
+              };
+            });
+          } catch (e) {
+            console.error('Error parsing stored questionnaires:', e);
           }
-        } else {
-          // No questionnaire yet, but show questionnaire input for new vendor
-          setShowQuestionnaireInput(true);
         }
-      } catch (error) {
-        console.error('Error fetching questionnaire:', error);
-        // Show empty questionnaire form even if there was an error fetching
-        setShowQuestionnaireInput(true);
       }
-    } catch (error) {
-      console.error('Error fetching vendor:', error);
-      setError('Unable to load vendor data. Please return to the dashboard and try again.');
+      
+      setQuestionnaires(userQuestionnaires);
+    } catch (err) {
+      console.error('Error fetching questionnaires:', err);
+      setError('Failed to load questionnaires. Please try again.');
     } finally {
-      setIsLoadingVendor(false);
+      setIsLoading(false);
     }
   };
 
-  // Calculate and update question count and validation when input changes
+  // Initial fetch on component mount
   useEffect(() => {
-    // Get current questions from either mode
-    const currentQuestions = useTextAreaMode 
-      ? questionnaireInput.split('\n').map(line => line.trim()).filter(line => line.length > 0)
-      : questions.filter(q => q.trim() !== '');
-    
-    setQuestionCount(currentQuestions.length);
-    
-    // Check for duplicates
-    const duplicates: number[] = [];
-    const seen = new Set<string>();
-    
-    currentQuestions.forEach((line, index) => {
-      if (seen.has(line.toLowerCase())) {
-        duplicates.push(index + 1);
-      } else {
-        seen.add(line.toLowerCase());
-      }
-    });
-    
-    setDuplicateLines(duplicates);
-    
-    // Check for long lines
-    const longLinesFound: number[] = [];
-    currentQuestions.forEach((line, index) => {
-      if (line.length > MAX_QUESTION_LENGTH) {
-        longLinesFound.push(index + 1);
-      }
-    });
-    
-    setLongLines(longLinesFound);
-    
-    // Validate total count
-    if (currentQuestions.length > MAX_QUESTIONS) {
-      setValidationError(`Exceeded maximum of ${MAX_QUESTIONS} questions. Please reduce the number of questions.`);
-    } else if (duplicates.length > 0) {
-      setValidationError(`Duplicate questions found on lines: ${duplicates.join(', ')}`);
-    } else if (longLinesFound.length > 0) {
-      setValidationError(`Questions exceeding ${MAX_QUESTION_LENGTH} characters on lines: ${longLinesFound.join(', ')}`);
-    } else {
-      setValidationError(null);
-    }
-    
-    // Auto-save draft
-    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
-      title: questionnaireTitle,
-      questions: useTextAreaMode ? questionnaireInput : questions.join('\n'),
-      mode: useTextAreaMode ? 'textarea' : 'list',
-      vendorId: vendorId
-    }));
-    
-  }, [questionnaireInput, questionnaireTitle, questions, useTextAreaMode, vendorId]);
-
-  // Debounced textarea resize
-  const resizeTextarea = useCallback(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    
-    // Reset height to calculate scrollHeight accurately
-    textarea.style.height = 'auto';
-    
-    // Set new height, with max-height enforced by CSS
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 400)}px`;
+    fetchQuestionnaires();
   }, []);
-  
-  const debouncedResize = useMemo(() => debounce(resizeTextarea, 100), [resizeTextarea]);
-  
-  useEffect(() => {
-    resizeTextarea();
-    return () => {
-      debouncedResize.cancel();
-    };
-  }, [questionnaireInput, debouncedResize, resizeTextarea]);
 
-  // Load autosaved draft
-  useEffect(() => {
-    if (showQuestionnaireInput) {
-      const savedDraft = localStorage.getItem(AUTOSAVE_KEY);
-      if (savedDraft) {
-        try {
-          const { title, questions } = JSON.parse(savedDraft);
-          setQuestionnaireTitle(title || '');
-          setQuestionnaireInput(questions || '');
-        } catch (e) {
-          console.error('Error loading saved draft:', e);
-        }
-      }
-    }
-  }, [showQuestionnaireInput]);
-
-  // Focus trap for modal
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!showQuestionnaireInput || e.key !== 'Tab') return;
-      
-      const modal = modalRef.current;
-      if (!modal) return;
-      
-      const focusableElements = modal.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      
-      const firstElement = focusableElements[0] as HTMLElement;
-      const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-      
-      if (e.shiftKey && document.activeElement === firstElement) {
-        e.preventDefault();
-        lastElement.focus();
-      } else if (!e.shiftKey && document.activeElement === lastElement) {
-        e.preventDefault();
-        firstElement.focus();
-      }
-    };
-    
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [showQuestionnaireInput]);
-
-  // Drag and drop handlers
+  // Handle drag and drop
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
     if (e.type === 'dragenter' || e.type === 'dragover') {
       setDragActive(true);
     } else if (e.type === 'dragleave') {
@@ -274,1618 +158,338 @@ const QuestionnairesPage = () => {
     }
   };
 
-  const fetchQuestionnaires = async () => {
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      // Only use questionnaires from local storage, no mock data
-      const storedQuestionnaires = localStorage.getItem('user_questionnaires');
-      let userQuestionnaires: Questionnaire[] = [];
-      
-      if (storedQuestionnaires) {
-        try {
-          const parsedQuestionnaires = JSON.parse(storedQuestionnaires);
-          
-          // Process each questionnaire to calculate dynamic status and progress
-          userQuestionnaires = parsedQuestionnaires.map((q: any) => {
-            // Default values if no answers
-            let progress = 0;
-            let status: QuestionnaireStatus = "Not Started";
-            
-            // Calculate progress and status based on answers if available
-            if (q.answers && q.answers.length > 0) {
-              const totalQuestions = q.answers.length;
-              
-              // Count questions that have actual answers (not placeholders or failures)
-              const answeredQuestions = q.answers.filter((a: any) => {
-                const answer = a.answer || '';
-                return answer.trim() !== '' && 
-                  !answer.includes('AI answer will be generated') &&
-                  !answer.includes('Generating...') &&
-                  !answer.includes('We couldn\'t generate an answer') &&
-                  answer !== 'Processing in batch mode...';
-              }).length;
-              
-              // If a questionnaire has been viewed but not all answers were generated
-              // Count it as at least "Draft" status regardless of progress percentage
-              if (answeredQuestions > 0) {
-                // Calculate progress percentage with a more forgiving algorithm
-                // If total questions is more than 10, we consider it successful if
-                // at least 80% of questions have answers
-                const minimumProgress = Math.max(10, answeredQuestions > 0 ? 10 : 0);
-                progress = Math.round((answeredQuestions / totalQuestions) * 100);
-                
-                // Determine status based on progress
-                if (progress === 0) {
-                  status = "Not Started";
-                } else if (progress === 100) {
-                  status = "Completed";
-                } else if (progress >= 75) {
-                  status = "In Review";
-                } else if (progress >= 25) {
-                  status = "In Progress";
-                } else {
-                  status = "Draft";
-                }
-                
-                // If at least one question is answered, it's at minimum a draft
-                if (answeredQuestions > 0 && status === "Not Started") {
-                  status = "Draft";
-                  progress = Math.max(progress, minimumProgress);
-                }
-                
-                // Override status if there are mandatory questions that need attention
-                const needsAttentionCount = q.answers.filter((a: any) => a.needsAttention).length;
-                if (needsAttentionCount > 0 && status === "Completed") {
-                  status = "In Review";
-                }
-              }
-            }
-            
-            // Return questionnaire with calculated values
-            return {
-              ...q,
-              progress,
-              status
-            };
-          });
-        } catch (e) {
-          console.error('Error parsing stored questionnaires:', e);
-        }
-      }
-
-      // If no questionnaires exist, create some sample ones for demo purposes
-      if (userQuestionnaires.length === 0) {
-        userQuestionnaires = createSampleQuestionnaires();
-        // Save sample questionnaires to localStorage
-        localStorage.setItem('user_questionnaires', JSON.stringify(userQuestionnaires));
-      }
-      
-      // Only use user-created questionnaires
-      setQuestionnaires(userQuestionnaires);
-      
-      // Save the updated questionnaires back to localStorage
-      if (userQuestionnaires.length > 0) {
-        localStorage.setItem('user_questionnaires', JSON.stringify(userQuestionnaires));
-      }
-    } catch (err) {
-      console.error('Error fetching questionnaires:', err);
-      setError('Failed to load questionnaires. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Create sample questionnaires for demo purposes
-  const createSampleQuestionnaires = (): Questionnaire[] => {
-    const now = new Date();
-    const futureDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000); // 2 weeks from now
-    
-    return [
-      {
-        id: 'q_security_assessment',
-        name: 'Security Assessment Questionnaire',
-        status: 'In Progress' as QuestionnaireStatus,
-        dueDate: futureDate.toISOString().split('T')[0],
-        progress: 75,
-        answers: [
-          {
-            question: "Does your organization have a written information security policy that is reviewed annually?",
-            answer: "Yes, our organization maintains a comprehensive information security policy that is reviewed annually and approved by senior management. The policy covers data classification, access controls, incident response, and compliance requirements.",
-            isMandatory: true,
-            needsAttention: false
-          },
-          {
-            question: "How does your organization handle data breach notification and incident response?",
-            answer: "We have a formal incident response plan that includes immediate containment, assessment, notification procedures within 72 hours, and post-incident review. Our security team is trained to respond within 2 hours of detection.",
-            isMandatory: true,
-            needsAttention: false
-          },
-          {
-            question: "What encryption standards does your organization use for data at rest and in transit?",
-            answer: "",
-            isMandatory: true,
-            needsAttention: false
-          },
-          {
-            question: "Describe your organization's access control and authentication procedures.",
-            answer: "We implement role-based access control (RBAC) with regular quarterly access reviews and multi-factor authentication for all administrative access and sensitive systems.",
-            isMandatory: true,
-            needsAttention: false
-          },
-          {
-            question: "How often does your organization conduct security awareness training for employees?",
-            answer: "Security awareness training is conducted quarterly for all employees, with additional specialized training for IT staff and monthly phishing simulation exercises.",
-            isMandatory: false,
-            needsAttention: false
-          },
-          {
-            question: "What measures are in place to protect against unauthorized physical access to facilities?",
-            answer: "",
-            isMandatory: true,
-            needsAttention: false
-          }
-        ]
-      },
-      {
-        id: 'q_compliance_review',
-        name: 'Compliance Review Questionnaire',
-        status: 'Draft' as QuestionnaireStatus,
-        dueDate: new Date(now.getTime() + 21 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 3 weeks from now
-        progress: 40,
-        answers: [
-          {
-            question: "Which regulatory frameworks does your organization currently comply with (SOC 2, GDPR, HIPAA, etc.)?",
-            answer: "Our organization complies with SOC 2 Type II, GDPR, CCPA, and ISO 27001. We undergo annual audits to maintain these certifications and have documented compliance procedures.",
-            isMandatory: true,
-            needsAttention: false
-          },
-          {
-            question: "How do you handle personal data processing, storage, and subject rights under GDPR?",
-            answer: "",
-            isMandatory: true,
-            needsAttention: false
-          },
-          {
-            question: "What financial controls and segregation of duties are in place for vendor payments and procurement?",
-            answer: "",
-            isMandatory: true,
-            needsAttention: false
-          },
-          {
-            question: "Describe your data retention and deletion policies for different types of information.",
-            answer: "We maintain a comprehensive data retention policy that specifies retention periods based on data type and regulatory requirements, with automatic deletion processes.",
-            isMandatory: false,
-            needsAttention: false
-          },
-          {
-            question: "How do you ensure compliance monitoring and reporting to relevant authorities?",
-            answer: "",
-            isMandatory: true,
-            needsAttention: false
-          }
-        ]
-      },
-      {
-        id: 'q_vendor_onboarding',
-        name: 'Vendor Onboarding Questionnaire',
-        status: 'Completed' as QuestionnaireStatus,
-        dueDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 week from now
-        progress: 100,
-        answers: [
-          {
-            question: "Provide a detailed description of your organization, services offered, and years in business.",
-            answer: "We are a cloud-based software provider specializing in enterprise solutions with over 10 years of experience serving Fortune 500 companies. We offer SaaS solutions for compliance management, risk assessment, and vendor management.",
-            isMandatory: true,
-            needsAttention: false
-          },
-          {
-            question: "What security certifications and compliance frameworks does your organization maintain?",
-            answer: "We maintain SOC 2 Type II, ISO 27001, PCI DSS Level 1, and GDPR compliance certifications. All certifications are audited annually by independent third-party auditors.",
-            isMandatory: true,
-            needsAttention: false
-          },
-          {
-            question: "How do you ensure service availability, uptime guarantees, and disaster recovery?",
-            answer: "We guarantee 99.9% uptime with redundant systems across multiple data centers, automated failover capabilities, and comprehensive disaster recovery plans tested quarterly.",
-            isMandatory: true,
-            needsAttention: false
-          },
-          {
-            question: "Describe your incident escalation process and support team availability.",
-            answer: "We have a 24/7 support team with defined escalation procedures. Critical incidents are escalated to senior management within 30 minutes and customers are notified within 15 minutes.",
-            isMandatory: true,
-            needsAttention: false
-          },
-          {
-            question: "How do you handle confidential customer data, including access controls and data processing agreements?",
-            answer: "All customer data is encrypted at rest and in transit, with strict access controls based on role and need-to-know basis. We have comprehensive data processing agreements and conduct regular access reviews.",
-            isMandatory: true,
-            needsAttention: false
-          },
-          {
-            question: "What is your approach to software development security, including code reviews and vulnerability management?",
-            answer: "We follow secure development lifecycle practices with mandatory code reviews, automated security testing, regular penetration testing, and vulnerability management programs.",
-            isMandatory: false,
-            needsAttention: false
-          }
-        ]
-      },
-      {
-        id: 'q_data_privacy_gdpr',
-        name: 'Data Privacy & GDPR Assessment',
-        status: 'In Review' as QuestionnaireStatus,
-        dueDate: new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 10 days from now
-        progress: 85,
-        answers: [
-          {
-            question: "Do you have a comprehensive data privacy policy that covers GDPR requirements?",
-            answer: "Yes, we maintain a comprehensive data privacy policy that aligns with GDPR Article 13 and 14, covering data collection, processing, storage, and subject rights.",
-            isMandatory: true,
-            needsAttention: false
-          },
-          {
-            question: "How do you obtain and document consent for personal data processing?",
-            answer: "We implement explicit consent mechanisms with clear opt-in procedures, maintain consent records with timestamps, and provide easy withdrawal options as required by GDPR Article 7.",
-            isMandatory: true,
-            needsAttention: false
-          },
-          {
-            question: "What technical and organizational measures protect personal data in your systems?",
-            answer: "",
-            isMandatory: true,
-            needsAttention: true
-          },
-          {
-            question: "How do you handle data subject access requests (DSAR) under GDPR Article 15?",
-            answer: "We have established procedures to respond to DSARs within 30 days, providing data subjects with information about their data processing and copies of their personal data.",
-            isMandatory: true,
-            needsAttention: false
-          },
-          {
-            question: "Describe your data retention and deletion procedures for different categories of personal data.",
-            answer: "We maintain data retention schedules based on legal requirements and business needs, with automated deletion processes and regular purging of unnecessary data.",
-            isMandatory: true,
-            needsAttention: false
-          },
-          {
-            question: "How do you conduct Data Protection Impact Assessments (DPIA) for high-risk processing?",
-            answer: "",
-            isMandatory: true,
-            needsAttention: true
-          },
-          {
-            question: "What procedures are in place for cross-border data transfers outside the EU?",
-            answer: "We use Standard Contractual Clauses (SCCs) and adequacy decisions for international transfers, ensuring appropriate safeguards are in place.",
-            isMandatory: false,
-            needsAttention: false
-          }
-        ]
-      }
-    ];
-  };
-
-  // Initial fetch on component mount
-  useEffect(() => {
-    fetchQuestionnaires();
-  }, []);
-  
-  // Focus the textarea when the modal is shown
-  useEffect(() => {
-    if (showQuestionnaireInput) {
-      // Focus on title first, then textarea
-      if (textareaRef.current) {
-        setTimeout(() => {
-          textareaRef.current?.focus();
-        }, 100);
-      }
-    }
-  }, [showQuestionnaireInput]);
-  
-  const handleNewQuestionnaire = () => {
-    // Add debug logging
-    console.log('New Questionnaire button clicked');
-    // Reset all states to ensure a clean start
-    setQuestionnaireTitle('');
-    setQuestionnaireInput('');
-    setQuestions(['']);
-    setUseTextAreaMode(false);
-    setQuestionAnswers([]);
-    setGeneratedAnswers([]);
-    setShowPreview(false);
-    setFindReplaceMode(false);
-    setShowAIAssistant(false);
-    setValidationError(null);
-    // Show the questionnaire input modal
-    setShowQuestionnaireInput(true);
-  };
-
-  // Add a function to check if the backend service is running
-  const checkBackendHealth = async (baseUrl: string): Promise<boolean> => {
-    try {
-      console.log('Checking backend health at:', baseUrl);
-      const response = await fetch(`${baseUrl}/health`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // Short timeout to not block the UI
-        signal: AbortSignal.timeout(5000)
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Backend health check result:', data);
-        return data.status === 'healthy';
-      }
-      return false;
-    } catch (error) {
-      console.error('Backend health check failed:', error);
-      return false;
-    }
-  };
-
-  // Add fallback answer generation for when API is unavailable
-  const generateLocalFallbackAnswer = (question: string): string => {
-    // Common patterns in compliance questions
-    const patterns = [
-      { regex: /encrypt/i, answer: "Yes, our company encrypts all personal data both at rest and in transit. We use industry-standard encryption protocols (AES-256 for data at rest and TLS 1.2+ for data in transit)." },
-      { regex: /access control|permission/i, answer: "Yes, our organization implements strict access control and role-based permissions for all sensitive data. We grant access on a need-to-know basis with the principle of least privilege." },
-      { regex: /data breach|incident/i, answer: "Yes, our company notifies supervisory authorities and affected individuals within 72 hours of becoming aware of a data breach, as required by GDPR Article 33." },
-      { regex: /retention|delete/i, answer: "Our organization has a comprehensive data retention and deletion policy. We keep data only as long as necessary for the purpose it was collected." },
-      { regex: /consent/i, answer: "Yes, our organization collects explicit consent before personal data is processed for specific purposes. We store consent records securely and include timestamp, method of collection, and the specific consent given." },
-      { regex: /audit/i, answer: "Yes, our organization conducts regular audits to ensure compliance with all applicable regulations and industry standards." },
-      { regex: /training|awareness/i, answer: "Our company's security and compliance awareness training is updated quarterly and is mandatory for all employees." },
-      { regex: /mfa|multi-factor/i, answer: "Yes, our company supports multi-factor authentication (MFA) for all users. MFA is mandatory for administrative access and strongly recommended for all user accounts." },
-      { regex: /test|assess/i, answer: "Yes, our company conducts regular security assessments and penetration testing to identify and address potential vulnerabilities." },
-      { regex: /backup/i, answer: "Yes, our organization maintains regular backups of all critical data with appropriate encryption and access controls in place." },
-    ];
-    
-    // Check for pattern matches
-    for (const pattern of patterns) {
-      if (pattern.regex.test(question)) {
-        return pattern.answer;
-      }
-    }
-    
-    // Default response for questions that don't match any patterns
-    return "Our organization handles this in accordance with our company policies and applicable regulations. We ensure compliance with all relevant laws and industry best practices.";
-  };
-
-  // Add a helper function to check if a question is mandatory
-  const isMandatoryQuestion = (question: string): boolean => {
-    // Check if the question contains "must" or ends with "(Required)"
-    return question.toLowerCase().includes("must") || 
-           question.endsWith("(Required)") || 
-           question.endsWith("(required)") ||
-           question.includes("mandatory") ||
-           question.includes("Mandatory");
-  };
-
-  // Add a function to check if an answer is sufficient
-  const isAnswerSufficient = (answer: string): boolean => {
-    // Very basic check - could be enhanced for better evaluation
-    const trimmedAnswer = answer.trim();
-    
-    // Check if the answer is empty, the default "We couldn't generate" message, or too short
-    return trimmedAnswer.length > 20 && 
-           !trimmedAnswer.startsWith("We couldn't generate") &&
-           !trimmedAnswer.includes("AI answer will be generated");
-  };
-
-  // Update the handleGenerateAnswers function to check health first
-  const handleGenerateAnswers = async (): Promise<QuestionAnswer[]> => {
-    // Get questions from either mode
-    const currentQuestions = useTextAreaMode 
-      ? questionnaireInput.split('\n').map(line => line.trim()).filter(line => line.length > 0)
-      : questions.filter(q => q.trim() !== '');
-
-    if (currentQuestions.length === 0) {
-      setValidationError("No questions detected – please add questions first.");
-      return [];
-    }
-
-    // Count mandatory questions
-    const mandatoryCount = currentQuestions.filter(q => isMandatoryQuestion(q)).length;
-    console.log(`Found ${mandatoryCount} mandatory questions out of ${currentQuestions.length} total`);
-
-    setIsGeneratingAnswers(true);
-    
-    // Initialize answers with loading states for each question
-    const initialAnswers = currentQuestions.map(question => ({ 
-      question, 
-      answer: 'Generating...', 
-      isLoading: true,
-      isMandatory: isMandatoryQuestion(question)
-    }));
-    setGeneratedAnswers(initialAnswers);
-    setShowAIAssistant(true);
-    
-    try {
-      // Determine the API endpoint based on environment
-      const baseApiEndpoint = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-        ? 'http://localhost:5000'  // Use Node.js backend on port 5000
-        : 'http://localhost:5000';  // Also use local backend for now
-
-      console.log('Using API endpoint:', baseApiEndpoint);
-      
-      // Check if the backend is healthy
-      const isHealthy = await checkBackendHealth(baseApiEndpoint);
-      if (!isHealthy) {
-        console.warn('Backend health check failed, using fallback answers');
-        throw new Error('Backend service is not available');
-      }
-      
-      // Try batch processing first for efficiency
-      const batchEndpoint = `${baseApiEndpoint}/batch-ask`;
-      
-      try {
-        console.log('Attempting batch processing for', currentQuestions.length, 'questions');
-        
-        // Show processing status in UI
-        setGeneratedAnswers(prev => 
-          prev.map(item => ({ ...item, answer: 'Processing in batch mode...', isLoading: true }))
-        );
-        
-        const batchResponse = await fetch(batchEndpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ questions: currentQuestions }),
-        });
-        
-        // Check if the request was successful
-        if (batchResponse.ok) {
-          const data = await batchResponse.json();
-          
-          if (data.answers && Array.isArray(data.answers)) {
-            console.log('Batch processing successful, received', data.answers.length, 'answers');
-            
-            // Map the batch responses back to our format
-            const answers = data.answers.map((item: any, index: number) => {
-              const questionText = item.question || currentQuestions[index];
-              const answerText = item.answer || "We couldn't generate an answer—please try again.";
-              const mandatory = isMandatoryQuestion(questionText);
-              const sufficient = isAnswerSufficient(answerText);
-              
-              return {
-                question: questionText,
-                answer: answerText,
-                isLoading: false,
-                isMandatory: mandatory,
-                needsAttention: mandatory && !sufficient
-              };
-            });
-            
-            setGeneratedAnswers(answers);
-            setIsGeneratingAnswers(false);
-            return answers;
-          }
-        } else {
-          console.warn('Batch processing failed, status:', batchResponse.status);
-          throw new Error('Batch processing failed');
-        }
-      } catch (batchError) {
-        console.error("Error in batch processing:", batchError);
-        // Continue with individual processing if batch fails
-      }
-      
-      // If batch processing failed, process questions individually
-      console.log('Falling back to individual processing for', currentQuestions.length, 'questions');
-      
-      // Process questions in parallel but update UI as each answer arrives
-      const finalAnswers: QuestionAnswer[] = [...initialAnswers];
-      const singleEndpoint = `${baseApiEndpoint}/ask`;
-      
-      await Promise.all(
-        currentQuestions.map(async (question, index) => {
-          try {
-            const aiResponse = await fetch(singleEndpoint, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ question }),
-            });
-            
-            if (!aiResponse.ok) {
-              throw new Error(`Failed to get AI response: ${aiResponse.status}`);
-            }
-            
-            const aiData = await aiResponse.json();
-            console.log(`Received answer for question ${index + 1}:`, aiData);
-            
-            const answerText = aiData.answer || "We couldn't generate an answer—please try again.";
-            const isMandatory = isMandatoryQuestion(question);
-            
-            // Update with successful AI response
-            finalAnswers[index] = { 
-              question: question, 
-              answer: answerText, 
-              isLoading: false,
-              isMandatory: isMandatory,
-              needsAttention: isMandatory && !isAnswerSufficient(answerText)
-            };
-            
-            // Update UI with current state
-            setGeneratedAnswers([...finalAnswers]);
-          } catch (error) {
-            console.error(`Error getting AI answer for question ${index + 1}:`, error);
-            
-            // Get the question and mandatory status
-            const questionText = question;
-            const isMandatory = isMandatoryQuestion(questionText);
-            const defaultAnswer = "We couldn't generate an answer—please try again.";
-            
-            // Update with error state
-            finalAnswers[index] = { 
-              question: questionText, 
-              answer: defaultAnswer, 
-              isLoading: false,
-              isMandatory: isMandatory,
-              needsAttention: isMandatory && !isAnswerSufficient(defaultAnswer)
-            };
-            
-            // Update UI with current state
-            setGeneratedAnswers([...finalAnswers]);
-          }
-        })
-      );
-
-      // Final update - all loading states should be false now
-      const completedAnswers = finalAnswers.map(qa => ({
-        question: qa.question,
-        answer: qa.answer,
-        isLoading: false,
-        isMandatory: qa.isMandatory,
-        needsAttention: qa.needsAttention
-      }));
-      
-      setGeneratedAnswers(completedAnswers);
-      setIsGeneratingAnswers(false);
-      return completedAnswers;
-    } catch (error) {
-      console.error('Error generating answers:', error);
-      
-      // Create fallback answers using the local fallback system
-      const fallbackAnswers = currentQuestions.map(question => {
-        const answer = generateLocalFallbackAnswer(question);
-        const mandatory = isMandatoryQuestion(question);
-        return {
-          question,
-          answer,
-          isLoading: false,
-          isMandatory: mandatory,
-          needsAttention: mandatory && !isAnswerSufficient(answer)
-        };
-      });
-      
-      setGeneratedAnswers(fallbackAnswers);
-      setIsGeneratingAnswers(false);
-      return fallbackAnswers;
-    }
-  };
-
-  // Wrapper function for button clicks (doesn't return anything)
-  const handleGenerateAnswersClick = async () => {
-    console.log('Generate answers button clicked');
-    try {
-      await handleGenerateAnswers();
-      console.log('Answers generated successfully');
-    } catch (error) {
-      console.error('Error generating answers:', error);
-      setValidationError('Failed to generate AI answers. Please try again.');
-    }
-  };
-  
-  const handleSubmitQuestionnaire = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Get questions from either mode
-    const currentQuestions = useTextAreaMode 
-      ? questionnaireInput.split('\n').map(line => line.trim()).filter(line => line.length > 0)
-      : questions.filter(q => q.trim() !== '');
-    
-    if (currentQuestions.length === 0) {
-      setValidationError("No questions detected – please add one per line.");
-      return;
-    }
-    
-    if (!questionnaireTitle.trim()) {
-      setValidationError("Please provide a title for the questionnaire.");
-      return;
-    }
-    
-    if (validationError) {
-      return; // Don't submit if there are validation errors
-    }
-    
-    setIsSubmitting(true);
-    
-    try {
-      // Send POST request to the API
-      const response = await fetch('/api/questionnaires', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: questionnaireTitle,
-          questions: currentQuestions
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      // Clear autosaved draft
-      localStorage.removeItem(AUTOSAVE_KEY);
-      
-      // Close modal
-      closeQuestionnaireInput();
-      
-      // Navigate to the chat page with the returned questionnaireId
-      router.push(`/questionnaires/${data.id}/chat`);
-      
-    } catch (error) {
-      console.error('Error submitting questionnaire:', error);
-      setValidationError('Failed to submit questionnaire. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  const closeQuestionnaireInput = () => {
-    setShowQuestionnaireInput(false);
-    setQuestionnaireTitle('');
-    setQuestionnaireInput('');
-    setQuestions(['']);
-    setUseTextAreaMode(false);
-    setQuestionAnswers([]);
-    setShowPreview(false);
-    setFindReplaceMode(false);
-    setGeneratedAnswers([]);
-    setShowAIAssistant(false);
-    setIsGeneratingAnswers(false);
-    setValidationError(null);
-    setUploadError(null);
-    setIsSubmitting(false);
-    setDragActive(false);
-    // Reset find/replace state
-    setFindText('');
-    setReplaceText('');
-  };
-
-  // Process file regardless of upload method
+  // Process file upload
   const processFile = async (file: File) => {
     setIsUploading(true);
     setUploadError(null);
     
     try {
-      // File size check (10MB limit as example)
       if (file.size > 10 * 1024 * 1024) {
-        throw new Error('File is unusually large (>10MB). Please check the file before uploading.');
+        throw new Error('File is too large (max 10MB)');
       }
       
-      // Sanitize filename
-      const sanitizedName = file.name.replace(/[^\w\s.-]/g, '');
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      let text = '';
       
-      // Check file type
-      const fileExtension = sanitizedName.split('.').pop()?.toLowerCase();
-      
-      if (fileExtension === 'txt') {
-        // Read file content
-        const text = await readFileAsText(file);
-        
-        // Set the text to the textarea
-        setQuestionnaireInput(text);
-        
-        // Auto-generate title from filename if not set
-        if (!questionnaireTitle) {
-          const baseName = sanitizedName.split('.')[0]
-            .replace(/[_-]/g, ' ')
-            .replace(/\b\w/g, c => c.toUpperCase());
-          setQuestionnaireTitle(baseName);
-        }
-      } else if (fileExtension === 'csv') {
-        // Read and parse CSV
-        const text = await readFileAsText(file);
-        const lines = text.split('\n')
-          .map(line => {
-            // Extract first column if CSV
-            const columns = line.split(',');
-            return columns[0]?.trim().replace(/^["']|["']$/g, '') || '';
-          })
-          .filter(line => line.length > 0)
-          .join('\n');
-        
-        setQuestionnaireInput(lines);
-        
-        // Auto-generate title from filename
-        if (!questionnaireTitle) {
-          const baseName = sanitizedName.split('.')[0]
-            .replace(/[_-]/g, ' ')
-            .replace(/\b\w/g, c => c.toUpperCase());
-          setQuestionnaireTitle(baseName);
-        }
-      } else if (fileExtension === 'md') {
-        // Basic Markdown support - extract lines that might be questions
-        const text = await readFileAsText(file);
-        const lines = text.split('\n')
-          .filter(line => {
-            // Skip headers, lists markers, etc.
-            const trimmed = line.trim();
-            return trimmed.length > 0 && 
-                  !trimmed.startsWith('#') && 
-                  !trimmed.startsWith('-') && 
-                  !trimmed.startsWith('*') &&
-                  !trimmed.startsWith('```');
-          })
-          .join('\n');
-        
-        setQuestionnaireInput(lines);
-        
-        // Auto-generate title from filename
-        if (!questionnaireTitle) {
-          const baseName = sanitizedName.split('.')[0]
-            .replace(/[_-]/g, ' ')
-            .replace(/\b\w/g, c => c.toUpperCase());
-          setQuestionnaireTitle(baseName);
-        }
+      if (fileExtension === 'txt' || fileExtension === 'md') {
+        text = await readFileAsText(file);
+      } else if (fileExtension === 'pdf') {
+        // For PDF, we'll need a PDF parsing library, for now show error
+        throw new Error('PDF parsing not yet implemented. Please use .txt or .md files for now.');
       } else {
-        throw new Error('Only .txt, .csv, and .md files are supported at this time');
+        throw new Error('Unsupported file type. Please use .txt, .md files.');
+      }
+      
+      // Extract questions from text (each line is a question)
+      const questions = text.split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0 && line.length <= MAX_QUESTION_LENGTH);
+      
+      if (questions.length > 0) {
+        setQuestionnaireInput(questions.join('\n'));
+        if (!questionnaireTitle) {
+          const baseName = file.name.split('.')[0]
+            .replace(/[_-]/g, ' ')
+            .replace(/\b\w/g, c => c.toUpperCase());
+          setQuestionnaireTitle(baseName);
+        }
       }
       
     } catch (error) {
       console.error('Error processing file:', error);
-      setUploadError(error instanceof Error ? error.message : 'An error occurred while processing the file');
+      setUploadError(error instanceof Error ? error.message : 'Error processing file');
     } finally {
       setIsUploading(false);
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     }
   };
 
-  // Handle file upload via input
-  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    await processFile(file);
-  };
-  
-  // Helper function to read file as text
   const readFileAsText = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          resolve(event.target.result as string);
-        } else {
-          reject(new Error('Failed to read file'));
-        }
-      };
-      
-      reader.onerror = () => {
-        reject(new Error('File read error'));
-      };
-      
+      reader.onload = (e) => resolve(e.target?.result as string || '');
+      reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsText(file);
     });
   };
 
-  // Clear textarea
-  const handleClearTextarea = () => {
-    if (confirm('Are you sure you want to clear all questions?')) {
-      setQuestionnaireInput('');
-      setGeneratedAnswers([]);
-      textareaRef.current?.focus();
-    }
-  };
-
-  // Toggle preview mode
-  const handleTogglePreview = () => {
-    setShowPreview(!showPreview);
-  };
-
-  // Execute find and replace
-  const handleFindReplace = () => {
-    if (!findText) return;
+  // Handle creating a new questionnaire
+  const handleCreateQuestionnaire = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    const newText = questionnaireInput.replace(
-      new RegExp(findText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), 
-      replaceText
-    );
-    
-    setQuestionnaireInput(newText);
-    setFindText('');
-    setReplaceText('');
-    setFindReplaceMode(false);
-    
-    // Focus back on textarea
-    textareaRef.current?.focus();
-  };
-
-  // Remove empty lines
-  const handleRemoveEmptyLines = () => {
-    const lines = questionnaireInput.split('\n').filter(line => line.trim() !== '');
-    setQuestionnaireInput(lines.join('\n'));
-  };
-
-  // Get parsed questions for preview
-  const getParsedQuestions = () => {
-    return questionnaireInput
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
-  };
-
-  // Add handling for viewing a questionnaire
-  const handleViewQuestionnaire = (questionnaire: Questionnaire) => {
-    console.log('View questionnaire clicked:', questionnaire.id);
-    
-    // Use direct navigation for better reliability
-    try {
-      console.log('Navigating to:', `/questionnaires/${questionnaire.id}/chat`);
-      window.location.href = `/questionnaires/${questionnaire.id}/chat`;
-    } catch (error) {
-      console.error('Navigation error:', error);
-      // Fallback to router push
-      router.push(`/questionnaires/${questionnaire.id}/chat`);
-    }
-  };
-  
-  // Add handling for editing a questionnaire
-  const handleEditQuestionnaire = (questionnaire: Questionnaire) => {
-    // Set the questionnaire input and title
-    setQuestionnaireTitle(questionnaire.name);
-    
-    // If the questionnaire has answers, get the questions from them
-    if ((questionnaire as any).answers) {
-      const questions = (questionnaire as any).answers.map((qa: any) => qa.question).join('\n');
-      setQuestionnaireInput(questions);
-    }
-    
-    // Show the questionnaire input modal
-    setShowQuestionnaireInput(true);
-  };
-  
-  // Add handling for deleting a questionnaire
-  const handleDeleteQuestionnaire = (questionnaire: Questionnaire) => {
-    // No need for browser confirm dialog since we're using our own UI confirmation
-    // Get existing questionnaires from local storage
-    const storedQuestionnaires = localStorage.getItem('user_questionnaires');
-    if (storedQuestionnaires) {
-      try {
-        const userQuestionnaires = JSON.parse(storedQuestionnaires);
-        
-        // Filter out the questionnaire to delete
-        const updatedQuestionnaires = userQuestionnaires.filter(
-          (q: Questionnaire) => q.id !== questionnaire.id
-        );
-        
-        // Save back to local storage
-        localStorage.setItem('user_questionnaires', JSON.stringify(updatedQuestionnaires));
-        
-        // Refresh the questionnaire list
-        fetchQuestionnaires();
-      } catch (e) {
-        console.error('Error deleting questionnaire:', e);
-      }
-    }
-  };
-
-  // Add an effect to ensure UI is properly initialized
-  useEffect(() => {
-    // Check if New Questionnaire button exists and ensure it has a click handler
-    const newQuestionnaireButton = document.getElementById('new-questionnaire-button');
-    
-    if (newQuestionnaireButton) {
-      console.log('New Questionnaire button found in DOM');
-      
-      // Add a direct event listener as a backup
-      const clickHandler = () => {
-        console.log('Direct click handler fired');
-        // Reset all states
-        setQuestionnaireTitle('');
-        setQuestionnaireInput('');
-        setQuestionAnswers([]);
-        setGeneratedAnswers([]);
-        setShowPreview(false);
-        setFindReplaceMode(false);
-        setShowAIAssistant(false);
-        setValidationError(null);
-        // Show the modal
-        setShowQuestionnaireInput(true);
-      };
-      
-      // Remove any existing listeners and add our new one
-      newQuestionnaireButton.removeEventListener('click', clickHandler);
-      newQuestionnaireButton.addEventListener('click', clickHandler);
-      
-      // Log that we're ready
-      console.log('New Questionnaire button is ready');
-      
-      // Cleanup function
-      return () => {
-        newQuestionnaireButton.removeEventListener('click', clickHandler);
-      };
-    } else {
-      console.log('New Questionnaire button not found in DOM yet');
-    }
-  }, [isLoading]); // Only run when loading state changes
-
-  // Return to dashboard
-  const handleReturnToDashboard = () => {
-    router.push('/dashboard');
-  };
-
-  // Save questionnaire progress and return to dashboard
-  const handleSaveAndReturn = async () => {
-    if (!vendorId) {
-      alert('No vendor ID found. Unable to save questionnaire.');
+    if (!questionnaireTitle.trim() || !questionnaireInput.trim()) {
+      setError('Please provide both a title and questions.');
       return;
     }
     
-    setIsSubmitting(true);
+    setIsCreatingQuestionnaire(true);
     
     try {
-      // Format answers for API
-      const formattedAnswers = questionAnswers.map(qa => ({
-        questionId: btoa(qa.question).substring(0, 12), // Simple ID generation
-        question: qa.question,
-        answer: qa.answer,
-        isMandatory: qa.isMandatory,
-        needsAttention: qa.needsAttention || false
-      }));
+      // Parse questions from textarea (each line is a question)
+      const questions = questionnaireInput.split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
       
-      // Save to API
-      const response = await fetch(`/api/vendors/${vendorId}/answers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          answers: formattedAnswers
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to save questionnaire');
+      if (questions.length === 0) {
+        throw new Error('Please add at least one question.');
       }
       
-      // Navigate back to dashboard
-      router.push('/dashboard');
+      if (questions.length > MAX_QUESTIONS) {
+        throw new Error(`Too many questions. Maximum is ${MAX_QUESTIONS}.`);
+      }
+      
+      // Generate a unique ID for the questionnaire
+      const questionnaireId = `q_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Create questionnaire object
+      const questionnaire = {
+        id: questionnaireId,
+        name: questionnaireTitle.trim(),
+        status: 'In Progress' as QuestionnaireStatus,
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        progress: 0,
+        answers: questions.map(question => ({
+          question: question,
+          answer: '',
+          isMandatory: true,
+          needsAttention: false
+        })),
+        createdAt: new Date().toISOString()
+      };
+      
+      // Save to localStorage
+      const existingQuestionnaires = JSON.parse(localStorage.getItem('user_questionnaires') || '[]');
+      existingQuestionnaires.push(questionnaire);
+      localStorage.setItem('user_questionnaires', JSON.stringify(existingQuestionnaires));
+      
+      // Close modal and reset form
+      setShowCreateQuestionnaire(false);
+      setQuestionnaireTitle('');
+      setQuestionnaireInput('');
+      setUploadError(null);
+      
+      // Refresh questionnaires list
+      fetchQuestionnaires();
+      
+      // Redirect to chat interface for the first question
+      router.push(`/questionnaires/${questionnaireId}/chat`);
+      
     } catch (error) {
-      console.error('Error saving questionnaire:', error);
-      alert('Failed to save questionnaire. Please try again.');
+      console.error('Error creating questionnaire:', error);
+      setError(error instanceof Error ? error.message : 'Failed to create questionnaire. Please try again.');
     } finally {
-      setIsSubmitting(false);
+      setIsCreatingQuestionnaire(false);
     }
   };
 
-  // Add question function
-  const addQuestion = () => {
-    setQuestions([...questions, '']);
+  // Handle viewing a questionnaire
+  const handleViewQuestionnaire = (questionnaire: Questionnaire) => {
+    router.push(`/questionnaires/${questionnaire.id}/chat`);
   };
-
-  // Remove question function
-  const removeQuestion = (index: number) => {
-    if (questions.length > 1) {
-      const newQuestions = questions.filter((_, i) => i !== index);
-      setQuestions(newQuestions);
+  
+  // Handle editing a questionnaire
+  const handleEditQuestionnaire = (questionnaire: Questionnaire) => {
+    // Navigate to chat interface for editing
+    router.push(`/questionnaires/${questionnaire.id}/chat`);
+  };
+  
+  // Handle deleting a questionnaire
+  const handleDeleteQuestionnaire = (questionnaire: Questionnaire) => {
+    try {
+      const existingQuestionnaires = JSON.parse(localStorage.getItem('user_questionnaires') || '[]');
+      const updatedQuestionnaires = existingQuestionnaires.filter((q: any) => q.id !== questionnaire.id);
+      localStorage.setItem('user_questionnaires', JSON.stringify(updatedQuestionnaires));
+      
+      // Refresh the list
+      fetchQuestionnaires();
+    } catch (error) {
+      console.error('Error deleting questionnaire:', error);
+      setError('Failed to delete questionnaire. Please try again.');
     }
   };
-
-  // Update question function
-  const updateQuestion = (index: number, value: string) => {
-    const newQuestions = [...questions];
-    newQuestions[index] = value;
-    setQuestions(newQuestions);
-  };
-
-  // Convert questions array to textarea format
-  const questionsToTextArea = () => {
-    return questions.filter(q => q.trim() !== '').join('\n');
-  };
-
-  // Convert textarea to questions array
-  const textAreaToQuestions = (text: string) => {
-    const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-    return lines.length > 0 ? lines : [''];
-  };
-
-  // Sync between question modes
-  useEffect(() => {
-    if (useTextAreaMode) {
-      setQuestionnaireInput(questionsToTextArea());
-    } else {
-      setQuestions(textAreaToQuestions(questionnaireInput));
-    }
-  }, [useTextAreaMode]);
-
-  // Update question count calculation
-  useEffect(() => {
-    const currentQuestions = useTextAreaMode 
-      ? questionnaireInput.split('\n').map(line => line.trim()).filter(line => line.length > 0)
-      : questions.filter(q => q.trim() !== '');
-    
-    setQuestionCount(currentQuestions.length);
-  }, [useTextAreaMode]);
 
   return (
     <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-      <SearchParamsProvider setVendorId={setVendorId} />
-      
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
         <Header />
         
-        <main id="main-content" className="container mx-auto py-8 px-4">
-          {/* Page Header */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800 flex items-center">
-                <ClipboardList className="mr-3 h-7 w-7 text-primary" />
-                {vendorId ? `Vendor Questionnaire${vendorName ? `: ${vendorName}` : ''}` : 'Questionnaires'}
-              </h1>
-              <p className="text-gray-600 mt-1">
-                {vendorId 
-                  ? 'Complete the questionnaire by entering questions and generating AI answers' 
-                  : 'Manage and track all your compliance questionnaires'
-                }
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              {vendorId ? (
-                <button 
-                  className="garnet-button garnet-button-secondary flex items-center"
-                  onClick={handleReturnToDashboard}
-                  type="button"
-                >
-                  Return to Dashboard
-                </button>
-              ) : (
-                <button 
-                  className="garnet-button garnet-button-gradient flex items-center"
-                  onClick={handleNewQuestionnaire}
-                  id="new-questionnaire-button"
-                  type="button"
-                >
-                  <Plus className="h-5 w-5 mr-2" />
-                  New Questionnaire
-                </button>
-              )}
-            </div>
-          </div>
-          
-          {showQuestionnaireInput ? (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center overflow-auto p-4">
-              <div 
-                ref={modalRef}
-                className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col animate-fade-in"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="questionnaire-modal-title"
-              >
-                <div className="py-3 px-5 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-primary/5 to-secondary/5">
-                  <h2 id="questionnaire-modal-title" className="text-xl font-bold text-gray-800 flex items-center">
-                    <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                      Create Questionnaire
-                    </span>
-                    <span className="ml-2">with AI Assistance</span>
-                  </h2>
-                  <button 
-                    onClick={closeQuestionnaireInput}
-                    className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
-                    aria-label="Close"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                
-                <div className="p-6 overflow-auto flex-grow">
-                  <form onSubmit={handleSubmitQuestionnaire}>
-                    {/* Title input */}
-                    <div className="mb-5">
-                      <label htmlFor="questionnaire-title" className="block text-sm font-medium text-gray-700 mb-1">
-                        Questionnaire Title
-                      </label>
-                      <input
-                        type="text"
-                        id="questionnaire-title"
-                        className="garnet-input"
-                        placeholder="Enter title for this questionnaire"
-                        value={questionnaireTitle}
-                        onChange={(e) => setQuestionnaireTitle(e.target.value)}
-                        required
-                        aria-label="Questionnaire title"
-                      />
-                    </div>
-
-                    {!showPreview && !showAIAssistant && (
-                      <>
-                        <div className="mb-5">
-                          <div className="flex justify-between items-center mb-1">
-                            <h3 className="text-lg font-semibold text-gray-800">Questions</h3>
-                            
-                            <div className="flex space-x-2">
-                              <button 
-                                type="button"
-                                onClick={handleGenerateAnswersClick}
-                                disabled={isGeneratingAnswers || questionCount === 0}
-                                className="btn-gradient px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm transition-all"
-                              >
-                                <Sparkles className="h-4 w-4 mr-1" />
-                                {isGeneratingAnswers ? 'Generating...' : 'Generate AI Answers'}
-                              </button>
-                              <button 
-                                type="button"
-                                onClick={() => setUseTextAreaMode(!useTextAreaMode)}
-                                className="text-sm text-primary hover:text-primary/80 flex items-center px-2 py-1 rounded border border-primary/20 hover:bg-primary/5"
-                                aria-label="Toggle input mode"
-                              >
-                                {useTextAreaMode ? 'List Mode' : 'Text Mode'}
-                              </button>
-                              <button 
-                                type="button"
-                                onClick={() => setFindReplaceMode(!findReplaceMode)}
-                                className="text-sm text-primary hover:text-primary/80 flex items-center"
-                                aria-label="Find and replace"
-                              >
-                                Find & Replace
-                              </button>
-                              <button 
-                                type="button"
-                                onClick={handleRemoveEmptyLines}
-                                className="text-sm text-primary hover:text-primary/80 flex items-center"
-                                aria-label="Remove empty lines"
-                              >
-                                Remove Empty Lines
-                              </button>
-                              <button 
-                                type="button"
-                                onClick={handleTogglePreview}
-                                className="text-sm text-primary hover:text-primary/80 flex items-center transition-all hover:bg-gray-100 px-2 py-1 rounded"
-                                aria-label="Preview questions"
-                              >
-                                Preview
-                              </button>
-                            </div>
-                          </div>
-                          
-                          <p className="text-gray-600 text-sm mb-4">
-                            {useTextAreaMode 
-                              ? 'Type or paste each question on its own line. Click "Generate AI Answers" to get compliance-based responses.'
-                              : 'Add questions one by one using the form below, or switch to text mode for bulk entry.'
-                            }
-                          </p>
-
-                          {!useTextAreaMode ? (
-                            // Individual Question Management Mode
-                            <div className="space-y-3 mb-4">
-                              {questions.map((question, index) => (
-                                <div key={index} className="flex gap-2">
-                                  <div className="flex-shrink-0 w-8 h-10 flex items-center justify-center text-sm font-medium text-gray-500 bg-gray-100 rounded">
-                                    {index + 1}
-                                  </div>
-                                  <input
-                                    type="text"
-                                    value={question}
-                                    onChange={(e) => updateQuestion(index, e.target.value)}
-                                    className="garnet-input flex-grow"
-                                    placeholder={`Enter question ${index + 1}...`}
-                                    aria-label={`Question ${index + 1}`}
-                                  />
-                                  {questions.length > 1 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => removeQuestion(index)}
-                                      className="flex-shrink-0 p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
-                                      aria-label={`Remove question ${index + 1}`}
-                                    >
-                                      <X className="h-4 w-4" />
-                                    </button>
-                                  )}
-                                </div>
-                              ))}
-                              
-                              <button
-                                type="button"
-                                onClick={addQuestion}
-                                className="flex items-center justify-center w-full p-3 border-2 border-dashed border-gray-300 text-gray-600 rounded-lg hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors"
-                              >
-                                <Plus className="h-5 w-5 mr-2" />
-                                Add Question
-                              </button>
-                            </div>
-                          ) : (
-                            // Textarea Mode (existing implementation)
-                            <>
-                              {/* Find and replace section */}
-                              {findReplaceMode && (
-                                <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <div>
-                                      <label htmlFor="find-text" className="block text-sm font-medium text-gray-700 mb-1">
-                                        Find
-                                      </label>
-                                      <input
-                                        type="text"
-                                        id="find-text"
-                                        className="garnet-input"
-                                        value={findText}
-                                        onChange={(e) => setFindText(e.target.value)}
-                                        placeholder="Text to find"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label htmlFor="replace-text" className="block text-sm font-medium text-gray-700 mb-1">
-                                        Replace
-                                      </label>
-                                      <input
-                                        type="text"
-                                        id="replace-text"
-                                        className="garnet-input"
-                                        value={replaceText}
-                                        onChange={(e) => setReplaceText(e.target.value)}
-                                        placeholder="Replacement text"
-                                      />
-                                    </div>
-                                  </div>
-                                  <div className="mt-2 flex justify-end">
-                                    <button
-                                      type="button"
-                                      className="garnet-button garnet-button-primary text-sm"
-                                      onClick={handleFindReplace}
-                                      disabled={!findText}
-                                    >
-                                      Replace All
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                              
-                              {/* File upload area */}
-                              <div 
-                                ref={dropZoneRef}
-                                className={`mb-5 border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                                  dragActive 
-                                    ? 'border-primary bg-primary/5' 
-                                    : 'border-gray-300 hover:border-gray-400'
-                                }`}
-                                onDragEnter={handleDrag}
-                                onDragOver={handleDrag}
-                                onDragLeave={handleDrag}
-                                onDrop={handleDrop}
-                              >
-                                <div className="flex flex-col items-center justify-center">
-                                  <Upload className="h-12 w-12 text-primary/40 mb-3" />
-                                  <p className="text-gray-600 mb-2 font-medium">
-                                    {dragActive ? 'Drop file here' : 'Drag and drop a file here, or click to browse'}
-                                  </p>
-                                  <div className="flex items-center justify-center text-xs text-gray-500 mb-4">
-                                    <div className="flex items-center mr-3">
-                                      <FileText className="h-4 w-4 mr-1" />
-                                      <span>.TXT</span>
-                                    </div>
-                                    <div className="flex items-center mr-3">
-                                      <FileType className="h-4 w-4 mr-1" />
-                                      <span>.CSV</span>
-                                    </div>
-                                    <div className="flex items-center">
-                                      <Files className="h-4 w-4 mr-1" />
-                                      <span>.MD</span>
-                                    </div>
-                                  </div>
-                                  <label className="garnet-button garnet-button-secondary text-sm cursor-pointer">
-                                    Browse Files
-                                    <input
-                                      type="file"
-                                      className="hidden"
-                                      accept=".txt,.csv,.md"
-                                      onChange={handleFileUpload}
-                                      ref={fileInputRef}
-                                      disabled={isUploading}
-                                      aria-label="Upload questions file"
-                                    />
-                                  </label>
-                                </div>
-                              </div>
-                              
-                              {isUploading && (
-                                <div className="mb-4 text-sm text-gray-600 flex items-center justify-center">
-                                  <svg className="animate-spin h-4 w-4 mr-2 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                  </svg>
-                                  Uploading...
-                                </div>
-                              )}
-                              
-                              {uploadError && (
-                                <p className="mb-4 text-sm text-red-600">
-                                  {uploadError}
-                                </p>
-                              )}
-                              
-                              <div className="relative mb-5">
-                                <textarea
-                                  ref={textareaRef}
-                                  className="garnet-input min-h-[200px] max-h-[400px] resize-none"
-                                  placeholder="Type or paste each question on its own line (e.g. 'Do you encrypt data at rest?')."
-                                  value={questionnaireInput}
-                                  onChange={(e) => {
-                                    setQuestionnaireInput(e.target.value);
-                                    debouncedResize();
-                                  }}
-                                  aria-label="Questionnaire input"
-                                  aria-describedby="question-counter"
-                                />
-                                
-                                <div className="absolute bottom-3 right-3 flex items-center">
-                                  <button
-                                    type="button"
-                                    onClick={handleClearTextarea}
-                                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md"
-                                    aria-label="Clear questions"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                </div>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </>
-                    )}
-                    
-                    {/* Preview Panel */}
-                    {showPreview && (
-                      <div className="mb-4">
-                        <div className="flex justify-between items-center mb-4">
-                          <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                            <span className="w-8 h-8 rounded-full bg-primary-light text-primary flex items-center justify-center mr-3">
-                              <Files className="h-4 w-4" />
-                            </span>
-                            Question Preview
-                          </h3>
-                          <div className="flex space-x-2">
-                            <button 
-                              type="button"
-                              onClick={handleGenerateAnswersClick}
-                              disabled={isGeneratingAnswers || questionCount === 0}
-                              className="btn-gradient px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center text-sm transition-all"
-                            >
-                              <Sparkles className="h-4 w-4 mr-1" />
-                              {isGeneratingAnswers ? 'Generating...' : 'Generate AI Answers'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleTogglePreview}
-                              className="text-sm text-primary hover:text-primary/80 flex items-center transition-all hover:bg-gray-100 px-2 py-1 rounded"
-                              aria-label="Preview questions"
-                            >
-                              Preview
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <div className="border border-gray-200 rounded-lg p-5 max-h-[400px] overflow-y-auto bg-gray-50">
-                          {getParsedQuestions().length > 0 ? (
-                            <ol className="list-decimal pl-5 space-y-3">
-                              {getParsedQuestions().map((question, index) => (
-                                <li key={index} className="text-gray-800">
-                                  {question}
-                                </li>
-                              ))}
-                            </ol>
-                          ) : (
-                            <p className="text-gray-500 text-center py-8">
-                              No questions added yet. Go back to edit and add some questions.
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* AI Assistant Panel */}
-                    {showAIAssistant && generatedAnswers.length > 0 && (
-                      <div className="mb-4">
-                        <div className="flex justify-between items-center mb-4">
-                          <h3 className="text-lg font-semibold text-gray-800 flex items-center">
-                            <span className="w-8 h-8 rounded-full bg-secondary-light text-secondary flex items-center justify-center mr-3">
-                              <MessageSquare className="h-4 w-4" />
-                            </span>
-                            AI-Generated Answers
-                          </h3>
-                          <div className="flex items-center space-x-4">
-                            {/* Add counter for mandatory questions that need attention */}
-                            <div className="text-sm">
-                              {(() => {
-                                const mandatoryCount = generatedAnswers.filter(qa => qa.isMandatory).length;
-                                const needsAttentionCount = generatedAnswers.filter(qa => qa.needsAttention).length;
-                                
-                                return (
-                                  <span className={needsAttentionCount > 0 ? "text-red-500 font-medium" : "text-green-600 font-medium"}>
-                                    {needsAttentionCount > 0 
-                                      ? `${needsAttentionCount} mandatory ${needsAttentionCount === 1 ? 'question' : 'questions'} need attention` 
-                                      : mandatoryCount > 0 
-                                        ? `All ${mandatoryCount} mandatory ${mandatoryCount === 1 ? 'question has' : 'questions have'} answers` 
-                                        : 'No mandatory questions detected'}
-                                  </span>
-                                );
-                              })()}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setShowAIAssistant(false)}
-                              className="text-sm text-primary hover:text-primary/80 flex items-center underline transition-all hover:bg-gray-100 px-2 py-1 rounded"
-                            >
-                              <ArrowLeft className="h-3 w-3 mr-1" /> Back to Edit
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <div className="border border-gray-200 rounded-lg overflow-hidden max-h-[500px] overflow-y-auto shadow-sm">
-                          {generatedAnswers.map((qa, index) => (
-                            <div 
-                              key={index} 
-                              className={`p-5 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'} border-b border-gray-200 last:border-0 ${
-                                qa.needsAttention ? 'border-l-4 border-l-red-500' : qa.isMandatory ? 'border-l-4 border-l-green-500' : ''
-                              }`}
-                            >
-                              <div className="mb-3 flex justify-between items-start">
-                                <div>
-                                  <span className="text-sm font-bold text-gray-500 uppercase tracking-wider">Q{index + 1}:</span>
-                                  {qa.isMandatory && (
-                                    <span className="ml-2 text-xs font-bold bg-red-100 text-red-800 px-2 py-0.5 rounded">
-                                      Required
-                                    </span>
-                                  )}
-                                  <p className={`font-medium mt-1 ${qa.needsAttention ? 'text-red-700' : 'text-gray-800'}`}>
-                                    {qa.question}
-                                  </p>
-                                </div>
-                              </div>
-                              <div>
-                                <span className="text-sm font-bold text-primary uppercase tracking-wider">Answer:</span>
-                                {qa.isLoading ? (
-                                  <div className="mt-4 flex items-center justify-center py-6 text-sm text-gray-500">
-                                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-primary mr-3"></div>
-                                    <span>Generating answer...</span>
-                                  </div>
-                                ) : (
-                                  <div className={`mt-2 prose prose-sm max-w-none ${qa.needsAttention ? 'text-red-700 bg-red-50 p-3 rounded' : 'text-gray-700'}`}>
-                                    {qa.answer.split('\n').map((paragraph, pIndex) => (
-                                      <p key={pIndex} className="mb-2">{paragraph}</p>
-                                    ))}
-                                    
-                                    {qa.needsAttention && (
-                                      <div className="mt-3 bg-red-100 p-3 rounded-md text-red-800 text-sm">
-                                        <p className="font-bold">⚠️ This answer needs attention</p>
-                                        <p>This is a mandatory question that requires a more specific or complete answer.</p>
-                                      </div>
-                                    )}
-                                    
-                                    <div className="mt-4 flex justify-end">
-                                      <button 
-                                        className="garnet-button-small bg-gray-100 text-primary hover:bg-gray-200 flex items-center"
-                                        onClick={() => {
-                                          // Create temp textarea to copy text
-                                          const textarea = document.createElement('textarea');
-                                          textarea.value = qa.answer;
-                                          document.body.appendChild(textarea);
-                                          textarea.select();
-                                          document.execCommand('copy');
-                                          document.body.removeChild(textarea);
-                                          
-                                          // Show feedback (could use a toast here)
-                                          alert('Answer copied to clipboard');
-                                        }}
-                                      >
-                                        <ClipboardCopy className="h-3 w-3 mr-1" />
-                                        Copy
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="flex justify-between items-center">
-                      <div id="question-counter" className="text-sm text-gray-600">
-                        {questionCount > 0 ? (
-                          <>You've entered {questionCount} question{questionCount !== 1 ? 's' : ''}</>
-                        ) : (
-                          <>No questions entered yet</>
-                        )}
-                        {questionCount > MAX_QUESTIONS && (
-                          <span className="text-red-500 ml-1">
-                            (exceeds maximum of {MAX_QUESTIONS})
-                          </span>
-                        )}
-                        {generatedAnswers.length > 0 && (
-                          <span className="text-primary ml-2">
-                            • {generatedAnswers.length} AI answers generated
-                          </span>
-                        )}
-                      </div>
-                      
-                      {/* Validation errors */}
-                      {validationError && (
-                        <p className="text-sm text-red-600">
-                          {validationError}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div className="mt-6 flex justify-end space-x-3">
-                      <button
-                        type="button"
-                        onClick={closeQuestionnaireInput}
-                        className="garnet-button garnet-button-secondary"
-                      >
-                        Cancel
-                      </button>
-                      
-                      {vendorId ? (
-                        <button
-                          type="button"
-                          onClick={handleSaveAndReturn}
-                          disabled={questionCount === 0 || isSubmitting}
-                          className="garnet-button garnet-button-gradient"
-                        >
-                          {isSubmitting ? (
-                            <div className="flex items-center">
-                              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              Saving...
-                            </div>
-                          ) : (
-                            'Save and Return'
-                          )}
-                        </button>
-                      ) : (
-                        <button
-                          type="submit"
-                          disabled={questionCount === 0 || !questionnaireTitle.trim() || isSubmitting || questionCount > MAX_QUESTIONS}
-                          className="garnet-button garnet-button-gradient"
-                          aria-live="polite"
-                        >
-                          {isSubmitting ? (
-                            <div className="flex items-center">
-                              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              Processing...
-                            </div>
-                          ) : (
-                            'Create Questionnaire'
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  </form>
-                </div>
+        <main className="container mx-auto py-8 px-4 max-w-7xl">
+          {/* Header Section */}
+          <div className="mb-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                  <ClipboardList className="mr-3 h-8 w-8 text-primary" />
+                  Questionnaires
+                </h1>
+                <p className="text-gray-600 mt-1">Manage and track your questionnaires</p>
               </div>
             </div>
-          ) : null}
+          </div>
+
+          {/* Create Questionnaire Modal */}
+          {showCreateQuestionnaire && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+              <div 
+                ref={modalRef}
+                className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col animate-fade-in"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="create-questionnaire-title"
+              >
+                <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-t-2xl">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h2 id="create-questionnaire-title" className="text-2xl font-bold text-gray-800 flex items-center">
+                        <ClipboardList className="h-6 w-6 mr-3 text-primary" />
+                        Create Questionnaire
+                      </h2>
+                      <p className="text-gray-600 mt-1">Add a title and questions to create your questionnaire</p>
+                    </div>
+                    <button 
+                      onClick={() => setShowCreateQuestionnaire(false)}
+                      className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                      aria-label="Close"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+                
+                <form onSubmit={handleCreateQuestionnaire} className="p-6 flex-grow overflow-auto">
+                  {/* Title Input */}
+                  <div className="mb-6">
+                    <label htmlFor="questionnaire-title" className="block text-sm font-semibold text-gray-700 mb-3">
+                      Questionnaire Title *
+                    </label>
+                    <input
+                      type="text"
+                      id="questionnaire-title"
+                      value={questionnaireTitle}
+                      onChange={(e) => setQuestionnaireTitle(e.target.value)}
+                      placeholder="Enter a descriptive title for your questionnaire..."
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-gray-800 placeholder-gray-500"
+                      required
+                      disabled={isCreatingQuestionnaire}
+                    />
+                  </div>
+
+                  {/* File Upload Section */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      Upload Questions (Optional)
+                    </label>
+                    <div 
+                      className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${
+                        dragActive 
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                      onDragEnter={handleDrag}
+                      onDragOver={handleDrag}
+                      onDragLeave={handleDrag}
+                      onDrop={handleDrop}
+                    >
+                      <Upload className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-600 mb-2">
+                        {dragActive ? 'Drop file here' : 'Drag and drop a file here, or click to browse'}
+                      </p>
+                      <p className="text-sm text-gray-500 mb-4">
+                        Supported formats: .txt, .md (PDF coming soon)
+                      </p>
+                      <label className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Browse Files
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept=".txt,.md"
+                          onChange={(e) => e.target.files?.[0] && processFile(e.target.files[0])}
+                          className="hidden"
+                          disabled={isUploading}
+                        />
+                      </label>
+                    </div>
+                    
+                    {isUploading && (
+                      <div className="mt-3 flex items-center text-sm text-gray-600">
+                        <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                        Processing file...
+                      </div>
+                    )}
+                    
+                    {uploadError && (
+                      <div className="mt-3 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+                        {uploadError}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Questions Input */}
+                  <div className="mb-6">
+                    <label htmlFor="questionnaire-questions" className="block text-sm font-semibold text-gray-700 mb-3">
+                      Questions *
+                    </label>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                      <p className="text-sm text-blue-800 flex items-start">
+                        <FileText className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                        <span>
+                          Enter each question on a new line. Press <kbd className="px-1 py-0.5 bg-blue-100 rounded text-xs">Enter</kbd> to create a new question.
+                          You can add up to {MAX_QUESTIONS} questions.
+                        </span>
+                      </p>
+                    </div>
+                    <textarea
+                      ref={questionsInputRef}
+                      id="questionnaire-questions"
+                      value={questionnaireInput}
+                      onChange={(e) => setQuestionnaireInput(e.target.value)}
+                      placeholder="Enter your questions here (one per line):&#10;&#10;What is your data retention policy?&#10;How do you handle security incidents?&#10;Do you have backup procedures in place?"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none text-gray-800 placeholder-gray-500"
+                      rows={8}
+                      required
+                      disabled={isCreatingQuestionnaire}
+                    />
+                    <div className="mt-2 flex justify-between text-sm text-gray-500">
+                      <span>
+                        {questionnaireInput.split('\n').filter(line => line.trim()).length} questions
+                      </span>
+                      <span>
+                        {questionnaireInput.length} characters
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateQuestionnaire(false)}
+                      className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                      disabled={isCreatingQuestionnaire}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={!questionnaireTitle.trim() || !questionnaireInput.trim() || isCreatingQuestionnaire}
+                      className="px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white font-semibold rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 transition-all duration-200 flex items-center"
+                    >
+                      {isCreatingQuestionnaire ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <PlusCircle className="h-4 w-4 mr-2" />
+                          Create Questionnaire
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
           
           {/* Questionnaire List Component */}
           <QuestionnaireList 
@@ -1896,6 +500,7 @@ const QuestionnairesPage = () => {
             onViewQuestionnaire={handleViewQuestionnaire}
             onEditQuestionnaire={handleEditQuestionnaire}
             onDeleteQuestionnaire={handleDeleteQuestionnaire}
+            onAddQuestionnaire={() => setShowCreateQuestionnaire(true)}
           />
         </main>
       </div>
@@ -1903,4 +508,19 @@ const QuestionnairesPage = () => {
   );
 };
 
-export default QuestionnairesPage;
+// Wrap with SearchParamsProvider for compatibility
+const QuestionnairesPageWrapper = () => {
+  const handleSetVendorId = (id: string | null) => {
+    // Handle vendor ID if needed in the future
+    console.log('Vendor ID:', id);
+  };
+  
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <SearchParamsProvider setVendorId={handleSetVendorId} />
+      <QuestionnairesPage />
+    </Suspense>
+  );
+};
+
+export default QuestionnairesPageWrapper;

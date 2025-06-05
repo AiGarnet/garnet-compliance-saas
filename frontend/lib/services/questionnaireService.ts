@@ -3,7 +3,7 @@ import { VendorService } from './vendorService';
 import { v4 as uuidv4 } from 'uuid';
 
 // Base API URL - adjust based on environment
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://garnet-compliance-saas-production.up.railway.app';
 
 // Check if we're in development/test mode
 const isDevelopment = process.env.NODE_ENV !== 'production';

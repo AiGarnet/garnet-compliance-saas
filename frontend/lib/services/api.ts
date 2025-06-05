@@ -1,5 +1,5 @@
 // Base API URL - adjust based on environment
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://garnet-compliance-saas-production.up.railway.app';
 
 /**
  * Generic API client for making HTTP requests

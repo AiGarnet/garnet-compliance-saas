@@ -160,9 +160,7 @@ export function QuestionnairesAnswersClient({ id }: { id: string }) {
     setQuestionnaire(updatedQuestionnaire);
     
     try {
-      const apiEndpoint = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-        ? 'http://localhost:5000/ask'
-        : 'https://garnet-compliance-saas-production.up.railway.app/ask';
+      const apiEndpoint = 'https://garnet-compliance-saas-production.up.railway.app/ask';
         
       const response = await fetch(apiEndpoint, {
         method: 'POST',
