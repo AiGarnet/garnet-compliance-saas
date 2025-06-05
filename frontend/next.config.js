@@ -1,14 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Removed: output: 'export' to support dynamic routes
+  // Enable static export for Netlify deployment
+  output: 'export',
   trailingSlash: true,
   distDir: '.next',
-  // This option is no longer supported in Next.js 14+
-  // outDir: 'out',
+  // Static export output directory
+  // outDir: 'out', // This is no longer needed with output: 'export'
   images: {
-    // Using remotePatterns instead of unoptimized for production builds
-    unoptimized: process.env.NODE_ENV === 'development',
+    // Static export requires unoptimized images
+    unoptimized: true,
   },
   swcMinify: true,
   
