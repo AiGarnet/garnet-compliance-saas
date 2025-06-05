@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { motion, useInView, useScroll, useTransform } from 'framer-motion';
+import { motion, useInView, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import WaitlistForm from './WaitlistForm';
 import IndustryRequestForm from './IndustryRequestForm';
 import { 
@@ -70,6 +70,66 @@ const AnimatedCounter = ({ end, duration = 2, suffix = '' }: { end: number; dura
   return <span ref={ref}>{count}{suffix}</span>;
 };
 
+// Loading Animation Component
+const LoadingAnimation = () => {
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-white"
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5, delay: 0.5 }}
+    >
+      <div className="text-center">
+        {/* Logo with pulse animation */}
+        <motion.div
+          className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl flex items-center justify-center"
+          animate={{
+            scale: [1, 1.1, 1],
+            rotate: [0, 180, 360],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          <span className="text-white font-bold text-xl">G</span>
+        </motion.div>
+        
+        {/* Loading dots */}
+        <div className="flex space-x-1 justify-center">
+          {[0, 1, 2].map((i) => (
+            <motion.div
+              key={i}
+              className="w-2 h-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full"
+              animate={{
+                y: [0, -10, 0],
+                opacity: [0.4, 1, 0.4],
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                delay: i * 0.2,
+                ease: "easeInOut"
+              }}
+            />
+          ))}
+        </div>
+        
+        <motion.p
+          className="mt-4 text-gray-600 text-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          Loading Garnet AI...
+        </motion.p>
+      </div>
+    </motion.div>
+  );
+};
+
 // Dynamic Navigation Hook
 const useDynamicNavbar = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -110,19 +170,19 @@ const SecurityTrustSection = () => {
     {
       icon: <Shield className="h-8 w-8" />,
       title: "GDPR Compliant",
-      description: "Get enterprise-grade compliance documentation and audit-ready reports that meet GDPR requirements",
+      description: "Generate ready-to-submit audit documents for EU & global frameworks",
       badge: "Certified"
     },
     {
       icon: <Lock className="h-8 w-8" />,
       title: "End-to-End Encryption",
-      description: "Receive military-grade AES-256 encrypted responses and documentation for maximum data protection",
+      description: "AES-256 encrypted data flow with zero tolerance for leaks or compromise",
       badge: "Military Grade"
     },
     {
       icon: <Eye className="h-8 w-8" />,
       title: "Zero Data Retention",
-      description: "Enjoy complete privacy with instant processing - your sensitive data is never stored permanently",
+      description: "Your data is processed in-memory and never stored permanently",
       badge: "Privacy First"
     }
   ];
@@ -145,12 +205,9 @@ const SecurityTrustSection = () => {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
-            Enterprise-Grade
-            <span className="block sm:inline bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> Security</span>
+            Enterprise-Grade Privacy, Security, 
+            <span className="block sm:inline bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"> and Encryption</span>
           </h2>
-          <p className="text-xl text-purple-100 max-w-3xl mx-auto leading-relaxed">
-            Your compliance data deserves the highest level of protection. We have built Garnet with security as our foundation.
-          </p>
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
@@ -375,9 +432,19 @@ const GarnetLandingPage = () => {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
   const [isIndustryFormOpen, setIsIndustryFormOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Use the dynamic navbar hook
   const isNavVisible = useDynamicNavbar();
+
+  // Loading animation effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500); // Show loading for 1.5 seconds
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const openWaitlist = () => {
     setIsWaitlistOpen(true);
@@ -399,32 +466,26 @@ const GarnetLandingPage = () => {
     {
       icon: <Zap className="h-8 w-8" />,
       title: "AI-Powered Automation",
-      description: "Automatically complete compliance questionnaires with 95% accuracy using advanced AI models.",
+      description: "Auto-complete vendor security forms with 95% accuracy using large language models trained on global compliance standards.",
       color: "from-blue-500 to-purple-600"
     },
     {
       icon: <Shield className="h-8 w-8" />,
       title: "Multi-Framework Support", 
-      description: "Support for ISO 27001, SOC 2, GDPR, HIPAA, and 20+ other compliance frameworks.",
+      description: "Comply with GDPR, ISO 27001, SOC 2, HIPAA, AML, FCPA, FATF, and 50+ global frameworks and data laws.",
       color: "from-purple-500 to-pink-600"
     },
     {
       icon: <BarChart3 className="h-8 w-8" />,
       title: "Real-Time Analytics",
-      description: "Track compliance status, identify gaps, and monitor progress with comprehensive dashboards.",
+      description: "Visualize gaps, monitor control implementation, and generate audit-ready reports in real-time.",
       color: "from-pink-500 to-red-600"
     },
     {
       icon: <Users className="h-8 w-8" />,
       title: "Trust Portal Sharing",
-      description: "Share your compliance status securely with customers through branded trust portals.",
+      description: "Host a live compliance page branded to your company, with up-to-date documents, policies, and certifications.",
       color: "from-teal-500 to-blue-600"
-    },
-    {
-      icon: <Briefcase className="h-8 w-8" />,
-      title: "Vendor Onboarding Workflows",
-      description: "Streamline vendor assessments with automated workflows designed for sales teams.",
-      color: "from-indigo-500 to-purple-600"
     }
   ];
 
@@ -465,10 +526,6 @@ const GarnetLandingPage = () => {
       answer: "Garnet AI automation reduces questionnaire response time by up to 80%, automatically analyzing your security posture and suggesting accurate responses. Our AI learns from your previous submissions and adapts to different compliance frameworks, transforming weeks of manual work into hours of intelligent automation."
     },
     {
-      question: "Is Garnet difficult to integrate with existing systems?",
-      answer: "Not at all! Garnet offers seamless integration with popular cloud services like AWS, Google Cloud, and Azure through secure API connectors. Our one-click integration process automatically collects evidence from your connected systems, and our team provides full support throughout the setup process."
-    },
-    {
       question: "What compliance frameworks does Garnet support?",
       answer: "Garnet supports 25+ major compliance frameworks including ISO 27001, SOC 2, GDPR, HIPAA, CCPA, PCI DSS, and many more. Our platform continuously updates to include new frameworks, ensuring you stay compliant as regulations evolve."
     },
@@ -483,8 +540,33 @@ const GarnetLandingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navigation */}
+    <>
+      {/* Loading Animation */}
+      <AnimatePresence>
+        {isLoading && <LoadingAnimation />}
+      </AnimatePresence>
+
+      <div className="min-h-screen bg-white">
+        <style jsx global>{`
+          html {
+            scroll-behavior: smooth;
+          }
+          
+          /* Custom focus styles for accessibility */
+          button:focus-visible,
+          a:focus-visible {
+            outline: 2px solid #7c3aed;
+            outline-offset: 2px;
+            border-radius: 6px;
+          }
+          
+          /* Remove default focus outline */
+          button:focus,
+          a:focus {
+            outline: none;
+          }
+        `}</style>
+        {/* Navigation */}
       <motion.nav 
         className={`fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 transition-shadow duration-300 ${
           isNavVisible ? 'shadow-lg' : ''
@@ -525,14 +607,19 @@ const GarnetLandingPage = () => {
               </span>
               </div>
             </div>
-            <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
-              {/* <a href="#demo" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Demo</a> */}
-              {/* <a href="#testimonials" className="text-gray-600 hover:text-purple-600 transition-colors text-sm lg:text-base">Testimonials</a> */}
+            <div className="hidden md:flex items-center space-x-4 lg:space-x-6">
               <motion.button 
-                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 lg:px-6 py-2 rounded-full hover:shadow-lg transition-all text-sm lg:text-base"
-                whileHover={{ scale: 1.05 }}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 lg:px-6 py-2 lg:py-2.5 rounded-full hover:shadow-lg transition-all text-sm lg:text-base font-medium focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                whileHover={{ 
+                  scale: 1.05, 
+                  boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.25)",
+                  background: "linear-gradient(to right, #8b5cf6, #ec4899)"
+                }}
                 whileTap={{ scale: 0.95 }}
                 onClick={openWaitlist}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
               >
                 Join Waitlist
               </motion.button>
@@ -540,10 +627,17 @@ const GarnetLandingPage = () => {
             {/* Mobile menu button */}
             <div className="md:hidden">
               <motion.button 
-                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-full hover:shadow-lg transition-all text-sm"
-                whileHover={{ scale: 1.05 }}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-full hover:shadow-lg transition-all text-sm font-medium focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                whileHover={{ 
+                  scale: 1.05,
+                  boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.25)",
+                  background: "linear-gradient(to right, #8b5cf6, #ec4899)"
+                }}
                 whileTap={{ scale: 0.95 }}
                 onClick={openWaitlist}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
               >
                 Join Waitlist
               </motion.button>
@@ -553,7 +647,7 @@ const GarnetLandingPage = () => {
       </motion.nav>
 
       {/* Hero Section */}
-      <section className="relative pt-8 pb-20 px-4 sm:px-6 lg:px-8 min-h-screen flex items-center bg-gradient-to-br from-purple-50 via-white to-pink-50">
+      <section className="relative pt-16 sm:pt-20 pb-20 px-4 sm:px-6 lg:px-8 min-h-screen flex items-center bg-gradient-to-br from-purple-50 via-white to-pink-50">
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <motion.div 
@@ -593,30 +687,14 @@ const GarnetLandingPage = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="mb-8"
           >
-            {/* Global Compliance Banner */}
-            <motion.div 
-              className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 mb-8 shadow-lg border border-purple-100"
-              whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              >
-                <Globe className="h-5 w-5 text-purple-600" />
-              </motion.div>
-              <span className="text-sm font-semibold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Built for US, EU, UK, Canada, Asia, Latin America, Australia, and NZ
-              </span>
-            </motion.div>
             
             <motion.h1 
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1, delay: 0.4 }}
               style={{ 
-                lineHeight: '1.2', 
+                lineHeight: '1.1', 
                 letterSpacing: '-0.025em',
                 fontFeatureSettings: '"kern" 1, "liga" 1',
                 textRendering: 'optimizeLegibility',
@@ -634,7 +712,7 @@ const GarnetLandingPage = () => {
                   display: 'inline-block'
                 }}
               >
-                AI-Powered Vendor Onboarding
+                Transform Weeks of Vendor
               </span>
               <motion.span 
                 className="block"
@@ -649,87 +727,167 @@ const GarnetLandingPage = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 1, delay: 0.8 }}
               >
-                for Sales Teams
+                Compliance into Hours
               </motion.span>
             </motion.h1>
             
             <motion.p 
-              className="text-xl text-gray-600 max-w-4xl mx-auto mb-10 leading-relaxed"
+              className="text-base sm:text-lg text-gray-600 max-w-2xl sm:max-w-3xl mx-auto mb-8 sm:mb-10 leading-relaxed"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
             >
-              Transform weeks of vendor compliance questionnaires into hours with{" "}
-              <span className="font-semibold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                AI-powered automation
-              </span>
-              . Close deals 50% faster and eliminate back-and-forth with automated, accurate responses that build trust.
+              Complete enterprise vendor onboarding with AI-powered accuracy. <br />
+              Automate questionnaires, manage evidence, and publish trust portals.
             </motion.p>
           </motion.div>
 
           <motion.div 
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-16"
+            className="flex flex-col sm:flex-row gap-4 justify-center mb-12 sm:mb-16"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
             <motion.button 
-                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:shadow-xl transition-all flex items-center justify-center group"
-              whileHover={{ scale: 1.05 }}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold hover:shadow-xl transition-all flex items-center justify-center group shadow-lg focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50"
+              whileHover={{ 
+                scale: 1.05, 
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+                background: "linear-gradient(to right, #8b5cf6, #ec4899)"
+              }}
               whileTap={{ scale: 0.95 }}
                 onClick={openWaitlist}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ 
+                  duration: 0.8, 
+                  delay: 0.4,
+                  type: "spring",
+                  stiffness: 100
+                }}
             >
                 Join Waitlist
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <motion.div
+                  className="ml-2"
+                  animate={{ x: [0, 4, 0] }}
+                  transition={{ 
+                    duration: 2, 
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  <ArrowRight className="h-4 sm:h-5 w-4 sm:w-5 group-hover:translate-x-1 transition-transform" />
+                </motion.div>
             </motion.button>
-            {/* <motion.button 
-                className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-full text-lg font-semibold hover:border-purple-300 hover:text-purple-600 transition-all flex items-center justify-center group"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-                <Play className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-              Watch Demo
-            </motion.button> */}
           </motion.div>
 
-          {/* Hero Visual */}
+          {/* Hero Visual - Live Dashboard Stats */}
           <motion.div 
               className="relative max-w-5xl mx-auto"
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.6 }}
           >
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 sm:p-8 shadow-2xl border border-purple-100">
-                <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Vendor Onboarding Dashboard</h3>
-                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">Live</span>
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 shadow-2xl border border-purple-100">
+                <div className="bg-white rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6 shadow-lg">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800">Vendor Onboarding Dashboard Live</h3>
+                    <span className="bg-green-100 text-green-800 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">Live</span>
                 </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  <motion.div 
+                    className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 sm:p-4 rounded-lg cursor-pointer"
+                    whileHover={{ 
+                      scale: 1.02, 
+                      y: -2,
+                      boxShadow: "0 8px 25px -8px rgba(59, 130, 246, 0.3)"
+                    }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.7 }}
+                  >
                     <div className="flex items-center justify-between">
-                        <FileCheck className="h-6 sm:h-8 w-6 sm:w-8 text-blue-600" />
-                        <span className="text-xl sm:text-2xl font-bold text-gray-800">24</span>
+                        <motion.div
+                          whileHover={{ rotate: 10 }}
+                          transition={{ type: "spring", stiffness: 300 }}
+                        >
+                          <FileCheck className="h-5 sm:h-6 lg:h-8 w-5 sm:w-6 lg:w-8 text-blue-600" />
+                        </motion.div>
+                        <motion.span 
+                          className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ duration: 0.5, delay: 1, type: "spring" }}
+                        >
+                          24
+                        </motion.span>
                     </div>
-                    <p className="text-sm text-gray-600 mt-2">Active Vendor Assessments</p>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-2">Active Vendor Assessments</p>
                     <p className="text-xs text-blue-600 mt-1">→ No more waiting on legal teams</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg">
+                  </motion.div>
+                  <motion.div 
+                    className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 sm:p-4 rounded-lg cursor-pointer"
+                    whileHover={{ 
+                      scale: 1.02, 
+                      y: -2,
+                      boxShadow: "0 8px 25px -8px rgba(147, 51, 234, 0.3)"
+                    }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.8 }}
+                  >
                     <div className="flex items-center justify-between">
-                        <Shield className="h-6 sm:h-8 w-6 sm:w-8 text-purple-600" />
-                        <span className="text-xl sm:text-2xl font-bold text-gray-800">95%</span>
+                        <motion.div
+                          whileHover={{ rotate: 10 }}
+                          transition={{ type: "spring", stiffness: 300 }}
+                        >
+                          <Shield className="h-5 sm:h-6 lg:h-8 w-5 sm:w-6 lg:w-8 text-purple-600" />
+                        </motion.div>
+                        <motion.span 
+                          className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ duration: 0.5, delay: 1.1, type: "spring" }}
+                        >
+                          95%
+                        </motion.span>
                     </div>
-                    <p className="text-sm text-gray-600 mt-2">Response Accuracy</p>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-2">Response Accuracy</p>
                     <p className="text-xs text-purple-600 mt-1">→ Stay audit-ready, reduce back-and-forth</p>
-                  </div>
-                    <div className="bg-gradient-to-br from-pink-50 to-pink-100 p-4 rounded-lg sm:col-span-2 lg:col-span-1">
+                  </motion.div>
+                    <motion.div 
+                      className="bg-gradient-to-br from-pink-50 to-pink-100 p-3 sm:p-4 rounded-lg sm:col-span-2 lg:col-span-1 cursor-pointer"
+                      whileHover={{ 
+                        scale: 1.02, 
+                        y: -2,
+                        boxShadow: "0 8px 25px -8px rgba(236, 72, 153, 0.3)"
+                      }}
+                      whileTap={{ scale: 0.98 }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.9 }}
+                    >
                     <div className="flex items-center justify-between">
-                        <Clock className="h-6 sm:h-8 w-6 sm:w-8 text-pink-600" />
-                        <span className="text-xl sm:text-2xl font-bold text-gray-800">2.5h</span>
+                        <motion.div
+                          whileHover={{ rotate: 10 }}
+                          transition={{ type: "spring", stiffness: 300 }}
+                        >
+                          <Clock className="h-5 sm:h-6 lg:h-8 w-5 sm:w-6 lg:w-8 text-pink-600" />
+                        </motion.div>
+                        <motion.span 
+                          className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ duration: 0.5, delay: 1.2, type: "spring" }}
+                        >
+                          2.5h
+                        </motion.span>
                     </div>
-                    <p className="text-sm text-gray-600 mt-2">Avg. Response Time</p>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-2">Avg. Response Time</p>
                     <p className="text-xs text-pink-600 mt-1">→ Close deals 50% faster</p>
-                  </div>
+                  </motion.div>
                 </div>
               </div>
             </div>
@@ -750,20 +908,18 @@ const GarnetLandingPage = () => {
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">
               Everything Sales Teams Need for 
-              <span className="block sm:inline bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> Faster Vendor Onboarding</span>
+              <span className="block sm:inline bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> Vendor Compliance</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Streamline compliance, build trust, and accelerate deal closure with AI-powered automation.
+              Streamline security reviews, build trust with buyers, and accelerate deal closure using Garnet AI.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
-                className={`group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 hover:border-purple-200 ${
-                  index === 4 ? 'md:col-span-2 xl:col-span-1' : ''
-                }`}
+                className="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 hover:border-purple-200"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -817,8 +973,6 @@ const GarnetLandingPage = () => {
                   <p className="text-base text-gray-600 leading-relaxed mb-6 flex-grow">
                     {feature.description}
                   </p>
-                  
-                  {/* Removed Learn more link for consistency */}
                 </div>
                 
                 {/* Hover glow effect */}
@@ -829,7 +983,71 @@ const GarnetLandingPage = () => {
         </div>
       </section>
 
-      {/* Multi-Region Compliance Section */}
+      {/* Workflow Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              Vendor Onboarding Workflows, 
+              <span className="block sm:inline bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> Built for Speed</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              Accelerate vendor assessments with pre-built workflows, designed specifically for sales, success, and customer-facing teams.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                step: "1",
+                title: "Upload Questionnaire",
+                description: "Simply upload your vendor security questionnaire in any format",
+                icon: <Upload className="h-8 w-8" />
+              },
+              {
+                step: "2", 
+                title: "AI Analysis & Response",
+                description: "Our AI analyzes requirements and generates accurate responses instantly",
+                icon: <Cpu className="h-8 w-8" />
+              },
+              {
+                step: "3",
+                title: "Review & Submit",
+                description: "Review, customize if needed, and submit with complete confidence",
+                icon: <CheckCircle className="h-8 w-8" />
+              }
+            ].map((workflow, index) => (
+              <motion.div
+                key={index}
+                className="text-center"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.2 }}
+              >
+                <div className="relative mb-6">
+                  <div className="w-20 h-20 mx-auto bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                    {workflow.icon}
+                  </div>
+                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center text-purple-600 font-bold text-sm shadow-md">
+                    {workflow.step}
+                  </div>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">{workflow.title}</h3>
+                <p className="text-gray-600 leading-relaxed">{workflow.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Global Trust Section */}
       <section className="py-20 bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 relative overflow-hidden">
         {/* Animated background elements */}
         <div className="absolute inset-0">
@@ -877,16 +1095,16 @@ const GarnetLandingPage = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <span className="inline-block px-4 py-2 bg-white/80 backdrop-blur-sm text-purple-700 rounded-full text-sm font-semibold mb-6 shadow-lg">
-                🌍 Global AI Platform
+                🌍 Global Trust Platform
               </span>
             </motion.div>
             
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-6">
               Trusted Worldwide by 
-              <span className="block sm:inline bg-gradient-to-r from-purple-600 via-blue-600 to-pink-600 bg-clip-text text-transparent"> Global Enterprises</span>
+              <span className="block sm:inline bg-gradient-to-r from-purple-600 via-blue-600 to-pink-600 bg-clip-text text-transparent"> Modern Vendors</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Our AI-powered compliance platform serves organizations across 6 continents with localized expertise and real-time regulatory updates.
+              Built for scale, Garnet supports 150+ countries with up-to-date regulatory guidance and localization for every region.
             </p>
           </motion.div>
 
@@ -902,7 +1120,7 @@ const GarnetLandingPage = () => {
               { number: "150+", label: "Countries Supported", icon: <Globe className="h-8 w-8" /> },
               { number: "99%", label: "Global Coverage", icon: <BarChart3 className="h-8 w-8" /> },
               { number: "6", label: "Continents", icon: <Users className="h-8 w-8" /> },
-              { number: "50+", label: "Compliance Frameworks", icon: <Shield className="h-8 w-8" /> }
+              { number: "50+", label: "Compliance Frameworks Supported", icon: <Shield className="h-8 w-8" /> }
             ].map((stat, index) => (
               <motion.div
                 key={index}
@@ -943,14 +1161,10 @@ const GarnetLandingPage = () => {
               </div>
               
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-3">
                   {[
-                    { country: "🇺🇸 United States", frameworks: ["SOC 2", "NIST", "CCPA"] },
-                    { country: "🇨🇦 Canada", frameworks: ["PIPEDA", "SOC 2"] },
-                    { country: "🇧🇷 Brazil", frameworks: ["LGPD", "ISO 27001"] },
-                    { country: "🇲🇽 Mexico", frameworks: ["LFPDPPP", "ISO 27001"] },
-                    { country: "🇦🇷 Argentina", frameworks: ["PDPA", "ISO 27001"] },
-                    { country: "🇨🇱 Chile", frameworks: ["Privacy Laws", "SOC 2"] }
+                    { country: "🇺🇸 USA", frameworks: ["SOC 2", "NIST", "CCPA"] },
+                    { country: "🇨🇦 Canada", frameworks: ["PIPEDA", "SOC 2"] }
                   ].map((item, idx) => (
                     <motion.div 
                       key={idx}
@@ -991,14 +1205,10 @@ const GarnetLandingPage = () => {
               </div>
               
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-3">
                   {[
-                    { country: "🇬🇧 United Kingdom", frameworks: ["GDPR", "ISO 27001"] },
-                    { country: "🇩🇪 Germany", frameworks: ["GDPR", "BSI"] },
-                    { country: "🇫🇷 France", frameworks: ["GDPR", "ISO 27001"] },
-                    { country: "🇿🇦 South Africa", frameworks: ["POPIA", "ISO 27001"] },
-                    { country: "🇳🇬 Nigeria", frameworks: ["DPA", "ISO 27001"] },
-                    { country: "🇰🇪 Kenya", frameworks: ["DPA", "Privacy Laws"] }
+                    { country: "🇬🇧 UK", frameworks: ["GDPR"] },
+                    { country: "🇩🇪 Germany", frameworks: ["GDPR", "BSI"] }
                   ].map((item, idx) => (
                     <motion.div 
                       key={idx}
@@ -1039,14 +1249,10 @@ const GarnetLandingPage = () => {
               </div>
               
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-3">
                   {[
                     { country: "🇸🇬 Singapore", frameworks: ["PDPA", "ISO 27001"] },
-                    { country: "🇦🇺 Australia", frameworks: ["Privacy Act", "ISO 27001"] },
-                    { country: "🇯🇵 Japan", frameworks: ["APPI", "ISO 27001"] },
-                    { country: "🇰🇷 South Korea", frameworks: ["PIPA", "ISO 27001"] },
-                    { country: "🇮🇳 India", frameworks: ["DPDP", "ISO 27001"] },
-                    { country: "🇳🇿 New Zealand", frameworks: ["Privacy Act", "ISO 27001"] }
+                    { country: "🇦🇺 Australia", frameworks: ["Privacy Act", "ISO 27001"] }
                   ].map((item, idx) => (
                     <motion.div 
                       key={idx}
@@ -1075,7 +1281,7 @@ const GarnetLandingPage = () => {
         </div>
       </section>
 
-      {/* All in One Solution Section */}
+      {/* Use Case Section */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
@@ -1086,308 +1292,169 @@ const GarnetLandingPage = () => {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Optimized to Serve Every Use Case 
-              <span className="block sm:inline bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> Across Industries</span>
+              Built for Every Industry 
+              <span className="block sm:inline bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> & Jurisdiction</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Our AI-powered compliance platform adapts to various industries and regulatory requirements.
+              Whether you are handling fintech, legal, consulting, or e-commerce vendor assessments, Garnet adapts to your specific needs.
             </p>
           </motion.div>
 
-          {/* Horizontal scrolling animation container */}
-          <div className="relative overflow-hidden py-4">
-            {/* Row 1 */}
-            <div className="mb-8 relative">
-              <motion.div 
-                className="flex space-x-6"
-                animate={{ 
-                  x: [0, -1800],
-                }}
-                transition={{
-                  x: {
-                    duration: 40,
-                    repeat: Infinity,
-                    repeatType: "loop",
-                    ease: "linear"
-                  }
-                }}
-              >
-                {/* First set of cards */}
-                {[
-                  {
-                    name: "FinTech",
-                    icon: <Building2 className="h-8 w-8" />,
-                    description: "Banking, payments, and financial services compliance",
-                    frameworks: ["PCI DSS", "SOX", "GDPR"]
-                  },
-                  {
-                    name: "Healthcare",
-                    icon: <Heart className="h-8 w-8" />,
-                    description: "Medical data protection and patient privacy",
-                    frameworks: ["HIPAA", "HITECH", "FDA"]
-                  },
-                  {
-                    name: "SaaS/Tech",
-                    icon: <Code className="h-8 w-8" />,
-                    description: "Technology companies and software platforms",
-                    frameworks: ["SOC 2", "ISO 27001", "GDPR"]
-                  },
-                  {
-                    name: "E-Commerce",
-                    icon: <ShoppingCart className="h-8 w-8" />,
-                    description: "Online retail and payment processing",
-                    frameworks: ["PCI DSS", "CCPA", "GDPR"]
-                  },
-                  {
-                    name: "Manufacturing",
-                    icon: <Settings className="h-8 w-8" />,
-                    description: "Industrial and manufacturing operations",
-                    frameworks: ["ISO 27001", "NIST", "SOC 2"]
-                  },
-                  {
-                    name: "Consulting",
-                    icon: <Briefcase className="h-8 w-8" />,
-                    description: "Professional services and client data handling",
-                    frameworks: ["SOC 2", "GDPR", "ISO 27001"]
-                  },
-                  // Duplicate the first set to create continuous loop
-                  {
-                    name: "FinTech",
-                    icon: <Building2 className="h-8 w-8" />,
-                    description: "Banking, payments, and financial services compliance",
-                    frameworks: ["PCI DSS", "SOX", "GDPR"]
-                  },
-                  {
-                    name: "Healthcare",
-                    icon: <Heart className="h-8 w-8" />,
-                    description: "Medical data protection and patient privacy",
-                    frameworks: ["HIPAA", "HITECH", "FDA"]
-                  },
-                  {
-                    name: "SaaS/Tech",
-                    icon: <Code className="h-8 w-8" />,
-                    description: "Technology companies and software platforms",
-                    frameworks: ["SOC 2", "ISO 27001", "GDPR"]
-                  },
-                  {
-                    name: "E-Commerce",
-                    icon: <ShoppingCart className="h-8 w-8" />,
-                    description: "Online retail and payment processing",
-                    frameworks: ["PCI DSS", "CCPA", "GDPR"]
-                  }
-                ].map((industry, index) => (
-                  <motion.div
-                    key={index}
-                    className="group relative w-64 flex-shrink-0"
-                    whileHover={{ 
-                      y: -15,
-                      scale: 1.05,
-                      zIndex: 10,
-                      transition: { type: "spring", stiffness: 300, damping: 15 }
-                    }}
-                  >
-                    <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 text-center relative overflow-hidden border border-gray-100 h-full">
-                      {/* Background gradient blob */}
-                      <div className="absolute -top-10 -right-10 w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
-                      
-                      {/* Icon container */}
-                      <motion.div 
-                        className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center text-white relative z-10"
-                        whileHover={{ scale: 1.1, rotate: 5 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                      >
-                        {industry.icon}
-                      </motion.div>
-                      
-                      {/* Industry name */}
-                      <h3 className="text-lg font-bold text-gray-900 mb-2 relative z-10">
-                        {industry.name}
-                      </h3>
-                      
-                      {/* Description */}
-                      <p className="text-sm text-gray-600 mb-3 leading-relaxed relative z-10">
-                        {industry.description}
-                      </p>
-                      
-                      {/* Frameworks */}
-                      <div className="flex flex-wrap justify-center gap-1 relative z-10">
-                        {industry.frameworks.map((framework, fIndex) => (
-                          <span 
-                            key={fIndex}
-                            className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full"
-                          >
-                            {framework}
-                          </span>
-                        ))}
-                      </div>
-                      
-                      {/* Hover overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
-            </div>
-
-            {/* Row 2 - moves in opposite direction */}
-            <div className="relative">
-              <motion.div 
-                className="flex space-x-6"
-                animate={{ 
-                  x: [-1800, 0],
-                }}
-                transition={{
-                  x: {
-                    duration: 45, // Slightly different speed for visual interest
-                    repeat: Infinity,
-                    repeatType: "loop",
-                    ease: "linear"
-                  }
-                }}
-              >
-                {/* Second set of cards */}
-                {[
-                  {
-                    name: "Government",
-                    icon: <Building2 className="h-8 w-8" />,
-                    description: "Ensuring compliance for public institutions and government agencies",
-                    frameworks: ["FISMA", "FedRAMP", "NIST 800-53"]
-                  },
-                  {
-                    name: "Education",
-                    icon: <Layers className="h-8 w-8" />,
-                    description: "Compliance with data privacy laws for students and academic institutions",
-                    frameworks: ["FERPA", "COPPA", "ISO 27001"]
-                  },
-                  {
-                    name: "Legal",
-                    icon: <FileCheck className="h-8 w-8" />,
-                    description: "Securing sensitive client data and adhering to confidentiality regulations",
-                    frameworks: ["GDPR", "ABA Model Rules", "ISO 27701"]
-                  },
-                  {
-                    name: "Real Estate",
-                    icon: <Home className="h-8 w-8" />,
-                    description: "Handling of sensitive financial and identity data in property transactions",
-                    frameworks: ["AML", "GDPR", "CCPA"]
-                  },
-                  {
-                    name: "Energy & Utilities",
-                    icon: <Gauge className="h-8 w-8" />,
-                    description: "Protecting infrastructure and operational data in critical industries",
-                    frameworks: ["NERC CIP", "ISO 27001", "NIST"]
-                  },
-                  {
-                    name: "Insurance",
-                    icon: <Shield className="h-8 w-8" />,
-                    description: "Compliance with financial, fraud, and customer data protection laws",
-                    frameworks: ["GLBA", "GDPR", "SOC 2"]
-                  },
-                  // Duplicate the second set to create continuous loop
-                  {
-                    name: "Government",
-                    icon: <Building2 className="h-8 w-8" />,
-                    description: "Ensuring compliance for public institutions and government agencies",
-                    frameworks: ["FISMA", "FedRAMP", "NIST 800-53"]
-                  },
-                  {
-                    name: "Education",
-                    icon: <Layers className="h-8 w-8" />,
-                    description: "Compliance with data privacy laws for students and academic institutions",
-                    frameworks: ["FERPA", "COPPA", "ISO 27001"]
-                  },
-                  {
-                    name: "Legal",
-                    icon: <FileCheck className="h-8 w-8" />,
-                    description: "Securing sensitive client data and adhering to confidentiality regulations",
-                    frameworks: ["GDPR", "ABA Model Rules", "ISO 27701"]
-                  },
-                  {
-                    name: "Real Estate",
-                    icon: <Home className="h-8 w-8" />,
-                    description: "Handling of sensitive financial and identity data in property transactions",
-                    frameworks: ["AML", "GDPR", "CCPA"]
-                  }
-                ].map((industry, index) => (
-                  <motion.div
-                    key={index}
-                    className="group relative w-64 flex-shrink-0"
-                    whileHover={{ 
-                      y: -15,
-                      scale: 1.05,
-                      zIndex: 10,
-                      transition: { type: "spring", stiffness: 300, damping: 15 }
-                    }}
-                  >
-                    <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 text-center relative overflow-hidden border border-gray-100 h-full">
-                      {/* Background gradient blob */}
-                      <div className="absolute -top-10 -right-10 w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
-                      
-                      {/* Icon container */}
-                      <motion.div 
-                        className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center text-white relative z-10"
-                        whileHover={{ scale: 1.1, rotate: 5 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                      >
-                        {industry.icon}
-                      </motion.div>
-                      
-                      {/* Industry name */}
-                      <h3 className="text-lg font-bold text-gray-900 mb-2 relative z-10">
-                        {industry.name}
-                      </h3>
-                      
-                      {/* Description */}
-                      <p className="text-sm text-gray-600 mb-3 leading-relaxed relative z-10">
-                        {industry.description}
-                      </p>
-                      
-                      {/* Frameworks */}
-                      <div className="flex flex-wrap justify-center gap-1 relative z-10">
-                        {industry.frameworks.map((framework, fIndex) => (
-                          <span 
-                            key={fIndex}
-                            className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full"
-                          >
-                            {framework}
-                          </span>
-                        ))}
-                      </div>
-                      
-                      {/* Hover overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
-            </div>
-
-            {/* Gradient overlay on edges */}
-            <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-white to-transparent z-10"></div>
-            <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-white to-transparent z-10"></div>
-          </div>
-
-          {/* Bottom CTA */}
-          {/* <motion.div 
-            className="text-center mt-16"
+          {/* Global Examples */}
+          <motion.div 
+            className="mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.8 }}
+            transition={{ duration: 0.6 }}
           >
-            <p className="text-gray-600 mb-6 text-lg">
-              Don't see your industry? Garnet adapts to any compliance framework.
-            </p>
-            <motion.button 
-              className="bg-white text-purple-600 border-2 border-purple-200 px-8 py-3 rounded-full font-semibold hover:bg-purple-50 hover:border-purple-300 transition-all inline-flex items-center group"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={openIndustryForm}
-            >
-              Add yours
-              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </motion.button>
-          </motion.div> */}
+            <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Global Coverage Examples</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { country: "🇧🇷 Brazil", frameworks: ["LGPD", "ISO 27001"] },
+                { country: "🇲🇽 Mexico", frameworks: ["LFPDPPP", "ISO 27001"] },
+                { country: "🇮🇳 India", frameworks: ["DPDP", "ISO 27001"] },
+                { country: "🇯🇵 Japan", frameworks: ["APPI", "ISO 27001"] },
+                { country: "🇿🇦 South Africa", frameworks: ["POPIA", "ISO 27001"] },
+                { country: "🇫🇷 France", frameworks: ["GDPR", "ISO 27001"] },
+                { country: "🇰🇪 Kenya", frameworks: ["DPA", "Privacy Laws"] },
+                { country: "🇳🇬 Nigeria", frameworks: ["DPA", "ISO 27001"] }
+              ].map((item, idx) => (
+                <motion.div 
+                  key={idx}
+                  className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg hover:from-purple-50 hover:to-pink-50 transition-all cursor-pointer border border-gray-200"
+                  whileHover={{ scale: 1.02, y: -2 }}
+                >
+                  <div className="text-sm font-semibold text-gray-800 mb-2">{item.country}</div>
+                  <div className="flex flex-wrap gap-1">
+                    {item.frameworks.map((fw, fIdx) => (
+                      <span key={fIdx} className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
+                        {fw}
+                      </span>
+                    ))}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Industries Grid */}
+          <motion.div 
+            className="mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Industries We Serve</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                {
+                  name: "SaaS & Tech",
+                  icon: <Code className="h-8 w-8" />,
+                  description: "Technology companies and software platforms",
+                  frameworks: ["ISO 27001", "GDPR"]
+                },
+                {
+                  name: "E-Commerce",
+                  icon: <ShoppingCart className="h-8 w-8" />,
+                  description: "Online retail and payment processing",
+                  frameworks: ["PCI DSS", "GDPR", "CCPA"]
+                },
+                {
+                  name: "Fintech",
+                  icon: <Building2 className="h-8 w-8" />,
+                  description: "Banking, payments, and financial services",
+                  frameworks: ["SOX", "PCI DSS", "AML"]
+                },
+                {
+                  name: "Manufacturing",
+                  icon: <Settings className="h-8 w-8" />,
+                  description: "Industrial and manufacturing operations",
+                  frameworks: ["NIST", "SOC 2"]
+                },
+                {
+                  name: "Consulting",
+                  icon: <Briefcase className="h-8 w-8" />,
+                  description: "Professional services and client data",
+                  frameworks: ["GDPR", "ISO 27001"]
+                },
+                {
+                  name: "Legal",
+                  icon: <Briefcase className="h-8 w-8" />,
+                  description: "Law firms and legal services",
+                  frameworks: ["ISO 27701", "ABA Rules"]
+                },
+                {
+                  name: "Real Estate",
+                  icon: <Home className="h-8 w-8" />,
+                  description: "Property management and real estate",
+                  frameworks: ["AML", "CCPA"]
+                },
+                {
+                  name: "Insurance",
+                  icon: <Shield className="h-8 w-8" />,
+                  description: "Insurance providers and brokers",
+                  frameworks: ["GLBA", "SOC 2"]
+                },
+                {
+                  name: "Energy",
+                  icon: <Zap className="h-8 w-8" />,
+                  description: "Energy and utility companies",
+                  frameworks: ["NERC CIP", "NIST"]
+                }
+              ].map((industry, index) => (
+                  <motion.div
+                    key={index}
+                    className="group relative"
+                    whileHover={{ 
+                      y: -5,
+                      scale: 1.02,
+                      transition: { type: "spring", stiffness: 300, damping: 15 }
+                    }}
+                  >
+                    <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 text-center relative overflow-hidden border border-gray-100 h-full">
+                      {/* Background gradient blob */}
+                      <div className="absolute -top-10 -right-10 w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
+                      
+                      {/* Icon container */}
+                      <motion.div 
+                        className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center text-white relative z-10"
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      >
+                        {industry.icon}
+                      </motion.div>
+                      
+                      {/* Industry name */}
+                      <h3 className="text-lg font-bold text-gray-900 mb-2 relative z-10">
+                        {industry.name}
+                      </h3>
+                      
+                      {/* Description */}
+                      <p className="text-sm text-gray-600 mb-3 leading-relaxed relative z-10">
+                        {industry.description}
+                      </p>
+                      
+                      {/* Frameworks */}
+                      <div className="flex flex-wrap justify-center gap-1 relative z-10">
+                        {industry.frameworks.map((framework, fIndex) => (
+                          <span 
+                            key={fIndex}
+                            className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full"
+                          >
+                            {framework}
+                          </span>
+                        ))}
+                      </div>
+                      
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"></div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
         </div>
       </section>
 
@@ -1459,12 +1526,8 @@ const GarnetLandingPage = () => {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              We Have Got the Answers 
-              <span className="block sm:inline bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> You Are Looking For</span>
+              We Have Got the Answers
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Quick answers to your AI-powered compliance automation questions.
-            </p>
           </motion.div>
 
           <div className="space-y-4">
@@ -1545,21 +1608,37 @@ const GarnetLandingPage = () => {
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">
-              Ready to Transform Your 
-              <span className="block">Compliance Process?</span>
+              Ready to Transform Your Compliance Process?
             </h2>
-            <p className="text-xl text-purple-100 max-w-3xl mx-auto mb-10 leading-relaxed">
-              Join hundreds of companies already saving time and closing deals faster with Garnet AI-powered compliance platform.
+            <p className="text-lg text-purple-200 max-w-3xl mx-auto mb-10 leading-relaxed">
+              Founders, sales teams, and legal leads across industries are gearing up to launch with Garnet. Join them and get early access to the platform.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <motion.button 
-                className="bg-white text-purple-600 px-6 sm:px-8 py-4 rounded-full text-lg font-semibold hover:shadow-xl transition-all flex items-center justify-center group"
-                whileHover={{ scale: 1.05 }}
+                className="bg-white text-purple-600 px-6 sm:px-8 py-4 rounded-full text-lg font-semibold hover:shadow-xl transition-all flex items-center justify-center group focus:ring-4 focus:ring-white focus:ring-opacity-50"
+                whileHover={{ 
+                  scale: 1.05,
+                  boxShadow: "0 25px 50px -12px rgba(255, 255, 255, 0.8)",
+                  background: "#f8fafc"
+                }}
                 whileTap={{ scale: 0.95 }}
                 onClick={openWaitlist}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
               >
                 Join Waitlist
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <motion.div
+                  className="ml-2"
+                  animate={{ x: [0, 4, 0] }}
+                  transition={{ 
+                    duration: 2, 
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </motion.div>
               </motion.button>
               {/* <motion.button 
                 className="border-2 border-white text-white px-6 sm:px-8 py-4 rounded-full text-lg font-semibold hover:bg-white hover:text-purple-600 transition-all group"
@@ -1640,7 +1719,8 @@ const GarnetLandingPage = () => {
         </div>
       </footer>
     </div>
-  );
-};
+    </>
+      );
+  };
 
 export default GarnetLandingPage; 
