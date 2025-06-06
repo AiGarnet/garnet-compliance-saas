@@ -13,12 +13,15 @@ import {
   Moon,
   Sun,
   Globe,
+  UserPlus,
+  LogIn,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MobileNavigation } from './MobileNavigation';
 import { translations } from '@/lib/i18n';
 import { injectCriticalCSS } from './critical-css';
 import { ThemeToggle } from './ui/ThemeToggle';
+import { useAuth } from '@/lib/auth/AuthContext';
 
 // Remove the hardcoded CSS variables since we're using the ones from critical-css
 // const cssVariables = {
@@ -39,6 +42,7 @@ interface HeaderProps {
 
 export default function Header({ locale = 'en' }: HeaderProps) {
   const pathname = usePathname();
+  const { user, isAuthenticated, logout, hasAccess } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -99,14 +103,28 @@ export default function Header({ locale = 'en' }: HeaderProps) {
   // Get translations based on locale
   const t = translations[currentLocale as keyof typeof translations] || translations.en;
 
-  // Navigation items
-  const navItems = [
-    { href: '/dashboard', label: t.dashboard },
-    { href: '/vendors', label: t.vendors },
-    { href: '/questionnaires', label: t.questionnaires },
-    { href: '/trust-portal', label: t.trustPortal },
-    { href: '/compliance', label: t.compliance },
-  ];
+  // Navigation items based on user role
+  const getNavItems = () => {
+    if (!isAuthenticated) return [];
+    
+    if (user?.role === 'enterprise') {
+      // Enterprise users only have access to Trust Portal
+      return [
+        { href: '/trust-portal', label: t.trustPortal },
+      ];
+    }
+    
+    // Vendor users have access to all features
+    return [
+      { href: '/dashboard', label: t.dashboard },
+      { href: '/vendors', label: t.vendors },
+      { href: '/questionnaires', label: t.questionnaires },
+      { href: '/trust-portal', label: t.trustPortal },
+      { href: '/compliance', label: t.compliance },
+    ];
+  };
+
+  const navItems = getNavItems();
 
   // Available languages
   const languages = [
@@ -118,7 +136,7 @@ export default function Header({ locale = 'en' }: HeaderProps) {
 
   return (
     <header 
-      className="sticky top-0 z-30 transition-colors"
+      className="sticky top-0 z-30 transition-colors bg-white shadow-sm"
       style={{backgroundColor: 'var(--header-bg)', color: 'var(--header-text)'}}
     >
       {/* Skip to content link */}
@@ -134,11 +152,8 @@ export default function Header({ locale = 'en' }: HeaderProps) {
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center" aria-label={t.homePage}>
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary flex items-center justify-center mr-2">
-                <span className="text-white text-lg font-bold">G</span>
-              </div>
-              <span className="text-xl font-semibold">
-                GarnetAI
+              <span className="text-2xl font-extrabold tracking-wide bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Garnet
               </span>
             </Link>
           </div>
@@ -151,8 +166,8 @@ export default function Header({ locale = 'en' }: HeaderProps) {
                   <Link 
                     href={item.href}
                     className={cn(
-                      "hover:text-primary min-h-[44px] min-w-[44px] flex items-center px-3 py-2 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30",
-                      pathname === item.href && "text-primary font-medium border-b-2 border-primary"
+                      "nav-link min-h-[44px] min-w-[44px] flex items-center px-3 py-2 rounded transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30",
+                      pathname === item.href ? "active" : ""
                     )}
                     aria-current={pathname === item.href ? 'page' : undefined}
                   >
@@ -165,111 +180,133 @@ export default function Header({ locale = 'en' }: HeaderProps) {
           
           {/* Right side controls */}
           <div className="flex items-center gap-2">
-            {/* Search Bar */}
-            <div className="relative hidden md:block">
-              <div className={cn(
-                "transition-all duration-200",
-                isSearchOpen ? "w-64" : "w-10"
-              )}>
-                <button
-                  onClick={() => setIsSearchOpen(!isSearchOpen)}
-                  className="absolute inset-y-0 left-0 flex items-center pl-3"
-                  aria-label={t.search}
-                  aria-expanded={isSearchOpen}
-                >
-                  <Search className="h-5 w-5" />
-                </button>
-                <input
-                  type="text"
-                  placeholder={isSearchOpen ? t.searchPlaceholder : ""}
-                  className={cn(
-                    "pl-10 py-2 pr-4 rounded-full text-sm bg-controls-bg focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all duration-200",
-                    isSearchOpen ? "w-full opacity-100" : "w-10 opacity-0 cursor-pointer"
-                  )}
-                  aria-hidden={!isSearchOpen}
-                />
-              </div>
-            </div>
-            
-            {/* Notifications Bell */}
-            <button
-              className="min-h-[44px] min-w-[44px] p-2 rounded-full hover:bg-controls-bg focus:outline-none focus:ring-2 focus:ring-primary/30"
-              aria-label={t.notifications}
-            >
-              <Bell className="h-5 w-5" />
-            </button>
-            
-            {/* Dark Mode Toggle */}
-            <ThemeToggle locale={currentLocale} />
-            
-            {/* Language Selector */}
-            <div className="relative">
-              <button
-                className="min-h-[44px] min-w-[44px] p-2 rounded-full hover:bg-controls-bg focus:outline-none focus:ring-2 focus:ring-primary/30"
-                aria-label={t.language}
-                onClick={() => {
-                  // Toggle through languages for simplicity
-                  const currentIndex = languages.findIndex(l => l.code === currentLocale);
-                  const nextIndex = (currentIndex + 1) % languages.length;
-                  setCurrentLocale(languages[nextIndex].code);
-                }}
-              >
-                <Globe className="h-5 w-5" />
-              </button>
-            </div>
-            
-            {/* Profile Dropdown */}
-            <div className="relative" ref={profileDropdownRef}>
-              <button
-                className="min-h-[44px] min-w-[44px] p-2 flex items-center gap-2 rounded-full hover:bg-controls-bg focus:outline-none focus:ring-2 focus:ring-primary/30"
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                aria-expanded={isProfileOpen}
-                aria-haspopup="true"
-              >
-                <div className="h-8 w-8 rounded-full bg-primary-light flex items-center justify-center dark:bg-primary-dark">
-                  <span className="text-primary font-medium dark:text-white">SA</span>
-                </div>
-                <span className="hidden md:inline">{t.profile}</span>
-              </button>
-              
-              {isProfileOpen && (
-                <div 
-                  className="absolute right-0 mt-2 w-48 bg-card-bg rounded-md shadow-lg py-1 z-10 border border-card-border"
-                  role="menu"
-                  aria-orientation="vertical"
-                >
-                  <div className="px-4 py-2 border-b border-card-border">
-                    <div className="text-sm font-medium">Sarah Anderson</div>
-                    <div className="text-xs text-muted-text">sarah@company.com</div>
+            {isAuthenticated ? (
+              <>
+                {/* Search Bar - Only for authenticated users */}
+                <div className="relative hidden md:block">
+                  <div className={cn(
+                    "transition-all duration-200",
+                    isSearchOpen ? "w-64" : "w-10"
+                  )}>
+                    <button
+                      onClick={() => setIsSearchOpen(!isSearchOpen)}
+                      className="absolute inset-y-0 left-0 flex items-center pl-3"
+                      aria-label={t.search}
+                      aria-expanded={isSearchOpen}
+                    >
+                      <Search className="h-5 w-5 text-gray-500" />
+                    </button>
+                    <input
+                      type="text"
+                      placeholder={isSearchOpen ? t.searchPlaceholder : ""}
+                      className={cn(
+                        "pl-10 py-2 pr-4 rounded-full text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all duration-200",
+                        isSearchOpen ? "w-full opacity-100" : "w-10 opacity-0 cursor-pointer"
+                      )}
+                      aria-hidden={!isSearchOpen}
+                    />
                   </div>
-                  
-                  <button 
-                    className="block w-full text-left px-4 py-2 text-sm hover:bg-controls-bg focus:bg-controls-bg focus:outline-none"
-                    role="menuitem"
+                </div>
+                
+                {/* Notifications Bell - Only for authenticated users */}
+                <button
+                  className="min-h-[44px] min-w-[44px] p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  aria-label={t.notifications}
+                >
+                  <Bell className="h-5 w-5 text-gray-500" />
+                </button>
+                
+                {/* Profile Dropdown - Only for authenticated users */}
+                <div className="relative" ref={profileDropdownRef}>
+                  <button
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    className="flex items-center min-h-[44px] min-w-[44px] p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    aria-expanded={isProfileOpen}
+                    aria-haspopup="true"
+                    aria-label={t.profile}
                   >
-                    <User className="h-4 w-4 inline-block mr-2" />
-                    {t.profile}
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 flex items-center justify-center text-primary">
+                      <User className="h-5 w-5" />
+                    </div>
                   </button>
                   
-                  <form method="POST" action="/logout">
-                    <input type="hidden" name="csrf_token" value="fake-csrf-token" />
-                    <button 
-                      type="submit"
-                      className="block w-full text-left px-4 py-2 text-sm hover:bg-controls-bg focus:bg-controls-bg focus:outline-none"
-                      role="menuitem"
+                  {isProfileOpen && (
+                    <div 
+                      className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 animate-fade-in"
+                      role="menu"
+                      aria-orientation="vertical"
+                      aria-labelledby="user-menu"
                     >
-                      <LogOut className="h-4 w-4 inline-block mr-2" />
-                      {t.logout}
-                    </button>
-                  </form>
+                      {/* User Info */}
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <p className="text-sm font-medium text-gray-900">{user?.full_name}</p>
+                        <p className="text-xs text-gray-500">{user?.email}</p>
+                        <p className="text-xs text-primary capitalize">{user?.role}</p>
+                      </div>
+                      
+                      <a 
+                        href="#" 
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary/5 transition-colors"
+                        role="menuitem"
+                      >
+                        {t.profile}
+                      </a>
+                      <a 
+                        href="#" 
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary/5 transition-colors"
+                        role="menuitem"
+                      >
+                        Settings
+                      </a>
+                      <button 
+                        onClick={logout}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-primary/5 transition-colors flex items-center"
+                        role="menuitem"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        {t.logout}
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            ) : (
+              <>
+                {/* Login and Signup buttons for non-authenticated users */}
+                <Link
+                  href="/auth/login"
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary transition-colors"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md transition-colors"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Sign Up
+                </Link>
+              </>
+            )}
             
-            {/* Mobile menu button */}
-            <div className="md:hidden">
-              <MobileNavigation />
-            </div>
+            {/* Mobile Menu Button - Only visible on mobile */}
+            <button 
+              aria-label="Menu"
+              className="md:hidden min-h-[44px] min-w-[44px] p-2 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              onClick={() => {
+                // This is expected to be handled by the MobileNavigation component
+                const mobileMenu = document.getElementById('mobile-menu');
+                if (mobileMenu) {
+                  const isExpanded = mobileMenu.getAttribute('aria-expanded') === 'true';
+                  mobileMenu.setAttribute('aria-expanded', (!isExpanded).toString());
+                  mobileMenu.classList.toggle('translate-x-0');
+                  mobileMenu.classList.toggle('-translate-x-full');
+                }
+              }}
+            >
+              <Menu className="h-6 w-6" />
+            </button>
           </div>
         </div>
       </div>
