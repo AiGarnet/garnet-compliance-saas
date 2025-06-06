@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import OpenAI from 'openai';
 import { UserService } from './services/userService';
+import { WaitlistService } from './services/waitlistService';
 import { WaitlistSignupRequest } from './types/user';
 import http from 'http';
 import vendorRoutes from './routes/vendorRoutes';
@@ -17,6 +18,7 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 console.log(`Configured to use PORT: ${PORT}`);
 const userService = new UserService();
+const waitlistService = new WaitlistService();
 
 // Configure CORS with specific options
 const corsOptions = {
@@ -102,6 +104,12 @@ app.get('/', (req: Request, res: Response) => {
       '/': 'API documentation (this response)',
       '/ask': 'POST - Submit a question to the AI chatbot',
       '/api/answer': 'POST - Submit a question to get compliance answers',
+      '/join-waitlist': 'POST - Join the waitlist (simple signup)',
+      '/api/waitlist/signup': 'POST - Join waitlist with password',
+      '/api/waitlist/stats': 'GET - Get waitlist statistics',
+      '/api/waitlist/users': 'GET - Get all waitlist entries',
+      '/api/auth/signup': 'POST - User signup with authentication',
+      '/api/auth/login': 'POST - User login',
       '/health': 'GET - Health check endpoint',
       '/ping': 'GET - Simple ping-pong response',
       '/version': 'GET - Get API version information'
@@ -116,6 +124,25 @@ app.get('/status', (req: Request, res: Response) => {
     status: 'ok', 
     timestamp: new Date(),
     complianceRecords: complianceData.length 
+  });
+});
+
+// Health check endpoint
+app.get('/health', (req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'ok',
+    message: 'GarnetAI Backend API is healthy',
+    timestamp: new Date().toISOString(),
+    service: 'GarnetAI Compliance Backend',
+    version: '1.0.0'
+  });
+});
+
+// Simple ping endpoint  
+app.get('/ping', (req: Request, res: Response) => {
+  res.status(200).json({
+    message: 'pong',
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -190,6 +217,69 @@ app.get('/api/waitlist/users', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Error fetching waitlist users:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Simple waitlist signup endpoint (for Netlify function compatibility)
+app.post('/join-waitlist', async (req: Request, res: Response) => {
+  console.log('Received waitlist request at:', new Date().toISOString());
+  console.log('Request body:', req.body);
+  console.log('Request headers:', req.headers);
+  
+  try {
+    const { email, full_name, role, organization } = req.body;
+    
+    // Validate required fields
+    if (!email || !full_name) {
+      console.error('Missing required fields');
+      return res.status(400).json({ 
+        error: 'Missing required fields: email and full_name are required' 
+      });
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.error('Invalid email format:', email);
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+    
+    console.log('Adding to waitlist table...');
+    
+    // Add to waitlist using the service
+    const waitlistEntry = await waitlistService.addToWaitlist({
+      name: full_name,
+      email: email,
+      role: role || null,
+      organization: organization || null
+    });
+    
+    console.log('Successfully added to waitlist:', waitlistEntry);
+    
+    // Return success response
+    return res.status(201).json({
+      success: true,
+      message: 'Successfully joined the waitlist!',
+      data: waitlistEntry
+    });
+    
+  } catch (error: any) {
+    console.error('Error in join-waitlist endpoint:', error);
+    
+    // Check for duplicate email
+    if (error.message === 'Email already exists in waitlist') {
+      return res.status(409).json({ 
+        success: false,
+        error: 'Email already registered in waitlist'
+      });
+    }
+    
+    // General error
+    return res.status(500).json({ 
+      success: false,
+      error: 'Internal server error',
+      details: error.message
+    });
   }
 });
 
