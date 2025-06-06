@@ -83,17 +83,16 @@ export function initializeTheme(): void {
     } else if (savedTheme === 'light') {
       setDarkMode(false);
     } else {
-      // Check if the user prefers dark mode
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setDarkMode(prefersDark);
+      // Default to light mode instead of system preference
+      setDarkMode(false);
     }
     
-    // Add a listener for the system preference
+    // Add a listener for the system preference (but always default to light)
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-      const systemPrefersDark = e.matches;
-      // Only apply system preference if the user hasn't set a preference
+      // Only apply system preference if the user has explicitly set it
+      // Default behavior is always light mode
       if (!localStorage.getItem('theme')) {
-        setDarkMode(systemPrefersDark);
+        setDarkMode(false);
       }
     });
   }
