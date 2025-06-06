@@ -7,6 +7,7 @@ import OpenAI from 'openai';
 import { UserService } from './services/userService';
 import { WaitlistSignupRequest } from './types/user';
 import http from 'http';
+import vendorRoutes from './routes/vendorRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -30,6 +31,9 @@ app.use(express.json());
 
 // Handle CORS preflight requests properly
 app.options('*', cors(corsOptions));
+
+// Register API routes
+app.use('/api/vendors', vendorRoutes);
 
 // Global error handling middleware
 app.use((err: any, req: Request, res: Response, next: Function) => {
@@ -61,12 +65,12 @@ let dataLoaded = false;
 for (const dataPath of possiblePaths) {
   try {
     console.log(`Attempting to load data from: ${dataPath}`);
-    const rawData = fs.readFileSync(dataPath, 'utf-8');
-    complianceData = JSON.parse(rawData);
+  const rawData = fs.readFileSync(dataPath, 'utf-8');
+  complianceData = JSON.parse(rawData);
     console.log(`Successfully loaded ${complianceData.length} compliance records from ${dataPath}`);
     dataLoaded = true;
     break;
-  } catch (error) {
+} catch (error) {
     console.log(`Could not load data from ${dataPath}`);
   }
 }
@@ -104,9 +108,9 @@ app.get('/', (req: Request, res: Response) => {
 
 app.get('/status', (req: Request, res: Response) => {
   res.status(200).json({ 
-    status: 'ok',
+    status: 'ok', 
     timestamp: new Date(),
-    complianceRecords: complianceData.length
+    complianceRecords: complianceData.length 
   });
 });
 
@@ -697,25 +701,25 @@ Use the following compliance information as additional context for your answers:
       temperature = 0.4;
     }
     
-    const response = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt
-        },
-        {
-          role: "user",
+      const response = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          {
+            role: "user",
           content: userContent
         }
       ],
       temperature: temperature,
     });
 
-    const answer = response.choices[0]?.message?.content || 
-      'This information is not available in the current compliance dataset. Please consult the compliance officer.';
-    
-    return answer;
+      const answer = response.choices[0]?.message?.content || 
+        'This information is not available in the current compliance dataset. Please consult the compliance officer.';
+      
+      return answer;
   } catch (error) {
     console.error('Error calling OpenAI:', error);
     return 'Error generating answer. Please consult the compliance officer.';

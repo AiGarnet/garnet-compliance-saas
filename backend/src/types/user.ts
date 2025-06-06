@@ -22,8 +22,10 @@ export interface CreateUserRequest {
 
 export interface WaitlistSignupRequest {
   email: string;
-  password: string;
+  password?: string;
   full_name: string;
   role: string;
   organization?: string;
+  source?: string;
+  metadata?: Record<string, any>;
 } 
