@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, LogIn, User, Lock } from "lucide-react";
+import { auth } from "../../../lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,19 +32,7 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Login failed");
-      }
+      const data = await auth.login(formData);
 
       // Store user data and token in localStorage
       localStorage.setItem("authToken", data.token);

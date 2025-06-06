@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, UserPlus, User, Lock, Mail, Building, Users } from "lucide-react";
+import { auth } from "../../../lib/api";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -66,25 +67,13 @@ export default function SignupPage() {
     setError("");
 
     try {
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          full_name: formData.full_name,
-          role: formData.role,
-          organization: formData.organization || null,
-        }),
+      const data = await auth.signup({
+        email: formData.email,
+        password: formData.password,
+        full_name: formData.full_name,
+        role: formData.role,
+        organization: formData.organization || null,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Signup failed");
-      }
 
       // Store user data and token in localStorage
       localStorage.setItem("authToken", data.token);
