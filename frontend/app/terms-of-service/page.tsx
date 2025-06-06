@@ -5,24 +5,25 @@ import Link from 'next/link';
 
 const TermsOfServicePage = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-6">
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="inline-flex items-center text-white hover:text-purple-200 transition-colors mb-4">
-            <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <Link href="/" className="inline-flex items-center text-white hover:text-purple-200 transition-colors mb-6 group">
+            <svg className="h-5 w-5 mr-2 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             Back to Home
           </Link>
-          <h1 className="text-3xl sm:text-4xl font-bold">Terms and Conditions</h1>
-          <p className="mt-2 text-purple-100">Last Updated: {new Date().toLocaleDateString()}</p>
+          <h1 className="text-4xl sm:text-5xl font-bold mb-4">Terms and Conditions</h1>
+          <p className="text-lg text-purple-100">Last Updated: {new Date().toLocaleDateString()}</p>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="prose prose-lg max-w-none">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 lg:p-12">
+          <div className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-headings:font-semibold prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-xl prose-h3:mt-6 prose-h3:mb-3 prose-p:text-gray-700 prose-p:leading-relaxed prose-li:text-gray-700 prose-strong:text-gray-900 prose-a:text-purple-600 prose-a:no-underline hover:prose-a:text-purple-800 hover:prose-a:underline">
           <h2>1. Introduction and Acceptance</h2>
           <p>
             By accessing or using Garnet AI's website, products, or services (collectively, the "Service"), you agree to be bound by these Terms and Conditions ("Terms"). If you do not agree with any part of these Terms, you must not use the Service. These Terms constitute a legally binding agreement between you (individually or on behalf of your company) and Garnet AI Limited, a company incorporated and registered in Ireland with its registered office at [Address], ("Garnet AI," "we," "us," or "our").
@@ -103,6 +104,7 @@ const TermsOfServicePage = () => {
           <p>
             These Terms, together with any Order Form(s), constitute the entire agreement between you and Garnet AI regarding the Service and supersede all prior and contemporaneous agreements, proposals, or representations, written or oral, concerning the Service.
           </p>
+          </div>
         </div>
       </div>
 

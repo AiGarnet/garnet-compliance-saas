@@ -1711,7 +1711,7 @@ const GarnetLandingPage = () => {
           {/* Bottom Bar */}
           <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              © 2025 Garnet AI, Inc. All rights reserved.
+              © 2025 Crookshanks Pvt. Limited. All rights reserved.
             </p>
             <div className="mt-4 md:mt-0 flex items-center space-x-6">
             </div>
