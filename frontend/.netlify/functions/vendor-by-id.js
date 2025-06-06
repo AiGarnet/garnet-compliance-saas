@@ -1,3 +1,5 @@
+const fetch = require('node-fetch');
+
 const BACKEND_URL = process.env.NODE_ENV === 'production' 
   ? 'https://garnet-compliance-saas-production.up.railway.app'
   : 'http://localhost:5000';

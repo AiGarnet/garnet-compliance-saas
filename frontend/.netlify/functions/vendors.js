@@ -1,3 +1,5 @@
+const fetch = require('node-fetch');
+
 const BACKEND_URL = process.env.NODE_ENV === 'production' 
   ? 'https://garnet-compliance-saas-production.up.railway.app'
   : 'http://localhost:5000';
@@ -22,6 +24,12 @@ exports.handler = async (event, context) => {
 
   try {
     const method = event.httpMethod;
+    console.log('Vendor function called:', {
+      method,
+      backendUrl: BACKEND_URL,
+      env: process.env.NODE_ENV,
+      headers: event.headers
+    });
     
     if (method === 'GET') {
       // Get all vendors
@@ -83,10 +91,19 @@ exports.handler = async (event, context) => {
     }
   } catch (error) {
     console.error('Vendor function error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: 'Internal server error' }),
+      body: JSON.stringify({ 
+        error: 'Internal server error',
+        details: error.message,
+        function: 'vendors'
+      }),
     };
   }
 }; 
