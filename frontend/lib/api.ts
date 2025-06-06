@@ -1,7 +1,10 @@
 // Helper function to get the correct API endpoint
 export function getApiEndpoint(path: string): string {
-  // Check if we're running on Netlify (static site)
-  const isNetlify = typeof window !== 'undefined' && window.location.hostname.includes('netlify.app');
+  // Check if we're running on Netlify (static site) - check for multiple domains
+  const isNetlify = typeof window !== 'undefined' && 
+    (window.location.hostname.includes('netlify.app') || 
+     window.location.hostname.includes('garnetai.net') ||
+     window.location.hostname.includes('testinggarnet.netlify.app'));
   
   // For Netlify, use function endpoints directly
   if (isNetlify) {
