@@ -7,6 +7,7 @@ import OpenAI from 'openai';
 import { UserService } from './services/userService';
 import { WaitlistSignupRequest } from './types/user';
 import http from 'http';
+import vendorRoutes from './routes/vendorRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -30,6 +31,9 @@ app.use(express.json());
 
 // Handle CORS preflight requests properly
 app.options('*', cors(corsOptions));
+
+// Register API routes
+app.use('/api/vendors', vendorRoutes);
 
 // Global error handling middleware
 app.use((err: any, req: Request, res: Response, next: Function) => {

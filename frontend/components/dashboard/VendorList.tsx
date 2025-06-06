@@ -28,15 +28,7 @@ import {
   SortDirection,
 } from './utils';
 
-// Define the possible vendor statuses
-export type VendorStatus = 'Questionnaire Pending' | 'In Review' | 'Approved';
-
-// Enhanced vendor interface with required status
-export interface Vendor {
-  id: string;
-  name: string;
-  status: VendorStatus;
-}
+import { Vendor, VendorStatus } from '@/types/vendor';
 
 export interface VendorListProps {
   vendors: Vendor[];
@@ -134,9 +126,9 @@ export function VendorList({
   const getStatusI18nKey = (status: VendorStatus | 'All'): string => {
     switch(status) {
       case 'All': return t.status.all;
-      case 'Questionnaire Pending': return t.status.questionnairePending;
-      case 'In Review': return t.status.inReview;
-      case 'Approved': return t.status.approved;
+      case VendorStatus.QUESTIONNAIRE_PENDING: return t.status.questionnairePending;
+      case VendorStatus.IN_REVIEW: return t.status.inReview;
+      case VendorStatus.APPROVED: return t.status.approved;
       default: return status;
     }
   }
@@ -149,11 +141,11 @@ export function VendorList({
   // Get the appropriate action button text based on vendor status
   const getQuestionnaireActionText = (status: VendorStatus): string => {
     switch(status) {
-      case 'Questionnaire Pending':
+      case VendorStatus.QUESTIONNAIRE_PENDING:
         return 'Start Questionnaire';
-      case 'In Review':
+      case VendorStatus.IN_REVIEW:
         return 'Continue Questionnaire';
-      case 'Approved':
+      case VendorStatus.APPROVED:
         return 'View Questionnaire';
       default:
         return 'Start Questionnaire';
@@ -162,7 +154,7 @@ export function VendorList({
 
   // Render filter pills
   const renderFilterPills = () => {
-    const statuses: (VendorStatus | 'All')[] = ['All', 'Questionnaire Pending', 'In Review', 'Approved'];
+    const statuses: (VendorStatus | 'All')[] = ['All', VendorStatus.QUESTIONNAIRE_PENDING, VendorStatus.IN_REVIEW, VendorStatus.APPROVED];
     const translatedStatuses = statuses.map(status => ({
       value: status,
       label: getStatusI18nKey(status)

@@ -3,42 +3,43 @@
 import React, { useState, useEffect } from "react";
 import { Building2, ExternalLink, Filter, Plus, Search, SlidersHorizontal, Users } from "lucide-react";
 import { MobileNavigation } from "@/components/MobileNavigation";
-import { VendorList, Vendor, VendorStatus } from "@/components/dashboard/VendorList";
+import { VendorList } from "@/components/dashboard/VendorList";
+import { Vendor, VendorFormData } from "@/types/vendor";
+import { vendors as vendorAPI } from "@/lib/api";
 import Header from "@/components/Header";
+import { AddVendorModal } from "../../components/vendors/AddVendorModal";
 
 const VendorsPage = () => {
-  // Sample data for demonstration
-  const mockVendors = [
-    { id: "1", name: "Acme Payments", status: "Questionnaire Pending" as VendorStatus },
-    { id: "2", name: "TechSecure Solutions", status: "In Review" as VendorStatus },
-    { id: "3", name: "Global Data Services", status: "Approved" as VendorStatus },
-    { id: "4", name: "SecureCloud Inc", status: "Questionnaire Pending" as VendorStatus },
-    { id: "5", name: "Oscorp Industries", status: "In Review" as VendorStatus },
-    { id: "6", name: "Umbrella Corporation", status: "Approved" as VendorStatus },
-  ];
-  
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // Simulate API fetch with delay and potential error
+  // Fetch vendors from API
   const fetchVendors = async () => {
     setIsLoading(true);
     setError('');
     
     try {
-      // Simulate network request
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Uncomment to simulate error
-      // if (Math.random() > 0.7) throw new Error("Failed to fetch vendors");
-      
-      setVendors(mockVendors);
+      const response = await vendorAPI.getAll();
+      setVendors(response.vendors || []);
       setIsLoading(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching vendors:", err);
-      setError('Unable to load vendors. Please try again.');
+      setError(err.message || 'Unable to load vendors. Please try again.');
       setIsLoading(false);
+    }
+  };
+
+  // Handle adding a new vendor
+  const handleAddVendor = async (vendorData: VendorFormData) => {
+    try {
+      const response = await vendorAPI.create(vendorData);
+      setVendors(prev => [...prev, response.vendor]);
+      setIsAddModalOpen(false);
+    } catch (err: any) {
+      console.error("Error creating vendor:", err);
+      throw new Error(err.message || 'Failed to create vendor');
     }
   };
 
@@ -63,7 +64,10 @@ const VendorsPage = () => {
           </div>
           
           <div className="flex items-center">
-            <button className="bg-primary text-white hover:bg-primary/90 px-4 py-2 rounded-md flex items-center transition-colors">
+            <button 
+              onClick={() => setIsAddModalOpen(true)}
+              className="bg-primary text-white hover:bg-primary/90 px-4 py-2 rounded-md flex items-center transition-colors"
+            >
               <Plus className="h-5 w-5 mr-2" />
               Add Vendor
             </button>
@@ -76,6 +80,13 @@ const VendorsPage = () => {
           isLoading={isLoading}
           error={error}
           onRetry={fetchVendors}
+        />
+
+        {/* Add Vendor Modal */}
+        <AddVendorModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onSubmit={handleAddVendor}
         />
       </main>
     </>

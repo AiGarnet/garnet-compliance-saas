@@ -52,4 +52,36 @@ export const auth = {
     method: 'POST',
     body: JSON.stringify(data),
   }),
+};
+
+// Vendor API functions
+export const vendors = {
+  // Get all vendors
+  getAll: () => apiCall('/api/vendors'),
+  
+  // Get vendor by ID
+  getById: (id: string) => apiCall(`/api/vendors/${id}`),
+  
+  // Create new vendor
+  create: (data: any) => apiCall('/api/vendors', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  
+  // Update vendor
+  update: (id: string, data: any) => apiCall(`/api/vendors/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  
+  // Delete vendor
+  delete: (id: string) => apiCall(`/api/vendors/${id}`, {
+    method: 'DELETE',
+  }),
+  
+  // Get vendors by status
+  getByStatus: (status: string) => apiCall(`/api/vendors/status/${status}`),
+  
+  // Get vendor statistics
+  getStats: () => apiCall('/api/vendors/stats'),
 }; 
