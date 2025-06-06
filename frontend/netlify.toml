@@ -1,10 +1,13 @@
 [build]
   publish = ".next"
-  command = "npm run build"
+  command = "npm run build && cd netlify/functions && npm install"
   functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "18"
+
+[functions]
+  node_bundler = "zisi"
 
 # Redirect API routes to Netlify functions
 [[redirects]]

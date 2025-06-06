@@ -13,7 +13,7 @@ const pool = new Pool({
 // JWT secret
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
-exports.handler = async (event, context) => {
+const handler = async (event, context) => {
   // Handle CORS
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -21,6 +21,12 @@ exports.handler = async (event, context) => {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json'
   };
+
+  console.log('Auth signup function called:', {
+    method: event.httpMethod,
+    path: event.path,
+    headers: event.headers
+  });
 
   // Handle preflight OPTIONS request
   if (event.httpMethod === 'OPTIONS') {
@@ -43,6 +49,8 @@ exports.handler = async (event, context) => {
   try {
     const body = JSON.parse(event.body);
     const { email, password, full_name, role, organization } = body;
+
+    console.log('Signup attempt for email:', email);
 
     // Validate required fields
     if (!email || !password || !full_name || !role) {
@@ -130,6 +138,8 @@ exports.handler = async (event, context) => {
         { expiresIn: '7d' }
       );
 
+      console.log('User created successfully:', user.id);
+
       // Return success response
       return {
         statusCode: 201,
@@ -163,4 +173,6 @@ exports.handler = async (event, context) => {
       })
     };
   }
-}; 
+};
+
+module.exports = { handler }; 
