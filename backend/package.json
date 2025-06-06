@@ -2,26 +2,32 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Express.js backend for monorepo project",
-  "main": "src/index.js",
+  "main": "src/waitlist-server.js",
   "engines": {
     "node": ">=16.0.0"
   },
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "nodemon --exec ts-node src/index.ts",
-    "dev:alt": "ts-node src/index.ts",
+    "build": "echo 'No build step required for waitlist server'",
+    "start": "node src/waitlist-server.js",
+    "railway-start": "cross-env PORT=8080 node src/waitlist-server.js",
+    "dev": "nodemon src/waitlist-server.js",
+    "dev:alt": "node src/waitlist-server.js",
     "lint": "eslint src --ext .ts",
     "test": "jest",
     "migrate": "node src/db/migrations/create_users_table.js",
-    "migrate:waitlist": "node src/db/migrations/update_users_table.js",
-    "migrate:waitlist-clean": "node src/db/migrations/create_waitlist_table.js"
+    "waitlist": "node src/waitlist-server.js",
+    "test-db": "node src/test-db-connection.js",
+    "create-waitlist-table": "node src/create-waitlist-table.js",
+    "drop-waitlist-table": "node src/drop-waitlist-table.js",
+    "check-waitlist-data": "node src/check-waitlist-data.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
     "openai": "^4.103.0",
     "pg": "^8.11.3"
   },
@@ -30,6 +36,7 @@
     "@types/cors": "^2.8.16",
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.8",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^20.9.0",
     "@types/pg": "^8.10.7",
     "@typescript-eslint/eslint-plugin": "^6.10.0",

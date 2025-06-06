@@ -1,0 +1,7 @@
+{
+  "name": "garnet-ai-netlify-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions for Garnet AI",
+  "main": "questionnaire.js",
+  "dependencies": {}
+} 

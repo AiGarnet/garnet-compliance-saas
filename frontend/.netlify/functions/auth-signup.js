@@ -1,71 +1,46 @@
-// Auth signup function - calls Railway backend
+const fetch = require('node-fetch');
 
-const handler = async (event, context) => {
-  // Handle CORS
+exports.handler = async (event, context) => {
+  // Set CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   };
-
-  console.log('Auth signup function called:', {
-    method: event.httpMethod,
-    path: event.path,
-    headers: event.headers
-  });
 
   // Handle preflight OPTIONS request
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
       headers,
-      body: ''
+      body: '',
     };
   }
 
-  // Only allow POST requests
+  // Only allow POST method
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
       headers,
-      body: JSON.stringify({ error: 'Method not allowed' })
+      body: JSON.stringify({ error: 'Method not allowed' }),
     };
   }
 
   try {
-    const body = JSON.parse(event.body);
-    const { email, password, full_name, role, organization } = body;
-
-    console.log('Signup attempt for email:', email);
+    // Parse request body
+    const body = JSON.parse(event.body || '{}');
+    console.log('Auth signup request:', body);
 
     // Validate required fields
+    const { email, password, full_name, role, organization, source } = body;
+    
     if (!email || !password || !full_name || !role) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({
-          error: 'Missing required fields: email, password, full_name, and role are required'
-        })
-      };
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Invalid email format' })
-      };
-    }
-
-    // Validate password strength
-    if (password.length < 8) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Password must be at least 8 characters long' })
+        body: JSON.stringify({ 
+          error: 'Missing required fields: email, password, full_name, and role are required' 
+        }),
       };
     }
 
@@ -74,12 +49,18 @@ const handler = async (event, context) => {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'Role must be either "vendor" or "enterprise"' })
+        body: JSON.stringify({ 
+          error: 'Role must be either "vendor" or "enterprise"' 
+        }),
       };
     }
 
-    // Call Railway backend for signup
-    const railwayResponse = await fetch('https://garnet-compliance-saas-production.up.railway.app/api/auth/signup', {
+    // Call Railway backend
+    const railwayUrl = 'https://garnet-compliance-saas-production.up.railway.app/api/auth/signup';
+    
+    console.log('Calling Railway backend:', railwayUrl);
+    
+    const response = await fetch(railwayUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -90,55 +71,30 @@ const handler = async (event, context) => {
         full_name,
         role,
         organization,
-        source: 'auth_signup'
-      })
+        source: source || 'netlify_signup'
+      }),
     });
 
-    console.log('Railway response status:', railwayResponse.status);
+    const responseData = await response.json();
+    console.log('Railway response status:', response.status);
+    console.log('Railway response data:', responseData);
 
-    // Parse Railway response
-    let railwayData;
-    try {
-      railwayData = await railwayResponse.json();
-      console.log('Railway response data:', railwayData);
-    } catch (e) {
-      console.error('Error parsing Railway response:', e);
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({
-          error: 'Failed to process signup request - invalid response from server'
-        })
-      };
-    }
-
-    // Return Railway response to frontend
-    if (railwayResponse.ok) {
-      console.log('User created successfully via Railway backend');
-      return {
-        statusCode: 201,
-        headers,
-        body: JSON.stringify(railwayData)
-      };
-    } else {
-      return {
-        statusCode: railwayResponse.status,
-        headers,
-        body: JSON.stringify(railwayData)
-      };
-    }
+    // Return the response from Railway
+    return {
+      statusCode: response.status,
+      headers,
+      body: JSON.stringify(responseData),
+    };
 
   } catch (error) {
-    console.error('Signup error:', error);
+    console.error('Auth signup error:', error);
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({
-        error: 'Failed to process signup request',
-        details: error.message
-      })
+      body: JSON.stringify({ 
+        error: 'Internal server error',
+        details: error.message 
+      }),
     };
   }
-};
-
-module.exports = { handler }; 
+}; 

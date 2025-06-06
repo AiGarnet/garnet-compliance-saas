@@ -11,9 +11,6 @@ import { cn } from "@/lib/utils";
 import Header from "@/components/Header";
 import { DevModeToggle } from "@/components/DevModeToggle";
 import { isDevModeEnabled } from "@/lib/env-config";
-import { useRouter } from "next/navigation";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { useAuth } from "@/lib/auth/AuthContext";
 
 // Vendor data
 const mockVendors = [
@@ -26,14 +23,11 @@ const mockVendors = [
 ];
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const { user } = useAuth();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [simulateError, setSimulateError] = useState<boolean>(false);
   const [isDevMode, setIsDevMode] = useState<boolean>(false);
-  const [isCreatingVendor, setIsCreatingVendor] = useState<boolean>(false);
 
   useEffect(() => {
     // Check developer mode on mount and when it changes
@@ -77,62 +71,20 @@ export default function DashboardPage() {
     fetchVendors();
   };
 
-  // Create a new vendor and navigate to questionnaire
-  const handleNewVendorQuestionnaire = async () => {
-    setIsCreatingVendor(true);
-    try {
-      // API call to create a new vendor
-      // In a real implementation, this would use a proper API client
-      const response = await fetch('/api/vendors', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: 'New Vendor',
-          status: 'Questionnaire Started',
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create vendor');
-      }
-      
-      const data = await response.json();
-      const vendorId = data.vendor.id;
-      
-      // Navigate to questionnaire page with the new vendor ID
-      router.push(`/questionnaires?vendorId=${vendorId}`);
-    } catch (error) {
-      console.error('Error creating vendor:', error);
-      // Show error message to user
-      alert('Failed to create new vendor. Please try again.');
-    } finally {
-      setIsCreatingVendor(false);
-    }
-  };
-  
-  // Handle continuing a questionnaire for an existing vendor
-  const handleContinueQuestionnaire = (vendorId: string) => {
-    router.push(`/questionnaires?vendorId=${vendorId}`);
-  };
-
   // Initial fetch on component mount
   useEffect(() => {
     fetchVendors();
   }, []);
 
   return (
-    <ProtectedRoute requiredRole="vendor">
+    <>
       <Header />
       
       <main id="main-content" className="flex flex-col gap-8 px-4 md:px-8 py-8 bg-body-bg dark:bg-body-bg">
         {/* Top bar with dev mode toggle in top-right corner */}
         <div className="flex justify-between items-center">
           <section className="flex flex-col gap-2">
-            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">
-              Welcome back, {user?.full_name || 'User'}
-            </h1>
+            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Welcome back, Sarah</h1>
             <p className="text-gray-600 dark:text-gray-300">Here's an overview of your compliance status</p>
           </section>
           <DevModeToggle />
@@ -196,30 +148,6 @@ export default function DashboardPage() {
           </div>
         )}
         
-        {/* New Vendor Questionnaire Button */}
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center">
-            <span className="text-primary mr-2">Your</span> Vendors
-          </h2>
-          <button 
-            onClick={handleNewVendorQuestionnaire}
-            disabled={isCreatingVendor}
-            className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {isCreatingVendor ? (
-              <>
-                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                Creating...
-              </>
-            ) : (
-              <>
-                <PlusCircle className="w-5 h-5" />
-                New Vendor Questionnaire
-              </>
-            )}
-          </button>
-        </div>
-        
         {/* Vendor Section */}
         <VendorList 
           vendors={vendors}
@@ -227,7 +155,6 @@ export default function DashboardPage() {
           isLoading={isLoading}
           error={error}
           onRetry={fetchVendors}
-          onViewQuestionnaire={handleContinueQuestionnaire}
         />
         
         {/* Two Column Layout */}
@@ -321,16 +248,16 @@ export default function DashboardPage() {
               
               <li className="border-b border-gray-100 dark:border-gray-700 pb-4">
                 <div className="flex items-start">
-                  <div className="w-10 h-10 rounded-full bg-danger-light dark:bg-danger-light flex items-center justify-center mr-3 flex-shrink-0">
-                    <svg className="w-5 h-5 text-danger dark:text-danger-color" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  <div className="w-10 h-10 rounded-full bg-primary-light dark:bg-primary-dark flex items-center justify-center mr-3 flex-shrink-0">
+                    <svg className="w-5 h-5 text-primary dark:text-primary-color" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                     </svg>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-800 dark:text-white">
-                      <span className="font-semibold">System</span> flagged anomalous login attempts for review
+                      <span className="font-semibold">Jennifer Wilson</span> created a new vendor questionnaire
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">2 days ago, 8:15 AM</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Yesterday, 11:35 AM</p>
                   </div>
                 </div>
               </li>
@@ -338,6 +265,6 @@ export default function DashboardPage() {
           </section>
         </div>
       </main>
-    </ProtectedRoute>
+    </>
   );
 }

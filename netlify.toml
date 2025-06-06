@@ -5,6 +5,9 @@
   # Directory to publish (Next.js static export automatically outputs to 'out')
   publish = "frontend/out"
   
+  # Functions directory
+  functions = "frontend/.netlify/functions"
+  
   # Environment variables
   [build.environment]
     NODE_VERSION = "18"

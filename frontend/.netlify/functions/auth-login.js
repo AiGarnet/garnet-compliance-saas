@@ -1,55 +1,55 @@
-// Auth login function - calls Railway backend
+const fetch = require('node-fetch');
 
-const handler = async (event, context) => {
-  // Handle CORS
+exports.handler = async (event, context) => {
+  // Set CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   };
-
-  console.log('Auth login function called:', {
-    method: event.httpMethod,
-    path: event.path,
-    headers: event.headers
-  });
 
   // Handle preflight OPTIONS request
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
       headers,
-      body: ''
+      body: '',
     };
   }
 
-  // Only allow POST requests
+  // Only allow POST method
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
       headers,
-      body: JSON.stringify({ error: 'Method not allowed' })
+      body: JSON.stringify({ error: 'Method not allowed' }),
     };
   }
 
   try {
-    const body = JSON.parse(event.body);
-    const { email, password } = body;
-
-    console.log('Login attempt for email:', email);
+    // Parse request body
+    const body = JSON.parse(event.body || '{}');
+    console.log('Auth login request:', body);
 
     // Validate required fields
+    const { email, password } = body;
+    
     if (!email || !password) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'Email and password are required' })
+        body: JSON.stringify({ 
+          error: 'Email and password are required' 
+        }),
       };
     }
 
-    // Call Railway backend for login
-    const railwayResponse = await fetch('https://garnet-compliance-saas-production.up.railway.app/api/auth/login', {
+    // Call Railway backend
+    const railwayUrl = 'https://garnet-compliance-saas-production.up.railway.app/api/auth/login';
+    
+    console.log('Calling Railway backend:', railwayUrl);
+    
+    const response = await fetch(railwayUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -57,54 +57,29 @@ const handler = async (event, context) => {
       body: JSON.stringify({
         email,
         password
-      })
+      }),
     });
 
-    console.log('Railway response status:', railwayResponse.status);
+    const responseData = await response.json();
+    console.log('Railway response status:', response.status);
+    console.log('Railway response data:', responseData);
 
-    // Parse Railway response
-    let railwayData;
-    try {
-      railwayData = await railwayResponse.json();
-      console.log('Railway response data:', railwayData);
-    } catch (e) {
-      console.error('Error parsing Railway response:', e);
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({
-          error: 'Failed to process login request - invalid response from server'
-        })
-      };
-    }
-
-    // Return Railway response to frontend
-    if (railwayResponse.ok) {
-      console.log('User logged in successfully via Railway backend');
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify(railwayData)
-      };
-    } else {
-      return {
-        statusCode: railwayResponse.status,
-        headers,
-        body: JSON.stringify(railwayData)
-      };
-    }
+    // Return the response from Railway
+    return {
+      statusCode: response.status,
+      headers,
+      body: JSON.stringify(responseData),
+    };
 
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Auth login error:', error);
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({
-        error: 'Failed to process login request',
-        details: error.message
-      })
+      body: JSON.stringify({ 
+        error: 'Internal server error',
+        details: error.message 
+      }),
     };
   }
-};
-
-module.exports = { handler }; 
+}; 

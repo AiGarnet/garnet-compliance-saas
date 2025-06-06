@@ -5,7 +5,6 @@ import { BarChart3, CheckSquare, Download, FileText, Plus, Search, ShieldCheck, 
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { FrameworkList, Framework, FrameworkStatus } from "@/components/dashboard/FrameworkList";
 import Header from "@/components/Header";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 const CompliancePage = () => {
   // Sample data for compliance frameworks
@@ -111,7 +110,7 @@ const CompliancePage = () => {
   ];
 
   return (
-    <ProtectedRoute requiredRole="vendor">
+    <>
       <Header />
       
       <main id="main-content" className="container mx-auto py-8 px-4">
@@ -341,7 +340,7 @@ const CompliancePage = () => {
           </div>
         </section>
       </main>
-    </ProtectedRoute>
+    </>
   );
 };
 
