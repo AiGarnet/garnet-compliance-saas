@@ -1,4 +1,15 @@
-const fetch = require('node-fetch');
+// Try to use built-in fetch first, fallback to node-fetch
+let fetch;
+try {
+  // Check if global fetch is available (Node 18+)
+  fetch = globalThis.fetch;
+  if (!fetch) {
+    fetch = require('node-fetch');
+  }
+} catch (error) {
+  console.log('Falling back to node-fetch:', error.message);
+  fetch = require('node-fetch');
+}
 
 const BACKEND_URL = process.env.NODE_ENV === 'production' 
   ? 'https://garnet-compliance-saas-production.up.railway.app'
@@ -28,28 +39,48 @@ exports.handler = async (event, context) => {
       method,
       backendUrl: BACKEND_URL,
       env: process.env.NODE_ENV,
-      headers: event.headers
+      headers: event.headers,
+      userAgent: event.headers['user-agent']
     });
+
+    // First, let's test if we can reach the backend at all
+    console.log('Testing backend connectivity...');
     
     if (method === 'GET') {
       // Get all vendors
+      console.log(`Making GET request to: ${BACKEND_URL}/api/vendors`);
+      
       const response = await fetch(`${BACKEND_URL}/api/vendors`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'User-Agent': 'Netlify-Function/vendors'
         },
+        timeout: 30000, // 30 second timeout
       });
 
+      console.log('Backend response status:', response.status);
+      console.log('Backend response headers:', response.headers.raw());
+
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to fetch vendors' }));
+        const errorText = await response.text();
+        console.error('Backend error response:', errorText);
+        
         return {
           statusCode: response.status,
           headers,
-          body: JSON.stringify(error),
+          body: JSON.stringify({ 
+            error: 'Failed to fetch vendors',
+            backendStatus: response.status,
+            backendResponse: errorText,
+            backendUrl: BACKEND_URL
+          }),
         };
       }
 
       const data = await response.json();
+      console.log('Successfully fetched vendors:', data);
+      
       return {
         statusCode: 200,
         headers,
@@ -58,25 +89,42 @@ exports.handler = async (event, context) => {
     } else if (method === 'POST') {
       // Create new vendor
       const body = JSON.parse(event.body || '{}');
+      console.log('Creating vendor with data:', body);
 
+      console.log(`Making POST request to: ${BACKEND_URL}/api/vendors`);
+      
       const response = await fetch(`${BACKEND_URL}/api/vendors`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'User-Agent': 'Netlify-Function/vendors'
         },
         body: JSON.stringify(body),
+        timeout: 30000, // 30 second timeout
       });
 
+      console.log('Backend POST response status:', response.status);
+
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Failed to create vendor' }));
+        const errorText = await response.text();
+        console.error('Backend POST error response:', errorText);
+        
         return {
           statusCode: response.status,
           headers,
-          body: JSON.stringify(error),
+          body: JSON.stringify({ 
+            error: 'Failed to create vendor',
+            backendStatus: response.status,
+            backendResponse: errorText,
+            backendUrl: BACKEND_URL,
+            requestBody: body
+          }),
         };
       }
 
       const data = await response.json();
+      console.log('Successfully created vendor:', data);
+      
       return {
         statusCode: 201,
         headers,
@@ -94,15 +142,35 @@ exports.handler = async (event, context) => {
     console.error('Error details:', {
       message: error.message,
       stack: error.stack,
-      name: error.name
+      name: error.name,
+      code: error.code,
+      type: error.type
     });
+    
+    // Check if it's a network/connection error
+    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.code === 'ETIMEDOUT') {
+      return {
+        statusCode: 503,
+        headers,
+        body: JSON.stringify({ 
+          error: 'Backend service unavailable',
+          details: error.message,
+          errorCode: error.code,
+          backendUrl: BACKEND_URL,
+          function: 'vendors'
+        }),
+      };
+    }
+    
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({ 
         error: 'Internal server error',
         details: error.message,
-        function: 'vendors'
+        errorType: error.name,
+        function: 'vendors',
+        backendUrl: BACKEND_URL
       }),
     };
   }
