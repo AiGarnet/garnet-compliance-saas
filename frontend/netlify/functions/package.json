@@ -2,6 +2,8 @@
   "name": "garnet-ai-netlify-functions",
   "version": "1.0.0",
   "description": "Netlify Functions for Garnet AI",
-  "main": "questionnaire.js",
-  "dependencies": {}
+  "main": "waitlist-signup.js",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
 } 
