@@ -13,12 +13,15 @@ import {
   Moon,
   Sun,
   Globe,
+  UserPlus,
+  LogIn,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MobileNavigation } from './MobileNavigation';
 import { translations } from '@/lib/i18n';
 import { injectCriticalCSS } from './critical-css';
 import { ThemeToggle } from './ui/ThemeToggle';
+import { useAuth } from '@/lib/auth/AuthContext';
 
 // Remove the hardcoded CSS variables since we're using the ones from critical-css
 // const cssVariables = {
@@ -39,6 +42,7 @@ interface HeaderProps {
 
 export default function Header({ locale = 'en' }: HeaderProps) {
   const pathname = usePathname();
+  const { user, isAuthenticated, logout, hasAccess } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -99,14 +103,28 @@ export default function Header({ locale = 'en' }: HeaderProps) {
   // Get translations based on locale
   const t = translations[currentLocale as keyof typeof translations] || translations.en;
 
-  // Navigation items
-  const navItems = [
-    { href: '/dashboard', label: t.dashboard },
-    { href: '/vendors', label: t.vendors },
-    { href: '/questionnaires', label: t.questionnaires },
-    { href: '/trust-portal', label: t.trustPortal },
-    { href: '/compliance', label: t.compliance },
-  ];
+  // Navigation items based on user role
+  const getNavItems = () => {
+    if (!isAuthenticated) return [];
+    
+    if (user?.role === 'enterprise') {
+      // Enterprise users only have access to Trust Portal
+      return [
+        { href: '/trust-portal', label: t.trustPortal },
+      ];
+    }
+    
+    // Vendor users have access to all features
+    return [
+      { href: '/dashboard', label: t.dashboard },
+      { href: '/vendors', label: t.vendors },
+      { href: '/questionnaires', label: t.questionnaires },
+      { href: '/trust-portal', label: t.trustPortal },
+      { href: '/compliance', label: t.compliance },
+    ];
+  };
+
+  const navItems = getNavItems();
 
   // Available languages
   const languages = [
@@ -162,86 +180,115 @@ export default function Header({ locale = 'en' }: HeaderProps) {
           
           {/* Right side controls */}
           <div className="flex items-center gap-2">
-            {/* Search Bar */}
-            <div className="relative hidden md:block">
-              <div className={cn(
-                "transition-all duration-200",
-                isSearchOpen ? "w-64" : "w-10"
-              )}>
+            {isAuthenticated ? (
+              <>
+                {/* Search Bar - Only for authenticated users */}
+                <div className="relative hidden md:block">
+                  <div className={cn(
+                    "transition-all duration-200",
+                    isSearchOpen ? "w-64" : "w-10"
+                  )}>
+                    <button
+                      onClick={() => setIsSearchOpen(!isSearchOpen)}
+                      className="absolute inset-y-0 left-0 flex items-center pl-3"
+                      aria-label={t.search}
+                      aria-expanded={isSearchOpen}
+                    >
+                      <Search className="h-5 w-5 text-gray-500" />
+                    </button>
+                    <input
+                      type="text"
+                      placeholder={isSearchOpen ? t.searchPlaceholder : ""}
+                      className={cn(
+                        "pl-10 py-2 pr-4 rounded-full text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all duration-200",
+                        isSearchOpen ? "w-full opacity-100" : "w-10 opacity-0 cursor-pointer"
+                      )}
+                      aria-hidden={!isSearchOpen}
+                    />
+                  </div>
+                </div>
+                
+                {/* Notifications Bell - Only for authenticated users */}
                 <button
-                  onClick={() => setIsSearchOpen(!isSearchOpen)}
-                  className="absolute inset-y-0 left-0 flex items-center pl-3"
-                  aria-label={t.search}
-                  aria-expanded={isSearchOpen}
+                  className="min-h-[44px] min-w-[44px] p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  aria-label={t.notifications}
                 >
-                  <Search className="h-5 w-5 text-gray-500" />
+                  <Bell className="h-5 w-5 text-gray-500" />
                 </button>
-                <input
-                  type="text"
-                  placeholder={isSearchOpen ? t.searchPlaceholder : ""}
-                  className={cn(
-                    "pl-10 py-2 pr-4 rounded-full text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all duration-200",
-                    isSearchOpen ? "w-full opacity-100" : "w-10 opacity-0 cursor-pointer"
+                
+                {/* Profile Dropdown - Only for authenticated users */}
+                <div className="relative" ref={profileDropdownRef}>
+                  <button
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    className="flex items-center min-h-[44px] min-w-[44px] p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    aria-expanded={isProfileOpen}
+                    aria-haspopup="true"
+                    aria-label={t.profile}
+                  >
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 flex items-center justify-center text-primary">
+                      <User className="h-5 w-5" />
+                    </div>
+                  </button>
+                  
+                  {isProfileOpen && (
+                    <div 
+                      className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 animate-fade-in"
+                      role="menu"
+                      aria-orientation="vertical"
+                      aria-labelledby="user-menu"
+                    >
+                      {/* User Info */}
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <p className="text-sm font-medium text-gray-900">{user?.full_name}</p>
+                        <p className="text-xs text-gray-500">{user?.email}</p>
+                        <p className="text-xs text-primary capitalize">{user?.role}</p>
+                      </div>
+                      
+                      <a 
+                        href="#" 
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary/5 transition-colors"
+                        role="menuitem"
+                      >
+                        {t.profile}
+                      </a>
+                      <a 
+                        href="#" 
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary/5 transition-colors"
+                        role="menuitem"
+                      >
+                        Settings
+                      </a>
+                      <button 
+                        onClick={logout}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-primary/5 transition-colors flex items-center"
+                        role="menuitem"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        {t.logout}
+                      </button>
+                    </div>
                   )}
-                  aria-hidden={!isSearchOpen}
-                />
-              </div>
-            </div>
-            
-            {/* Notifications Bell */}
-            <button
-              className="min-h-[44px] min-w-[44px] p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/30"
-              aria-label={t.notifications}
-            >
-              <Bell className="h-5 w-5 text-gray-500" />
-            </button>
-            
-            {/* Profile Dropdown */}
-            <div className="relative" ref={profileDropdownRef}>
-              <button
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center min-h-[44px] min-w-[44px] p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/30"
-                aria-expanded={isProfileOpen}
-                aria-haspopup="true"
-                aria-label={t.profile}
-              >
-                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-primary/20 to-secondary/20 flex items-center justify-center text-primary">
-                  <User className="h-5 w-5" />
                 </div>
-              </button>
-              
-              {isProfileOpen && (
-                <div 
-                  className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 animate-fade-in"
-                  role="menu"
-                  aria-orientation="vertical"
-                  aria-labelledby="user-menu"
+              </>
+            ) : (
+              <>
+                {/* Login and Signup buttons for non-authenticated users */}
+                <Link
+                  href="/auth/login"
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary transition-colors"
                 >
-                  <a 
-                    href="#" 
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary/5 transition-colors"
-                    role="menuitem"
-                  >
-                    {t.profile}
-                  </a>
-                  <a 
-                    href="#" 
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary/5 transition-colors"
-                    role="menuitem"
-                  >
-                    Settings
-                  </a>
-                  <a 
-                    href="#" 
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary/5 transition-colors flex items-center"
-                    role="menuitem"
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    {t.logout}
-                  </a>
-                </div>
-              )}
-            </div>
+                  <LogIn className="h-4 w-4" />
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md transition-colors"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Sign Up
+                </Link>
+              </>
+            )}
             
             {/* Mobile Menu Button - Only visible on mobile */}
             <button 

@@ -1,10 +1,9 @@
-import { redirect } from 'next/navigation';
+import { ChatClient } from './ChatClient';
 
 export async function generateStaticParams() {
-  // For static export, we need to provide some common questionnaire IDs
-  const commonIds = [
+  // For static export, we provide common/demo questionnaire IDs
+  const staticIds = [
     'demo_1', 'demo_2', 'demo_3',
-    'q_100', 'q_101', 'q_102',
     'q_security_assessment',
     'q_vendor_onboarding',
     'q_compliance_review',
@@ -14,11 +13,14 @@ export async function generateStaticParams() {
     'q_2024_audit'
   ];
   
-  return commonIds.map(id => ({ id }));
+  return staticIds.map(id => ({ id }));
 }
 
+// Allow dynamic params that aren't in generateStaticParams
+export const dynamicParams = true;
+
 export default function ChatPage({ params }: { params: { id: string } }) {
-  // Redirect to the answers page for this questionnaire
-  // The chat functionality is now integrated into the answers page
-  redirect(`/questionnaires/answers/${params.id}`);
+  // The ChatClient will handle checking if the questionnaire exists
+  // and redirect if not found
+  return <ChatClient params={params} />;
 } 

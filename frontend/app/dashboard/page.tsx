@@ -12,6 +12,8 @@ import Header from "@/components/Header";
 import { DevModeToggle } from "@/components/DevModeToggle";
 import { isDevModeEnabled } from "@/lib/env-config";
 import { useRouter } from "next/navigation";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 // Vendor data
 const mockVendors = [
@@ -25,6 +27,7 @@ const mockVendors = [
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
@@ -120,14 +123,16 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <>
+    <ProtectedRoute requiredRole="vendor">
       <Header />
       
       <main id="main-content" className="flex flex-col gap-8 px-4 md:px-8 py-8 bg-body-bg dark:bg-body-bg">
         {/* Top bar with dev mode toggle in top-right corner */}
         <div className="flex justify-between items-center">
           <section className="flex flex-col gap-2">
-            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">Welcome back, Sarah</h1>
+            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">
+              Welcome back, {user?.full_name || 'User'}
+            </h1>
             <p className="text-gray-600 dark:text-gray-300">Here's an overview of your compliance status</p>
           </section>
           <DevModeToggle />
@@ -333,6 +338,6 @@ export default function DashboardPage() {
           </section>
         </div>
       </main>
-    </>
+    </ProtectedRoute>
   );
 }

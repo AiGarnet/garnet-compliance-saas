@@ -8,6 +8,7 @@ import { QuestionnaireList, Questionnaire, QuestionnaireStatus } from "@/compone
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Header from '@/components/Header';
 import { debounce } from 'lodash';
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 // Create a client component for search params
 import SearchParamsProvider from '@/components/SearchParamsProvider';
@@ -137,6 +138,29 @@ const QuestionnairesPage = () => {
     fetchQuestionnaires();
   }, []);
 
+  // Refresh questionnaires when user returns to this page
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Page becomes visible again, refresh questionnaires
+        fetchQuestionnaires();
+      }
+    };
+
+    const handleFocus = () => {
+      // Page gains focus, refresh questionnaires
+      fetchQuestionnaires();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
   // Handle drag and drop
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -240,25 +264,53 @@ const QuestionnairesPage = () => {
       // Generate a unique ID for the questionnaire
       const questionnaireId = `q_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      // Create questionnaire object
-      const questionnaire = {
-        id: questionnaireId,
-        name: questionnaireTitle.trim(),
-        status: 'In Progress' as QuestionnaireStatus,
-        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        progress: 0,
-        answers: questions.map(question => ({
+      // Call backend API to create questionnaire
+      const response = await fetch('https://garnet-compliance-saas-production.up.railway.app/api/questionnaires', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: questionnaireTitle.trim(),
+          questions: questions
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create questionnaire');
+      }
+      
+      const questionnaire = await response.json();
+      
+      // Use backend-generated ID if available, otherwise use our generated ID
+      const finalQuestionnaireId = questionnaire.id || questionnaireId;
+      
+      // Also save to localStorage for offline access and compatibility
+      const existingQuestionnaires = JSON.parse(localStorage.getItem('user_questionnaires') || '[]');
+      
+      // Convert backend format to frontend format
+      const frontendQuestionnaire = {
+        id: finalQuestionnaireId,
+        name: questionnaire.name || questionnaireTitle.trim(),
+        status: questionnaire.status as QuestionnaireStatus || 'In Progress',
+        dueDate: questionnaire.dueDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        progress: questionnaire.progress || 0,
+        answers: (questionnaire.answers || questions.map((question: string) => ({
           question: question,
           answer: '',
           isMandatory: true,
           needsAttention: false
+        }))).map((qa: any) => ({
+          question: qa.question,
+          answer: qa.answer || '',
+          isMandatory: qa.isMandatory !== undefined ? qa.isMandatory : true,
+          needsAttention: qa.needsAttention || false
         })),
-        createdAt: new Date().toISOString()
+        createdAt: questionnaire.createdAt || new Date().toISOString()
       };
       
-      // Save to localStorage
-      const existingQuestionnaires = JSON.parse(localStorage.getItem('user_questionnaires') || '[]');
-      existingQuestionnaires.push(questionnaire);
+      existingQuestionnaires.push(frontendQuestionnaire);
       localStorage.setItem('user_questionnaires', JSON.stringify(existingQuestionnaires));
       
       // Close modal and reset form
@@ -270,12 +322,60 @@ const QuestionnairesPage = () => {
       // Refresh questionnaires list
       fetchQuestionnaires();
       
-      // Redirect to answers interface for the questionnaire
-      router.push(`/questionnaires/answers/${questionnaireId}`);
+      // Redirect to chat interface for the questionnaire
+      router.push(`/questionnaires/${finalQuestionnaireId}/chat`);
       
     } catch (error) {
       console.error('Error creating questionnaire:', error);
       setError(error instanceof Error ? error.message : 'Failed to create questionnaire. Please try again.');
+      
+      // Fallback to localStorage if backend fails
+      try {
+        // Parse questions again for fallback
+        const questions = questionnaireInput.split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0);
+          
+        // Generate a unique ID for the questionnaire
+        const questionnaireId = `q_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Create questionnaire object
+        const questionnaire = {
+          id: questionnaireId,
+          name: questionnaireTitle.trim(),
+          status: 'In Progress' as QuestionnaireStatus,
+          dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          progress: 0,
+          answers: questions.map((question: string) => ({
+            question: question,
+            answer: '',
+            isMandatory: true,
+            needsAttention: false
+          })),
+          createdAt: new Date().toISOString()
+        };
+        
+        // Save to localStorage as fallback
+        const existingQuestionnaires = JSON.parse(localStorage.getItem('user_questionnaires') || '[]');
+        existingQuestionnaires.push(questionnaire);
+        localStorage.setItem('user_questionnaires', JSON.stringify(existingQuestionnaires));
+        
+        // Close modal and reset form
+        setShowCreateQuestionnaire(false);
+        setQuestionnaireTitle('');
+        setQuestionnaireInput('');
+        setUploadError(null);
+        
+        // Refresh questionnaires list
+        fetchQuestionnaires();
+        
+        // Redirect to chat interface for the questionnaire
+        router.push(`/questionnaires/${questionnaireId}/chat`);
+        
+      } catch (fallbackError) {
+        console.error('Fallback failed:', fallbackError);
+        setError('Failed to create questionnaire. Please try again.');
+      }
     } finally {
       setIsCreatingQuestionnaire(false);
     }
@@ -283,13 +383,24 @@ const QuestionnairesPage = () => {
 
   // Handle viewing a questionnaire
   const handleViewQuestionnaire = (questionnaire: Questionnaire) => {
-    router.push(`/questionnaires/answers/${questionnaire.id}`);
+    // Use query params for dynamic IDs, direct route for static demo IDs
+    const staticIds = ['demo_1', 'demo_2', 'demo_3'];
+    if (staticIds.includes(questionnaire.id)) {
+      router.push(`/questionnaires/answers/${questionnaire.id}`);
+    } else {
+      router.push(`/questionnaires/answers?id=${questionnaire.id}`);
+    }
   };
   
   // Handle editing a questionnaire
   const handleEditQuestionnaire = (questionnaire: Questionnaire) => {
-    // Navigate to answers interface for editing
-    router.push(`/questionnaires/answers/${questionnaire.id}`);
+    // Use query params for dynamic IDs, direct route for static demo IDs
+    const staticIds = ['demo_1', 'demo_2', 'demo_3'];
+    if (staticIds.includes(questionnaire.id)) {
+      router.push(`/questionnaires/answers/${questionnaire.id}`);
+    } else {
+      router.push(`/questionnaires/answers?id=${questionnaire.id}`);
+    }
   };
   
   // Handle deleting a questionnaire
@@ -308,9 +419,10 @@ const QuestionnairesPage = () => {
   };
 
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-        <Header />
+    <ProtectedRoute requiredRole="vendor">
+      <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+          <Header />
         
         <main className="container mx-auto py-8 px-4 max-w-7xl">
           {/* Header Section */}
@@ -505,6 +617,7 @@ const QuestionnairesPage = () => {
         </main>
       </div>
     </Suspense>
+    </ProtectedRoute>
   );
 };
 

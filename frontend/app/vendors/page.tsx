@@ -9,6 +9,7 @@ import { addVendor, saveVendor, vendorsData, getAllVendors } from "@/lib/data/ve
 import { useRouter } from "next/navigation";
 import { Vendor, VendorStatus, RiskLevel, QuestionnaireAnswer } from "@/lib/types/vendor.types";
 import { v4 as uuidv4 } from 'uuid';
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 // Create a global object for our vendor functions
 if (typeof window !== 'undefined') {
@@ -204,7 +205,7 @@ const VendorsPage = () => {
   }));
 
   return (
-    <>
+    <ProtectedRoute requiredRole="vendor">
       <Header />
           
       <main id="main-content" className="container mx-auto py-8 px-4">
@@ -352,7 +353,7 @@ const VendorsPage = () => {
           </div>
         )}
       </main>
-    </>
+    </ProtectedRoute>
   );
 };
 

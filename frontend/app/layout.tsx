@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import './styles.css'
 import { ThemeInitializer } from '@/components/ThemeInitializer'
+import { AuthProvider } from '@/lib/auth/AuthContext'
 
 export const metadata: Metadata = {
   title: 'GarnetAI - Compliance Platform',
@@ -31,7 +32,9 @@ export default function RootLayout({
         </a>
         
         <ThemeInitializer />
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   )

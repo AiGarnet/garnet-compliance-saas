@@ -1,11 +1,9 @@
 import { redirect } from 'next/navigation';
 
 export async function generateStaticParams() {
-  // For static export, we need to provide some common questionnaire IDs
-  // that might be pre-rendered. This is for the redirect page.
-  const commonIds = [
+  // For static export, we provide common questionnaire IDs
+  const staticIds = [
     'demo_1', 'demo_2', 'demo_3',
-    'q_100', 'q_101', 'q_102',
     'q_security_assessment',
     'q_vendor_onboarding',
     'q_compliance_review',
@@ -15,10 +13,14 @@ export async function generateStaticParams() {
     'q_2024_audit'
   ];
   
-  return commonIds.map(id => ({ id }));
+  return staticIds.map(id => ({ id }));
 }
 
+// Allow dynamic params that aren't in generateStaticParams
+export const dynamicParams = true;
+
 export default function QuestionnairePage({ params }: { params: { id: string } }) {
-  // Redirect to the answers page for this questionnaire
-  redirect(`/questionnaires/answers/${params.id}`);
+  // For questionnaire pages, redirect to the chat interface
+  // This provides a clean URL structure
+  redirect(`/questionnaires/${params.id}/chat`);
 } 

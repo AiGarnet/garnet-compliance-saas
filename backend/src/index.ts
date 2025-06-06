@@ -693,6 +693,217 @@ app.post('/join-waitlist', async (req: Request, res: Response) => {
 // Add vendor routes
 app.use('/api/vendors', vendorRoutes);
 
+// Questionnaire endpoints
+interface QuestionAnswer {
+  question: string;
+  answer: string;
+  isMandatory: boolean;
+  needsAttention?: boolean;
+}
+
+interface Questionnaire {
+  id: string;
+  name: string;
+  status: string;
+  progress: number;
+  dueDate: string;
+  answers: QuestionAnswer[];
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// In-memory storage for questionnaires (in production, use a database)
+const questionnaires: Map<string, Questionnaire> = new Map();
+
+// Create a new questionnaire
+app.post('/api/questionnaires', async (req: Request, res: Response) => {
+  try {
+    const { title, questions } = req.body;
+    
+    if (!title || !title.trim()) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+    
+    if (!questions || !Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ error: 'At least one question is required' });
+    }
+    
+    // Generate unique ID
+    const id = `q_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Create questionnaire
+    const questionnaire: Questionnaire = {
+      id,
+      name: title.trim(),
+      status: 'Draft',
+      progress: 0,
+      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      answers: questions.map((question: string) => ({
+        question: question.trim(),
+        answer: '',
+        isMandatory: true,
+        needsAttention: false
+      })),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Store in memory
+    questionnaires.set(id, questionnaire);
+    
+    res.status(201).json(questionnaire);
+  } catch (error: any) {
+    console.error('Error creating questionnaire:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get a specific questionnaire
+app.get('/api/questionnaires/:id', (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const questionnaire = questionnaires.get(id);
+    if (!questionnaire) {
+      return res.status(404).json({ error: 'Questionnaire not found' });
+    }
+    
+    res.json(questionnaire);
+  } catch (error: any) {
+    console.error('Error fetching questionnaire:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update a questionnaire
+app.put('/api/questionnaires/:id', (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    
+    const questionnaire = questionnaires.get(id);
+    if (!questionnaire) {
+      return res.status(404).json({ error: 'Questionnaire not found' });
+    }
+    
+    // Update fields
+    const updatedQuestionnaire: Questionnaire = {
+      ...questionnaire,
+      ...updates,
+      id, // Ensure ID cannot be changed
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Recalculate progress if answers were updated
+    if (updates.answers) {
+      const answeredQuestions = updatedQuestionnaire.answers.filter(qa => qa.answer && qa.answer.trim() !== '').length;
+      const totalQuestions = updatedQuestionnaire.answers.length;
+      updatedQuestionnaire.progress = totalQuestions > 0 ? Math.round((answeredQuestions / totalQuestions) * 100) : 0;
+      
+      // Update status based on progress
+      if (updatedQuestionnaire.progress === 100) {
+        updatedQuestionnaire.status = 'Completed';
+      } else if (updatedQuestionnaire.progress >= 75) {
+        updatedQuestionnaire.status = 'In Review';
+      } else if (updatedQuestionnaire.progress >= 25) {
+        updatedQuestionnaire.status = 'In Progress';
+      } else if (updatedQuestionnaire.progress > 0) {
+        updatedQuestionnaire.status = 'Draft';
+      } else {
+        updatedQuestionnaire.status = 'Not Started';
+      }
+    }
+    
+    questionnaires.set(id, updatedQuestionnaire);
+    
+    res.json(updatedQuestionnaire);
+  } catch (error: any) {
+    console.error('Error updating questionnaire:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete a questionnaire
+app.delete('/api/questionnaires/:id', (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    if (!questionnaires.has(id)) {
+      return res.status(404).json({ error: 'Questionnaire not found' });
+    }
+    
+    questionnaires.delete(id);
+    
+    res.status(204).send();
+  } catch (error: any) {
+    console.error('Error deleting questionnaire:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all questionnaires for a user (simplified - no user auth in this demo)
+app.get('/api/questionnaires', (req: Request, res: Response) => {
+  try {
+    const allQuestionnaires = Array.from(questionnaires.values());
+    res.json(allQuestionnaires);
+  } catch (error: any) {
+    console.error('Error fetching questionnaires:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update a specific question in a questionnaire
+app.put('/api/questionnaires/:id/questions/:questionIndex', (req: Request, res: Response) => {
+  try {
+    const { id, questionIndex } = req.params;
+    const { question, answer } = req.body;
+    
+    const questionnaire = questionnaires.get(id);
+    if (!questionnaire) {
+      return res.status(404).json({ error: 'Questionnaire not found' });
+    }
+    
+    const qIndex = parseInt(questionIndex);
+    if (isNaN(qIndex) || qIndex < 0 || qIndex >= questionnaire.answers.length) {
+      return res.status(400).json({ error: 'Invalid question index' });
+    }
+    
+    // Update the question/answer
+    questionnaire.answers[qIndex] = {
+      ...questionnaire.answers[qIndex],
+      ...(question && { question }),
+      ...(answer !== undefined && { answer })
+    };
+    
+    // Recalculate progress
+    const answeredQuestions = questionnaire.answers.filter(qa => qa.answer && qa.answer.trim() !== '').length;
+    const totalQuestions = questionnaire.answers.length;
+    questionnaire.progress = totalQuestions > 0 ? Math.round((answeredQuestions / totalQuestions) * 100) : 0;
+    
+    // Update status based on progress
+    if (questionnaire.progress === 100) {
+      questionnaire.status = 'Completed';
+    } else if (questionnaire.progress >= 75) {
+      questionnaire.status = 'In Review';
+    } else if (questionnaire.progress >= 25) {
+      questionnaire.status = 'In Progress';
+    } else if (questionnaire.progress > 0) {
+      questionnaire.status = 'Draft';
+    } else {
+      questionnaire.status = 'Not Started';
+    }
+    
+    questionnaire.updatedAt = new Date().toISOString();
+    
+    questionnaires.set(id, questionnaire);
+    
+    res.json(questionnaire);
+  } catch (error: any) {
+    console.error('Error updating question:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Add batch-ask endpoint that the frontend expects
 app.post('/batch-ask', async (req: Request, res: Response) => {
   try {

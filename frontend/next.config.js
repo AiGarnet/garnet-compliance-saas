@@ -41,6 +41,8 @@ const nextConfig = {
   experimental: {
     // Enable server components
     serverComponentsExternalPackages: ['lodash', 'uuid'],
+    // Allow missing generate static params in development
+    missingSuspenseWithCSRBailout: false,
   },
 
   // Note: When using 'output: export', rewrites and headers won't work

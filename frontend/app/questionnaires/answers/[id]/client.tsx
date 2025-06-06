@@ -24,9 +24,34 @@ export function QuestionnairesAnswersClient({ id }: { id: string }) {
   const [regeneratingAnswers, setRegeneratingAnswers] = useState<Record<number, boolean>>({});
   const [answerCache, setAnswerCache] = useState<Record<string, string>>({});
   
+  // Function to generate AI answer for a question
+  const generateAIAnswer = async (question: string): Promise<string> => {
+    try {
+      const apiEndpoint = 'https://garnet-compliance-saas-production.up.railway.app/ask';
+      
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ question }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate answer');
+      }
+      
+      const data = await response.json();
+      return data.answer || "We couldn't generate an answer—please try again.";
+    } catch (error) {
+      console.error('Error generating AI answer:', error);
+      return "We couldn't generate an answer—please try again.";
+    }
+  };
+
   useEffect(() => {
     // Load the questionnaire from localStorage
-    const loadQuestionnaire = () => {
+    const loadQuestionnaire = async () => {
       try {
         if (typeof window !== 'undefined') {
           const storedQuestionnaires = localStorage.getItem('user_questionnaires');
@@ -66,6 +91,82 @@ export function QuestionnairesAnswersClient({ id }: { id: string }) {
                 }
               }
               
+              // Check if this is a new questionnaire (all answers are empty)
+              const hasEmptyAnswers = found.answers && found.answers.some((qa: QuestionAnswer) => 
+                !qa.answer || qa.answer.trim() === ''
+              );
+              
+              if (hasEmptyAnswers) {
+                // This is a new questionnaire, auto-generate answers
+                console.log('Detected new questionnaire, auto-generating AI answers...');
+                
+                // Set questionnaire first with loading states
+                const questionnaireWithLoading = {
+                  ...found,
+                  answers: found.answers.map((qa: QuestionAnswer) => ({
+                    ...qa,
+                    answer: qa.answer || 'Generating AI answer...',
+                    isLoading: !qa.answer || qa.answer.trim() === ''
+                  }))
+                };
+                setQuestionnaire(questionnaireWithLoading);
+                
+                // Generate answers for empty questions
+                const updatedAnswers = await Promise.all(
+                  found.answers.map(async (qa: QuestionAnswer, index: number) => {
+                    if (!qa.answer || qa.answer.trim() === '') {
+                      try {
+                        const aiAnswer = await generateAIAnswer(qa.question);
+                        return { ...qa, answer: aiAnswer, isLoading: false };
+                      } catch (error) {
+                        console.error(`Error generating answer for question ${index + 1}:`, error);
+                        return { 
+                          ...qa, 
+                          answer: "We couldn't generate an answer—please try again.", 
+                          isLoading: false 
+                        };
+                      }
+                    }
+                    return qa;
+                  })
+                );
+                
+                                 // Calculate progress
+                 const answeredQuestions = updatedAnswers.filter(qa => qa.answer && qa.answer.trim() !== '' && qa.answer !== "Generating AI answer...").length;
+                 const totalQuestions = updatedAnswers.length;
+                 const progress = totalQuestions > 0 ? Math.round((answeredQuestions / totalQuestions) * 100) : 0;
+                 
+                 // Determine status
+                 let status = 'Not Started';
+                 if (progress === 100) {
+                   status = 'Completed';
+                 } else if (progress >= 75) {
+                   status = 'In Review';
+                 } else if (progress >= 25) {
+                   status = 'In Progress';
+                 } else if (progress > 0) {
+                   status = 'Draft';
+                 }
+
+                 // Update questionnaire with generated answers
+                 const updatedQuestionnaire = {
+                   ...found,
+                   answers: updatedAnswers,
+                   status: status as any,
+                   progress: progress
+                 };
+                
+                // Save back to localStorage
+                const finalQuestionnaires = parsedQuestionnaires.map((q: any) => 
+                  q.id === id ? updatedQuestionnaire : q
+                );
+                localStorage.setItem('user_questionnaires', JSON.stringify(finalQuestionnaires));
+                
+                setQuestionnaire(updatedQuestionnaire);
+              } else {
+                setQuestionnaire(found);
+              }
+              
               // Initialize the answer cache with current answers
               const initialCache: Record<string, string> = {};
               if (found.answers) {
@@ -74,7 +175,6 @@ export function QuestionnairesAnswersClient({ id }: { id: string }) {
                 });
               }
               setAnswerCache(initialCache);
-              setQuestionnaire(found);
             } else {
               console.error('Questionnaire not found');
               // Redirect back to questionnaires list if not found
@@ -95,43 +195,127 @@ export function QuestionnairesAnswersClient({ id }: { id: string }) {
   }, [id, router]);
   
   // Handle saving edited answer
-  const handleSaveAnswer = (index: number) => {
+  const handleSaveAnswer = async (index: number) => {
     if (!questionnaire || !questionnaire.answers) return;
     
-    // Create a copy of the questionnaire
-    const updatedQuestionnaire = {
-      ...questionnaire,
-      answers: [...questionnaire.answers]
-    };
-    
-    // Update the specific answer
-    updatedQuestionnaire.answers[index] = {
-      ...updatedQuestionnaire.answers[index],
-      answer: editedAnswer
-    };
-    
-    // Update answer cache
-    setAnswerCache({
-      ...answerCache,
-      [`${questionnaire.id}-${index}`]: editedAnswer
-    });
-    
-    // Save back to localStorage
-    if (typeof window !== 'undefined') {
-      const storedQuestionnaires = localStorage.getItem('user_questionnaires');
-      if (storedQuestionnaires) {
-        try {
-          const parsedQuestionnaires = JSON.parse(storedQuestionnaires);
-          const updatedQuestionnaires = parsedQuestionnaires.map((q: any) => 
-            q.id === id ? updatedQuestionnaire : q
-          );
-          
-          localStorage.setItem('user_questionnaires', JSON.stringify(updatedQuestionnaires));
-          setQuestionnaire(updatedQuestionnaire);
-          setEditingAnswerIndex(null);
-        } catch (error) {
-          console.error('Error saving questionnaire:', error);
+    try {
+      // Call backend API first
+      const response = await fetch(`https://garnet-compliance-saas-production.up.railway.app/api/questionnaires/${id}/questions/${index}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          answer: editedAnswer
+        }),
+      });
+
+      let updatedQuestionnaire;
+      
+      if (response.ok) {
+        // Backend update successful
+        updatedQuestionnaire = await response.json();
+        
+        // Convert backend format to frontend format if needed
+        if (updatedQuestionnaire.answers) {
+          updatedQuestionnaire.answers = updatedQuestionnaire.answers.map((qa: any) => ({
+            question: qa.question,
+            answer: qa.answer,
+            isMandatory: qa.isMandatory,
+            needsAttention: qa.needsAttention || false,
+            isLoading: false
+          }));
         }
+      } else {
+        // Backend failed, update locally
+        console.warn('Backend update failed, updating locally');
+        updatedQuestionnaire = {
+          ...questionnaire,
+          answers: [...questionnaire.answers]
+        };
+        
+        // Update the specific answer
+        updatedQuestionnaire.answers[index] = {
+          ...updatedQuestionnaire.answers[index],
+          answer: editedAnswer
+        };
+      }
+      
+      // Update answer cache
+      setAnswerCache({
+        ...answerCache,
+        [`${questionnaire.id}-${index}`]: editedAnswer
+      });
+      
+      // Save to localStorage for offline access
+      if (typeof window !== 'undefined') {
+        const storedQuestionnaires = localStorage.getItem('user_questionnaires');
+        if (storedQuestionnaires) {
+          try {
+            const parsedQuestionnaires = JSON.parse(storedQuestionnaires);
+            const updatedQuestionnaires = parsedQuestionnaires.map((q: any) => 
+              q.id === id ? {
+                ...q,
+                answers: q.answers.map((qa: any, idx: number) => 
+                  idx === index ? { ...qa, answer: editedAnswer } : qa
+                ),
+                progress: updatedQuestionnaire.progress,
+                status: updatedQuestionnaire.status
+              } : q
+            );
+            
+            localStorage.setItem('user_questionnaires', JSON.stringify(updatedQuestionnaires));
+            setQuestionnaire(updatedQuestionnaire);
+            setEditingAnswerIndex(null);
+          } catch (error) {
+            console.error('Error saving to localStorage:', error);
+          }
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error saving answer:', error);
+      
+      // Fallback to localStorage only
+      try {
+        // Create a copy of the questionnaire
+        const updatedQuestionnaire = {
+          ...questionnaire,
+          answers: [...questionnaire.answers]
+        };
+        
+        // Update the specific answer
+        updatedQuestionnaire.answers[index] = {
+          ...updatedQuestionnaire.answers[index],
+          answer: editedAnswer
+        };
+        
+        // Update answer cache
+        setAnswerCache({
+          ...answerCache,
+          [`${questionnaire.id}-${index}`]: editedAnswer
+        });
+        
+        // Save to localStorage as fallback
+        if (typeof window !== 'undefined') {
+          const storedQuestionnaires = localStorage.getItem('user_questionnaires');
+          if (storedQuestionnaires) {
+            try {
+              const parsedQuestionnaires = JSON.parse(storedQuestionnaires);
+              const updatedQuestionnaires = parsedQuestionnaires.map((q: any) => 
+                q.id === id ? updatedQuestionnaire : q
+              );
+              
+              localStorage.setItem('user_questionnaires', JSON.stringify(updatedQuestionnaires));
+              setQuestionnaire(updatedQuestionnaire);
+              setEditingAnswerIndex(null);
+            } catch (error) {
+              console.error('Error saving questionnaire:', error);
+            }
+          }
+        }
+      } catch (fallbackError) {
+        console.error('Fallback save failed:', fallbackError);
       }
     }
   };
@@ -316,113 +500,183 @@ export function QuestionnairesAnswersClient({ id }: { id: string }) {
         </div>
         
         {/* Questionnaire Header */}
-        <div className="questionnaire-header">
-          <h1 className="questionnaire-title flex items-center">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold mb-3">
             <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               {questionnaire.name}
             </span>
           </h1>
-          <div className="flex items-center mt-2 text-sm text-gray-600">
-            <span>Due: {questionnaire.dueDate}</span>
-            <span className="mx-2">•</span>
-            <span>Status: <span className="badge badge-primary ml-1">{questionnaire.status}</span></span>
+          <div className="flex items-center justify-center gap-4 text-sm text-gray-600 bg-gray-50 rounded-full px-6 py-3 inline-flex">
+            <span className="flex items-center">
+              <span className="w-2 h-2 bg-primary rounded-full mr-2"></span>
+              Due: {questionnaire.dueDate}
+            </span>
+            <span className="text-gray-400">•</span>
+            <span className="flex items-center">
+              <span className={`w-2 h-2 rounded-full mr-2 ${
+                questionnaire.status === 'Completed' ? 'bg-green-500' :
+                questionnaire.status === 'In Progress' ? 'bg-blue-500' :
+                questionnaire.status === 'In Review' ? 'bg-orange-500' :
+                questionnaire.status === 'Draft' ? 'bg-yellow-500' :
+                'bg-gray-400'
+              }`}></span>
+              Status: {questionnaire.status}
+            </span>
+            <span className="text-gray-400">•</span>
+            <span className="flex items-center">
+              <span className="w-2 h-2 bg-secondary rounded-full mr-2"></span>
+              Progress: {questionnaire.progress}%
+            </span>
           </div>
         </div>
         
-        {/* Q&A Section with ChatGPT-like interface */}
-        <div className="space-y-8 max-w-4xl mx-auto animate-slide-up" role="list" aria-label="Questions and answers">
+        {/* Welcome Message for new questionnaire */}
+        {questionnaire.answers?.some((qa: QuestionAnswer) => qa.isLoading) && (
+          <div className="max-w-4xl mx-auto mb-8">
+            <div className="bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/10 rounded-lg p-6">
+              <div className="flex items-center mb-3">
+                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-3">
+                  <Check className="h-4 w-4" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800">Welcome to Garnet AI Assistant</h3>
+              </div>
+              <p className="text-gray-600">
+                I'm generating intelligent responses for your questionnaire questions. This may take a moment...
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Q&A Section with Enhanced ChatGPT-like interface */}
+        <div className="space-y-6 max-w-4xl mx-auto animate-slide-up" role="list" aria-label="Questions and answers">
           {questionnaire.answers?.map((qa: QuestionAnswer, index: number) => (
-            <section key={index} className="questionnaire-card shadow-sm overflow-hidden" role="listitem">
-              {/* Question */}
-              <div className="bg-gray-50 p-6 rounded-t-lg">
-                <div className="flex justify-between items-start">
-                  <h3 className="font-semibold text-gray-800 text-lg flex items-center">
-                    <span className="w-8 h-8 rounded-full bg-primary-light text-primary flex items-center justify-center mr-3 font-bold">
+            <div key={index} className="space-y-4" role="listitem">
+              {/* Question Bubble (User style) */}
+              <div className="flex justify-end">
+                <div className="max-w-3xl bg-primary text-white rounded-2xl rounded-tr-md px-6 py-4 shadow-sm">
+                  <div className="flex items-center mb-2">
+                    <span className="w-6 h-6 rounded-full bg-white/20 text-white flex items-center justify-center mr-2 text-sm font-bold">
                       {index + 1}
                     </span>
-                    Question:
-                  </h3>
+                    <span className="text-sm opacity-90">Question</span>
+                  </div>
+                  <p className="text-white leading-relaxed">{qa.question}</p>
                 </div>
-                <p className="mt-3 text-gray-700">{qa.question}</p>
               </div>
               
-              {/* Answer */}
-              <article className="bg-white border-t border-gray-200 p-6 rounded-b-lg">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-semibold text-primary text-lg flex items-center">
-                    <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-3">
-                      <Check className="h-4 w-4" />
-                    </span>
-                    Answer:
-                  </h3>
-                  
-                  <div className="flex space-x-2">
-                    {editingAnswerIndex === index ? (
-                      <>
-                        <button 
-                          onClick={() => handleSaveAnswer(index)}
-                          className="garnet-button-small bg-success-light text-success-dark hover:bg-success/20"
-                          aria-label="Save edited answer"
-                        >
-                          <Save className="h-4 w-4 mr-1" />
-                          Save
-                        </button>
-                        <button 
-                          onClick={handleCancelEdit}
-                          className="garnet-button-small bg-gray-100 text-gray-600 hover:bg-gray-200"
-                          aria-label="Cancel editing"
-                        >
-                          <ArrowLeft className="h-4 w-4 mr-1" />
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button 
-                          onClick={() => handleEditAnswer(index)}
-                          className="garnet-button-small bg-primary-light text-primary-dark hover:bg-primary/20"
-                          aria-label="Edit answer"
-                        >
-                          <Edit2 className="h-4 w-4 mr-1" />
-                          Edit
-                        </button>
-                        <button 
-                          onClick={() => handleRegenerateAnswer(index)}
-                          className="garnet-button-small bg-secondary-light text-secondary-dark hover:bg-secondary/20"
-                          aria-label="Regenerate answer"
-                          disabled={regeneratingAnswers[index] || qa.isLoading}
-                        >
-                          <RefreshCw className={`h-4 w-4 mr-1 ${(regeneratingAnswers[index] || qa.isLoading) ? 'animate-spin' : ''}`} />
-                          Regenerate
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-                
-                {editingAnswerIndex === index ? (
-                  <textarea
-                    className="garnet-input min-h-[200px]"
-                    value={editedAnswer}
-                    onChange={(e) => setEditedAnswer(e.target.value)}
-                    aria-label="Edit answer"
-                  />
-                ) : qa.isLoading ? (
-                  <div className="flex items-center justify-center py-16 bg-white">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
-                      <p className="text-gray-500">Generating new answer...</p>
+              {/* Answer Bubble (Assistant style) */}
+              <div className="flex justify-start">
+                <div className="max-w-3xl bg-white border border-gray-200 rounded-2xl rounded-tl-md px-6 py-4 shadow-sm">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-2">
+                        <Check className="h-3 w-3" />
+                      </div>
+                      <span className="text-sm text-gray-600 font-medium">Garnet AI Assistant</span>
+                    </div>
+                    
+                    <div className="flex space-x-1">
+                      {editingAnswerIndex === index ? (
+                        <>
+                          <button 
+                            onClick={() => handleSaveAnswer(index)}
+                            className="px-3 py-1.5 text-xs bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors flex items-center"
+                            aria-label="Save edited answer"
+                          >
+                            <Save className="h-3 w-3 mr-1" />
+                            Save
+                          </button>
+                          <button 
+                            onClick={handleCancelEdit}
+                            className="px-3 py-1.5 text-xs bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors flex items-center"
+                            aria-label="Cancel editing"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button 
+                            onClick={() => handleEditAnswer(index)}
+                            className="px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors flex items-center"
+                            aria-label="Edit answer"
+                          >
+                            <Edit2 className="h-3 w-3 mr-1" />
+                            Edit
+                          </button>
+                          <button 
+                            onClick={() => handleRegenerateAnswer(index)}
+                            className="px-3 py-1.5 text-xs bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition-colors flex items-center"
+                            aria-label="Regenerate answer"
+                            disabled={regeneratingAnswers[index] || qa.isLoading}
+                          >
+                            <RefreshCw className={`h-3 w-3 mr-1 ${(regeneratingAnswers[index] || qa.isLoading) ? 'animate-spin' : ''}`} />
+                            Regenerate
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
-                ) : (
-                  <div className="prose max-w-none pt-2">
-                    <ReactMarkdown>{qa.answer}</ReactMarkdown>
-                  </div>
-                )}
-              </article>
-            </section>
+                  
+                  {editingAnswerIndex === index ? (
+                    <textarea
+                      className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary min-h-[200px] resize-none"
+                      value={editedAnswer}
+                      onChange={(e) => setEditedAnswer(e.target.value)}
+                      aria-label="Edit answer"
+                      placeholder="Edit your answer here..."
+                    />
+                  ) : qa.isLoading ? (
+                    <div className="flex items-center py-8">
+                      <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary mr-3"></div>
+                      <div>
+                        <p className="text-gray-600 font-medium">Generating intelligent response...</p>
+                        <p className="text-sm text-gray-400 mt-1">This may take a few moments</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="prose max-w-none text-gray-700 leading-relaxed">
+                      <ReactMarkdown 
+                        components={{
+                          p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
+                          ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
+                          li: ({ children }) => <li className="text-gray-700">{children}</li>,
+                          strong: ({ children }) => <strong className="font-semibold text-gray-800">{children}</strong>,
+                          em: ({ children }) => <em className="italic text-gray-600">{children}</em>
+                        }}
+                      >
+                        {qa.answer}
+                      </ReactMarkdown>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           ))}
         </div>
+
+        {/* Completion Message */}
+        {questionnaire.answers?.length > 0 && !questionnaire.answers.some((qa: QuestionAnswer) => qa.isLoading) && (
+          <div className="max-w-4xl mx-auto mt-8">
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto mb-4">
+                <Check className="h-6 w-6" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Questionnaire Complete!</h3>
+              <p className="text-gray-600 mb-4">
+                All questions have been answered with AI-generated responses. You can edit any answer or regenerate new responses as needed.
+              </p>
+              <button
+                onClick={handleBack}
+                className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors flex items-center mx-auto"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Questionnaires
+              </button>
+            </div>
+          </div>
+        )}
       </main>
     </>
   );
