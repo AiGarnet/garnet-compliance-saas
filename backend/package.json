@@ -2,16 +2,16 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Express.js backend for monorepo project",
-  "main": "src/waitlist-server.js",
+  "main": "dist/index.js",
   "engines": {
     "node": ">=16.0.0"
   },
   "scripts": {
-    "build": "echo 'No build step required for waitlist server'",
-    "start": "node src/waitlist-server.js",
-    "railway-start": "cross-env PORT=8080 node src/waitlist-server.js",
-    "dev": "nodemon src/waitlist-server.js",
-    "dev:alt": "node src/waitlist-server.js",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "railway-start": "npm run build && cross-env PORT=8080 node dist/index.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "dev:alt": "ts-node src/index.ts",
     "lint": "eslint src --ext .ts",
     "test": "jest",
     "migrate": "node src/db/migrations/create_users_table.js",
