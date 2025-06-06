@@ -24,7 +24,23 @@
   command = "cd frontend && npm install && npm run build"
   publish = "frontend/out"
 
-# Redirects for SPA routing
+# Redirects for API routes to Netlify functions
+[[redirects]]
+  from = "/api/vendors"
+  to = "/.netlify/functions/vendors"
+  status = 200
+
+[[redirects]]
+  from = "/api/vendors/stats"
+  to = "/.netlify/functions/vendor-stats"
+  status = 200
+
+[[redirects]]
+  from = "/api/vendors/:id"
+  to = "/.netlify/functions/vendor-by-id?id=:id"
+  status = 200
+
+# Redirects for SPA routing (must be last)
 [[redirects]]
   from = "/*"
   to = "/index.html"

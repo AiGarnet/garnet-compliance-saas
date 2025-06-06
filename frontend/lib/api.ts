@@ -13,7 +13,16 @@ export function getApiEndpoint(path: string): string {
         return '/.netlify/functions/auth-signup';
       case '/api/auth/login':
         return '/.netlify/functions/auth-login';
+      case '/api/vendors':
+        return '/.netlify/functions/vendors';
+      case '/api/vendors/stats':
+        return '/.netlify/functions/vendor-stats';
       default:
+        // Handle vendor ID routes
+        if (path.startsWith('/api/vendors/') && path.split('/').length === 4) {
+          const vendorId = path.split('/')[3];
+          return `/.netlify/functions/vendor-by-id?id=${vendorId}`;
+        }
         return path;
     }
   }
