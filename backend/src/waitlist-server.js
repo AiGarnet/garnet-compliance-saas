@@ -37,58 +37,206 @@ app.use((req, res, next) => {
   next();
 });
 
-// Check database connection and ensure proper table structure
-async function setupDatabase() {
-  const client = await pool.connect();
-  try {
-    console.log('Checking database connection...');
-    
-    // Check if waitlist table exists
-    const tableCheckResult = await client.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_name = 'waitlist'
-      );
-    `);
-    
-    const tableExists = tableCheckResult.rows[0].exists;
-    console.log('Waitlist table exists:', tableExists);
-    
-    if (!tableExists) {
-      console.log('Creating waitlist table...');
-      await client.query(`
-        CREATE TABLE waitlist (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          name VARCHAR(255) NOT NULL,
-          email VARCHAR(255) UNIQUE NOT NULL,
-          role VARCHAR(100),
-          organization VARCHAR(255),
-          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-        );
-        
-        CREATE INDEX waitlist_email_idx ON waitlist(email);
-        CREATE INDEX waitlist_created_at_idx ON waitlist(created_at);
-        CREATE INDEX waitlist_role_idx ON waitlist(role);
-      `);
-      console.log('Waitlist table created successfully!');
-    }
+// Authentication endpoints
 
-    // Check the table structure
-    const columnsResult = await client.query(`
-      SELECT column_name, data_type 
-      FROM information_schema.columns 
-      WHERE table_name = 'waitlist'
-      ORDER BY ordinal_position;
-    `);
+// Authentication signup endpoint
+app.post('/api/auth/signup', async (req, res) => {
+  console.log('Received auth signup request at:', new Date().toISOString());
+  console.log('Request body:', req.body);
+  
+  const client = await pool.connect();
+  
+  try {
+    const { email, password, full_name, role, organization, source } = req.body;
     
-    console.log('Waitlist table structure:');
-    console.table(columnsResult.rows);
+    // Validate required fields
+    if (!email || !password || !full_name || !role) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: email, password, full_name, and role are required' 
+      });
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+    
+    // Validate password strength
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+    }
+    
+    // Validate role
+    if (!['vendor', 'enterprise'].includes(role)) {
+      return res.status(400).json({ error: 'Role must be either "vendor" or "enterprise"' });
+    }
+    
+    // Check if user already exists
+    const existingUserQuery = 'SELECT id FROM users WHERE email = $1';
+    const existingUserResult = await client.query(existingUserQuery, [email.toLowerCase()]);
+    
+    if (existingUserResult.rows.length > 0) {
+      return res.status(409).json({ error: 'Email already registered' });
+    }
+    
+    // Hash password
+    const bcrypt = require('bcryptjs');
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    
+    // Insert new user
+    const insertUserQuery = `
+      INSERT INTO users (
+        email, 
+        password_hash, 
+        full_name, 
+        role, 
+        organization, 
+        source, 
+        signup_date, 
+        metadata, 
+        is_active,
+        created_at,
+        updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      RETURNING id, email, full_name, role, organization, created_at
+    `;
+    
+    const values = [
+      email.toLowerCase(),
+      hashedPassword,
+      full_name,
+      role,
+      organization || null,
+      source || 'auth_signup',
+      new Date(),
+      {
+        signup_source: source || 'auth_signup',
+        signup_date: new Date().toISOString(),
+        is_authenticated: true
+      },
+      true
+    ];
+    
+    const insertResult = await client.query(insertUserQuery, values);
+    const user = insertResult.rows[0];
+    
+    // Generate JWT token
+    const jwt = require('jsonwebtoken');
+    const JWT_SECRET = process.env.JWT_SECRET || 'garnet-ai-super-secret-jwt-key-2025-production';
+    
+    const token = jwt.sign(
+      { 
+        id: user.id, 
+        email: user.email,
+        role: user.role 
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    console.log('User created successfully via auth signup');
+    
+    return res.status(201).json({
+      message: 'Successfully signed up!',
+      token,
+      user
+    });
+    
   } catch (error) {
-    console.error('Database setup error:', error);
+    console.error('Auth signup error:', error);
+    if (error.message === 'User with this email already exists') {
+      return res.status(409).json({ error: 'Email already registered' });
+    }
+    return res.status(500).json({ error: 'Internal server error' });
   } finally {
     client.release();
   }
-}
+});
+
+// Authentication login endpoint
+app.post('/api/auth/login', async (req, res) => {
+  console.log('Received auth login request at:', new Date().toISOString());
+  console.log('Request body:', req.body);
+  
+  const client = await pool.connect();
+  
+  try {
+    const { email, password } = req.body;
+    
+    // Validate required fields
+    if (!email || !password) {
+      return res.status(400).json({ 
+        error: 'Email and password are required' 
+      });
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+    
+    // Find user by email
+    const userQuery = 'SELECT id, email, password_hash, full_name, role, organization, created_at FROM users WHERE email = $1';
+    const userResult = await client.query(userQuery, [email.toLowerCase()]);
+    
+    if (userResult.rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Check if password exists (user might be from waitlist without password)
+    if (!user.password_hash) {
+      return res.status(401).json({ error: 'Account not set up for login. Please sign up again.' });
+    }
+    
+    // Verify password
+    const bcrypt = require('bcryptjs');
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+    
+    // Generate JWT token
+    const jwt = require('jsonwebtoken');
+    const JWT_SECRET = process.env.JWT_SECRET || 'garnet-ai-super-secret-jwt-key-2025-production';
+    
+    const token = jwt.sign(
+      { 
+        id: user.id, 
+        email: user.email,
+        role: user.role 
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    console.log('User logged in successfully via auth login');
+    
+    return res.status(200).json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        role: user.role,
+        organization: user.organization,
+        created_at: user.created_at
+      }
+    });
+    
+  } catch (error) {
+    console.error('Auth login error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
+  }
+});
 
 // API Endpoint to join waitlist
 app.post('/join-waitlist', async (req, res) => {
@@ -237,13 +385,23 @@ app.get('/api/waitlist/users', async (req, res) => {
 app.get('/', (req, res) => {
   res.status(200).json({
     status: 'ok',
-    message: 'Waitlist API is running',
-    version: '2.0.0',
+    message: 'Waitlist and Authentication API is running',
+    version: '2.1.0',
     endpoints: [
       {
         path: '/join-waitlist',
         method: 'POST',
         description: 'Add a user to the waitlist'
+      },
+      {
+        path: '/api/auth/signup',
+        method: 'POST',
+        description: 'User signup with authentication'
+      },
+      {
+        path: '/api/auth/login',
+        method: 'POST',
+        description: 'User login with authentication'
       },
       {
         path: '/api/waitlist/stats',
@@ -260,16 +418,11 @@ app.get('/', (req, res) => {
 });
 
 // Start the server
-app.listen(PORT, async () => {
-  try {
-    await setupDatabase();
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Waitlist API is available at: http://localhost:${PORT}/join-waitlist`);
-    console.log('For production: https://garnet-compliance-saas-production.up.railway.app/join-waitlist');
-    console.log('Netlify site: https://testinggarnet.netlify.app/');
-  } catch (error) {
-    console.error('Failed to setup database on startup:', error);
-  }
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Waitlist API is available at: http://localhost:${PORT}/join-waitlist`);
+  console.log('For production: https://garnet-compliance-saas-production.up.railway.app/join-waitlist');
+  console.log('Netlify site: https://testinggarnet.netlify.app/');
 });
 
 // Sample curl command to test the endpoint:
