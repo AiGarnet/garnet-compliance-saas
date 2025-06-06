@@ -11,8 +11,11 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
-# Expose the port the app will run on
-EXPOSE 5000
+# Build the TypeScript code
+RUN npm run build
 
-# Start the application in development mode
-CMD ["npm", "run", "dev"] 
+# Expose the port the app will run on
+EXPOSE 8080
+
+# Start the application in production mode
+CMD ["npm", "start"] 

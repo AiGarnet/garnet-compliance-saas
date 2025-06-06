@@ -51,11 +51,6 @@ app.use((err: any, req: Request, res: Response, next: Function) => {
   });
 });
 
-// Error handler for 404 Not Found
-app.use((req: Request, res: Response) => {
-  res.status(404).json({ error: 'Not Found', path: req.path });
-});
-
 // Load compliance data with more robust path resolution
 let complianceData: any[] = [];
 
@@ -842,6 +837,11 @@ app.get('/version', (req: Request, res: Response) => {
 // Ping route
 app.get('/ping', (req: Request, res: Response) => {
   res.send('pong');
+});
+
+// Error handler for 404 Not Found - MUST BE LAST
+app.use((req: Request, res: Response) => {
+  res.status(404).json({ error: 'Not Found', path: req.path });
 });
 
 // Create HTTP server with proper timeout
