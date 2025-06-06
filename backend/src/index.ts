@@ -20,8 +20,13 @@ const userService = new UserService();
 
 // Configure CORS with specific options
 const corsOptions = {
-  origin: ['https://testinggarnet.netlify.app'],
-  methods: ['GET', 'POST'],
+  origin: [
+    'https://testinggarnet.netlify.app',
+    'https://garnetai.net',
+    /\.netlify\.app$/,  // Allow any Netlify subdomain
+    /\.garnetai\.net$/  // Allow any garnetai.net subdomain
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: false
 };
 
