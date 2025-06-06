@@ -184,6 +184,144 @@ app.get('/api/waitlist/users', async (req: Request, res: Response) => {
   }
 });
 
+// Authentication signup endpoint
+app.post('/api/auth/signup', async (req: Request, res: Response) => {
+  try {
+    const { email, password, full_name, role, organization, source }: WaitlistSignupRequest = req.body;
+    
+    // Validate required fields
+    if (!email || !password || !full_name || !role) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: email, password, full_name, and role are required' 
+      });
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+    
+    // Validate password strength
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+    }
+    
+    // Validate role
+    if (!['vendor', 'enterprise'].includes(role)) {
+      return res.status(400).json({ error: 'Role must be either "vendor" or "enterprise"' });
+    }
+    
+    // Create authenticated user
+    const user = await userService.createWaitlistUser({
+      email,
+      password,
+      full_name,
+      role,
+      organization,
+      source: source || 'auth_signup',
+      metadata: {
+        signup_source: source || 'auth_signup',
+        signup_date: new Date().toISOString(),
+        is_authenticated: true
+      }
+    });
+    
+    // Generate JWT token
+    const jwt = require('jsonwebtoken');
+    const JWT_SECRET = process.env.JWT_SECRET || 'garnet-ai-super-secret-jwt-key-2025-production';
+    
+    const token = jwt.sign(
+      { 
+        id: user.id, 
+        email: user.email,
+        role: user.role 
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    // Return success response (don't include password hash)
+    const { password_hash, ...userResponse } = user;
+    res.status(201).json({
+      message: 'Successfully signed up!',
+      token,
+      user: userResponse
+    });
+    
+  } catch (error: any) {
+    console.error('Auth signup error:', error);
+    if (error.message === 'User with this email already exists') {
+      return res.status(409).json({ error: 'Email already registered' });
+    }
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Authentication login endpoint
+app.post('/api/auth/login', async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Validate required fields
+    if (!email || !password) {
+      return res.status(400).json({ 
+        error: 'Email and password are required' 
+      });
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+    
+    // Find user by email and verify password
+    const user = await userService.getUserByEmail(email);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+    
+    // Check if password exists (user might be from waitlist without password)
+    if (!user.password_hash) {
+      return res.status(401).json({ error: 'Account not set up for login. Please sign up again.' });
+    }
+    
+    // Verify password
+    const bcrypt = require('bcryptjs');
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+    
+    // Generate JWT token
+    const jwt = require('jsonwebtoken');
+    const JWT_SECRET = process.env.JWT_SECRET || 'garnet-ai-super-secret-jwt-key-2025-production';
+    
+    const token = jwt.sign(
+      { 
+        id: user.id, 
+        email: user.email,
+        role: user.role 
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    // Return success response (don't include password hash)
+    const { password_hash, ...userResponse } = user;
+    res.status(200).json({
+      message: 'Login successful',
+      token,
+      user: userResponse
+    });
+    
+  } catch (error: any) {
+    console.error('Auth login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Security questionnaire endpoint
 app.post('/api/answer', async (req: Request, res: Response) => {
   try {
