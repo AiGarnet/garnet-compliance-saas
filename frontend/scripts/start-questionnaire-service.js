@@ -197,7 +197,7 @@ function main() {
   
   // Configuration
   const port = process.env.QUESTIONNAIRE_SERVICE_PORT || 5001;
-  const backendUrl = process.env.BACKEND_API_URL || 'https://garnet-compliance-saas-production.up.railway.app';
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'https://garnet-compliance-saas-production.up.railway.app';
   
   // Find a Python interpreter
   findPythonInterpreter((pythonCommand) => {

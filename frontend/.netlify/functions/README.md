@@ -110,7 +110,7 @@ All functions forward requests to the Railway backend at:
 
 ## Environment Variables
 
-- `BACKEND_API_URL`: Override default Railway backend URL (optional)
+- `NEXT_PUBLIC_API_URL`: Override default Railway backend URL (optional)
 - `NODE_ENV`: Environment setting (development/production)
 
 ## Development

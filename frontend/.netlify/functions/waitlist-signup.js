@@ -63,7 +63,7 @@ exports.handler = async (event, context) => {
     }
 
     // Railway backend URL
-    const BACKEND_URL = process.env.BACKEND_API_URL || 'https://garnet-compliance-saas-production.up.railway.app';
+    const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://garnet-compliance-saas-production.up.railway.app';
     const waitlistEndpoint = `${BACKEND_URL}/join-waitlist`;
 
     console.log('Netlify Function: Forwarding to Railway backend:', waitlistEndpoint);
