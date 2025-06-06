@@ -1,8 +1,9 @@
 const fetch = require('node-fetch');
 
-const BACKEND_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://garnet-compliance-saas-production.up.railway.app'
-  : 'http://localhost:5000';
+// Determine backend URL - prioritize explicit env var, then check for production environment
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL 
+  || (process.env.NODE_ENV === 'production' ? 'https://garnet-compliance-saas-production.up.railway.app' : null)
+  || 'https://garnet-compliance-saas-production.up.railway.app'; // Default to production backend
 
 exports.handler = async (event, context) => {
   // Set CORS headers
