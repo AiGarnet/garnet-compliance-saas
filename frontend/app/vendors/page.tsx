@@ -25,18 +25,6 @@ const VendorsPage = () => {
   // Protect this page - redirect to login if not authenticated
   const { isLoading: authLoading } = useAuthGuard();
 
-  // Show loading while checking authentication
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
   // Fetch vendors from API
   const fetchVendors = async () => {
     setIsLoading(true);
@@ -69,6 +57,18 @@ const VendorsPage = () => {
   useEffect(() => {
     fetchVendors();
   }, []); // Empty dependency array to run only once
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
