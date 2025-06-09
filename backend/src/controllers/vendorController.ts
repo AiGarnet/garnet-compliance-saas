@@ -13,10 +13,13 @@ export class VendorController {
    */
   async getAllVendors(req: Request, res: Response) {
     try {
+      console.log('VendorController: getAllVendors called');
       const vendors = await vendorService.getAllVendors();
+      console.log(`VendorController: Found ${vendors.length} vendors`);
       res.json({ vendors });
     } catch (error: any) {
       console.error('Error fetching vendors:', error);
+      console.error('Error stack:', error.stack);
       res.status(500).json({ error: error.message || 'Internal server error' });
     }
   }

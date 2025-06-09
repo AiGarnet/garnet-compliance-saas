@@ -12,7 +12,15 @@ export class VendorService {
    * Get all vendors
    */
   async getAllVendors(): Promise<Vendor[]> {
-    return this.vendorRepository.getAllVendors();
+    console.log('VendorService: getAllVendors called');
+    try {
+      const vendors = await this.vendorRepository.getAllVendors();
+      console.log(`VendorService: Repository returned ${vendors.length} vendors`);
+      return vendors;
+    } catch (error) {
+      console.error('VendorService: Error in getAllVendors:', error);
+      throw error;
+    }
   }
   
   /**

@@ -6,13 +6,23 @@ export class VendorRepository {
    * Get all vendors from the database
    */
   async getAllVendors(): Promise<Vendor[]> {
+    console.log('VendorRepository: getAllVendors called');
     const query = `
       SELECT * FROM vendors
       ORDER BY name ASC
     `;
     
-    const result = await pool.query(query);
-    return this.mapVendorsWithAnswers(result.rows);
+    try {
+      console.log('VendorRepository: Executing query:', query);
+      const result = await pool.query(query);
+      console.log(`VendorRepository: Query returned ${result.rows.length} rows`);
+      const vendors = await this.mapVendorsWithAnswers(result.rows);
+      console.log(`VendorRepository: Mapped to ${vendors.length} vendors with answers`);
+      return vendors;
+    } catch (error) {
+      console.error('VendorRepository: Error in getAllVendors:', error);
+      throw error;
+    }
   }
   
   /**

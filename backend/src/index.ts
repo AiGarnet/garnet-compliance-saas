@@ -42,6 +42,25 @@ app.options('*', cors(corsOptions));
 // Register API routes
 app.use('/api/vendors', vendorRoutes);
 
+// Database test endpoint
+app.get('/api/test-db', async (req: Request, res: Response) => {
+  try {
+    const pool = require('./config/database').default;
+    const result = await pool.query('SELECT NOW() as current_time, COUNT(*) as vendor_count FROM vendors');
+    res.json({ 
+      status: 'Database connection successful',
+      timestamp: result.rows[0].current_time,
+      vendorCount: result.rows[0].vendor_count
+    });
+  } catch (error: any) {
+    console.error('Database test error:', error);
+    res.status(500).json({ 
+      status: 'Database connection failed',
+      error: error.message 
+    });
+  }
+});
+
 // Global error handling middleware
 app.use((err: any, req: Request, res: Response, next: Function) => {
   console.error('Unhandled error:', err);
@@ -105,6 +124,11 @@ app.get('/', (req: Request, res: Response) => {
       '/api/waitlist/users': 'GET - Get all waitlist entries',
       '/api/auth/signup': 'POST - User signup with authentication',
       '/api/auth/login': 'POST - User login',
+      '/api/vendors': 'GET - Get all vendors',
+      '/api/vendors/:id': 'GET - Get vendor by ID with questionnaire answers',
+      '/api/vendors/stats': 'GET - Get vendor statistics',
+      '/api/vendors/status/:status': 'GET - Get vendors by status',
+      '/api/test-db': 'GET - Test database connection and vendor count',
       '/health': 'GET - Health check endpoint',
       '/ping': 'GET - Simple ping-pong response',
       '/version': 'GET - Get API version information'
