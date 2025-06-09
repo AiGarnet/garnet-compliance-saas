@@ -61,17 +61,19 @@ const QuestionnairesPage = () => {
   // Protect this page - redirect to login if not authenticated (after state declarations)
   const { isLoading: authLoading } = useAuthGuard();
 
-  // Show loading while checking authentication
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  // Debounced textarea resize
+  const resizeTextarea = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    // Reset height to calculate scrollHeight accurately
+    textarea.style.height = 'auto';
+    
+    // Set new height, with max-height enforced by CSS
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 400)}px`;
+  }, []);
+  
+  const debouncedResize = useMemo(() => debounce(resizeTextarea, 100), [resizeTextarea]);
 
   // Calculate and update question count and validation when input changes
   useEffect(() => {
@@ -125,20 +127,6 @@ const QuestionnairesPage = () => {
     
   }, [questionnaireInput, questionnaireTitle]);
 
-  // Debounced textarea resize
-  const resizeTextarea = useCallback(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    
-    // Reset height to calculate scrollHeight accurately
-    textarea.style.height = 'auto';
-    
-    // Set new height, with max-height enforced by CSS
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 400)}px`;
-  }, []);
-  
-  const debouncedResize = useMemo(() => debounce(resizeTextarea, 100), [resizeTextarea]);
-  
   useEffect(() => {
     resizeTextarea();
     return () => {
@@ -192,28 +180,24 @@ const QuestionnairesPage = () => {
     };
   }, [showQuestionnaireInput]);
 
-  // Drag and drop handlers
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
+  // Initial fetch on component mount
+  useEffect(() => {
+    fetchQuestionnaires();
+  }, []);
+  
+  // Focus the textarea when the modal is shown
+  useEffect(() => {
+    if (showQuestionnaireInput) {
+      // Focus on title first, then textarea
+      if (textareaRef.current) {
+        setTimeout(() => {
+          textareaRef.current?.focus();
+        }, 100);
+      }
     }
-  };
+  }, [showQuestionnaireInput]);
 
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      await processFile(e.dataTransfer.files[0]);
-    }
-  };
-
+  // Fetch questionnaires from API
   const fetchQuestionnaires = async () => {
     setIsLoading(true);
     setError('');
@@ -244,23 +228,18 @@ const QuestionnairesPage = () => {
     }
   };
 
-  // Initial fetch on component mount
-  useEffect(() => {
-    fetchQuestionnaires();
-  }, []);
-  
-  // Focus the textarea when the modal is shown
-  useEffect(() => {
-    if (showQuestionnaireInput) {
-      // Focus on title first, then textarea
-      if (textareaRef.current) {
-        setTimeout(() => {
-          textareaRef.current?.focus();
-        }, 100);
-      }
-    }
-  }, [showQuestionnaireInput]);
-  
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   const handleNewQuestionnaire = () => {
     setShowQuestionnaireInput(true);
     setQuestionnaireTitle('');
@@ -643,6 +622,28 @@ const QuestionnairesPage = () => {
           console.error('Error deleting questionnaire:', e);
         }
       }
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      await processFile(e.dataTransfer.files[0]);
     }
   };
 
