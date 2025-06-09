@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '../api';
 
@@ -113,17 +113,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userData');
     removeCookie('authToken');
     setToken(null);
     setUser(null);
     router.push('/auth/login');
-  };
+  }, [router]);
 
-  // Role-based access control
-  const hasAccess = (requiredRole?: string | string[]) => {
+  // Memoize the hasAccess function to prevent re-renders
+  const hasAccess = useCallback((requiredRole?: string | string[]) => {
     if (!user) return false;
 
     // If no specific role required, just check if authenticated
@@ -136,11 +136,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Handle single role
     return user.role === requiredRole;
-  };
+  }, [user]);
 
-  const isAuthenticated = !!user && !!token;
+  const isAuthenticated = useMemo(() => !!user && !!token, [user, token]);
 
-  const value: AuthContextType = {
+  // Memoize the context value to prevent unnecessary re-renders
+  const value: AuthContextType = useMemo(() => ({
     user,
     token,
     isLoading,
@@ -148,7 +149,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     hasAccess,
-  };
+  }), [user, token, isLoading, isAuthenticated, logout, hasAccess]);
 
   return (
     <AuthContext.Provider value={value}>

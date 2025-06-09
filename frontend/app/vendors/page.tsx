@@ -3,15 +3,21 @@
 import React, { useState, useEffect } from "react";
 import { Building2, ExternalLink, Filter, Plus, Search, SlidersHorizontal, Users } from "lucide-react";
 import { MobileNavigation } from "@/components/MobileNavigation";
-import { VendorList, Vendor, VendorStatus } from "@/components/dashboard/VendorList";
 import { VendorFormData } from "@/types/vendor";
 import { vendors as vendorAPI } from "@/lib/api";
 import Header from "@/components/Header";
 import { AddVendorModal } from "../../components/vendors/AddVendorModal";
 import { useAuthGuard } from "@/lib/auth/useAuthGuard";
 
+// Simple vendor interface for this page
+interface SimpleVendor {
+  id: string;
+  name: string;
+  status: string;
+}
+
 const VendorsPage = () => {
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendors, setVendors] = useState<SimpleVendor[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -62,7 +68,7 @@ const VendorsPage = () => {
   // Initial fetch on component mount
   useEffect(() => {
     fetchVendors();
-  }, []);
+  }, []); // Empty dependency array to run only once
 
   return (
     <>
@@ -90,13 +96,64 @@ const VendorsPage = () => {
           </div>
         </div>
         
-        {/* Vendor List */}
-        <VendorList 
-          vendors={vendors} 
-          isLoading={isLoading}
-          error={error}
-          onRetry={fetchVendors}
-        />
+        {/* Simple Vendor List */}
+        <div className="mt-8">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <span className="ml-3 text-gray-600">Loading vendors...</span>
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+              <p className="text-red-600 mb-4">{error}</p>
+              <button 
+                onClick={fetchVendors}
+                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : vendors.length === 0 ? (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
+              <Building2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No vendors yet</h3>
+              <p className="text-gray-600 mb-6">Get started by adding your first vendor</p>
+              <button 
+                onClick={() => setIsAddModalOpen(true)}
+                className="bg-primary text-white px-6 py-3 rounded-md hover:bg-primary/90 transition-colors"
+              >
+                Add Your First Vendor
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-medium text-gray-900">Your Vendors</h2>
+              </div>
+              <div className="divide-y divide-gray-200">
+                {vendors.map((vendor) => (
+                  <div key={vendor.id} className="px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Building2 className="h-5 w-5 text-gray-400 mr-3" />
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-900">{vendor.name}</h3>
+                        <p className="text-sm text-gray-500">Status: {vendor.status}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button className="text-primary hover:text-primary/80 text-sm font-medium">
+                        View
+                      </button>
+                      <button className="text-gray-600 hover:text-gray-800 text-sm font-medium">
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Add Vendor Modal */}
         <AddVendorModal

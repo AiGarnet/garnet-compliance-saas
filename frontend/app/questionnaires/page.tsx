@@ -20,23 +20,9 @@ const MAX_QUESTION_LENGTH = 200;
 const AUTOSAVE_KEY = 'questionnaire_draft';
 
 const QuestionnairesPage = () => {
-  // Protect this page - redirect to login if not authenticated
-  const { isLoading: authLoading } = useAuthGuard();
-
-  // Show loading while checking authentication
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
   const router = useRouter();
-  // Remove mock data and start with empty array
+  
+  // State declarations first
   const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
@@ -71,6 +57,21 @@ const QuestionnairesPage = () => {
   const [isGeneratingAnswers, setIsGeneratingAnswers] = useState(false);
   const [generatedAnswers, setGeneratedAnswers] = useState<QuestionAnswer[]>([]);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+
+  // Protect this page - redirect to login if not authenticated (after state declarations)
+  const { isLoading: authLoading } = useAuthGuard();
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Calculate and update question count and validation when input changes
   useEffect(() => {
