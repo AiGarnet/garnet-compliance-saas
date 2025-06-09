@@ -8,6 +8,7 @@ import { vendors as vendorAPI } from "@/lib/api";
 import Header from "@/components/Header";
 import { AddVendorModal } from "../../components/vendors/AddVendorModal";
 import { useAuthGuard } from "@/lib/auth/useAuthGuard";
+import { useRouter } from "next/navigation";
 
 // Simple vendor interface for this page
 interface SimpleVendor {
@@ -21,6 +22,7 @@ const VendorsPage = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const router = useRouter();
 
   // Protect this page - redirect to login if not authenticated
   const { isLoading: authLoading } = useAuthGuard();
@@ -55,6 +57,18 @@ const VendorsPage = () => {
       console.error("Error creating vendor:", err);
       throw new Error(err.message || 'Failed to create vendor');
     }
+  };
+
+  // Handle viewing a vendor
+  const handleViewVendor = (vendorId: string) => {
+    router.push(`/vendors/${vendorId}`);
+  };
+
+  // Handle editing a vendor (placeholder for now - you can implement edit modal later)
+  const handleEditVendor = (vendorId: string) => {
+    // For now, navigate to the vendor detail page
+    // Later you can implement an edit modal or dedicated edit page
+    router.push(`/vendors/${vendorId}?edit=true`);
   };
 
   // Initial fetch on component mount
@@ -140,15 +154,26 @@ const VendorsPage = () => {
                     <div className="flex items-center">
                       <Building2 className="h-5 w-5 text-gray-400 mr-3" />
                       <div>
-                        <h3 className="text-sm font-medium text-gray-900">{vendor.name}</h3>
+                        <h3 
+                          className="text-sm font-medium text-gray-900 hover:text-primary cursor-pointer transition-colors"
+                          onClick={() => handleViewVendor(vendor.id)}
+                        >
+                          {vendor.name}
+                        </h3>
                         <p className="text-sm text-gray-500">Status: {vendor.status}</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <button className="text-primary hover:text-primary/80 text-sm font-medium">
+                      <button 
+                        onClick={() => handleViewVendor(vendor.id)}
+                        className="text-primary hover:text-primary/80 text-sm font-medium transition-colors"
+                      >
                         View
                       </button>
-                      <button className="text-gray-600 hover:text-gray-800 text-sm font-medium">
+                      <button 
+                        onClick={() => handleEditVendor(vendor.id)}
+                        className="text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors"
+                      >
                         Edit
                       </button>
                     </div>
