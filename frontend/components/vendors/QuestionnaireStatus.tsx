@@ -111,8 +111,17 @@ export function QuestionnaireStatus({ vendor }: QuestionnaireStatusProps) {
           </ul>
           {vendor.questionnaireAnswers.length > 3 && (
             <div className="mt-3 text-sm">
-              <a href="#" className="text-primary hover:underline">
-                View all answers
+              <a 
+                href="#questionnaire-answers" 
+                className="text-primary hover:underline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById('questionnaire-answers')?.scrollIntoView({ 
+                    behavior: 'smooth' 
+                  });
+                }}
+              >
+                View all answers ({vendor.questionnaireAnswers.length} total)
               </a>
             </div>
           )}

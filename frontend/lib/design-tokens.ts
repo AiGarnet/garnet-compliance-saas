@@ -98,6 +98,6 @@ export function forceLightMode(): void {
     localStorage.setItem('theme', 'light');
     // Remove any other theme-related classes that might exist
     document.documentElement.classList.remove('dark-theme', 'dark');
-    document.documentElement.classList.add('light-mode', 'light-theme');
+    document.documentElement.classList.add('light-mode');
   }
 } 

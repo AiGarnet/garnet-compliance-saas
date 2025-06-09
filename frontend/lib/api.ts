@@ -6,29 +6,31 @@ export function getApiEndpoint(path: string): string {
      window.location.hostname.includes('garnetai.net') ||
      window.location.hostname.includes('testinggarnet.netlify.app'));
   
-  // For Netlify, use function endpoints directly
+  // For vendor API calls, always use Railway backend (even on Netlify)
+  if (path.startsWith('/api/vendors')) {
+    const RAILWAY_URL = process.env.NEXT_PUBLIC_RAILWAY_BACKEND_URL || 'https://your-railway-app.up.railway.app';
+    return `${RAILWAY_URL}${path}`;
+  }
+  
+  // For Netlify, use function endpoints for auth and other non-vendor APIs
   if (isNetlify) {
     switch (path) {
       case '/api/auth/signup':
         return '/.netlify/functions/auth-signup';
       case '/api/auth/login':
         return '/.netlify/functions/auth-login';
-      case '/api/vendors':
-        return '/.netlify/functions/vendors';
-      case '/api/vendors/stats':
-        return '/.netlify/functions/vendor-stats';
       default:
-        // Handle vendor ID routes
-        if (path.startsWith('/api/vendors/') && path.split('/').length === 4) {
-          const vendorId = path.split('/')[3];
-          return `/.netlify/functions/vendor-by-id?id=${vendorId}`;
-        }
         return path;
     }
   }
   
-  // For local development, use the original API routes
-  return path;
+  // For local development, use the backend server URL
+  const isDevelopment = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+  const BACKEND_URL = isDevelopment 
+    ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080')
+    : (process.env.NEXT_PUBLIC_RAILWAY_BACKEND_URL || 'https://your-railway-app.up.railway.app');
+  
+  return `${BACKEND_URL}${path}`;
 }
 
 // API helper functions

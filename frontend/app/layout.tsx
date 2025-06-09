@@ -33,7 +33,7 @@ export default function RootLayout({
               (function() {
                 if (typeof document !== 'undefined') {
                   document.documentElement.classList.remove('dark-mode', 'dark', 'dark-theme');
-                  document.documentElement.classList.add('light-mode', 'light-theme');
+                  document.documentElement.classList.add('light-mode');
                   if (typeof localStorage !== 'undefined') {
                     localStorage.setItem('theme', 'light');
                   }

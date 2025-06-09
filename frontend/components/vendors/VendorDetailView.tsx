@@ -4,6 +4,7 @@ import { useVendor } from '@/hooks/useVendor';
 import { VendorDetailHeader } from '@/components/vendors/VendorDetailHeader';
 import { VendorInfoCard } from '@/components/vendors/VendorInfoCard';
 import { QuestionnaireStatus } from '@/components/vendors/QuestionnaireStatus';
+import { VendorQuestionnaireAnswers } from '@/components/vendors/VendorQuestionnaireAnswers';
 import { VendorActivityFeed } from '@/components/vendors/VendorActivityFeed';
 import { VendorDetailSkeleton } from '@/components/vendors/VendorDetailSkeleton';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
@@ -55,6 +56,7 @@ export function VendorDetailView({ vendorId }: VendorDetailViewProps) {
             {/* Left column */}
             <div className="lg:col-span-2 space-y-6">
               <QuestionnaireStatus vendor={vendor} />
+              <VendorQuestionnaireAnswers vendor={vendor} />
               <VendorActivityFeed vendor={vendor} />
             </div>
             
