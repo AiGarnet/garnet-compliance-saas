@@ -99,17 +99,24 @@ async function createVendorsTable() {
     
     // Insert some sample data
     console.log('Inserting sample vendors...');
-    await client.query(`
-      INSERT INTO vendors (name, status, risk_score, risk_level, contact_name, contact_email, website, industry, description)
-      VALUES 
-        ('Acme Payments', 'Questionnaire Pending', 65, 'Medium', 'John Smith', 'john@acmepayments.com', 'https://acmepayments.com', 'Financial Services', 'Payment processing solutions'),
-        ('TechSecure Solutions', 'In Review', 45, 'Low', 'Sarah Johnson', 'sarah@techsecure.com', 'https://techsecure.com', 'Cybersecurity', 'Security consulting and solutions'),
-        ('Global Data Services', 'Approved', 30, 'Low', 'Mike Chen', 'mike@globaldata.com', 'https://globaldata.com', 'Data Analytics', 'Data processing and analytics platform'),
-        ('SecureCloud Inc', 'Questionnaire Pending', 70, 'High', 'Lisa Brown', 'lisa@securecloud.com', 'https://securecloud.com', 'Cloud Services', 'Cloud infrastructure and security'),
-        ('Oscorp Industries', 'In Review', 55, 'Medium', 'Norman Osborn', 'norman@oscorp.com', 'https://oscorp.com', 'Technology', 'Advanced technology solutions'),
-        ('Umbrella Corporation', 'Approved', 25, 'Low', 'Alice Red', 'alice@umbrella.com', 'https://umbrella.com', 'Pharmaceuticals', 'Pharmaceutical research and development')
-      ON CONFLICT (name) DO NOTHING;
-    `);
+    
+    // Check if vendors already exist
+    const existingVendors = await client.query('SELECT COUNT(*) FROM vendors');
+    
+    if (existingVendors.rows[0].count === '0') {
+      await client.query(`
+        INSERT INTO vendors (name, status, risk_score, risk_level, contact_name, contact_email, website, industry, description)
+        VALUES 
+          ('Acme Payments', 'Questionnaire Pending', 65, 'Medium', 'John Smith', 'john@acmepayments.com', 'https://acmepayments.com', 'Financial Services', 'Payment processing solutions'),
+          ('TechSecure Solutions', 'In Review', 45, 'Low', 'Sarah Johnson', 'sarah@techsecure.com', 'https://techsecure.com', 'Cybersecurity', 'Security consulting and solutions'),
+          ('Global Data Services', 'Approved', 30, 'Low', 'Mike Chen', 'mike@globaldata.com', 'https://globaldata.com', 'Data Analytics', 'Data processing and analytics platform'),
+          ('SecureCloud Inc', 'Questionnaire Pending', 70, 'High', 'Lisa Brown', 'lisa@securecloud.com', 'https://securecloud.com', 'Cloud Services', 'Cloud infrastructure and security'),
+          ('Oscorp Industries', 'In Review', 55, 'Medium', 'Norman Osborn', 'norman@oscorp.com', 'https://oscorp.com', 'Technology', 'Advanced technology solutions'),
+          ('Umbrella Corporation', 'Approved', 25, 'Low', 'Alice Red', 'alice@umbrella.com', 'https://umbrella.com', 'Pharmaceuticals', 'Pharmaceutical research and development');
+      `);
+    } else {
+      console.log('Sample vendors already exist, skipping insertion.');
+    }
     
     console.log('Sample vendors inserted successfully!');
     
