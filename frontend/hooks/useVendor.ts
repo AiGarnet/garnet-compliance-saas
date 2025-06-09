@@ -43,7 +43,7 @@ interface UseVendorResult {
  * @param id - The ID of the vendor to fetch
  * @param mockMode - Whether to use mock data instead of real API calls
  */
-export function useVendor(id: string, mockMode = true): UseVendorResult {
+export function useVendor(id: string, mockMode = false): UseVendorResult {
   const [vendor, setVendor] = useState<VendorDetail | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -111,15 +111,35 @@ export function useVendor(id: string, mockMode = true): UseVendorResult {
 
         setVendor(vendorDetail);
       } else {
-        // In a real app, this would be an API call
-        const response = await fetch(`/api/vendors/${id}`);
+        // Use the API client to fetch vendor data
+        const { vendors } = await import('@/lib/api');
+        const response = await vendors.getById(id);
         
-        if (!response.ok) {
-          throw new Error('Failed to fetch vendor data');
+        console.log('useVendor: API response:', response);
+        
+        if (!response.vendor) {
+          throw new Error('Vendor not found');
         }
         
-        const data = await response.json();
-        setVendor(data);
+        // Transform the API response to match our VendorDetail interface
+        const vendorDetail: VendorDetail = {
+          ...response.vendor,
+          activities: [
+            {
+              id: '1',
+              type: 'status_change',
+              message: `Status changed to ${response.vendor.status}`,
+              timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+              user: {
+                name: 'System',
+                avatar: '/images/avatars/system.jpg'
+              }
+            }
+          ]
+        };
+        
+        console.log('useVendor: Setting vendor detail:', vendorDetail);
+        setVendor(vendorDetail);
       }
       
       setIsLoading(false);

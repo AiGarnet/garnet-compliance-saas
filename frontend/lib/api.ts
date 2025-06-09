@@ -8,7 +8,7 @@ export function getApiEndpoint(path: string): string {
   
   // For vendor API calls, always use Railway backend (even on Netlify)
   if (path.startsWith('/api/vendors')) {
-    const RAILWAY_URL = process.env.NEXT_PUBLIC_RAILWAY_BACKEND_URL || 'https://your-railway-app.up.railway.app';
+    const RAILWAY_URL = process.env.NEXT_PUBLIC_RAILWAY_BACKEND_URL || 'https://garnet-compliance-saas-production.up.railway.app';
     return `${RAILWAY_URL}${path}`;
   }
   
@@ -28,7 +28,7 @@ export function getApiEndpoint(path: string): string {
   const isDevelopment = typeof window !== 'undefined' && window.location.hostname === 'localhost';
   const BACKEND_URL = isDevelopment 
     ? (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080')
-    : (process.env.NEXT_PUBLIC_RAILWAY_BACKEND_URL || 'https://your-railway-app.up.railway.app');
+    : (process.env.NEXT_PUBLIC_RAILWAY_BACKEND_URL || 'https://garnet-compliance-saas-production.up.railway.app');
   
   return `${BACKEND_URL}${path}`;
 }
@@ -95,4 +95,13 @@ export const vendors = {
   
   // Get vendor statistics
   getStats: () => apiCall('/api/vendors/stats'),
+};
+
+// Test functions
+export const test = {
+  // Test database connection
+  testDatabase: () => apiCall('/api/test-db'),
+  
+  // Test general backend connectivity
+  ping: () => apiCall('/ping'),
 }; 

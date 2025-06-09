@@ -31,11 +31,15 @@ const VendorsPage = () => {
     setError('');
     
     try {
+      console.log('Frontend: Fetching vendors...');
       const response = await vendorAPI.getAll();
+      console.log('Frontend: API response:', response);
       setVendors(response.vendors || []);
+      console.log('Frontend: Set vendors:', response.vendors || []);
       setIsLoading(false);
     } catch (err: any) {
       console.error("Error fetching vendors:", err);
+      console.error("Error details:", err);
       setError(err.message || 'Unable to load vendors. Please try again.');
       setIsLoading(false);
     }
