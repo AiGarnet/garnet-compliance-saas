@@ -1,13 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff, UserPlus, User, Lock, Mail, Building, Users } from "lucide-react";
+import { Eye, EyeOff, UserPlus, User, Lock, Mail, Building, Users, Info } from "lucide-react";
+import { useAuth } from "@/lib/auth/AuthContext";
 import { auth } from "../../../lib/api";
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { isAuthenticated, isLoading: authLoading, login } = useAuth();
+  
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -20,6 +24,15 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const redirectTo = searchParams?.get('redirect') || null;
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, authLoading, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -53,6 +66,12 @@ export default function SignupPage() {
       return false;
     }
 
+    // Ensure only vendor and enterprise roles are allowed
+    if (!['vendor', 'enterprise'].includes(formData.role)) {
+      setError("Please select a valid role");
+      return false;
+    }
+
     return true;
   };
 
@@ -75,22 +94,26 @@ export default function SignupPage() {
         organization: formData.organization || null,
       });
 
-      // Store user data and token in localStorage
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("userData", JSON.stringify(data.user));
-
-      // Redirect based on user role
-      if (data.user.role === "enterprise") {
-        router.push("/trust-portal");
-      } else {
-        router.push("/dashboard");
-      }
+      // Use AuthContext login method to properly handle tokens and cookies
+      await login(formData.email, formData.password);
     } catch (err: any) {
       setError(err.message || "An error occurred during signup");
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Show loading if auth is still initializing
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
@@ -106,7 +129,7 @@ export default function SignupPage() {
           <p className="mt-2 text-sm text-gray-600">
             Already have an account?{" "}
             <Link
-              href="/auth/login"
+              href={`/auth/login${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`}
               className="font-medium text-primary hover:text-primary/80 transition-colors"
             >
               Sign in here
@@ -114,8 +137,26 @@ export default function SignupPage() {
           </p>
         </div>
 
+        {/* Redirect Message */}
+        {redirectTo && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <Info className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-medium text-blue-800">
+                  Account required
+                </h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  Create an account to access{" "}
+                  <span className="font-medium">{decodeURIComponent(redirectTo)}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Form */}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="bg-white shadow-xl rounded-lg p-8 space-y-6">
             {/* Error Message */}
             {error && (

@@ -8,6 +8,7 @@ import { QuestionnaireList, Questionnaire, QuestionnaireStatus } from "@/compone
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Header from '@/components/Header';
 import { debounce } from 'lodash';
+import { useAuthGuard } from "@/lib/auth/useAuthGuard";
 
 interface QuestionAnswer {
   question: string;
@@ -19,6 +20,21 @@ const MAX_QUESTION_LENGTH = 200;
 const AUTOSAVE_KEY = 'questionnaire_draft';
 
 const QuestionnairesPage = () => {
+  // Protect this page - redirect to login if not authenticated
+  const { isLoading: authLoading } = useAuthGuard();
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   const router = useRouter();
   // Remove mock data and start with empty array
   const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);

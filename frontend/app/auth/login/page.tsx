@@ -1,13 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff, LogIn, User, Lock } from "lucide-react";
-import { auth } from "../../../lib/api";
+import { Eye, EyeOff, LogIn, User, Lock, Info } from "lucide-react";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+  
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -15,6 +18,15 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  const redirectTo = searchParams?.get('redirect') || null;
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, authLoading, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -32,24 +44,26 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const data = await auth.login(formData);
-
-      // Store user data and token in localStorage
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("userData", JSON.stringify(data.user));
-
-      // Redirect based on user role
-      if (data.user.role === "enterprise") {
-        router.push("/trust-portal");
-      } else {
-        router.push("/dashboard");
-      }
+      await login(formData.email, formData.password);
+      // AuthContext handles the redirect
     } catch (err: any) {
       setError(err.message || "An error occurred during login");
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Show loading if auth is still initializing
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 sm:px-6 lg:px-8">
@@ -65,7 +79,7 @@ export default function LoginPage() {
           <p className="mt-2 text-sm text-gray-600">
             Or{" "}
             <Link
-              href="/auth/signup"
+              href={`/auth/signup${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`}
               className="font-medium text-primary hover:text-primary/80 transition-colors"
             >
               create a new account
@@ -73,8 +87,26 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {/* Redirect Message */}
+        {redirectTo && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <Info className="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-medium text-blue-800">
+                  Sign in required
+                </h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  You need to sign in to access{" "}
+                  <span className="font-medium">{decodeURIComponent(redirectTo)}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Form */}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="bg-white shadow-xl rounded-lg p-8 space-y-6">
             {/* Error Message */}
             {error && (

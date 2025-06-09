@@ -3,17 +3,33 @@
 import React, { useState, useEffect } from "react";
 import { Building2, ExternalLink, Filter, Plus, Search, SlidersHorizontal, Users } from "lucide-react";
 import { MobileNavigation } from "@/components/MobileNavigation";
-import { VendorList } from "@/components/dashboard/VendorList";
-import { Vendor, VendorFormData } from "@/types/vendor";
+import { VendorList, Vendor, VendorStatus } from "@/components/dashboard/VendorList";
+import { VendorFormData } from "@/types/vendor";
 import { vendors as vendorAPI } from "@/lib/api";
 import Header from "@/components/Header";
 import { AddVendorModal } from "../../components/vendors/AddVendorModal";
+import { useAuthGuard } from "@/lib/auth/useAuthGuard";
 
 const VendorsPage = () => {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // Protect this page - redirect to login if not authenticated
+  const { isLoading: authLoading } = useAuthGuard();
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Fetch vendors from API
   const fetchVendors = async () => {

@@ -37,6 +37,18 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Helper function to set cookie
+const setCookie = (name: string, value: string, days: number = 7) => {
+  const expires = new Date();
+  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+};
+
+// Helper function to remove cookie
+const removeCookie = (name: string) => {
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+};
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -53,12 +65,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (storedToken && storedUser) {
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
+          // Also set cookie for middleware access
+          setCookie('authToken', storedToken);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
         // Clear invalid data
         localStorage.removeItem('authToken');
         localStorage.removeItem('userData');
+        removeCookie('authToken');
       } finally {
         setIsLoading(false);
       }
@@ -71,18 +86,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const data = await auth.login({ email, password });
 
-      // Store auth data
+      // Store auth data in both localStorage and cookies
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('userData', JSON.stringify(data.user));
+      setCookie('authToken', data.token);
       
       setToken(data.token);
       setUser(data.user);
 
-      // Redirect based on role
-      if (data.user.role === 'enterprise') {
-        router.push('/trust-portal');
+      // Check for redirect parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectTo = urlParams.get('redirect');
+      
+      if (redirectTo) {
+        router.push(redirectTo);
       } else {
-        router.push('/dashboard');
+        // Default redirect based on role
+        if (data.user.role === 'enterprise') {
+          router.push('/trust-portal');
+        } else {
+          router.push('/dashboard');
+        }
       }
     } catch (error) {
       throw error;
@@ -92,6 +116,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userData');
+    removeCookie('authToken');
     setToken(null);
     setUser(null);
     router.push('/auth/login');

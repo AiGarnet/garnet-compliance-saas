@@ -5,24 +5,34 @@ import { AlertTriangle, Eye, PlusCircle, LogOut, User } from "lucide-react";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ComplianceCard } from "@/components/dashboard/ComplianceCard";
 import { QuestionnaireCard } from "@/components/dashboard/QuestionnaireCard";
-import { VendorList, Vendor, VendorStatus } from "@/components/dashboard/VendorList";
+import { VendorList } from "@/components/dashboard/VendorList";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { cn } from "@/lib/utils";
 import Header from "@/components/Header";
 import { DevModeToggle } from "@/components/DevModeToggle";
 import { isDevModeEnabled } from "@/lib/env-config";
+import { useAuthGuard } from "@/lib/auth/useAuthGuard";
+
+// Define types locally since they're not exported
+type VendorStatus = "Questionnaire Pending" | "In Review" | "Approved";
+
+interface Vendor {
+  id: string;
+  name: string;
+  status: VendorStatus;
+}
 
 // Vendor data
-const mockVendors = [
-  { id: "1", name: "Acme Corp", status: "Questionnaire Pending" as VendorStatus },
-  { id: "2", name: "Globex Ltd", status: "In Review" as VendorStatus },
-  { id: "3", name: "Stark Industries", status: "Approved" as VendorStatus },
-  { id: "4", name: "Wayne Enterprises", status: "Questionnaire Pending" as VendorStatus },
-  { id: "5", name: "Oscorp Industries", status: "In Review" as VendorStatus },
-  { id: "6", name: "Umbrella Corporation", status: "Approved" as VendorStatus },
+const mockVendors: Vendor[] = [
+  { id: "1", name: "Acme Corp", status: "Questionnaire Pending" },
+  { id: "2", name: "Globex Ltd", status: "In Review" },
+  { id: "3", name: "Stark Industries", status: "Approved" },
+  { id: "4", name: "Wayne Enterprises", status: "Questionnaire Pending" },
+  { id: "5", name: "Oscorp Industries", status: "In Review" },
+  { id: "6", name: "Umbrella Corporation", status: "Approved" },
 ];
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
@@ -266,5 +276,26 @@ export default function DashboardPage() {
         </div>
       </main>
     </>
+  );
+}
+
+export default function DashboardPage() {
+  // Protect this page - redirect to login if not authenticated
+  const { isLoading: authLoading } = useAuthGuard();
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <DashboardContent />
   );
 }
