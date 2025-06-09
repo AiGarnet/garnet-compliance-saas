@@ -383,10 +383,14 @@ app.get('/api/waitlist/users', async (req, res) => {
 
 // Health check endpoint
 app.get('/', (req, res) => {
+  console.log('Root route accessed at:', new Date().toISOString());
+  console.log('Request headers:', req.headers);
+  
   res.status(200).json({
     status: 'ok',
     message: 'Waitlist and Authentication API is running',
     version: '2.1.0',
+    timestamp: new Date().toISOString(),
     endpoints: [
       {
         path: '/join-waitlist',
@@ -417,12 +421,47 @@ app.get('/', (req, res) => {
   });
 });
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// Add a catch-all route for debugging
+app.use('*', (req, res) => {
+  console.log('Unmatched route accessed:', req.method, req.originalUrl);
+  console.log('Request headers:', req.headers);
+  res.status(404).json({ 
+    error: 'Not Found', 
+    path: req.path,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Start the server with proper error handling
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT} and listening on all interfaces`);
+  console.log(`Root endpoint: http://localhost:${PORT}/`);
   console.log(`Waitlist API is available at: http://localhost:${PORT}/join-waitlist`);
   console.log('For production: https://garnet-compliance-saas-production.up.railway.app/join-waitlist');
   console.log('Netlify site: https://testinggarnet.netlify.app/');
+  console.log('Server started successfully at:', new Date().toISOString());
+});
+
+server.on('error', (error) => {
+  console.error('Server error:', error);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
 });
 
 // Sample curl command to test the endpoint:
