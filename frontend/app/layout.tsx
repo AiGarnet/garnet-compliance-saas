@@ -24,7 +24,25 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className="h-full light-mode">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Force light mode immediately on page load
+              (function() {
+                if (typeof document !== 'undefined') {
+                  document.documentElement.classList.remove('dark-mode', 'dark', 'dark-theme');
+                  document.documentElement.classList.add('light-mode', 'light-theme');
+                  if (typeof localStorage !== 'undefined') {
+                    localStorage.setItem('theme', 'light');
+                  }
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-gray-50 flex flex-col">
         {/* Skip link for keyboard users */}
         <a href="#main-content" className="skip-link">

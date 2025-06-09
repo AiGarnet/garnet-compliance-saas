@@ -19,20 +19,22 @@ export function ThemeToggle({
   showLabel = false,
   size = 'md'
 }: ThemeToggleProps) {
+  // Always stay in light mode
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   
   // Get translations based on locale
   const t = translations[locale as keyof typeof translations] || translations.en;
   
-  // Initialize state from the current theme
+  // Always force light mode on mount
   useEffect(() => {
-    setTheme(isDarkMode() ? 'dark' : 'light');
+    setTheme('light');
+    setDarkMode(false);
   }, []);
   
+  // Disable theme toggle - always stay in light mode
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setDarkMode(newTheme === 'dark');
-    setTheme(newTheme);
+    // Do nothing - theme is locked to light mode
+    return;
   };
   
   // Size classes mapping

@@ -42,35 +42,41 @@ export const criticalNavCSS = `
   --focus-ring-offset: 2px;
 }
 
-/* Dark Mode Variables */
+/* Force light mode - Override any dark mode attempts */
+html,
+html.dark-mode,
+html.dark,
+html.dark-theme,
 .dark-mode {
-  --header-bg: #1f2937;
-  --header-text: #f9fafb;
-  --primary-color: #60a5fa;
-  --primary-light: #1e40af;
-  --primary-dark: #93c5fd;
-  --body-bg: #111827;
-  --body-text: #f9fafb;
-  --card-bg: #1f2937;
-  --card-border: #374151;
-  --card-text: #e5e7eb;
-  --muted-text: #9ca3af;
-  --success-color: #34d399;
-  --success-light: #064e3b;
-  --warning-color: #fbbf24;
-  --warning-light: #78350f;
-  --danger-color: #f87171;
-  --danger-light: #7f1d1d;
-  --secondary-color: #9ca3af;
-  --secondary-light: #374151;
-  --controls-bg: #1f2937;
-  --controls-text: #e5e7eb;
-  --switch-active: #60a5fa;
-  --switch-inactive: #9ca3af;
-  --search-icon: #9ca3af;
-  --search-text: #e5e7eb;
-  --search-placeholder: #9ca3af;
-  --search-bg: #1f2937;
+  --header-bg: #ffffff !important;
+  --header-text: #1f2937 !important;
+  --primary-color: #3b82f6 !important;
+  --primary-light: #93c5fd !important;
+  --primary-dark: #1e40af !important;
+  --body-bg: #f9fafb !important;
+  --body-text: #111827 !important;
+  --card-bg: #ffffff !important;
+  --card-border: #e5e7eb !important;
+  --card-text: #374151 !important;
+  --muted-text: #6b7280 !important;
+  --success-color: #10b981 !important;
+  --success-light: #d1fae5 !important;
+  --warning-color: #f59e0b !important;
+  --warning-light: #fef3c7 !important;
+  --danger-color: #ef4444 !important;
+  --danger-light: #fee2e2 !important;
+  --secondary-color: #6b7280 !important;
+  --secondary-light: #e5e7eb !important;
+  --controls-bg: #f3f4f6 !important;
+  --controls-text: #111827 !important;
+  --switch-active: #3b82f6 !important;
+  --switch-inactive: #6b7280 !important;
+  --search-icon: #6b7280 !important;
+  --search-text: #111827 !important;
+  --search-placeholder: #6b7280 !important;
+  --search-bg: #f3f4f6 !important;
+  background-color: #f9fafb !important;
+  color: #111827 !important;
 }
 
 /* Base styles with transitions */
@@ -127,10 +133,8 @@ export const injectCriticalCSS = () => {
     // Add class to html element to help style overrides take effect immediately
     document.documentElement.classList.add('theme-enabled');
     
-    // Dark mode is now handled by the Header component using localStorage
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      document.documentElement.classList.add('dark-mode');
-    }
+    // Always force light mode - ignore any saved theme preferences
+    document.documentElement.classList.remove('dark-mode');
+    localStorage.setItem('theme', 'light');
   }
 }; 

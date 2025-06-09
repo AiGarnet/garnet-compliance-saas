@@ -4,15 +4,12 @@ import React, { useState } from 'react';
 
 // This component demonstrates and tests accessibility contrast requirements
 export function ContrastChecker() {
+  // Always stay in light mode - disable dark mode functionality
   const [darkMode, setDarkMode] = useState(false);
   
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    if (!darkMode) {
-      document.documentElement.classList.add('dark-mode');
-    } else {
-      document.documentElement.classList.remove('dark-mode');
-    }
+    // Disabled - always stay in light mode
+    return;
   };
   
   // Color combinations to test (each meets 4.5:1 contrast ratio)

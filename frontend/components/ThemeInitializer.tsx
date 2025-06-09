@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
-import { initializeTheme } from '@/lib/design-tokens';
+import { initializeTheme, forceLightMode } from '@/lib/design-tokens';
 
 export function ThemeInitializer() {
   useEffect(() => {
-    // Initialize theme based on user preferences
+    // Always force light mode on every page load
+    forceLightMode();
     initializeTheme();
   }, []);
 

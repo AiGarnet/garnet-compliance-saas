@@ -53,17 +53,10 @@ export default function Header({ locale = 'en' }: HeaderProps) {
   useEffect(() => {
     injectCriticalCSS();
     
-    // Check for saved theme preference or default to light mode
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      setIsDarkMode(true);
-      document.documentElement.classList.add('dark-mode');
-    } else {
-      // Explicitly set light mode theme as default
-      localStorage.setItem('theme', 'light');
-      setIsDarkMode(false);
-      document.documentElement.classList.remove('dark-mode');
-    }
+    // Always force light mode - ignore any saved preferences
+    localStorage.setItem('theme', 'light');
+    setIsDarkMode(false);
+    document.documentElement.classList.remove('dark-mode');
   }, []);
   
   // We'll use our ThemeToggle component instead of this function

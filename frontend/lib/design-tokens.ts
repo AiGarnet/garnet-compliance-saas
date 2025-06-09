@@ -75,25 +75,29 @@ export function isDarkMode(): boolean {
  */
 export function initializeTheme(): void {
   if (typeof window !== 'undefined') {
-    // Check if the user has a saved preference
-    const savedTheme = localStorage.getItem('theme');
+    // Always force light mode - ignore any saved preferences
+    setDarkMode(false);
     
-    if (savedTheme === 'dark') {
-      setDarkMode(true);
-    } else if (savedTheme === 'light') {
-      setDarkMode(false);
-    } else {
-      // Default to light mode instead of system preference
-      setDarkMode(false);
-    }
+    // Remove any existing theme preference to ensure it stays light
+    localStorage.setItem('theme', 'light');
     
-    // Add a listener for the system preference (but always default to light)
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-      // Only apply system preference if the user has explicitly set it
-      // Default behavior is always light mode
-      if (!localStorage.getItem('theme')) {
-        setDarkMode(false);
-      }
-    });
+    // Remove the system preference listener since we always want light mode
+    // No longer listening to system preference changes
+  }
+}
+
+/**
+ * Force light mode - utility function to ensure light theme is always applied
+ * Call this function to override any theme settings and force light mode
+ */
+export function forceLightMode(): void {
+  if (typeof document !== 'undefined') {
+    // Remove dark mode class
+    document.documentElement.classList.remove('dark-mode');
+    // Set light theme in localStorage
+    localStorage.setItem('theme', 'light');
+    // Remove any other theme-related classes that might exist
+    document.documentElement.classList.remove('dark-theme', 'dark');
+    document.documentElement.classList.add('light-mode', 'light-theme');
   }
 } 

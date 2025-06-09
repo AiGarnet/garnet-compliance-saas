@@ -8,6 +8,39 @@
 /* Import accessibility styles */
 @import "../lib/accessibility.css";
 
+/* Force light mode - Override any dark mode styles */
+@layer base {
+  /* Force light mode on all pages */
+  html,
+  html.dark-mode,
+  html.dark,
+  html.dark-theme {
+    /* Override dark mode variables with light mode values */
+    --color-body-bg: 255 255 255 !important; /* White background */
+    --color-body-text: 17 24 39 !important; /* Gray-900 text */
+    --color-header-bg: 255 255 255 !important; /* White header */
+    --color-header-text: 31 41 55 !important; /* Gray-800 header text */
+    --color-card-bg: 255 255 255 !important; /* White cards */
+    --color-card-border: 229 231 235 !important; /* Gray-200 borders */
+    --color-card-text: 55 65 81 !important; /* Gray-700 card text */
+    --color-muted-text: 107 114 128 !important; /* Gray-500 muted text */
+  }
+  
+  /* Force remove dark mode classes */
+  html.dark-mode,
+  html.dark,
+  html.dark-theme {
+    background-color: rgb(255 255 255) !important;
+    color: rgb(17 24 39) !important;
+  }
+  
+  /* Ensure body stays light */
+  body {
+    background-color: rgb(249 250 251) !important; /* Gray-50 */
+    color: rgb(17 24 39) !important; /* Gray-900 */
+  }
+}
+
 /* Add any additional global styles below */
 
 /* Chat interface specific styles */
