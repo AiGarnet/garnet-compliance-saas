@@ -1,5 +1,5 @@
 import pool from '../config/database';
-import { Vendor, QuestionnaireAnswer, VendorStatus, RiskLevel } from '../types/vendor';
+import { Vendor, QuestionnaireAnswer, VendorStatus, RiskLevel, CreateVendorRequest, UpdateVendorRequest } from '../types/vendor';
 
 export class VendorRepository {
   /**
@@ -8,7 +8,7 @@ export class VendorRepository {
   async getAllVendors(): Promise<Vendor[]> {
     const query = `
       SELECT * FROM vendors
-      ORDER BY name ASC
+      ORDER BY company_name ASC
     `;
     
     const result = await pool.query(query);
@@ -22,7 +22,7 @@ export class VendorRepository {
     const query = `
       SELECT * FROM vendors
       WHERE status = $1
-      ORDER BY name ASC
+      ORDER BY company_name ASC
     `;
     
     const result = await pool.query(query, [status]);
@@ -32,13 +32,32 @@ export class VendorRepository {
   /**
    * Get a vendor by ID with all questionnaire answers
    */
-  async getVendorById(id: string): Promise<Vendor | null> {
+  async getVendorById(vendorId: number): Promise<Vendor | null> {
     const query = `
       SELECT * FROM vendors
-      WHERE id = $1
+      WHERE vendor_id = $1
     `;
     
-    const result = await pool.query(query, [id]);
+    const result = await pool.query(query, [vendorId]);
+    
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    const vendors = await this.mapVendorsWithAnswers([result.rows[0]]);
+    return vendors[0];
+  }
+  
+  /**
+   * Get a vendor by UUID for backward compatibility
+   */
+  async getVendorByUuid(uuid: string): Promise<Vendor | null> {
+    const query = `
+      SELECT * FROM vendors
+      WHERE uuid = $1
+    `;
+    
+    const result = await pool.query(query, [uuid]);
     
     if (result.rows.length === 0) {
       return null;
@@ -51,48 +70,34 @@ export class VendorRepository {
   /**
    * Create a new vendor
    */
-  async createVendor(vendor: Omit<Vendor, 'id' | 'questionnaireAnswers' | 'createdAt' | 'updatedAt'>): Promise<Vendor> {
+  async createVendor(vendor: CreateVendorRequest): Promise<Vendor> {
     const query = `
-      INSERT INTO vendors (name, status, risk_score, risk_level, contact_name, contact_email, website, industry, description)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      INSERT INTO vendors (company_name, region, contact_email, status, risk_score, risk_level, contact_name, website, industry, description)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *
     `;
     
     const values = [
-      vendor.name,
-      vendor.status,
-      vendor.riskScore,
-      vendor.riskLevel,
+      vendor.companyName,
+      vendor.region,
+      vendor.contactEmail,
+      vendor.status || 'Questionnaire Pending',
+      vendor.riskScore || 50,
+      vendor.riskLevel || 'Medium',
       vendor.contactName || null,
-      vendor.contactEmail || null,
       vendor.website || null,
       vendor.industry || null,
       vendor.description || null
     ];
     
     const result = await pool.query(query, values);
-    return {
-      ...result.rows[0],
-      id: result.rows[0].id,
-      name: result.rows[0].name,
-      status: result.rows[0].status as VendorStatus,
-      riskScore: result.rows[0].risk_score,
-      riskLevel: result.rows[0].risk_level as RiskLevel,
-      contactName: result.rows[0].contact_name,
-      contactEmail: result.rows[0].contact_email,
-      website: result.rows[0].website,
-      industry: result.rows[0].industry,
-      description: result.rows[0].description,
-      createdAt: result.rows[0].created_at,
-      updatedAt: result.rows[0].updated_at,
-      questionnaireAnswers: []
-    };
+    return this.mapRowToVendor(result.rows[0], []);
   }
   
   /**
    * Update a vendor
    */
-  async updateVendor(id: string, vendor: Partial<Vendor>): Promise<Vendor | null> {
+  async updateVendor(vendorId: number, vendor: Partial<UpdateVendorRequest>): Promise<Vendor | null> {
     // Start building the query
     let query = 'UPDATE vendors SET ';
     const values: any[] = [];
@@ -100,9 +105,19 @@ export class VendorRepository {
     let paramIndex = 1;
     
     // Add fields that need to be updated
-    if (vendor.name !== undefined) {
-      setClauses.push(`name = $${paramIndex++}`);
-      values.push(vendor.name);
+    if (vendor.companyName !== undefined) {
+      setClauses.push(`company_name = $${paramIndex++}`);
+      values.push(vendor.companyName);
+    }
+    
+    if (vendor.region !== undefined) {
+      setClauses.push(`region = $${paramIndex++}`);
+      values.push(vendor.region);
+    }
+    
+    if (vendor.contactEmail !== undefined) {
+      setClauses.push(`contact_email = $${paramIndex++}`);
+      values.push(vendor.contactEmail);
     }
     
     if (vendor.status !== undefined) {
@@ -125,11 +140,6 @@ export class VendorRepository {
       values.push(vendor.contactName);
     }
     
-    if (vendor.contactEmail !== undefined) {
-      setClauses.push(`contact_email = $${paramIndex++}`);
-      values.push(vendor.contactEmail);
-    }
-    
     if (vendor.website !== undefined) {
       setClauses.push(`website = $${paramIndex++}`);
       values.push(vendor.website);
@@ -147,13 +157,13 @@ export class VendorRepository {
     
     // If no fields to update
     if (setClauses.length === 0) {
-      return this.getVendorById(id);
+      return this.getVendorById(vendorId);
     }
     
     // Complete the query
     query += setClauses.join(', ');
-    query += ` WHERE id = $${paramIndex} RETURNING *`;
-    values.push(id);
+    query += ` WHERE vendor_id = $${paramIndex} RETURNING *`;
+    values.push(vendorId);
     
     const result = await pool.query(query, values);
     
@@ -161,20 +171,20 @@ export class VendorRepository {
       return null;
     }
     
-    return this.getVendorById(id);
+    return this.getVendorById(vendorId);
   }
   
   /**
    * Delete a vendor
    */
-  async deleteVendor(id: string): Promise<boolean> {
+  async deleteVendor(vendorId: number): Promise<boolean> {
     const query = `
       DELETE FROM vendors
-      WHERE id = $1
-      RETURNING id
+      WHERE vendor_id = $1
+      RETURNING vendor_id
     `;
     
-    const result = await pool.query(query, [id]);
+    const result = await pool.query(query, [vendorId]);
     return result.rows.length > 0;
   }
   
@@ -182,7 +192,7 @@ export class VendorRepository {
    * Save questionnaire answers for a vendor
    */
   async saveVendorQuestionnaireAnswers(
-    vendorId: string,
+    vendorId: number,
     answers: Omit<QuestionnaireAnswer, 'id' | 'createdAt' | 'updatedAt'>[]
   ): Promise<QuestionnaireAnswer[]> {
     // Begin transaction
@@ -198,23 +208,16 @@ export class VendorRepository {
         const upsertQuery = `
           INSERT INTO vendor_questionnaire_answers
             (vendor_id, question_id, question, answer)
-          VALUES
-            ($1, $2, $3, $4)
+          VALUES ($1, $2, $3, $4)
           ON CONFLICT (vendor_id, question_id)
           DO UPDATE SET
-            question = $3,
-            answer = $4,
+            question = EXCLUDED.question,
+            answer = EXCLUDED.answer,
             updated_at = CURRENT_TIMESTAMP
           RETURNING *
         `;
         
-        const values = [
-          vendorId,
-          answer.questionId,
-          answer.question,
-          answer.answer
-        ];
-        
+        const values = [vendorId, answer.questionId, answer.question, answer.answer];
         const result = await client.query(upsertQuery, values);
         
         savedAnswers.push({
@@ -226,21 +229,6 @@ export class VendorRepository {
           createdAt: result.rows[0].created_at,
           updatedAt: result.rows[0].updated_at
         });
-      }
-      
-      // Update vendor status to IN_REVIEW if it has answers now
-      if (answers.length > 0) {
-        const updateVendorQuery = `
-          UPDATE vendors
-          SET status = $1
-          WHERE id = $2 AND status = $3
-        `;
-        
-        await client.query(updateVendorQuery, [
-          VendorStatus.IN_REVIEW,
-          vendorId,
-          VendorStatus.QUESTIONNAIRE_PENDING
-        ]);
       }
       
       await client.query('COMMIT');
@@ -257,7 +245,7 @@ export class VendorRepository {
   /**
    * Get questionnaire answers for a vendor
    */
-  async getVendorQuestionnaireAnswers(vendorId: string): Promise<QuestionnaireAnswer[]> {
+  async getVendorQuestionnaireAnswers(vendorId: number): Promise<QuestionnaireAnswer[]> {
     const query = `
       SELECT * FROM vendor_questionnaire_answers
       WHERE vendor_id = $1
@@ -278,31 +266,43 @@ export class VendorRepository {
   }
   
   /**
-   * Helper method to map database rows to Vendor objects with answers
+   * Map database rows to vendors with their answers
    */
   private async mapVendorsWithAnswers(rows: any[]): Promise<Vendor[]> {
     const vendors: Vendor[] = [];
     
     for (const row of rows) {
-      const answers = await this.getVendorQuestionnaireAnswers(row.id);
-      
-      vendors.push({
-        id: row.id,
-        name: row.name,
-        status: row.status as VendorStatus,
-        riskScore: row.risk_score,
-        riskLevel: row.risk_level as RiskLevel,
-        contactName: row.contact_name,
-        contactEmail: row.contact_email,
-        website: row.website,
-        industry: row.industry,
-        description: row.description,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        questionnaireAnswers: answers
-      });
+      const answers = await this.getVendorQuestionnaireAnswers(row.vendor_id);
+      vendors.push(this.mapRowToVendor(row, answers));
     }
     
     return vendors;
+  }
+  
+  /**
+   * Map a single database row to a Vendor object
+   */
+  private mapRowToVendor(row: any, answers: QuestionnaireAnswer[]): Vendor {
+    return {
+      vendorId: row.vendor_id,
+      uuid: row.uuid,
+      companyName: row.company_name,
+      region: row.region,
+      status: row.status as VendorStatus,
+      riskScore: row.risk_score,
+      riskLevel: row.risk_level as RiskLevel,
+      contactName: row.contact_name,
+      contactEmail: row.contact_email,
+      website: row.website,
+      industry: row.industry,
+      description: row.description,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      questionnaireAnswers: answers,
+      
+      // Backward compatibility
+      id: row.uuid, // Map UUID to old id field
+      name: row.company_name // Map company_name to old name field
+    };
   }
 } 

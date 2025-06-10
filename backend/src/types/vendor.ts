@@ -22,7 +22,7 @@ export enum RiskLevel {
  */
 export interface QuestionnaireAnswer {
   id: string;
-  vendorId: string;
+  vendorId: number;
   questionId: string;
   question: string;
   answer: string;
@@ -31,11 +31,13 @@ export interface QuestionnaireAnswer {
 }
 
 /**
- * Represents a vendor in the system with additional fields for database storage
+ * Represents a vendor in the system with updated field alignment
  */
 export interface Vendor {
-  id: string;
-  name: string;
+  vendorId: number;
+  uuid?: string;
+  companyName: string;
+  region: string;
   status: VendorStatus;
   riskScore: number;
   riskLevel: RiskLevel;
@@ -43,7 +45,43 @@ export interface Vendor {
   updatedAt: Date;
   questionnaireAnswers: QuestionnaireAnswer[];
   contactName?: string;
+  contactEmail: string;
+  website?: string;
+  industry?: string;
+  description?: string;
+  
+  id?: string;
+  name?: string;
+}
+
+/**
+ * Interface for creating a new vendor (excludes auto-generated fields)
+ */
+export interface CreateVendorRequest {
+  companyName: string;
+  region: string;
+  contactEmail: string;
+  status?: VendorStatus;
+  riskScore?: number;
+  riskLevel?: RiskLevel;
+  contactName?: string;
+  website?: string;
+  industry?: string;
+  description?: string;
+}
+
+/**
+ * Interface for updating a vendor (all fields optional except vendorId)
+ */
+export interface UpdateVendorRequest {
+  vendorId: number;
+  companyName?: string;
+  region?: string;
   contactEmail?: string;
+  status?: VendorStatus;
+  riskScore?: number;
+  riskLevel?: RiskLevel;
+  contactName?: string;
   website?: string;
   industry?: string;
   description?: string;
