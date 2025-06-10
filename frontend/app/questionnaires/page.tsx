@@ -25,30 +25,11 @@ const MAX_QUESTION_LENGTH = 200;
 const AUTOSAVE_KEY = 'questionnaire_draft';
 
 const QuestionnairesPage = () => {
+  // ✅ CORRECT: ALL hooks must be declared at the top level, before any conditional returns
   const router = useRouter();
   
-  // Critical: Check hydration state FIRST, before any other hooks
+  // State declarations - ALL hooks first
   const [hasMounted, setHasMounted] = useState(false);
-  
-  // Hydration-safe mounting effect - must be first
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
-  // Early return BEFORE any other hooks to prevent hook count mismatch
-  if (!hasMounted) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Now all other hooks can run safely after hydration check
-  // State declarations
   const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
@@ -85,10 +66,10 @@ const QuestionnairesPage = () => {
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [answerCache, setAnswerCache] = useState<Record<string, string>>({});
 
-  // Protect this page - redirect to login if not authenticated (after hydration)
+  // Custom hooks - also must be at top level
   const { isLoading: authLoading } = useAuthGuard();
 
-  // Debounced textarea resize - simplified to avoid circular dependencies
+  // useCallback hooks - at top level
   const resizeTextarea = useCallback(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -100,12 +81,16 @@ const QuestionnairesPage = () => {
     textarea.style.height = `${Math.min(textarea.scrollHeight, 400)}px`;
   }, []);
   
-  // Create debounced version once and don't memoize it to avoid circular deps
+  // Create debounced version once
   const debouncedResizeRef = useRef<ReturnType<typeof debounce> | null>(null);
-  
   if (!debouncedResizeRef.current) {
     debouncedResizeRef.current = debounce(resizeTextarea, 100);
   }
+
+  // useEffect hooks - at top level
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   // Calculate and update question count and validation when input changes
   useEffect(() => {
@@ -265,6 +250,111 @@ const QuestionnairesPage = () => {
     }
   }, [showQuestionnaireInput]);
 
+  // Handle editing an individual answer
+  const handleAnswerEdit = useCallback((index: number, newAnswer: string) => {
+    setGeneratedAnswers(prev => {
+      const updatedAnswers = prev.map((qa, i) => 
+        i === index 
+          ? { ...qa, answer: newAnswer, hasError: false, isGenerated: false }
+          : qa
+      );
+      
+      // Update answer cache synchronously
+      const question = prev[index]?.question;
+      if (question) {
+        setAnswerCache(cache => ({ ...cache, [question]: newAnswer }));
+      }
+      
+      return updatedAnswers;
+    });
+  }, []);
+
+  // Handle regenerating a single answer
+  const handleRegenerateAnswer = useCallback(async (index: number) => {
+    // Access current state directly
+    const currentQuestion = generatedAnswers[index]?.question;
+    if (!currentQuestion) return;
+    
+    // Check cache first
+    const cachedAnswer = answerCache[currentQuestion];
+    if (cachedAnswer) {
+      setGeneratedAnswers(prev => 
+        prev.map((qa, i) => 
+          i === index 
+            ? { ...qa, answer: cachedAnswer, hasError: false, isGenerated: true }
+            : qa
+        )
+      );
+      return;
+    }
+
+    // Set loading state for this specific answer
+    setGeneratedAnswers(prev => 
+      prev.map((qa, i) => 
+        i === index 
+          ? { ...qa, isLoading: true, hasError: false }
+          : qa
+      )
+    );
+
+    try {
+      const result = await QuestionnaireService.getAnswer(currentQuestion);
+      
+      if (result.success && result.answer) {
+        const newAnswer = result.answer;
+        
+        // Update the answer and cache in a single operation
+        setGeneratedAnswers(prev => 
+          prev.map((qa, i) => 
+            i === index 
+              ? { 
+                  ...qa, 
+                  answer: newAnswer, 
+                  isLoading: false, 
+                  hasError: newAnswer.includes('We couldn\'t generate an answer'),
+                  isGenerated: true 
+                }
+              : qa
+          )
+        );
+        
+        // Cache the new answer
+        setAnswerCache(prev => ({ ...prev, [currentQuestion]: newAnswer }));
+      } else {
+        throw new Error(result.error || 'Failed to regenerate answer');
+      }
+    } catch (error) {
+      console.error('Error regenerating answer:', error);
+      
+      // Set error state
+      setGeneratedAnswers(prev => 
+        prev.map((qa, i) => 
+          i === index 
+            ? { 
+                ...qa, 
+                answer: 'We couldn\'t generate an answer—please try again.', 
+                isLoading: false, 
+                hasError: true,
+                isGenerated: false 
+              }
+            : qa
+        )
+      );
+    }
+  }, [generatedAnswers, answerCache]);
+
+  // ✅ CORRECT: Early return AFTER all hooks are declared
+  if (!hasMounted) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   const handleNewQuestionnaire = () => {
     setShowQuestionnaireInput(true);
     setQuestionnaireTitle('');
@@ -370,99 +460,6 @@ const QuestionnairesPage = () => {
     await handleGenerateAnswers();
   };
 
-  // Handle editing an individual answer
-  const handleAnswerEdit = useCallback((index: number, newAnswer: string) => {
-    setGeneratedAnswers(prev => {
-      const updatedAnswers = prev.map((qa, i) => 
-        i === index 
-          ? { ...qa, answer: newAnswer, hasError: false, isGenerated: false }
-          : qa
-      );
-      
-      // Update answer cache synchronously
-      const question = prev[index]?.question;
-      if (question) {
-        setAnswerCache(cache => ({ ...cache, [question]: newAnswer }));
-      }
-      
-      return updatedAnswers;
-    });
-  }, []);
-
-  // Handle regenerating a single answer
-  const handleRegenerateAnswer = useCallback(async (index: number) => {
-    // Access current state directly
-    const currentQuestion = generatedAnswers[index]?.question;
-    if (!currentQuestion) return;
-    
-    // Check cache first
-    const cachedAnswer = answerCache[currentQuestion];
-    if (cachedAnswer) {
-      setGeneratedAnswers(prev => 
-        prev.map((qa, i) => 
-          i === index 
-            ? { ...qa, answer: cachedAnswer, hasError: false, isGenerated: true }
-            : qa
-        )
-      );
-      return;
-    }
-
-    // Set loading state for this specific answer
-    setGeneratedAnswers(prev => 
-      prev.map((qa, i) => 
-        i === index 
-          ? { ...qa, isLoading: true, hasError: false }
-          : qa
-      )
-    );
-
-    try {
-      const result = await QuestionnaireService.getAnswer(currentQuestion);
-      
-      if (result.success && result.answer) {
-        const newAnswer = result.answer;
-        
-        // Update the answer and cache in a single operation
-        setGeneratedAnswers(prev => 
-          prev.map((qa, i) => 
-            i === index 
-              ? { 
-                  ...qa, 
-                  answer: newAnswer, 
-                  isLoading: false, 
-                  hasError: newAnswer.includes('We couldn\'t generate an answer'),
-                  isGenerated: true 
-                }
-              : qa
-          )
-        );
-        
-        // Cache the new answer
-        setAnswerCache(prev => ({ ...prev, [currentQuestion]: newAnswer }));
-      } else {
-        throw new Error(result.error || 'Failed to regenerate answer');
-      }
-    } catch (error) {
-      console.error('Error regenerating answer:', error);
-      
-      // Set error state
-      setGeneratedAnswers(prev => 
-        prev.map((qa, i) => 
-          i === index 
-            ? { 
-                ...qa, 
-                answer: 'We couldn\'t generate an answer—please try again.', 
-                isLoading: false, 
-                hasError: true,
-                isGenerated: false 
-              }
-            : qa
-        )
-      );
-    }
-  }, [generatedAnswers, answerCache]);
-  
   const handleSubmitQuestionnaire = async (e: React.FormEvent) => {
     e.preventDefault();
     
