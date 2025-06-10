@@ -125,11 +125,13 @@ const QuestionnairesPage = () => {
       setValidationError(null);
     }
     
-    // Auto-save draft
-    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
-      title: questionnaireTitle,
-      questions: questionnaireInput
-    }));
+    // Auto-save draft (only on client side)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
+        title: questionnaireTitle,
+        questions: questionnaireInput
+      }));
+    }
     
   }, [questionnaireInput, questionnaireTitle]);
 
@@ -142,7 +144,7 @@ const QuestionnairesPage = () => {
 
   // Load autosaved draft
   useEffect(() => {
-    if (showQuestionnaireInput) {
+    if (showQuestionnaireInput && typeof window !== 'undefined') {
       const savedDraft = localStorage.getItem(AUTOSAVE_KEY);
       if (savedDraft) {
         try {
@@ -209,15 +211,18 @@ const QuestionnairesPage = () => {
     setError('');
     
     try {
-      // Only use questionnaires from local storage, no mock data
-      const storedQuestionnaires = localStorage.getItem('user_questionnaires');
+      // Ensure we're on the client side before accessing localStorage
       let userQuestionnaires: Questionnaire[] = [];
       
-      if (storedQuestionnaires) {
-        try {
-          userQuestionnaires = JSON.parse(storedQuestionnaires);
-        } catch (e) {
-          console.error('Error parsing stored questionnaires:', e);
+      if (typeof window !== 'undefined') {
+        const questionnairesData = localStorage.getItem('user_questionnaires');
+        
+        if (questionnairesData) {
+          try {
+            userQuestionnaires = JSON.parse(questionnairesData);
+          } catch (e) {
+            console.error('Error parsing stored questionnaires:', e);
+          }
         }
       }
       
@@ -528,26 +533,28 @@ const QuestionnairesPage = () => {
         setValidationError(`⚠️ Saved locally only. Database connection issue: ${databaseResult.error}`);
       }
       
-      // Always store in local storage for offline access and backup
-      const storedQuestionnaires = localStorage.getItem('user_questionnaires');
-      let userQuestionnaires: Array<Questionnaire & { answers?: QuestionAnswer[] }> = [];
-      
-      if (storedQuestionnaires) {
-        try {
-          userQuestionnaires = JSON.parse(storedQuestionnaires);
-        } catch (e) {
-          console.error('Error parsing stored questionnaires:', e);
+      // Always store in local storage for offline access and backup (only on client side)
+      if (typeof window !== 'undefined') {
+        const existingQuestionnaires = localStorage.getItem('user_questionnaires');
+        let userQuestionnaires: Array<Questionnaire & { answers?: QuestionAnswer[] }> = [];
+        
+        if (existingQuestionnaires) {
+          try {
+            userQuestionnaires = JSON.parse(existingQuestionnaires);
+          } catch (e) {
+            console.error('Error parsing stored questionnaires:', e);
+          }
         }
+        
+        // Add the new questionnaire
+        userQuestionnaires.push(newQuestionnaire);
+        
+        // Save back to local storage
+        localStorage.setItem('user_questionnaires', JSON.stringify(userQuestionnaires));
+        
+        // Clear autosaved draft
+        localStorage.removeItem(AUTOSAVE_KEY);
       }
-      
-      // Add the new questionnaire
-      userQuestionnaires.push(newQuestionnaire);
-      
-      // Save back to local storage
-      localStorage.setItem('user_questionnaires', JSON.stringify(userQuestionnaires));
-      
-      // Clear autosaved draft
-      localStorage.removeItem(AUTOSAVE_KEY);
       
       // Close modal
       closeQuestionnaireInput();
@@ -767,24 +774,26 @@ const QuestionnairesPage = () => {
   // Add handling for deleting a questionnaire
   const handleDeleteQuestionnaire = (questionnaire: Questionnaire) => {
     if (confirm(`Are you sure you want to delete the questionnaire "${questionnaire.name}"?`)) {
-      // Get existing questionnaires from local storage
-      const storedQuestionnaires = localStorage.getItem('user_questionnaires');
-      if (storedQuestionnaires) {
-        try {
-          const userQuestionnaires = JSON.parse(storedQuestionnaires);
-          
-          // Filter out the questionnaire to delete
-          const updatedQuestionnaires = userQuestionnaires.filter(
-            (q: Questionnaire) => q.id !== questionnaire.id
-          );
-          
-          // Save back to local storage
-      localStorage.setItem('user_questionnaires', JSON.stringify(updatedQuestionnaires));
-      
-          // Refresh the questionnaire list
-      fetchQuestionnaires();
-        } catch (e) {
-          console.error('Error deleting questionnaire:', e);
+      // Get existing questionnaires from local storage (only on client side)
+      if (typeof window !== 'undefined') {
+        const savedQuestionnaires = localStorage.getItem('user_questionnaires');
+        if (savedQuestionnaires) {
+          try {
+            const userQuestionnaires = JSON.parse(savedQuestionnaires);
+            
+            // Filter out the questionnaire to delete
+            const updatedQuestionnaires = userQuestionnaires.filter(
+              (q: Questionnaire) => q.id !== questionnaire.id
+            );
+            
+            // Save back to local storage
+            localStorage.setItem('user_questionnaires', JSON.stringify(updatedQuestionnaires));
+            
+            // Refresh the questionnaire list
+            fetchQuestionnaires();
+          } catch (e) {
+            console.error('Error deleting questionnaire:', e);
+          }
         }
       }
     }
