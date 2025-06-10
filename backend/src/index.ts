@@ -440,58 +440,145 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
   }
 });
 
-// Security questionnaire endpoint
+// Security questionnaire endpoint - supports both single question and batch processing
 app.post('/api/answer', async (req: Request, res: Response) => {
   try {
-    const { question } = req.body;
+    const { question, questions } = req.body;
     
-    if (!question) {
-      return res.status(400).json({ error: 'Question is required' });
+    // Validate input - either single question or array of questions
+    if (!question && (!questions || !Array.isArray(questions) || questions.length === 0)) {
+      return res.status(400).json({ 
+        error: 'Either "question" (string) or "questions" (array) is required' 
+      });
     }
 
     // Validate OpenAI configuration
     if (!process.env.OPENAI_API_KEY) {
-      return res.status(500).json({ error: 'OpenAI API key not configured' });
+      return res.status(500).json({ 
+        error: 'OpenAI API key not configured',
+        fallback: 'We couldn\'t generate an answer—please try again.'
+      });
     }
 
-    // Find relevant compliance information
-    const relevantData = findRelevantComplianceData(question, complianceData);
-    
-    // Generate answer using OpenAI
-    const answer = await generateAnswer(question, relevantData);
-    
-    res.json({ question, answer });
+    // Handle single question
+    if (question) {
+      try {
+        const relevantData = findRelevantComplianceData(question, complianceData);
+        const answer = await generateAnswer(question, relevantData);
+        res.json({ question, answer });
+      } catch (error: any) {
+        console.error('Error processing single question:', error);
+        res.json({ 
+          question, 
+          answer: 'We couldn\'t generate an answer—please try again.',
+          error: error.message 
+        });
+      }
+      return;
+    }
+
+    // Handle batch questions
+    if (questions) {
+      const results = await Promise.allSettled(
+        questions.map(async (q: string, index: number) => {
+          try {
+            // Add small delay between requests to avoid rate limiting
+            if (index > 0) {
+              await new Promise(resolve => setTimeout(resolve, 200));
+            }
+            
+            const relevantData = findRelevantComplianceData(q, complianceData);
+            const answer = await generateAnswer(q, relevantData);
+            return { question: q, answer, success: true };
+          } catch (error: any) {
+            console.error(`Error processing question ${index + 1}:`, error);
+            return { 
+              question: q, 
+              answer: 'We couldn\'t generate an answer—please try again.',
+              success: false,
+              error: error.message 
+            };
+          }
+        })
+      );
+
+      const answers = results.map(result => {
+        if (result.status === 'fulfilled') {
+          return result.value;
+        } else {
+          return {
+            question: 'Unknown question',
+            answer: 'We couldn\'t generate an answer—please try again.',
+            success: false,
+            error: result.reason?.message || 'Unknown error'
+          };
+        }
+      });
+
+      res.json({ 
+        answers,
+        metadata: {
+          totalQuestions: questions.length,
+          successfulAnswers: answers.filter(a => a.success).length,
+          failedAnswers: answers.filter(a => !a.success).length,
+          processingTimeMs: Date.now(),
+          timestamp: new Date().toISOString()
+        }
+      });
+    }
   } catch (error: any) {
-    console.error('Error processing question:', error);
-    res.status(500).json({ error: error.message || 'Internal server error' });
+    console.error('Error processing questions:', error);
+    res.status(500).json({ 
+      error: error.message || 'Internal server error',
+      fallback: 'We couldn\'t generate an answer—please try again.'
+    });
   }
 });
 
-// Add a compatible /ask endpoint for frontend integration
+// Add a compatible /ask endpoint for frontend integration with enhanced error handling
 app.post('/ask', async (req: Request, res: Response) => {
   try {
     const { question } = req.body;
     
     if (!question) {
-      return res.status(400).json({ error: 'Question is required' });
+      return res.status(400).json({ 
+        error: 'Question is required',
+        answer: 'We couldn\'t generate an answer—please try again.'
+      });
     }
 
     // Validate OpenAI configuration
     if (!process.env.OPENAI_API_KEY) {
-      return res.status(500).json({ error: 'OpenAI API key not configured' });
+      return res.status(500).json({ 
+        error: 'OpenAI API key not configured',
+        answer: 'We couldn\'t generate an answer—please try again.'
+      });
     }
 
-    // Find relevant compliance information
-    const relevantData = findRelevantComplianceData(question, complianceData);
-    
-    // Generate answer using OpenAI
-    const answer = await generateAnswer(question, relevantData);
-    
-    // Return just the answer field as expected by the frontend
-    res.json({ answer });
+    try {
+      // Find relevant compliance information
+      const relevantData = findRelevantComplianceData(question, complianceData);
+      
+      // Generate answer using OpenAI
+      const answer = await generateAnswer(question, relevantData);
+      
+      // Return just the answer field as expected by the frontend
+      res.json({ answer });
+    } catch (aiError: any) {
+      console.error('Error generating AI answer:', aiError);
+      // Return a graceful fallback instead of throwing
+      res.json({ 
+        answer: 'We couldn\'t generate an answer—please try again.',
+        error: aiError.message,
+        fallback: true
+      });
+    }
   } catch (error: any) {
     console.error('Error processing question:', error);
-    res.status(500).json({ error: error.message || 'Internal server error' });
+    res.status(500).json({ 
+      error: error.message || 'Internal server error',
+      answer: 'We couldn\'t generate an answer—please try again.'
+    });
   }
 });
 
