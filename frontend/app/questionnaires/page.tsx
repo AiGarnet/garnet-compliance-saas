@@ -151,7 +151,7 @@ const QuestionnairesPage = () => {
           const { title, questions } = JSON.parse(savedDraft);
           setQuestionnaireTitle(title || '');
           setQuestionnaireInput(questions || '');
-          } catch (e) {
+        } catch (e) {
           console.error('Error loading saved draft:', e);
         }
       }
@@ -188,25 +188,8 @@ const QuestionnairesPage = () => {
     };
   }, [showQuestionnaireInput]);
 
-  // Initial fetch on component mount
-  useEffect(() => {
-    fetchQuestionnaires();
-  }, []);
-  
-  // Focus the textarea when the modal is shown
-  useEffect(() => {
-    if (showQuestionnaireInput) {
-      // Focus on title first, then textarea
-      if (textareaRef.current) {
-        setTimeout(() => {
-          textareaRef.current?.focus();
-        }, 100);
-      }
-    }
-  }, [showQuestionnaireInput]);
-
   // Fetch questionnaires from API
-  const fetchQuestionnaires = async () => {
+  const fetchQuestionnaires = useCallback(async () => {
     setIsLoading(true);
     setError('');
     
@@ -237,7 +220,24 @@ const QuestionnairesPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  // Initial fetch on component mount
+  useEffect(() => {
+    fetchQuestionnaires();
+  }, [fetchQuestionnaires]);
+  
+  // Focus the textarea when the modal is shown
+  useEffect(() => {
+    if (showQuestionnaireInput) {
+      // Focus on title first, then textarea
+      if (textareaRef.current) {
+        setTimeout(() => {
+          textareaRef.current?.focus();
+        }, 100);
+      }
+    }
+  }, [showQuestionnaireInput]);
 
   // Show loading while checking authentication
   if (authLoading) {
