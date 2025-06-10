@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 // For static export, we use static data instead of dynamic API routes
 // Remove 'force-dynamic' and implement static alternatives
@@ -26,30 +26,83 @@ export async function generateStaticParams() {
   return ids.map(id => ({ id: String(id) }));
 }
 
+interface QuestionAnswer {
+  question: string;
+  answer: string;
+}
+
+interface Questionnaire {
+  id: string;
+  name: string;
+  status: string;
+  progress: number;
+  dueDate: string;
+  answers: QuestionAnswer[];
+  createdAt?: string;
+}
+
 export async function GET(
-  req: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Questionnaire ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Generate realistic questionnaire data based on ID
-    const questionnaire = generateQuestionnaireData(id);
-
-    return NextResponse.json(questionnaire);
+    const { id } = params;
+    
+    // For static export, we'll return a mock questionnaire
+    // In a real implementation, this would fetch from database
+    const mockQuestionnaire: Questionnaire = {
+      id,
+      name: `Questionnaire ${id}`,
+      status: 'Not Started',
+      progress: 0,
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      answers: [],
+      createdAt: new Date().toISOString()
+    };
+    
+    return NextResponse.json(mockQuestionnaire);
   } catch (error) {
     console.error('Error fetching questionnaire:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch questionnaire' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = params;
+    const body = await request.json();
+    
+    // For static export, we'll just return the updated data
+    // In a real implementation, this would update the database
+    const updatedQuestionnaire = {
+      id,
+      ...body,
+      updatedAt: new Date().toISOString()
+    };
+    
+    return NextResponse.json(updatedQuestionnaire);
+  } catch (error) {
+    console.error('Error updating questionnaire:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = params;
+    
+    // For static export, we'll just return success
+    // In a real implementation, this would delete from database
+    return NextResponse.json({ message: 'Questionnaire deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting questionnaire:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 

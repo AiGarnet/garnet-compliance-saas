@@ -292,7 +292,7 @@ export function ChatClient({ params }: { params: { id: string } }) {
 
     try {
       // Call backend API first
-      const response = await fetch(`https://garnet-compliance-saas-production.up.railway.app/api/questionnaires/${params.id}/questions/${editingQuestion}`, {
+      const response = await fetch(`/api/questionnaires/${params.id}/questions/${editingQuestion}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

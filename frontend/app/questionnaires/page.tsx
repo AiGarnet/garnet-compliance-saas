@@ -353,17 +353,52 @@ const QuestionnairesPage = () => {
         finalAnswers = await handleGenerateAnswers();
       }
       
-      // Store the new questionnaire with AI answers
-      const newQuestionnaire: Questionnaire & { answers?: QuestionAnswer[] } = {
-        id: `q${Date.now()}`,  
-        name: questionnaireTitle,
-        status: "Not Started" as QuestionnaireStatus,
-        dueDate: new Date().toLocaleDateString(),
-        progress: 0,
-        answers: finalAnswers.length > 0 ? finalAnswers : questions.map(q => ({ question: q, answer: 'AI answer will be generated' })),
+      // Create questionnaire object for API
+      const questionnaireData = {
+        title: questionnaireTitle,
+        questions: questions,
+        answers: finalAnswers.length > 0 ? finalAnswers : questions.map(q => ({ question: q, answer: '' }))
       };
       
-      // Get existing questionnaires from local storage
+      let newQuestionnaire: Questionnaire & { answers?: QuestionAnswer[] };
+      
+      // Try to create questionnaire via API first
+      try {
+        const response = await fetch('/api/questionnaires', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(questionnaireData)
+        });
+        
+        if (response.ok) {
+          const apiQuestionnaire = await response.json();
+          newQuestionnaire = {
+            id: apiQuestionnaire.id,
+            name: apiQuestionnaire.name || questionnaireTitle,
+            status: "Not Started" as QuestionnaireStatus,
+            dueDate: apiQuestionnaire.dueDate || new Date().toLocaleDateString(),
+            progress: 0,
+            answers: apiQuestionnaire.answers || finalAnswers.length > 0 ? finalAnswers : questions.map(q => ({ question: q, answer: '' })),
+          };
+        } else {
+          throw new Error('API call failed');
+        }
+      } catch (apiError) {
+        console.warn('API call failed, falling back to local storage:', apiError);
+        // Fallback to local storage
+        newQuestionnaire = {
+          id: `q${Date.now()}`,  
+          name: questionnaireTitle,
+          status: "Not Started" as QuestionnaireStatus,
+          dueDate: new Date().toLocaleDateString(),
+          progress: 0,
+          answers: finalAnswers.length > 0 ? finalAnswers : questions.map(q => ({ question: q, answer: '' })),
+        };
+      }
+      
+      // Always store in local storage for offline access
       const storedQuestionnaires = localStorage.getItem('user_questionnaires');
       let userQuestionnaires: Array<Questionnaire & { answers?: QuestionAnswer[] }> = [];
       
@@ -390,8 +425,8 @@ const QuestionnairesPage = () => {
       // Refresh the questionnaire list
       fetchQuestionnaires();
       
-      // Redirect to the questionnaire answers page
-      router.push(`/questionnaires/answers?id=${newQuestionnaire.id}`);
+      // Redirect to the chat interface instead of answers page
+      router.push(`/questionnaires/${newQuestionnaire.id}/chat`);
       
     } catch (error) {
       console.error('Error submitting questionnaire:', error);

@@ -1,9 +1,20 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 // For static export, we use static data instead of dynamic API routes
 // Remove 'force-dynamic' and implement static alternatives
 
-export async function POST(req: Request) {
+interface QuestionAnswer {
+  question: string;
+  answer: string;
+}
+
+interface QuestionnaireData {
+  title: string;
+  questions: string[];
+  answers?: QuestionAnswer[];
+}
+
+export async function POST(request: NextRequest) {
   // For static builds, you would typically:
   // 1. Use client-side state management instead of API routes
   // 2. Or use Netlify functions for dynamic functionality
@@ -12,46 +23,43 @@ export async function POST(req: Request) {
   // Client-side code should handle this limitation
 
   try {
-    const body = await req.json();
-    const { title, questions } = body;
-
-    // Validate the input
-    if (!title || !title.trim()) {
-      return NextResponse.json(
-        { error: 'Title is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!questions || !Array.isArray(questions) || questions.length === 0) {
-      return NextResponse.json(
-        { error: 'At least one question is required' },
-        { status: 400 }
-      );
-    }
-
-    // In a real application, you would save this to a database
-    // For now, we'll generate a unique ID and return it
-    const id = `q_${Date.now()}`;
-
-    // Store in localStorage for persistence (this is just a simple example)
-    // In a real application, you would use a database
+    const body: QuestionnaireData = await request.json();
+    const { title, questions, answers } = body;
     
-    // For now, we'll use a dummy response
-    return NextResponse.json({
+    if (!title || !questions || !Array.isArray(questions) || questions.length === 0) {
+      return NextResponse.json({ error: 'Title and questions array are required' }, { status: 400 });
+    }
+    
+    // Generate a unique ID
+    const id = `q${Date.now().toString(36)}${Math.random().toString(36).substr(2, 5)}`;
+    
+    // Create questionnaire object
+    const questionnaire = {
       id,
-      title,
-      questions: questions.map((q, index) => ({
-        id: `${id}_q_${index}`,
-        text: typeof q === 'string' ? q : q.text || q.question,
-      })),
-      createdAt: new Date().toISOString(),
-    });
+      name: title,
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
+      status: 'Not Started',
+      progress: 0,
+      answers: answers || questions.map((question: string) => ({
+        question,
+        answer: '' // Empty answer to be filled later
+      }))
+    };
+    
+    return NextResponse.json(questionnaire);
   } catch (error) {
     console.error('Error creating questionnaire:', error);
-    return NextResponse.json(
-      { error: 'Failed to create questionnaire' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    // For now, return empty array as questionnaires are stored in localStorage
+    // In a real implementation, this would fetch from database
+    return NextResponse.json([]);
+  } catch (error) {
+    console.error('Error fetching questionnaires:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 } 
