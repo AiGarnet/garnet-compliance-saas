@@ -1,5 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Add generateStaticParams to support static export
+export async function generateStaticParams() {
+  // Return all possible combinations of id and questionId that this API route needs to handle
+  const ids = [
+    'demo_1',
+    'demo_2', 
+    'demo_3',
+    'q_100',
+    'q_101',
+    'q_102',
+    'q_security_assessment',
+    'q_vendor_onboarding',
+    'q_compliance_review',
+    'q_risk_assessment',
+    'q_data_protection',
+    'q_2023_audit',
+    'q_2024_audit'
+  ];
+  
+  const questionIds = ['1', '2', '3', '4', '5', '6', '7', '8'];
+  
+  // Generate all combinations of id and questionId
+  const params = [];
+  for (const id of ids) {
+    for (const questionId of questionIds) {
+      params.push({ id: String(id), questionId: String(questionId) });
+    }
+  }
+  
+  return params;
+}
+
 interface QuestionAnswer {
   question: string;
   answer: string;
