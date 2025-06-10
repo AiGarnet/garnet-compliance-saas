@@ -27,6 +27,9 @@ const AUTOSAVE_KEY = 'questionnaire_draft';
 const QuestionnairesPage = () => {
   const router = useRouter();
   
+  // Add hydration-safe mounting check
+  const [hasMounted, setHasMounted] = useState(false);
+  
   // State declarations first
   const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -63,6 +66,11 @@ const QuestionnairesPage = () => {
   const [generatedAnswers, setGeneratedAnswers] = useState<QuestionAnswer[]>([]);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [answerCache, setAnswerCache] = useState<Record<string, string>>({});
+
+  // Hydration-safe mounting effect
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   // Protect this page - redirect to login if not authenticated (after state declarations)
   const { isLoading: authLoading } = useAuthGuard();
@@ -245,7 +253,7 @@ const QuestionnairesPage = () => {
   }, [showQuestionnaireInput]);
 
   // Show loading while checking authentication
-  if (authLoading) {
+  if (!hasMounted) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
