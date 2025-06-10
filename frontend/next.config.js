@@ -5,8 +5,7 @@ const nextConfig = {
   output: 'export',
   trailingSlash: true,
   distDir: '.next',
-  // Static export output directory
-  // outDir: 'out', // This is no longer needed with output: 'export'
+  // Static export output directory - Next.js 13+ with output: 'export' outputs to 'out' by default
   images: {
     // Static export requires unoptimized images
     unoptimized: true,
