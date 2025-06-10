@@ -109,24 +109,65 @@ export class VendorService {
   /**
    * Update a vendor
    */
-  async updateVendor(id: string, vendorData: Partial<Vendor>): Promise<Vendor | null> {
+  async updateVendor(id: string, vendorData: Partial<{
+    name?: string;
+    status?: VendorStatus;
+    riskScore?: number;
+    riskLevel?: RiskLevel;
+    contactName?: string;
+    contactEmail?: string;
+    website?: string;
+    industry?: string;
+    description?: string;
+  }>): Promise<Vendor | null> {
     // If risk score is updated, also update risk level
     if (vendorData.riskScore !== undefined && vendorData.riskLevel === undefined) {
       vendorData.riskLevel = this.calculateRiskLevel(vendorData.riskScore);
+    }
+
+    // Map the fields to match the database schema
+    const updateData: any = {};
+    
+    if (vendorData.name !== undefined) {
+      updateData.companyName = vendorData.name; // Map name to companyName
+    }
+    if (vendorData.status !== undefined) {
+      updateData.status = vendorData.status;
+    }
+    if (vendorData.riskScore !== undefined) {
+      updateData.riskScore = vendorData.riskScore;
+    }
+    if (vendorData.riskLevel !== undefined) {
+      updateData.riskLevel = vendorData.riskLevel;
+    }
+    if (vendorData.contactName !== undefined) {
+      updateData.contactName = vendorData.contactName;
+    }
+    if (vendorData.contactEmail !== undefined) {
+      updateData.contactEmail = vendorData.contactEmail;
+    }
+    if (vendorData.website !== undefined) {
+      updateData.website = vendorData.website;
+    }
+    if (vendorData.industry !== undefined) {
+      updateData.industry = vendorData.industry;
+    }
+    if (vendorData.description !== undefined) {
+      updateData.description = vendorData.description;
     }
 
     // Check if the ID is a valid number (numeric vendor ID)
     const numericId = parseInt(id, 10);
     if (!isNaN(numericId) && numericId.toString() === id) {
       // It's a numeric ID
-      return this.vendorRepository.updateVendor(numericId, vendorData);
+      return this.vendorRepository.updateVendor(numericId, updateData);
     } else {
       // For UUIDs, we need to first get the vendor to get the numeric ID
       const vendor = await this.vendorRepository.getVendorByUuid(id);
       if (!vendor) {
         return null;
       }
-      return this.vendorRepository.updateVendor(vendor.vendorId, vendorData);
+      return this.vendorRepository.updateVendor(vendor.vendorId, updateData);
     }
   }
   
