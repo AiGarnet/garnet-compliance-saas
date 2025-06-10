@@ -67,7 +67,7 @@ const QuestionnairesPage = () => {
   // Protect this page - redirect to login if not authenticated (after state declarations)
   const { isLoading: authLoading } = useAuthGuard();
 
-  // Debounced textarea resize
+  // Debounced textarea resize - simplified to avoid circular dependencies
   const resizeTextarea = useCallback(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
@@ -79,7 +79,12 @@ const QuestionnairesPage = () => {
     textarea.style.height = `${Math.min(textarea.scrollHeight, 400)}px`;
   }, []);
   
-  const debouncedResize = useMemo(() => debounce(resizeTextarea, 100), [resizeTextarea]);
+  // Create debounced version once and don't memoize it to avoid circular deps
+  const debouncedResizeRef = useRef<ReturnType<typeof debounce> | null>(null);
+  
+  if (!debouncedResizeRef.current) {
+    debouncedResizeRef.current = debounce(resizeTextarea, 100);
+  }
 
   // Calculate and update question count and validation when input changes
   useEffect(() => {
@@ -138,9 +143,9 @@ const QuestionnairesPage = () => {
   useEffect(() => {
     resizeTextarea();
     return () => {
-      debouncedResize.cancel();
+      debouncedResizeRef.current?.cancel();
     };
-  }, [questionnaireInput, debouncedResize, resizeTextarea]);
+  }, [questionnaireInput, resizeTextarea]);
 
   // Load autosaved draft
   useEffect(() => {
@@ -1066,7 +1071,7 @@ const QuestionnairesPage = () => {
                           value={questionnaireInput}
                           onChange={(e) => {
                             setQuestionnaireInput(e.target.value);
-                            debouncedResize();
+                            debouncedResizeRef.current?.();
                           }}
                           aria-label="Questionnaire input"
                           aria-describedby="question-counter"
