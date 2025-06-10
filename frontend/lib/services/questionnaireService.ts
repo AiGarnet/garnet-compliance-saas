@@ -23,25 +23,93 @@ interface GenerateAnswersResponse {
  */
 export const QuestionnaireService = {
   /**
-   * Generate answers for a list of questions using AI
+   * Generate answers for a list of questions using AI with batch processing
    * @param questions - Array of question strings
+   * @param onProgress - Optional callback for progress updates
    * @returns Promise with generated answers
    */
-  async generateAnswers(questions: string[]): Promise<GenerateAnswersResponse> {
+  async generateAnswers(
+    questions: string[], 
+    onProgress?: (completed: number, total: number, currentQuestion?: string) => void
+  ): Promise<GenerateAnswersResponse> {
     try {
+      if (questions.length === 0) {
+        return {
+          success: false,
+          error: 'No questions provided'
+        };
+      }
+
+      // For single question, use individual processing
+      if (questions.length === 1) {
+        onProgress?.(0, 1, questions[0]);
+        const result = await this.getAnswer(questions[0]);
+        onProgress?.(1, 1);
+        
+        if (result.success) {
+          return {
+            success: true,
+            data: {
+              answers: [{ question: questions[0], answer: result.answer || '' }],
+              metadata: {
+                totalQuestions: 1,
+                successfulAnswers: 1,
+                failedAnswers: 0,
+                processingTimeMs: Date.now(),
+                timestamp: new Date().toISOString()
+              }
+            }
+          };
+        } else {
+          return {
+            success: false,
+            error: result.error || 'Failed to generate answer'
+          };
+        }
+      }
+
+      // For multiple questions, use batch processing
+      onProgress?.(0, questions.length);
+      
       const response = await apiClient.post<{
-        answers: Array<{ question: string; answer: string }>;
-        metadata?: any;
+        answers: Array<{ 
+          question: string; 
+          answer: string; 
+          success?: boolean; 
+          error?: string; 
+        }>;
+        metadata?: {
+          totalQuestions: number;
+          successfulAnswers: number;
+          failedAnswers: number;
+          processingTimeMs: number;
+          timestamp: string;
+        };
       }>('/api/answer', {
         questions: questions
       });
 
+      onProgress?.(questions.length, questions.length);
+
+      // Ensure all answers have the fallback message for failed ones
+      const processedAnswers = response.answers.map(answer => ({
+        question: answer.question,
+        answer: answer.success === false ? 
+          'We couldn\'t generate an answer—please try again.' : 
+          answer.answer
+      }));
+
       return {
         success: true,
-        data: response
+        data: {
+          answers: processedAnswers,
+          metadata: response.metadata
+        }
       };
     } catch (error: any) {
       console.error('Error generating answers:', error);
+      onProgress?.(questions.length, questions.length); // Complete progress on error
+      
       return {
         success: false,
         error: error.message || 'Failed to generate answers'

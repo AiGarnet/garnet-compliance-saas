@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, ChangeEvent, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList, Filter, Plus, Search, SlidersHorizontal, X, Upload, FileText, FileType, Files, RefreshCw, Trash2, Sparkles, MessageSquare } from "lucide-react";
+import { ClipboardList, Filter, Plus, Search, SlidersHorizontal, X, Upload, FileText, FileType, Files, RefreshCw, Trash2, Sparkles, MessageSquare, Loader2 } from "lucide-react";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { QuestionnaireList, Questionnaire, QuestionnaireStatus } from "@/components/dashboard/QuestionnaireList";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -10,10 +10,14 @@ import Header from '@/components/Header';
 import { debounce } from 'lodash';
 import { useAuthGuard } from "@/lib/auth/useAuthGuard";
 import { QuestionnaireService } from '@/lib/services/questionnaireService';
+import { EnhancedAnswerDisplay } from '@/components/questionnaire/EnhancedAnswerDisplay';
 
 interface QuestionAnswer {
   question: string;
   answer: string;
+  isLoading?: boolean;
+  hasError?: boolean;
+  isGenerated?: boolean;
 }
 
 const MAX_QUESTIONS = 500;
@@ -58,6 +62,7 @@ const QuestionnairesPage = () => {
   const [isGeneratingAnswers, setIsGeneratingAnswers] = useState(false);
   const [generatedAnswers, setGeneratedAnswers] = useState<QuestionAnswer[]>([]);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [answerCache, setAnswerCache] = useState<Record<string, string>>({});
 
   // Protect this page - redirect to login if not authenticated (after state declarations)
   const { isLoading: authLoading } = useAuthGuard();
@@ -254,7 +259,7 @@ const QuestionnairesPage = () => {
     setShowAIAssistant(false);
   };
 
-  // Generate AI answers for questions
+  // Generate AI answers for questions with enhanced progress tracking
   const handleGenerateAnswers = async (): Promise<QuestionAnswer[]> => {
     const questions = questionnaireInput
       .split('\n')
@@ -267,44 +272,75 @@ const QuestionnairesPage = () => {
     }
 
     setIsGeneratingAnswers(true);
+    setValidationError(null);
+    
+    // Initialize answers with loading states
+    const initialAnswers = questions.map(question => ({
+      question,
+      answer: '',
+      isLoading: true,
+      isGenerated: true
+    }));
+    setGeneratedAnswers(initialAnswers);
+    setShowAIAssistant(true);
     
     try {
-      const apiEndpoint = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-        ? 'http://localhost:5000/ask'
-        : 'https://garnet-compliance-saas-production.up.railway.app/ask';
-
-      const aiResponses = await Promise.all(
-        questions.map(async (question) => {
-          try {
-            const aiResponse = await fetch(apiEndpoint, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ question }),
-            });
-            
-            if (!aiResponse.ok) {
-              throw new Error('Failed to get AI response');
-            }
-            
-            const aiData = await aiResponse.json();
-            return { question, answer: aiData.answer || 'No answer available' };
-          } catch (error) {
-            console.error('Error getting AI answer:', error);
-            return { question, answer: 'Unable to generate an answer. Please consult the compliance officer.' };
-          }
-        })
+      // Use the enhanced QuestionnaireService with progress tracking
+      const result = await QuestionnaireService.generateAnswers(
+        questions,
+        (completed, total, currentQuestion) => {
+          // Update progress for individual questions
+          setGeneratedAnswers(prev => 
+            prev.map((qa, index) => ({
+              ...qa,
+              isLoading: index >= completed,
+              answer: index < completed ? (prev[index]?.answer || 'Generated successfully') : qa.answer
+            }))
+          );
+        }
       );
 
-      setGeneratedAnswers(aiResponses);
-      setShowAIAssistant(true);
-      return aiResponses; // Return the generated answers
+      if (result.success && result.data) {
+        const finalAnswers = result.data.answers.map(answer => ({
+          question: answer.question,
+          answer: answer.answer,
+          isLoading: false,
+          isGenerated: true,
+          hasError: answer.answer.includes('We couldn\'t generate an answer')
+        }));
+        
+        setGeneratedAnswers(finalAnswers);
+        
+        // Show success message with metadata
+        if (result.data.metadata) {
+          const { successfulAnswers, failedAnswers, totalQuestions } = result.data.metadata;
+          if (failedAnswers > 0) {
+            setValidationError(
+              `Generated ${successfulAnswers}/${totalQuestions} answers successfully. ${failedAnswers} failed - you can regenerate them individually.`
+            );
+          }
+        }
+        
+        return finalAnswers;
+      } else {
+        throw new Error(result.error || 'Failed to generate answers');
+      }
       
     } catch (error) {
       console.error('Error generating answers:', error);
-      setValidationError('Failed to generate AI answers. Please try again.');
-      return [];
+      
+      // Update all answers to show error state
+      const errorAnswers = questions.map(question => ({
+        question,
+        answer: 'We couldn\'t generate an answer—please try again.',
+        isLoading: false,
+        isGenerated: false,
+        hasError: true
+      }));
+      
+      setGeneratedAnswers(errorAnswers);
+      setValidationError('Failed to generate AI answers. You can try regenerating individual answers or edit them manually.');
+      return errorAnswers;
     } finally {
       setIsGeneratingAnswers(false);
     }
@@ -314,6 +350,96 @@ const QuestionnairesPage = () => {
   const handleGenerateAnswersClick = async () => {
     await handleGenerateAnswers();
   };
+
+  // Handle editing an individual answer
+  const handleAnswerEdit = useCallback((index: number, newAnswer: string) => {
+    setGeneratedAnswers(prev => 
+      prev.map((qa, i) => 
+        i === index 
+          ? { ...qa, answer: newAnswer, hasError: false, isGenerated: false }
+          : qa
+      )
+    );
+    
+    // Cache the edited answer
+    const question = generatedAnswers[index]?.question;
+    if (question) {
+      setAnswerCache(prev => ({ ...prev, [question]: newAnswer }));
+    }
+  }, [generatedAnswers]);
+
+  // Handle regenerating a single answer
+  const handleRegenerateAnswer = useCallback(async (index: number) => {
+    const question = generatedAnswers[index]?.question;
+    if (!question) return;
+
+    // Check cache first
+    const cachedAnswer = answerCache[question];
+    if (cachedAnswer) {
+      setGeneratedAnswers(prev => 
+        prev.map((qa, i) => 
+          i === index 
+            ? { ...qa, answer: cachedAnswer, hasError: false, isGenerated: true }
+            : qa
+        )
+      );
+      return;
+    }
+
+    // Set loading state for this specific answer
+    setGeneratedAnswers(prev => 
+      prev.map((qa, i) => 
+        i === index 
+          ? { ...qa, isLoading: true, hasError: false }
+          : qa
+      )
+    );
+
+    try {
+      const result = await QuestionnaireService.getAnswer(question);
+      
+      if (result.success && result.answer) {
+        const newAnswer = result.answer;
+        
+        // Update the answer
+        setGeneratedAnswers(prev => 
+          prev.map((qa, i) => 
+            i === index 
+              ? { 
+                  ...qa, 
+                  answer: newAnswer, 
+                  isLoading: false, 
+                  hasError: newAnswer.includes('We couldn\'t generate an answer'),
+                  isGenerated: true 
+                }
+              : qa
+          )
+        );
+        
+        // Cache the new answer
+        setAnswerCache(prev => ({ ...prev, [question]: newAnswer }));
+      } else {
+        throw new Error(result.error || 'Failed to regenerate answer');
+      }
+    } catch (error) {
+      console.error('Error regenerating answer:', error);
+      
+      // Set error state
+      setGeneratedAnswers(prev => 
+        prev.map((qa, i) => 
+          i === index 
+            ? { 
+                ...qa, 
+                answer: 'We couldn\'t generate an answer—please try again.', 
+                isLoading: false, 
+                hasError: true,
+                isGenerated: false 
+              }
+            : qa
+        )
+      );
+    }
+  }, [generatedAnswers, answerCache]);
   
   const handleSubmitQuestionnaire = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -979,41 +1105,43 @@ const QuestionnairesPage = () => {
                     </div>
                   )}
 
-                  {/* AI Assistant Panel */}
+                  {/* Enhanced AI Assistant Panel */}
                   {showAIAssistant && generatedAnswers.length > 0 && (
                     <div className="mb-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium text-gray-800 dark:text-white flex items-center">
-                          <MessageSquare className="h-5 w-5 mr-2 text-purple-500" />
-                          AI-Generated Answers
-                        </h3>
-                        <button
-                          type="button"
-                          onClick={() => setShowAIAssistant(false)}
-                          className="text-sm text-primary hover:text-primary/80 flex items-center"
-                        >
-                          Back to Edit
-                        </button>
+                      <div className="flex justify-between items-center mb-6">
+                        <div className="flex items-center">
+                          <h3 className="text-lg font-medium text-gray-800 dark:text-white flex items-center">
+                            <MessageSquare className="h-5 w-5 mr-2 text-purple-500" />
+                            AI-Generated Answers
+                          </h3>
+                          {isGeneratingAnswers && (
+                            <div className="ml-4 flex items-center text-sm text-blue-600">
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Generating...
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <div className="text-sm text-gray-500">
+                            {generatedAnswers.filter(qa => !qa.isLoading && qa.answer && !qa.hasError).length} / {generatedAnswers.length} completed
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowAIAssistant(false)}
+                            className="text-sm text-primary hover:text-primary/80 flex items-center"
+                          >
+                            Back to Edit
+                          </button>
+                        </div>
                       </div>
                       
-                      <div className="border border-gray-200 dark:border-gray-700 rounded-md max-h-[500px] overflow-y-auto">
-                        {generatedAnswers.map((qa, index) => (
-                          <div key={index} className={`p-4 ${index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-800' : 'bg-white dark:bg-gray-900'}`}>
-                            <div className="mb-2">
-                              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Q{index + 1}:</span>
-                              <p className="font-medium text-gray-800 dark:text-gray-200">{qa.question}</p>
-                            </div>
-                            <div>
-                              <span className="text-sm font-medium text-purple-600 dark:text-purple-400">AI Answer:</span>
-                              <div className="mt-1 text-gray-700 dark:text-gray-300 prose prose-sm max-w-none">
-                                {qa.answer.split('\n').map((paragraph, pIndex) => (
-                                  <p key={pIndex} className="mb-2">{paragraph}</p>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <EnhancedAnswerDisplay
+                        questionAnswers={generatedAnswers}
+                        onAnswerEdit={handleAnswerEdit}
+                        onRegenerateAnswer={handleRegenerateAnswer}
+                        isGenerating={isGeneratingAnswers}
+                        className="max-h-[600px] overflow-y-auto"
+                      />
                     </div>
                   )}
                   
