@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Header from '@/components/Header';
 import { debounce } from 'lodash';
 import { useAuthGuard } from "@/lib/auth/useAuthGuard";
+import { QuestionnaireService } from '@/lib/services/questionnaireService';
 
 interface QuestionAnswer {
   question: string;
@@ -345,60 +346,63 @@ const QuestionnairesPage = () => {
     setIsSubmitting(true);
     
     try {
-      // Use generated answers if available, otherwise generate them
-      let finalAnswers = generatedAnswers;
+      // First, try to save directly to the backend database
+      const shouldGenerateAnswers = generatedAnswers.length > 0 || true; // Always generate answers for better UX
       
-      if (finalAnswers.length === 0) {
-        // Generate answers if not already done
-        finalAnswers = await handleGenerateAnswers();
-      }
-      
-      // Create questionnaire object for API
-      const questionnaireData = {
-        title: questionnaireTitle,
-        questions: questions,
-        answers: finalAnswers.length > 0 ? finalAnswers : questions.map(q => ({ question: q, answer: '' }))
-      };
+      const databaseResult = await QuestionnaireService.saveQuestionnaireToDatabase(
+        questionnaireTitle,
+        questions,
+        shouldGenerateAnswers
+      );
       
       let newQuestionnaire: Questionnaire & { answers?: QuestionAnswer[] };
       
-      // Try to create questionnaire via API first
-      try {
-        const response = await fetch('/api/questionnaires', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(questionnaireData)
-        });
+      if (databaseResult.success && databaseResult.questionnaire) {
+        // Successfully saved to database
+        console.log('✅ Questionnaire saved to database successfully!');
+        console.log('📊 Created vendor:', databaseResult.vendor?.name);
+        console.log('📝 Questionnaire ID:', databaseResult.questionnaire.id);
         
-        if (response.ok) {
-          const apiQuestionnaire = await response.json();
-          newQuestionnaire = {
-            id: apiQuestionnaire.id,
-            name: apiQuestionnaire.name || questionnaireTitle,
-            status: "Not Started" as QuestionnaireStatus,
-            dueDate: apiQuestionnaire.dueDate || new Date().toLocaleDateString(),
-            progress: 0,
-            answers: apiQuestionnaire.answers || finalAnswers.length > 0 ? finalAnswers : questions.map(q => ({ question: q, answer: '' })),
-          };
-        } else {
-          throw new Error('API call failed');
+        newQuestionnaire = {
+          id: databaseResult.questionnaire.id,
+          name: databaseResult.questionnaire.name,
+          status: "Completed" as QuestionnaireStatus, // Mark as completed since we have answers
+          dueDate: databaseResult.questionnaire.dueDate,
+          progress: 100, // 100% since we have all answers
+          answers: databaseResult.questionnaire.answers,
+          vendorId: databaseResult.questionnaire.vendorId,
+          vendorName: databaseResult.questionnaire.vendorName,
+        };
+        
+        // Show success message
+        setValidationError(null);
+        
+      } else {
+        // Fallback to local storage if database save fails
+        console.warn('⚠️ Database save failed, falling back to local storage:', databaseResult.error);
+        
+        // Use generated answers if available, otherwise generate them
+        let finalAnswers = generatedAnswers;
+        
+        if (finalAnswers.length === 0) {
+          // Generate answers if not already done
+          finalAnswers = await handleGenerateAnswers();
         }
-      } catch (apiError) {
-        console.warn('API call failed, falling back to local storage:', apiError);
-        // Fallback to local storage
+        
         newQuestionnaire = {
           id: `q${Date.now()}`,  
           name: questionnaireTitle,
           status: "Not Started" as QuestionnaireStatus,
           dueDate: new Date().toLocaleDateString(),
-          progress: 0,
+          progress: finalAnswers.length > 0 ? 100 : 0,
           answers: finalAnswers.length > 0 ? finalAnswers : questions.map(q => ({ question: q, answer: '' })),
         };
+        
+        // Show warning about fallback
+        setValidationError(`⚠️ Saved locally only. Database connection issue: ${databaseResult.error}`);
       }
       
-      // Always store in local storage for offline access
+      // Always store in local storage for offline access and backup
       const storedQuestionnaires = localStorage.getItem('user_questionnaires');
       let userQuestionnaires: Array<Questionnaire & { answers?: QuestionAnswer[] }> = [];
       
@@ -429,7 +433,7 @@ const QuestionnairesPage = () => {
       router.push(`/questionnaires/${newQuestionnaire.id}/chat`);
       
     } catch (error) {
-      console.error('Error submitting questionnaire:', error);
+      console.error('❌ Error submitting questionnaire:', error);
       setValidationError('Failed to submit questionnaire. Please try again.');
     } finally {
       setIsSubmitting(false);

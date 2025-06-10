@@ -25,6 +25,8 @@ export interface Questionnaire {
   dueDate: string;
   progress: number;
   answers?: any[];
+  vendorId?: string;
+  vendorName?: string;
 }
 
 export interface QuestionnaireListProps {

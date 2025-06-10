@@ -1,4 +1,4 @@
-import { Question } from '../types/questionnaire.types';
+import { apiClient } from './api';
 import { VendorService } from './vendorService';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -8,120 +8,166 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://garnet-complian
 // Check if we're in development/test mode
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
+interface GenerateAnswersResponse {
+  success: boolean;
+  data?: {
+    answers: Array<{ question: string; answer: string }>;
+    metadata?: any;
+  };
+  error?: string;
+}
+
 /**
  * Questionnaire Service
  * Handles interactions with the question answering API
  */
 export const QuestionnaireService = {
   /**
-   * Generate answers for a list of questions
+   * Generate answers for a list of questions using AI
    * @param questions - Array of question strings
-   * @returns Promise with the questions and their answers
+   * @returns Promise with generated answers
    */
-  async generateAnswers(questions: string[]): Promise<{
-    success: boolean;
-    data?: {
-      answers: Array<{
-        question: string;
-        answer: string;
-        error?: string | null;
-      }>;
-      metadata: {
-        totalQuestions: number;
-        processingTimeMs: number;
-        timestamp: string;
-      };
-    };
-    error?: string;
-  }> {
+  async generateAnswers(questions: string[]): Promise<GenerateAnswersResponse> {
     try {
-      // If we're in a dev/test environment with no API available, generate mock data
-      if (isDevelopment) {
-        console.log('Using mock data for question answers (development mode)');
-        return {
-          success: true,
-          data: {
-            answers: questions.map(question => ({
-              question,
-              answer: `This is a mock answer for: ${question}`,
-            })),
-            metadata: {
-              totalQuestions: questions.length,
-              processingTimeMs: 100,
-              timestamp: new Date().toISOString()
-            }
-          }
-        };
-      }
-      
-      // Otherwise, call the real API
-      const response = await fetch(`${API_BASE_URL}/api/generate-answers`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ questions }),
+      const response = await apiClient.post<{
+        answers: Array<{ question: string; answer: string }>;
+        metadata?: any;
+      }>('/api/answer', {
+        questions: questions
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate answers');
-      }
-
-      return await response.json();
+      return {
+        success: true,
+        data: response
+      };
     } catch (error: any) {
       console.error('Error generating answers:', error);
       return {
         success: false,
-        error: error.message || 'An unknown error occurred',
+        error: error.message || 'Failed to generate answers'
       };
     }
   },
 
   /**
-   * Generate an answer for a single question
-   * @param question - The question string
-   * @returns Promise with the question and its answer
+   * Get a single answer for a question using AI
+   * @param question - The question to answer
+   * @returns Promise with the generated answer
    */
-  async generateAnswer(question: string): Promise<{
-    success: boolean;
-    data?: {
-      question: string;
-      answer: string;
-    };
-    error?: string;
-  }> {
+  async getAnswer(question: string): Promise<{ success: boolean; answer?: string; error?: string }> {
     try {
-      const result = await this.generateAnswers([question]);
-      
-      if (!result.success || !result.data) {
-        return {
-          success: false,
-          error: result.error || 'Failed to generate answer',
-        };
-      }
-
-      const answer = result.data.answers[0];
-      
-      if (answer.error) {
-        return {
-          success: false,
-          error: answer.error,
-        };
-      }
+      const response = await apiClient.post<{ answer: string }>('/api/answer', {
+        question: question
+      });
 
       return {
         success: true,
-        data: {
-          question: answer.question,
-          answer: answer.answer,
-        },
+        answer: response.answer
       };
     } catch (error: any) {
-      console.error('Error generating answer:', error);
+      console.error('Error getting answer:', error);
       return {
         success: false,
-        error: error.message || 'An unknown error occurred',
+        error: error.message || 'Failed to get answer'
+      };
+    }
+  },
+
+  /**
+   * Submit a question to the AI chatbot
+   * @param question - The question to ask
+   * @returns Promise with the AI response
+   */
+  async askQuestion(question: string): Promise<{ success: boolean; response?: string; error?: string }> {
+    try {
+      const response = await apiClient.post<{ response: string }>('/ask', {
+        question: question
+      });
+
+      return {
+        success: true,
+        response: response.response
+      };
+    } catch (error: any) {
+      console.error('Error asking question:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to ask question'
+      };
+    }
+  },
+
+  /**
+   * Create a new vendor with questionnaire answers directly in the backend database
+   * @param vendorName - Name of the vendor
+   * @param questions - Array of questions
+   * @param answers - Array of answers (optional, will generate if not provided)
+   * @param vendorData - Additional vendor data
+   * @returns Promise with the created vendor and questionnaire data
+   */
+  async createVendorWithQuestionnaire(
+    vendorName: string,
+    questions: string[],
+    answers?: Array<{ question: string; answer: string }>,
+    vendorData?: {
+      contactName?: string;
+      contactEmail?: string;
+      website?: string;
+      industry?: string;
+      description?: string;
+    }
+  ): Promise<{ success: boolean; vendor?: any; questionnaire?: any; error?: string }> {
+    try {
+      // Generate answers if not provided
+      let finalAnswers = answers;
+      if (!finalAnswers || finalAnswers.length === 0) {
+        const generateResult = await this.generateAnswers(questions);
+        if (!generateResult.success || !generateResult.data) {
+          return {
+            success: false,
+            error: generateResult.error || 'Failed to generate answers'
+          };
+        }
+        finalAnswers = generateResult.data.answers;
+      }
+
+      // Add questionId to each answer
+      const answersWithIds = finalAnswers.map(answer => ({
+        questionId: uuidv4(),
+        question: answer.question,
+        answer: answer.answer
+      }));
+
+      // Create vendor with questionnaire via backend API
+      const response = await apiClient.post<{ vendor: any }>('/api/vendors/with-answers', {
+        name: vendorName,
+        ...vendorData,
+        answers: answersWithIds
+      });
+
+      // Create a questionnaire object for frontend use
+      const questionnaire = {
+        id: `q${Date.now().toString(36)}${Math.random().toString(36).substr(2, 5)}`,
+        name: `${vendorName} Security Questionnaire`,
+        vendorId: response.vendor.id,
+        vendorName: vendorName,
+        status: 'Completed',
+        progress: 100,
+        dueDate: new Date().toISOString().split('T')[0],
+        answers: finalAnswers,
+        createdAt: new Date().toISOString()
+      };
+
+      return {
+        success: true,
+        vendor: response.vendor,
+        questionnaire: questionnaire
+      };
+    } catch (error: any) {
+      console.error('Error creating vendor with questionnaire:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to create vendor with questionnaire'
       };
     }
   },
@@ -192,4 +238,65 @@ export const QuestionnaireService = {
       };
     }
   },
+
+  /**
+   * Save questionnaire directly to backend database (bypassing local API routes)
+   * @param title - Questionnaire title
+   * @param questions - Array of questions
+   * @param generateAnswers - Whether to generate AI answers
+   * @returns Promise with the saved questionnaire data
+   */
+  async saveQuestionnaireToDatabase(
+    title: string,
+    questions: string[],
+    generateAnswers: boolean = true
+  ): Promise<{ success: boolean; questionnaire?: any; vendor?: any; error?: string }> {
+    try {
+      // Generate answers if requested
+      let answers: Array<{ question: string; answer: string }> = [];
+      if (generateAnswers) {
+        const generateResult = await this.generateAnswers(questions);
+        if (generateResult.success && generateResult.data) {
+          answers = generateResult.data.answers;
+        }
+      } else {
+        // Create empty answers
+        answers = questions.map(q => ({ question: q, answer: '' }));
+      }
+
+      // Create a vendor name based on the questionnaire title
+      const vendorName = title.includes('Questionnaire') ? 
+        title.replace('Questionnaire', '').trim() || `Vendor for ${title}` :
+        `Vendor for ${title}`;
+
+      // Create vendor with questionnaire
+      const result = await this.createVendorWithQuestionnaire(
+        vendorName,
+        questions,
+        answers,
+        {
+          description: `Vendor created from questionnaire: ${title}`
+        }
+      );
+
+      if (!result.success) {
+        return {
+          success: false,
+          error: result.error
+        };
+      }
+
+      return {
+        success: true,
+        questionnaire: result.questionnaire,
+        vendor: result.vendor
+      };
+    } catch (error: any) {
+      console.error('Error saving questionnaire to database:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to save questionnaire to database'
+      };
+    }
+  }
 }; 
