@@ -27,10 +27,28 @@ const AUTOSAVE_KEY = 'questionnaire_draft';
 const QuestionnairesPage = () => {
   const router = useRouter();
   
-  // Add hydration-safe mounting check
+  // Critical: Check hydration state FIRST, before any other hooks
   const [hasMounted, setHasMounted] = useState(false);
   
-  // State declarations first
+  // Hydration-safe mounting effect - must be first
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  // Early return BEFORE any other hooks to prevent hook count mismatch
+  if (!hasMounted) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Now all other hooks can run safely after hydration check
+  // State declarations
   const [questionnaires, setQuestionnaires] = useState<Questionnaire[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
@@ -67,12 +85,7 @@ const QuestionnairesPage = () => {
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [answerCache, setAnswerCache] = useState<Record<string, string>>({});
 
-  // Hydration-safe mounting effect
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
-  // Protect this page - redirect to login if not authenticated (after state declarations)
+  // Protect this page - redirect to login if not authenticated (after hydration)
   const { isLoading: authLoading } = useAuthGuard();
 
   // Debounced textarea resize - simplified to avoid circular dependencies
@@ -251,18 +264,6 @@ const QuestionnairesPage = () => {
       }
     }
   }, [showQuestionnaireInput]);
-
-  // Show loading while checking authentication
-  if (!hasMounted) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   const handleNewQuestionnaire = () => {
     setShowQuestionnaireInput(true);
