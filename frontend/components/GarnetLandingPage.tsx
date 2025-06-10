@@ -1208,7 +1208,7 @@ const GarnetLandingPage = () => {
                 <div className="grid grid-cols-1 gap-3">
                   {[
                     { country: "🇬🇧 UK", frameworks: ["GDPR"] },
-                    { country: "🇩🇪 Germany", frameworks: ["GDPR", "BSI"] }
+                    { country: "🇮🇪 Ireland", frameworks: ["GDPR", "BSI"] }
                   ].map((item, idx) => (
                     <motion.div 
                       key={idx}
