@@ -19,7 +19,15 @@ export class VendorService {
    * Get a vendor by ID
    */
   async getVendorById(id: string): Promise<Vendor | null> {
-    return this.vendorRepository.getVendorById(id);
+    // Check if the ID is a valid number (numeric vendor ID)
+    const numericId = parseInt(id, 10);
+    if (!isNaN(numericId) && numericId.toString() === id) {
+      // It's a numeric ID
+      return this.vendorRepository.getVendorById(numericId);
+    } else {
+      // It's a UUID
+      return this.vendorRepository.getVendorByUuid(id);
+    }
   }
   
   /**
@@ -83,17 +91,18 @@ export class VendorService {
   }): Promise<Vendor> {
     // Set default values if not provided
     const vendorToCreate = {
-      name: vendorData.name,
+      companyName: vendorData.name, // Map name to companyName
+      region: 'US', // Default region - you might want to make this configurable
+      contactEmail: vendorData.contactEmail || 'unknown@example.com', // Default email if not provided
       status: vendorData.status || VendorStatus.QUESTIONNAIRE_PENDING,
       riskScore: vendorData.riskScore !== undefined ? vendorData.riskScore : 50, // Default risk score
       riskLevel: vendorData.riskLevel || this.calculateRiskLevel(vendorData.riskScore || 50),
       contactName: vendorData.contactName,
-      contactEmail: vendorData.contactEmail,
       website: vendorData.website,
       industry: vendorData.industry,
       description: vendorData.description
     };
-    
+
     return this.vendorRepository.createVendor(vendorToCreate);
   }
   
@@ -105,15 +114,39 @@ export class VendorService {
     if (vendorData.riskScore !== undefined && vendorData.riskLevel === undefined) {
       vendorData.riskLevel = this.calculateRiskLevel(vendorData.riskScore);
     }
-    
-    return this.vendorRepository.updateVendor(id, vendorData);
+
+    // Check if the ID is a valid number (numeric vendor ID)
+    const numericId = parseInt(id, 10);
+    if (!isNaN(numericId) && numericId.toString() === id) {
+      // It's a numeric ID
+      return this.vendorRepository.updateVendor(numericId, vendorData);
+    } else {
+      // For UUIDs, we need to first get the vendor to get the numeric ID
+      const vendor = await this.vendorRepository.getVendorByUuid(id);
+      if (!vendor) {
+        return null;
+      }
+      return this.vendorRepository.updateVendor(vendor.vendorId, vendorData);
+    }
   }
   
   /**
    * Delete a vendor
    */
   async deleteVendor(id: string): Promise<boolean> {
-    return this.vendorRepository.deleteVendor(id);
+    // Check if the ID is a valid number (numeric vendor ID)
+    const numericId = parseInt(id, 10);
+    if (!isNaN(numericId) && numericId.toString() === id) {
+      // It's a numeric ID
+      return this.vendorRepository.deleteVendor(numericId);
+    } else {
+      // For UUIDs, we need to first get the vendor to get the numeric ID
+      const vendor = await this.vendorRepository.getVendorByUuid(id);
+      if (!vendor) {
+        return false;
+      }
+      return this.vendorRepository.deleteVendor(vendor.vendorId);
+    }
   }
   
   /**
@@ -123,19 +156,19 @@ export class VendorService {
     vendorId: string,
     answers: { questionId: string; question: string; answer: string }[]
   ): Promise<QuestionnaireAnswer[]> {
-    // Check if vendor exists
-    const vendor = await this.vendorRepository.getVendorById(vendorId);
+    // Check if vendor exists and get numeric ID
+    const vendor = await this.getVendorById(vendorId);
     if (!vendor) {
       throw new Error(`Vendor with ID ${vendorId} not found`);
     }
-    
+
     // Add vendorId to each answer
     const answersWithVendorId = answers.map(answer => ({
       ...answer,
-      vendorId
+      vendorId: vendor.vendorId // Use the numeric vendor ID
     }));
-    
-    return this.vendorRepository.saveVendorQuestionnaireAnswers(vendorId, answersWithVendorId);
+
+    return this.vendorRepository.saveVendorQuestionnaireAnswers(vendor.vendorId, answersWithVendorId);
   }
   
   /**
@@ -162,17 +195,17 @@ export class VendorService {
       
       // Save answers
       if (answers.length > 0) {
-        // Add vendorId to each answer
+        // Add vendorId to each answer using the numeric vendor ID
         const answersWithVendorId = answers.map(answer => ({
           ...answer,
-          vendorId: vendor.id
+          vendorId: vendor.vendorId // Use the numeric vendorId from the created vendor
         }));
         
-        await this.vendorRepository.saveVendorQuestionnaireAnswers(vendor.id, answersWithVendorId);
+        await this.vendorRepository.saveVendorQuestionnaireAnswers(vendor.vendorId, answersWithVendorId);
       }
       
       // Return the vendor with answers
-      return this.vendorRepository.getVendorById(vendor.id) as Promise<Vendor>;
+      return this.getVendorById(vendor.vendorId.toString()) as Promise<Vendor>;
     } catch (error) {
       throw error;
     }
