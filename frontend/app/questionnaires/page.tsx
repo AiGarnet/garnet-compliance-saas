@@ -238,7 +238,7 @@ const QuestionnairesPage = () => {
   // Initial fetch on component mount
   useEffect(() => {
     fetchQuestionnaires();
-  }, [fetchQuestionnaires]);
+  }, []);
   
   // Focus the textarea when the modal is shown
   useEffect(() => {
@@ -371,48 +371,36 @@ const QuestionnairesPage = () => {
 
   // Handle editing an individual answer
   const handleAnswerEdit = useCallback((index: number, newAnswer: string) => {
-    setGeneratedAnswers(prev => 
-      prev.map((qa, i) => 
+    setGeneratedAnswers(prev => {
+      const updatedAnswers = prev.map((qa, i) => 
         i === index 
           ? { ...qa, answer: newAnswer, hasError: false, isGenerated: false }
           : qa
-      )
-    );
-    
-    // Cache the edited answer
-    setGeneratedAnswers(prev => {
+      );
+      
+      // Update answer cache synchronously
       const question = prev[index]?.question;
       if (question) {
         setAnswerCache(cache => ({ ...cache, [question]: newAnswer }));
       }
-      return prev;
+      
+      return updatedAnswers;
     });
   }, []);
 
   // Handle regenerating a single answer
   const handleRegenerateAnswer = useCallback(async (index: number) => {
-    // Get current state values
-    let currentQuestion: string | undefined;
-    let cachedAnswer: string | undefined;
-    
-    setGeneratedAnswers(prev => {
-      currentQuestion = prev[index]?.question;
-      return prev;
-    });
-    
+    // Access current state directly
+    const currentQuestion = generatedAnswers[index]?.question;
     if (!currentQuestion) return;
     
-    setAnswerCache(prev => {
-      cachedAnswer = prev[currentQuestion!];
-      return prev;
-    });
-
     // Check cache first
+    const cachedAnswer = answerCache[currentQuestion];
     if (cachedAnswer) {
       setGeneratedAnswers(prev => 
         prev.map((qa, i) => 
           i === index 
-            ? { ...qa, answer: cachedAnswer!, hasError: false, isGenerated: true }
+            ? { ...qa, answer: cachedAnswer, hasError: false, isGenerated: true }
             : qa
         )
       );
@@ -434,7 +422,7 @@ const QuestionnairesPage = () => {
       if (result.success && result.answer) {
         const newAnswer = result.answer;
         
-        // Update the answer
+        // Update the answer and cache in a single operation
         setGeneratedAnswers(prev => 
           prev.map((qa, i) => 
             i === index 
@@ -450,7 +438,7 @@ const QuestionnairesPage = () => {
         );
         
         // Cache the new answer
-        setAnswerCache(prev => ({ ...prev, [currentQuestion!]: newAnswer }));
+        setAnswerCache(prev => ({ ...prev, [currentQuestion]: newAnswer }));
       } else {
         throw new Error(result.error || 'Failed to regenerate answer');
       }
@@ -472,7 +460,7 @@ const QuestionnairesPage = () => {
         )
       );
     }
-  }, []);
+  }, [generatedAnswers, answerCache]);
   
   const handleSubmitQuestionnaire = async (e: React.FormEvent) => {
     e.preventDefault();
