@@ -367,24 +367,39 @@ const QuestionnairesPage = () => {
     );
     
     // Cache the edited answer
-    const question = generatedAnswers[index]?.question;
-    if (question) {
-      setAnswerCache(prev => ({ ...prev, [question]: newAnswer }));
-    }
-  }, [generatedAnswers]);
+    setGeneratedAnswers(prev => {
+      const question = prev[index]?.question;
+      if (question) {
+        setAnswerCache(cache => ({ ...cache, [question]: newAnswer }));
+      }
+      return prev;
+    });
+  }, []);
 
   // Handle regenerating a single answer
   const handleRegenerateAnswer = useCallback(async (index: number) => {
-    const question = generatedAnswers[index]?.question;
-    if (!question) return;
+    // Get current state values
+    let currentQuestion: string | undefined;
+    let cachedAnswer: string | undefined;
+    
+    setGeneratedAnswers(prev => {
+      currentQuestion = prev[index]?.question;
+      return prev;
+    });
+    
+    if (!currentQuestion) return;
+    
+    setAnswerCache(prev => {
+      cachedAnswer = prev[currentQuestion!];
+      return prev;
+    });
 
     // Check cache first
-    const cachedAnswer = answerCache[question];
     if (cachedAnswer) {
       setGeneratedAnswers(prev => 
         prev.map((qa, i) => 
           i === index 
-            ? { ...qa, answer: cachedAnswer, hasError: false, isGenerated: true }
+            ? { ...qa, answer: cachedAnswer!, hasError: false, isGenerated: true }
             : qa
         )
       );
@@ -401,7 +416,7 @@ const QuestionnairesPage = () => {
     );
 
     try {
-      const result = await QuestionnaireService.getAnswer(question);
+      const result = await QuestionnaireService.getAnswer(currentQuestion);
       
       if (result.success && result.answer) {
         const newAnswer = result.answer;
@@ -422,7 +437,7 @@ const QuestionnairesPage = () => {
         );
         
         // Cache the new answer
-        setAnswerCache(prev => ({ ...prev, [question]: newAnswer }));
+        setAnswerCache(prev => ({ ...prev, [currentQuestion!]: newAnswer }));
       } else {
         throw new Error(result.error || 'Failed to regenerate answer');
       }
@@ -444,7 +459,7 @@ const QuestionnairesPage = () => {
         )
       );
     }
-  }, [generatedAnswers, answerCache]);
+  }, []);
   
   const handleSubmitQuestionnaire = async (e: React.FormEvent) => {
     e.preventDefault();
