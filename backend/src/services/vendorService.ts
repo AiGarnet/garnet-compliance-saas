@@ -12,28 +12,20 @@ export class VendorService {
    * Get all vendors
    */
   async getAllVendors(): Promise<Vendor[]> {
-    console.log('VendorService: getAllVendors called');
-    try {
-      const vendors = await this.vendorRepository.getAllVendors();
-      console.log(`VendorService: Repository returned ${vendors.length} vendors`);
-      return vendors;
-    } catch (error) {
-      console.error('VendorService: Error in getAllVendors:', error);
-      throw error;
-    }
+    return this.vendorRepository.getAllVendors();
   }
   
   /**
    * Get a vendor by ID
    */
   async getVendorById(id: string): Promise<Vendor | null> {
-    // Check if the ID is numeric (vendor_id) or a UUID string
+    // Check if the ID is a valid number (numeric vendor ID)
     const numericId = parseInt(id, 10);
     if (!isNaN(numericId) && numericId.toString() === id) {
       // It's a numeric ID
       return this.vendorRepository.getVendorById(numericId);
     } else {
-      // It's a UUID string
+      // It's a UUID
       return this.vendorRepository.getVendorByUuid(id);
     }
   }
@@ -43,6 +35,13 @@ export class VendorService {
    */
   async getVendorsByStatus(status: VendorStatus): Promise<Vendor[]> {
     return this.vendorRepository.getVendorsByStatus(status);
+  }
+
+  /**
+   * Get vendors with AI suggestions
+   */
+  async getVendorsWithSuggestions(): Promise<Vendor[]> {
+    return this.vendorRepository.getVendorsWithSuggestions();
   }
   
   /**
@@ -100,8 +99,8 @@ export class VendorService {
     // Set default values if not provided
     const vendorToCreate = {
       companyName: vendorData.name, // Map name to companyName
-      region: 'Unknown', // Default region since it's required
-      contactEmail: vendorData.contactEmail || '', // Default email since it's required
+      region: 'US', // Default region - you might want to make this configurable
+      contactEmail: vendorData.contactEmail || 'unknown@example.com', // Default email if not provided
       status: vendorData.status || VendorStatus.QUESTIONNAIRE_PENDING,
       riskScore: vendorData.riskScore !== undefined ? vendorData.riskScore : 50, // Default risk score
       riskLevel: vendorData.riskLevel || this.calculateRiskLevel(vendorData.riskScore || 50),
@@ -110,33 +109,67 @@ export class VendorService {
       industry: vendorData.industry,
       description: vendorData.description
     };
-    
+
     return this.vendorRepository.createVendor(vendorToCreate);
   }
   
   /**
    * Update a vendor
    */
-  async updateVendor(id: string, vendorData: Partial<Vendor>): Promise<Vendor | null> {
+  async updateVendor(id: string, vendorData: Partial<{
+    name?: string;
+    status?: VendorStatus;
+    riskScore?: number;
+    riskLevel?: RiskLevel;
+    contactName?: string;
+    contactEmail?: string;
+    website?: string;
+    industry?: string;
+    description?: string;
+  }>): Promise<Vendor | null> {
     // If risk score is updated, also update risk level
     if (vendorData.riskScore !== undefined && vendorData.riskLevel === undefined) {
       vendorData.riskLevel = this.calculateRiskLevel(vendorData.riskScore);
     }
+
+    // Map the fields to match the database schema
+    const updateData: any = {};
     
-    // Map name to companyName if provided
-    const updateData: any = { ...vendorData };
-    if (vendorData.name) {
-      updateData.companyName = vendorData.name;
-      delete updateData.name;
+    if (vendorData.name !== undefined) {
+      updateData.companyName = vendorData.name; // Map name to companyName
     }
-    
-    // Check if the ID is numeric (vendor_id) or a UUID string
+    if (vendorData.status !== undefined) {
+      updateData.status = vendorData.status;
+    }
+    if (vendorData.riskScore !== undefined) {
+      updateData.riskScore = vendorData.riskScore;
+    }
+    if (vendorData.riskLevel !== undefined) {
+      updateData.riskLevel = vendorData.riskLevel;
+    }
+    if (vendorData.contactName !== undefined) {
+      updateData.contactName = vendorData.contactName;
+    }
+    if (vendorData.contactEmail !== undefined) {
+      updateData.contactEmail = vendorData.contactEmail;
+    }
+    if (vendorData.website !== undefined) {
+      updateData.website = vendorData.website;
+    }
+    if (vendorData.industry !== undefined) {
+      updateData.industry = vendorData.industry;
+    }
+    if (vendorData.description !== undefined) {
+      updateData.description = vendorData.description;
+    }
+
+    // Check if the ID is a valid number (numeric vendor ID)
     const numericId = parseInt(id, 10);
     if (!isNaN(numericId) && numericId.toString() === id) {
       // It's a numeric ID
       return this.vendorRepository.updateVendor(numericId, updateData);
     } else {
-      // For UUID, we need to get the vendor first to get the numeric ID
+      // For UUIDs, we need to first get the vendor to get the numeric ID
       const vendor = await this.vendorRepository.getVendorByUuid(id);
       if (!vendor) {
         return null;
@@ -149,13 +182,13 @@ export class VendorService {
    * Delete a vendor
    */
   async deleteVendor(id: string): Promise<boolean> {
-    // Check if the ID is numeric (vendor_id) or a UUID string
+    // Check if the ID is a valid number (numeric vendor ID)
     const numericId = parseInt(id, 10);
     if (!isNaN(numericId) && numericId.toString() === id) {
       // It's a numeric ID
       return this.vendorRepository.deleteVendor(numericId);
     } else {
-      // For UUID, we need to get the vendor first to get the numeric ID
+      // For UUIDs, we need to first get the vendor to get the numeric ID
       const vendor = await this.vendorRepository.getVendorByUuid(id);
       if (!vendor) {
         return false;
@@ -172,31 +205,18 @@ export class VendorService {
     answers: { questionId: string; question: string; answer: string }[]
   ): Promise<QuestionnaireAnswer[]> {
     // Check if vendor exists and get numeric ID
-    let numericVendorId: number;
-    const numericId = parseInt(vendorId, 10);
-    if (!isNaN(numericId) && numericId.toString() === vendorId) {
-      // It's a numeric ID
-      numericVendorId = numericId;
-      const vendor = await this.vendorRepository.getVendorById(numericVendorId);
-      if (!vendor) {
-        throw new Error(`Vendor with ID ${vendorId} not found`);
-      }
-    } else {
-      // It's a UUID string
-      const vendor = await this.vendorRepository.getVendorByUuid(vendorId);
-      if (!vendor) {
-        throw new Error(`Vendor with ID ${vendorId} not found`);
-      }
-      numericVendorId = vendor.vendorId;
+    const vendor = await this.getVendorById(vendorId);
+    if (!vendor) {
+      throw new Error(`Vendor with ID ${vendorId} not found`);
     }
-    
+
     // Add vendorId to each answer
     const answersWithVendorId = answers.map(answer => ({
       ...answer,
-      vendorId: numericVendorId
+      vendorId: vendor.vendorId // Use the numeric vendor ID
     }));
-    
-    return this.vendorRepository.saveVendorQuestionnaireAnswers(numericVendorId, answersWithVendorId);
+
+    return this.vendorRepository.saveVendorQuestionnaireAnswers(vendor.vendorId, answersWithVendorId);
   }
   
   /**
@@ -223,17 +243,17 @@ export class VendorService {
       
       // Save answers
       if (answers.length > 0) {
-        // Add vendorId to each answer
+        // Add vendorId to each answer using the numeric vendor ID
         const answersWithVendorId = answers.map(answer => ({
           ...answer,
-          vendorId: vendor.vendorId
+          vendorId: vendor.vendorId // Use the numeric vendorId from the created vendor
         }));
         
         await this.vendorRepository.saveVendorQuestionnaireAnswers(vendor.vendorId, answersWithVendorId);
       }
       
       // Return the vendor with answers
-      return this.vendorRepository.getVendorById(vendor.vendorId) as Promise<Vendor>;
+      return this.getVendorById(vendor.vendorId.toString()) as Promise<Vendor>;
     } catch (error) {
       throw error;
     }

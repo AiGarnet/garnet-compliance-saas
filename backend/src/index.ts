@@ -42,25 +42,6 @@ app.options('*', cors(corsOptions));
 // Register API routes
 app.use('/api/vendors', vendorRoutes);
 
-// Database test endpoint
-app.get('/api/test-db', async (req: Request, res: Response) => {
-  try {
-    const pool = require('./config/database').default;
-    const result = await pool.query('SELECT NOW() as current_time, COUNT(*) as vendor_count FROM vendors');
-    res.json({ 
-      status: 'Database connection successful',
-      timestamp: result.rows[0].current_time,
-      vendorCount: result.rows[0].vendor_count
-    });
-  } catch (error: any) {
-    console.error('Database test error:', error);
-    res.status(500).json({ 
-      status: 'Database connection failed',
-      error: error.message 
-    });
-  }
-});
-
 // Global error handling middleware
 app.use((err: any, req: Request, res: Response, next: Function) => {
   console.error('Unhandled error:', err);
@@ -68,6 +49,11 @@ app.use((err: any, req: Request, res: Response, next: Function) => {
     error: 'Internal server error',
     message: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
+});
+
+// Error handler for 404 Not Found
+app.use((req: Request, res: Response) => {
+  res.status(404).json({ error: 'Not Found', path: req.path });
 });
 
 // Load compliance data with more robust path resolution
@@ -118,17 +104,21 @@ app.get('/', (req: Request, res: Response) => {
       '/': 'API documentation (this response)',
       '/ask': 'POST - Submit a question to the AI chatbot',
       '/api/answer': 'POST - Submit a question to get compliance answers',
+      '/api/generate-answers': 'POST - Generate answers for multiple questions in batch',
       '/join-waitlist': 'POST - Join the waitlist (simple signup)',
       '/api/waitlist/signup': 'POST - Join waitlist with password',
       '/api/waitlist/stats': 'GET - Get waitlist statistics',
       '/api/waitlist/users': 'GET - Get all waitlist entries',
       '/api/auth/signup': 'POST - User signup with authentication',
       '/api/auth/login': 'POST - User login',
-      '/api/vendors': 'GET - Get all vendors',
-      '/api/vendors/:id': 'GET - Get vendor by ID with questionnaire answers',
-      '/api/vendors/stats': 'GET - Get vendor statistics',
-      '/api/vendors/status/:status': 'GET - Get vendors by status',
-      '/api/test-db': 'GET - Test database connection and vendor count',
+      'GET /api/vendors': 'Get all vendors',
+      'GET /api/vendors/:id': 'Get vendor by ID',
+      'POST /api/vendors': 'Create new vendor',
+      'PUT /api/vendors/:id': 'Update vendor',
+      'DELETE /api/vendors/:id': 'Delete vendor',
+      'POST /api/vendors/:id/answers': 'Save questionnaire answers for vendor',
+      'GET /api/vendors/stats': 'Get vendor statistics',
+      'GET /api/vendors/status/:status': 'Get vendors by status',
       '/health': 'GET - Health check endpoint',
       '/ping': 'GET - Simple ping-pong response',
       '/version': 'GET - Get API version information'
@@ -440,145 +430,150 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
   }
 });
 
-// Security questionnaire endpoint - supports both single question and batch processing
+// Security questionnaire endpoint
 app.post('/api/answer', async (req: Request, res: Response) => {
   try {
-    const { question, questions } = req.body;
+    const { question } = req.body;
     
-    // Validate input - either single question or array of questions
-    if (!question && (!questions || !Array.isArray(questions) || questions.length === 0)) {
-      return res.status(400).json({ 
-        error: 'Either "question" (string) or "questions" (array) is required' 
-      });
+    if (!question) {
+      return res.status(400).json({ error: 'Question is required' });
     }
 
     // Validate OpenAI configuration
     if (!process.env.OPENAI_API_KEY) {
-      return res.status(500).json({ 
-        error: 'OpenAI API key not configured',
-        fallback: 'We couldn\'t generate an answer—please try again.'
-      });
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
     }
 
-    // Handle single question
-    if (question) {
-      try {
-        const relevantData = findRelevantComplianceData(question, complianceData);
-        const answer = await generateAnswer(question, relevantData);
-        res.json({ question, answer });
-      } catch (error: any) {
-        console.error('Error processing single question:', error);
-        res.json({ 
-          question, 
-          answer: 'We couldn\'t generate an answer—please try again.',
-          error: error.message 
-        });
-      }
-      return;
-    }
-
-    // Handle batch questions
-    if (questions) {
-      const results = await Promise.allSettled(
-        questions.map(async (q: string, index: number) => {
-          try {
-            // Add small delay between requests to avoid rate limiting
-            if (index > 0) {
-              await new Promise(resolve => setTimeout(resolve, 200));
-            }
-            
-            const relevantData = findRelevantComplianceData(q, complianceData);
-            const answer = await generateAnswer(q, relevantData);
-            return { question: q, answer, success: true };
-          } catch (error: any) {
-            console.error(`Error processing question ${index + 1}:`, error);
-            return { 
-              question: q, 
-              answer: 'We couldn\'t generate an answer—please try again.',
-              success: false,
-              error: error.message 
-            };
-          }
-        })
-      );
-
-      const answers = results.map(result => {
-        if (result.status === 'fulfilled') {
-          return result.value;
-        } else {
-          return {
-            question: 'Unknown question',
-            answer: 'We couldn\'t generate an answer—please try again.',
-            success: false,
-            error: result.reason?.message || 'Unknown error'
-          };
-        }
-      });
-
-      res.json({ 
-        answers,
-        metadata: {
-          totalQuestions: questions.length,
-          successfulAnswers: answers.filter(a => a.success).length,
-          failedAnswers: answers.filter(a => !a.success).length,
-          processingTimeMs: Date.now(),
-          timestamp: new Date().toISOString()
-        }
-      });
-    }
+    // Find relevant compliance information
+    const relevantData = findRelevantComplianceData(question, complianceData);
+    
+    // Generate answer using OpenAI
+    const answer = await generateAnswer(question, relevantData);
+    
+    res.json({ question, answer });
   } catch (error: any) {
-    console.error('Error processing questions:', error);
-    res.status(500).json({ 
-      error: error.message || 'Internal server error',
-      fallback: 'We couldn\'t generate an answer—please try again.'
-    });
+    console.error('Error processing question:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
   }
 });
 
-// Add a compatible /ask endpoint for frontend integration with enhanced error handling
+// Add a compatible /ask endpoint for frontend integration
 app.post('/ask', async (req: Request, res: Response) => {
   try {
     const { question } = req.body;
     
     if (!question) {
-      return res.status(400).json({ 
-        error: 'Question is required',
-        answer: 'We couldn\'t generate an answer—please try again.'
-      });
+      return res.status(400).json({ error: 'Question is required' });
     }
 
     // Validate OpenAI configuration
     if (!process.env.OPENAI_API_KEY) {
-      return res.status(500).json({ 
-        error: 'OpenAI API key not configured',
-        answer: 'We couldn\'t generate an answer—please try again.'
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    }
+
+    // Find relevant compliance information
+    const relevantData = findRelevantComplianceData(question, complianceData);
+    
+    // Generate answer using OpenAI
+    const answer = await generateAnswer(question, relevantData);
+    
+    // Return just the answer field as expected by the frontend
+    res.json({ answer });
+  } catch (error: any) {
+    console.error('Error processing question:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// Batch answer generation endpoint
+app.post('/api/generate-answers', async (req: Request, res: Response) => {
+  try {
+    const { questions } = req.body;
+    
+    if (!questions || !Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ error: 'Questions array is required and cannot be empty' });
+    }
+
+    // Validate OpenAI configuration
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    }
+
+    const startTime = Date.now();
+    const results: Array<{
+      question: string;
+      answer: string;
+      success: boolean;
+      error?: string;
+    }> = [];
+    let successfulAnswers = 0;
+    let failedAnswers = 0;
+
+    // Process questions in batches to avoid overwhelming the API
+    const batchSize = 5;
+    for (let i = 0; i < questions.length; i += batchSize) {
+      const batch = questions.slice(i, i + batchSize);
+      
+      // Process batch in parallel
+      const batchPromises = batch.map(async (question: string) => {
+        try {
+          // Find relevant compliance information
+          const relevantData = findRelevantComplianceData(question, complianceData);
+          
+          // Generate answer using OpenAI
+          const answer = await generateAnswer(question, relevantData);
+          
+          successfulAnswers++;
+          return {
+            question,
+            answer,
+            success: true
+          };
+        } catch (error: any) {
+          console.error(`Error generating answer for question: "${question}"`, error);
+          failedAnswers++;
+          return {
+            question,
+            answer: 'We couldn\'t generate an answer—please try again.',
+            success: false,
+            error: error.message
+          };
+        }
+      });
+
+      const batchResults = await Promise.allSettled(batchPromises);
+      
+      // Process settled promises and extract values
+      batchResults.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          results.push(result.value);
+        } else {
+          failedAnswers++;
+          results.push({
+            question: 'Unknown question',
+            answer: 'We couldn\'t generate an answer—please try again.',
+            success: false,
+            error: result.reason?.message || 'Unknown error'
+          });
+        }
       });
     }
 
-    try {
-      // Find relevant compliance information
-      const relevantData = findRelevantComplianceData(question, complianceData);
-      
-      // Generate answer using OpenAI
-      const answer = await generateAnswer(question, relevantData);
-      
-      // Return just the answer field as expected by the frontend
-      res.json({ answer });
-    } catch (aiError: any) {
-      console.error('Error generating AI answer:', aiError);
-      // Return a graceful fallback instead of throwing
-      res.json({ 
-        answer: 'We couldn\'t generate an answer—please try again.',
-        error: aiError.message,
-        fallback: true
-      });
-    }
-  } catch (error: any) {
-    console.error('Error processing question:', error);
-    res.status(500).json({ 
-      error: error.message || 'Internal server error',
-      answer: 'We couldn\'t generate an answer—please try again.'
+    const processingTimeMs = Date.now() - startTime;
+
+    res.json({
+      answers: results,
+      metadata: {
+        totalQuestions: questions.length,
+        successfulAnswers,
+        failedAnswers,
+        processingTimeMs,
+        timestamp: new Date().toISOString()
+      }
     });
+  } catch (error: any) {
+    console.error('Error in batch answer generation:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
   }
 });
 
@@ -948,11 +943,6 @@ app.get('/version', (req: Request, res: Response) => {
 // Ping route
 app.get('/ping', (req: Request, res: Response) => {
   res.send('pong');
-});
-
-// Error handler for 404 Not Found - MUST BE LAST
-app.use((req: Request, res: Response) => {
-  res.status(404).json({ error: 'Not Found', path: req.path });
 });
 
 // Create HTTP server with proper timeout

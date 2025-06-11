@@ -13,13 +13,10 @@ export class VendorController {
    */
   async getAllVendors(req: Request, res: Response) {
     try {
-      console.log('VendorController: getAllVendors called');
       const vendors = await vendorService.getAllVendors();
-      console.log(`VendorController: Found ${vendors.length} vendors`);
       res.json({ vendors });
     } catch (error: any) {
       console.error('Error fetching vendors:', error);
-      console.error('Error stack:', error.stack);
       res.status(500).json({ error: error.message || 'Internal server error' });
     }
   }
@@ -194,6 +191,19 @@ export class VendorController {
       res.json({ vendors });
     } catch (error: any) {
       console.error(`Error fetching vendors with status ${req.params.status}:`, error);
+      res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+  }
+
+  /**
+   * Get vendors with AI suggestions
+   */
+  async getVendorsWithSuggestions(req: Request, res: Response) {
+    try {
+      const vendors = await vendorService.getVendorsWithSuggestions();
+      res.json({ vendors });
+    } catch (error: any) {
+      console.error('Error fetching vendors with suggestions:', error);
       res.status(500).json({ error: error.message || 'Internal server error' });
     }
   }
