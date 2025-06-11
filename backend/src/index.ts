@@ -37,12 +37,47 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// Request logging middleware for debugging
+app.use((req: Request, res: Response, next: Function) => {
+  console.log(`📝 ${new Date().toISOString()} - ${req.method} ${req.path} - IP: ${req.ip}`);
+  next();
+});
+
 // Handle CORS preflight requests properly
 app.options('*', cors(corsOptions));
 
 // Register API routes
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/questionnaires', questionnaireRoutes);
+
+// Debug endpoint to test questionnaire functionality
+app.get('/test-questionnaires', async (req: Request, res: Response) => {
+  try {
+    console.log('🧪 Testing questionnaire functionality...');
+    
+    // Import and test the repository directly
+    const { QuestionnaireRepository } = await import('./db/questionnaireRepository');
+    const repo = new QuestionnaireRepository();
+    
+    // Test database connection
+    const questionnaires = await repo.getAllQuestionnaires();
+    
+    res.json({
+      success: true,
+      message: 'Questionnaire system is working',
+      questionnairesCount: questionnaires.length,
+      questionnaires: questionnaires.slice(0, 3), // Return first 3 for testing
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('❌ Questionnaire test failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
 
 // Global error handling middleware
 app.use((err: any, req: Request, res: Response, next: Function) => {
@@ -121,6 +156,13 @@ app.get('/', (req: Request, res: Response) => {
       'POST /api/vendors/:id/answers': 'Save questionnaire answers for vendor',
       'GET /api/vendors/stats': 'Get vendor statistics',
       'GET /api/vendors/status/:status': 'Get vendors by status',
+      'GET /api/questionnaires': 'Get all questionnaires',
+      'GET /api/questionnaires/:id': 'Get questionnaire by ID',
+      'POST /api/questionnaires': 'Create new questionnaire',
+      'PUT /api/questionnaires/:id': 'Update questionnaire',
+      'DELETE /api/questionnaires/:id': 'Delete questionnaire',
+      'GET /api/questionnaires/:id/questions': 'Get questionnaire questions',
+      'PUT /api/questionnaires/:id/questions/:questionId': 'Update questionnaire question',
       '/health': 'GET - Health check endpoint',
       '/ping': 'GET - Simple ping-pong response',
       '/version': 'GET - Get API version information'
