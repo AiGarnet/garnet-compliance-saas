@@ -71,6 +71,19 @@ export class QuestionnaireRepository {
    */
   async getAllQuestionnaires(): Promise<Questionnaire[]> {
     const query = `
+      WITH numbered_questions AS (
+        SELECT 
+          law_tag,
+          questionnaire_id,
+          question,
+          answer,
+          status,
+          created_at,
+          updated_at,
+          ROW_NUMBER() OVER (PARTITION BY law_tag ORDER BY questionnaire_id) as question_order
+        FROM questionnaires
+        WHERE law_tag IS NOT NULL
+      )
       SELECT 
         law_tag as questionnaire_id,
         MIN(created_at) as created_at,
@@ -81,15 +94,14 @@ export class QuestionnaireRepository {
             'questionnaireId', law_tag,
             'questionText', question,
             'answer', answer,
-            'questionOrder', ROW_NUMBER() OVER (PARTITION BY law_tag ORDER BY questionnaire_id),
+            'questionOrder', question_order,
             'isRequired', true,
             'createdAt', created_at,
             'updatedAt', updated_at
           ) ORDER BY questionnaire_id
         ) as questions,
         status
-      FROM questionnaires
-      WHERE law_tag IS NOT NULL
+      FROM numbered_questions
       GROUP BY law_tag, status
       ORDER BY MIN(created_at) DESC
     `;

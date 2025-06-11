@@ -220,6 +220,24 @@ app.get('/test-simple', (req: Request, res: Response) => {
   });
 });
 
+// Test questionnaires endpoint
+app.get('/test-questionnaires', (req: Request, res: Response) => {
+  res.status(200).json({
+    message: 'Questionnaire API is functional',
+    timestamp: new Date().toISOString(),
+    status: 'operational',
+    endpoints: {
+      'GET /api/questionnaires': 'Get all questionnaires',
+      'POST /api/questionnaires': 'Create new questionnaire',
+      'GET /api/questionnaires/:id': 'Get questionnaire by ID',
+      'PUT /api/questionnaires/:id': 'Update questionnaire',
+      'DELETE /api/questionnaires/:id': 'Delete questionnaire',
+      'GET /api/questionnaires/:id/questions': 'Get questionnaire questions',
+      'PUT /api/questionnaires/:id/questions/:questionId': 'Update question'
+    }
+  });
+});
+
 // Waitlist signup endpoint
 app.post('/api/waitlist/signup', async (req: Request, res: Response) => {
   try {
