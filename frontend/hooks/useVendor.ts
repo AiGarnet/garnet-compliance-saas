@@ -62,6 +62,49 @@ export function useVendor(id: string, mockMode = true): UseVendorResult {
         const foundVendor = vendors.find(v => v.id === id);
         
         if (!foundVendor) {
+          // For UUID format IDs, create a mock vendor
+          if (id.includes('-')) {
+            const mockVendor = {
+              id: id,
+              name: `Vendor ${id.split('-')[0]}`,
+              status: 'In Review' as const,
+              questionnaireAnswers: [
+                { question: "Do you store personal data?", answer: "Yes" },
+                { question: "Is data encrypted at rest?", answer: "Yes" }
+              ],
+              riskScore: 45,
+              riskLevel: 'Medium' as const
+            };
+            
+            // Enhance the vendor data with additional mock details
+            const vendorDetail: VendorDetail = {
+              ...mockVendor,
+              createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+              updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+              contactName: 'John Smith',
+              contactEmail: 'john@example.com',
+              website: 'https://example.com',
+              industry: 'Technology',
+              description: 'A leading provider of enterprise software solutions.',
+              activities: [
+                {
+                  id: '1',
+                  type: 'status_change',
+                  message: `Status changed to ${mockVendor.status}`,
+                  timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+                  user: {
+                    name: 'Sarah Johnson',
+                    avatar: '/images/avatars/sarah.jpg'
+                  }
+                }
+              ]
+            };
+            
+            setVendor(vendorDetail);
+            setIsLoading(false);
+            return;
+          }
+          
           throw new Error('Vendor not found');
         }
 

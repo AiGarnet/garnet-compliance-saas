@@ -10,12 +10,20 @@ export function generateStaticParams() {
     'demo_3',
     '1', // Common IDs that might exist
     '2',
-    '3'
+    '3',
+    '4',
+    '5',
+    '6',
+    // Add support for UUID format vendors
+    'ce268669-b2e5-424e-8f1e-ea898dc057ab'
   ];
 
   console.log(`Generating static params for ${staticIds.length} vendor IDs`);
   return staticIds.map(id => ({ id: String(id) }));
 }
+
+// Enable dynamic params for vendor IDs not in static params
+export const dynamicParams = true;
 
 // Client component for vendor detail
 export default function VendorDetailPage({ params }: { params: { id: string } }) {
