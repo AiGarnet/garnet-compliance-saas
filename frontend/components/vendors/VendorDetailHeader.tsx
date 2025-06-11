@@ -8,9 +8,10 @@ import { Tooltip } from '@/components/ui/Tooltip';
 
 interface VendorDetailHeaderProps {
   vendor: VendorDetail;
+  onEdit?: () => void;
 }
 
-export function VendorDetailHeader({ vendor }: VendorDetailHeaderProps) {
+export function VendorDetailHeader({ vendor, onEdit }: VendorDetailHeaderProps) {
   return (
     <div className="bg-white dark:bg-card-bg border-b border-gray-200 dark:border-card-border shadow-sm py-6 px-4 md:px-6">
       <div className="container mx-auto max-w-7xl">
@@ -54,15 +55,25 @@ export function VendorDetailHeader({ vendor }: VendorDetailHeaderProps) {
           </div>
           
           <div className="flex items-center gap-3">
-            <Tooltip content="Coming Soon">
+            {onEdit ? (
               <button
-                className="px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors opacity-60 cursor-not-allowed"
-                disabled
+                onClick={onEdit}
+                className="px-4 py-2 rounded-md bg-primary text-white flex items-center gap-2 hover:bg-primary/90 transition-colors"
               >
                 <Edit className="h-4 w-4" />
                 <span>Edit</span>
               </button>
-            </Tooltip>
+            ) : (
+              <Tooltip content="Coming Soon">
+                <button
+                  className="px-4 py-2 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors opacity-60 cursor-not-allowed"
+                  disabled
+                >
+                  <Edit className="h-4 w-4" />
+                  <span>Edit</span>
+                </button>
+              </Tooltip>
+            )}
             
             <Tooltip content="Coming Soon">
               <button

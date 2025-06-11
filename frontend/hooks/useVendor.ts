@@ -43,7 +43,7 @@ interface UseVendorResult {
  * @param id - The ID of the vendor to fetch
  * @param mockMode - Whether to use mock data instead of real API calls
  */
-export function useVendor(id: string, mockMode = false): UseVendorResult {
+export function useVendor(id: string, mockMode = true): UseVendorResult {
   const [vendor, setVendor] = useState<VendorDetail | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);

@@ -7,10 +7,14 @@ import { QuestionnaireStatus } from '@/components/vendors/QuestionnaireStatus';
 import { VendorQuestionnaireAnswers } from '@/components/vendors/VendorQuestionnaireAnswers';
 import { VendorActivityFeed } from '@/components/vendors/VendorActivityFeed';
 import { VendorDetailSkeleton } from '@/components/vendors/VendorDetailSkeleton';
+import { EditVendorModal } from '@/components/vendors/EditVendorModal';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import Header from '@/components/Header';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { vendors as vendorAPI } from '@/lib/api';
+import { VendorFormData } from '@/types/vendor';
 
 interface VendorDetailViewProps {
   vendorId: string;
@@ -19,6 +23,35 @@ interface VendorDetailViewProps {
 export function VendorDetailView({ vendorId }: VendorDetailViewProps) {
   const { vendor, isLoading, error, fetchVendor } = useVendor(vendorId);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Check if edit mode is requested via URL parameter
+  useEffect(() => {
+    if (searchParams) {
+      const editParam = searchParams.get('edit');
+      if (editParam === 'true' && vendor) {
+        setIsEditModalOpen(true);
+        // Remove the edit parameter from URL
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('edit');
+        window.history.replaceState({}, '', newUrl.toString());
+      }
+    }
+  }, [searchParams, vendor]);
+
+  // Handle vendor update
+  const handleUpdateVendor = async (vendorData: VendorFormData) => {
+    try {
+      await vendorAPI.update(vendorId, vendorData);
+      setIsEditModalOpen(false);
+      // Refresh vendor data
+      fetchVendor();
+    } catch (err: any) {
+      console.error("Error updating vendor:", err);
+      throw new Error(err.message || 'Failed to update vendor');
+    }
+  };
 
   // Show skeleton while loading
   if (isLoading) {
@@ -61,7 +94,7 @@ export function VendorDetailView({ vendorId }: VendorDetailViewProps) {
     <>
       <Header />
       <div className="min-h-screen bg-gray-50 dark:bg-body-bg">
-        <VendorDetailHeader vendor={vendor} />
+        <VendorDetailHeader vendor={vendor} onEdit={() => setIsEditModalOpen(true)} />
         
         <div className="container mx-auto max-w-7xl py-8 px-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -79,6 +112,16 @@ export function VendorDetailView({ vendorId }: VendorDetailViewProps) {
           </div>
         </div>
       </div>
+
+      {/* Edit Vendor Modal */}
+      {vendor && (
+        <EditVendorModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onSubmit={handleUpdateVendor}
+          vendor={vendor}
+        />
+      )}
     </>
   );
 } 
