@@ -228,4 +228,68 @@ router.post('/auth/signup', async (req: Request, res: Response) => {
   }
 });
 
+// Authentication login endpoint
+router.post('/auth/login', async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Validate required fields
+    if (!email || !password) {
+      return res.status(400).json({ 
+        error: 'Email and password are required' 
+      });
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+    
+    // Find user by email and verify password
+    const user = await userService.getUserByEmail(email);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+    
+    // Check if password exists (user might be from waitlist without password)
+    if (!user.password_hash) {
+      return res.status(401).json({ error: 'Account not set up for login. Please sign up again.' });
+    }
+    
+    // Verify password
+    const bcrypt = require('bcryptjs');
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+    
+    // Generate JWT token
+    const jwt = require('jsonwebtoken');
+    const JWT_SECRET = process.env.JWT_SECRET || 'garnet-ai-super-secret-jwt-key-2025-production';
+    
+    const token = jwt.sign(
+      { 
+        id: user.id, 
+        email: user.email,
+        role: user.role 
+      },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    // Return success response (don't include password hash)
+    const { password_hash, ...userResponse } = user;
+    res.status(200).json({
+      message: 'Login successful',
+      token,
+      user: userResponse
+    });
+    
+  } catch (error: any) {
+    console.error('Auth login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router; 
