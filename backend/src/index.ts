@@ -10,6 +10,8 @@ import { WaitlistSignupRequest } from './types/user';
 import http from 'http';
 import vendorRoutes from './routes/vendorRoutes';
 import questionnaireRoutes from './routes/questionnaireRoutes';
+import systemRoutes from './routes/systemRoutes';
+import waitlistRoutes from './routes/waitlistRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -55,6 +57,14 @@ app.use('/api/questionnaires', (req: Request, res: Response, next: Function) => 
   next();
 });
 app.use('/api/questionnaires', questionnaireRoutes);
+
+// Register system routes (health, ping, AI endpoints)
+app.use('/', systemRoutes);
+app.use('/api', systemRoutes);
+
+// Register waitlist routes
+app.use('/', waitlistRoutes);
+app.use('/api', waitlistRoutes);
 
 // Debug endpoint to test questionnaire functionality
 app.get('/test-questionnaires', async (req: Request, res: Response) => {
