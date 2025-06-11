@@ -173,94 +173,139 @@ export function ChatClient({ params }: { params: { id: string } }) {
   useEffect(() => {
     const loadQuestionnaire = async () => {
       try {
+        // First, try to load from backend API
+        console.log('🔍 Loading questionnaire from backend API:', params.id);
+        
+        try {
+          const backendResponse = await fetch(`/api/questionnaires/${params.id}`);
+          
+          if (backendResponse.ok) {
+            const backendQuestionnaire = await backendResponse.json();
+            console.log('✅ Loaded from backend:', backendQuestionnaire);
+            
+            // Transform backend format to frontend format
+            const transformedQuestionnaire = {
+              id: backendQuestionnaire.id,
+              name: backendQuestionnaire.title,
+              status: backendQuestionnaire.status,
+              progress: backendQuestionnaire.progress,
+              dueDate: new Date().toLocaleDateString(),
+              createdAt: backendQuestionnaire.createdAt,
+              answers: backendQuestionnaire.questions?.map((q: any) => ({
+                question: q.questionText,
+                answer: q.answer || '',
+                isLoading: false,
+                isMandatory: q.isRequired,
+                needsAttention: !q.answer,
+                category: detectQuestionCategory(q.questionText)
+              })) || []
+            };
+            
+            setQuestionnaire(transformedQuestionnaire);
+            setupChatMessages(transformedQuestionnaire);
+            setLoading(false);
+            return;
+          }
+        } catch (backendError) {
+          console.warn('⚠️ Backend API failed, falling back to localStorage:', backendError);
+        }
+        
+        // Fallback to localStorage
         if (typeof window !== 'undefined') {
+          console.log('🔍 Loading questionnaire from localStorage:', params.id);
+          
           const storedQuestionnaires = localStorage.getItem('user_questionnaires');
           if (storedQuestionnaires) {
             const parsedQuestionnaires = JSON.parse(storedQuestionnaires);
             const found = parsedQuestionnaires.find((q: any) => q.id === params.id);
             
             if (found) {
+              console.log('✅ Loaded from localStorage:', found);
               setQuestionnaire(found);
-              
-              // Create initial chat messages from questions
-              const initialMessages: Message[] = [];
-              
-              // Welcome message with progress overview
-              const answeredCount = found.answers?.filter((qa: QuestionAnswer) => qa.answer && qa.answer.trim() !== '').length || 0;
-              const totalCount = found.answers?.length || 0;
-              
-              initialMessages.push({
-                id: 'welcome',
-                type: 'system',
-                content: `Welcome to your compliance questionnaire! 📋\n\n**${found.name}**\n\nProgress: ${answeredCount}/${totalCount} questions completed (${found.progress}%)\nDue: ${new Date(found.dueDate).toLocaleDateString()}\n\nI'm here to help you complete your compliance requirements efficiently. You can edit questions, get AI-generated answers, and use smart suggestions below.`,
-                timestamp: new Date(),
-                suggestions: [
-                  'Generate AI answers for all questions',
-                  'Show me compliance best practices',
-                  'Help me understand what\'s required',
-                  'Review my completed answers'
-                ]
-              });
-
-              // Add each question as a user message with answer as assistant message
-              found.answers?.forEach((qa: QuestionAnswer, index: number) => {
-                const category = detectQuestionCategory(qa.question);
-                const suggestions = getSmartSuggestions(qa.question);
-                
-                // Question bubble (user style)
-                initialMessages.push({
-                  id: `question-${index}`,
-                  type: 'user',
-                  content: qa.question,
-                  timestamp: new Date(Date.now() + index * 1000),
-                  questionIndex: index,
-                  category,
-                  suggestions: suggestions.slice(0, 3)
-                });
-
-                // Answer bubble (assistant style) - only if answer exists
-                if (qa.answer && qa.answer.trim() !== '') {
-                  initialMessages.push({
-                    id: `answer-${index}`,
-                    type: 'assistant',
-                    content: qa.answer,
-                    timestamp: new Date(Date.now() + index * 1000 + 500),
-                    questionIndex: index,
-                    category
-                  });
-                } else {
-                  // Show placeholder for unanswered questions
-                  initialMessages.push({
-                    id: `placeholder-${index}`,
-                    type: 'assistant',
-                    content: `⏳ **Answer needed for this ${category} question**\n\nClick "Generate AI Answer" below or use the smart suggestions to get started.`,
-                    timestamp: new Date(Date.now() + index * 1000 + 500),
-                    questionIndex: index,
-                    category,
-                    suggestions: suggestions.slice(0, 2)
-                  });
-                }
-              });
-
-              setMessages(initialMessages);
-            } else {
-              // Questionnaire not found - might be a dynamic ID that doesn't exist yet
-              console.warn(`Questionnaire with ID ${params.id} not found in localStorage`);
-              
-              // Try to fetch from backend or create a placeholder
-              // For now, we'll redirect to questionnaires list
-              setTimeout(() => {
-                router.push('/questionnaires');
-              }, 2000);
+              setupChatMessages(found);
+              setLoading(false);
+              return;
             }
-          } else {
-            // No questionnaires in localStorage
-            console.warn('No questionnaires found in localStorage');
-            setTimeout(() => {
-              router.push('/questionnaires');
-            }, 2000);
           }
         }
+        
+        // If not found anywhere
+        console.error('❌ Questionnaire not found:', params.id);
+        setLoading(false);
+        
+      } catch (error) {
+        console.error('❌ Error loading questionnaire:', error);
+        setLoading(false);
+      }
+    };
+
+    const setupChatMessages = (questionnaire: any) => {
+      // Create initial chat messages from questions
+      const initialMessages: Message[] = [];
+      
+      // Welcome message with progress overview
+      const answeredCount = questionnaire.answers?.filter((qa: QuestionAnswer) => qa.answer && qa.answer.trim() !== '').length || 0;
+      const totalCount = questionnaire.answers?.length || 0;
+      
+      initialMessages.push({
+        id: 'welcome',
+        type: 'system',
+        content: `Welcome to your compliance questionnaire! 📋\n\n**${questionnaire.name}**\n\nProgress: ${answeredCount}/${totalCount} questions completed (${questionnaire.progress}%)\nDue: ${new Date(questionnaire.dueDate).toLocaleDateString()}\n\nI'm here to help you complete your compliance requirements efficiently. You can edit questions, get AI-generated answers, and use smart suggestions below.`,
+        timestamp: new Date(),
+        suggestions: [
+          'Generate AI answers for all questions',
+          'Show me compliance best practices',
+          'Help me understand what\'s required',
+          'Review my completed answers'
+        ]
+      });
+
+      // Add each question as a user message with answer as assistant message
+      questionnaire.answers?.forEach((qa: QuestionAnswer, index: number) => {
+        const category = detectQuestionCategory(qa.question);
+        const suggestions = getSmartSuggestions(qa.question);
+        
+        // Question bubble (user style)
+        initialMessages.push({
+          id: `question-${index}`,
+          type: 'user',
+          content: qa.question,
+          timestamp: new Date(Date.now() + index * 1000),
+          questionIndex: index,
+          category,
+          suggestions: suggestions.slice(0, 3)
+        });
+
+        // Answer bubble (assistant style) - only if answer exists
+        if (qa.answer && qa.answer.trim() !== '') {
+          initialMessages.push({
+            id: `answer-${index}`,
+            type: 'assistant',
+            content: qa.answer,
+            timestamp: new Date(Date.now() + index * 1000 + 500),
+            questionIndex: index,
+            category
+          });
+        } else {
+          // Show placeholder for unanswered questions
+          initialMessages.push({
+            id: `placeholder-${index}`,
+            type: 'assistant',
+            content: `⏳ **Answer needed for this ${category} question**\n\nClick "Generate AI Answer" below or use the smart suggestions to get started.`,
+            timestamp: new Date(Date.now() + index * 1000 + 500),
+            questionIndex: index,
+            category,
+            suggestions: suggestions.slice(0, 2)
+          });
+        }
+      });
+
+      setMessages(initialMessages);
+    };
+
+    if (params.id) {
+      loadQuestionnaire();
+    }
       } catch (error) {
         console.error('Error loading questionnaire:', error);
         // On error, redirect to questionnaires list

@@ -577,7 +577,15 @@ const QuestionnairesPage = () => {
       fetchQuestionnaires();
       
       // Redirect to the chat interface instead of answers page
-      router.push(`/questionnaires/${newQuestionnaire.id}/chat`);
+      console.log('🔄 Redirecting to chat page for questionnaire:', newQuestionnaire.id);
+      
+      // Close modal first to avoid navigation issues
+      setShowQuestionnaireInput(false);
+      
+      // Use setTimeout to ensure modal closes before navigation
+      setTimeout(() => {
+        router.push(`/questionnaires/${newQuestionnaire.id}/chat`);
+      }, 100);
       
     } catch (error) {
       console.error('❌ Error submitting questionnaire:', error);
