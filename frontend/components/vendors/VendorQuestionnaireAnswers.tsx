@@ -54,24 +54,24 @@ export function VendorQuestionnaireAnswers({ vendor }: VendorQuestionnaireAnswer
             key={index} 
             className="border-b border-gray-100 dark:border-gray-700 pb-6 last:border-b-0 last:pb-0"
           >
-            {/* Question Number and Question */}
-            <div className="flex items-start mb-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-semibold mr-3 mt-0.5">
-                {index + 1}
-              </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-gray-900 dark:text-white text-base leading-relaxed">
-                  {qa.question}
-                </h3>
-              </div>
-            </div>
-
-            {/* Answer */}
-            <div className="ml-11">
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-                  {qa.answer}
-                </p>
+            {/* Question and Answer */}
+            <div className="space-y-3">
+              {/* Question Number and Question */}
+              <div className="flex items-start">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold mr-3 mt-0.5">
+                  {index + 1}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-gray-900 dark:text-white text-base leading-relaxed mb-2">
+                    {qa.question}
+                  </h3>
+                  {/* Answer directly below question */}
+                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border-l-4 border-primary/20">
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                      {qa.answer}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
