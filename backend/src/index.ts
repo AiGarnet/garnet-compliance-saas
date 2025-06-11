@@ -104,6 +104,7 @@ app.get('/', (req: Request, res: Response) => {
       '/': 'API documentation (this response)',
       '/ask': 'POST - Submit a question to the AI chatbot',
       '/api/answer': 'POST - Submit a question to get compliance answers',
+      '/api/generate-answers': 'POST - Generate answers for multiple questions in batch',
       '/join-waitlist': 'POST - Join the waitlist (simple signup)',
       '/api/waitlist/signup': 'POST - Join waitlist with password',
       '/api/waitlist/stats': 'GET - Get waitlist statistics',
@@ -480,6 +481,98 @@ app.post('/ask', async (req: Request, res: Response) => {
     res.json({ answer });
   } catch (error: any) {
     console.error('Error processing question:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+// Batch answer generation endpoint
+app.post('/api/generate-answers', async (req: Request, res: Response) => {
+  try {
+    const { questions } = req.body;
+    
+    if (!questions || !Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ error: 'Questions array is required and cannot be empty' });
+    }
+
+    // Validate OpenAI configuration
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    }
+
+    const startTime = Date.now();
+    const results: Array<{
+      question: string;
+      answer: string;
+      success: boolean;
+      error?: string;
+    }> = [];
+    let successfulAnswers = 0;
+    let failedAnswers = 0;
+
+    // Process questions in batches to avoid overwhelming the API
+    const batchSize = 5;
+    for (let i = 0; i < questions.length; i += batchSize) {
+      const batch = questions.slice(i, i + batchSize);
+      
+      // Process batch in parallel
+      const batchPromises = batch.map(async (question: string) => {
+        try {
+          // Find relevant compliance information
+          const relevantData = findRelevantComplianceData(question, complianceData);
+          
+          // Generate answer using OpenAI
+          const answer = await generateAnswer(question, relevantData);
+          
+          successfulAnswers++;
+          return {
+            question,
+            answer,
+            success: true
+          };
+        } catch (error: any) {
+          console.error(`Error generating answer for question: "${question}"`, error);
+          failedAnswers++;
+          return {
+            question,
+            answer: 'We couldn\'t generate an answer—please try again.',
+            success: false,
+            error: error.message
+          };
+        }
+      });
+
+      const batchResults = await Promise.allSettled(batchPromises);
+      
+      // Process settled promises and extract values
+      batchResults.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          results.push(result.value);
+        } else {
+          failedAnswers++;
+          results.push({
+            question: 'Unknown question',
+            answer: 'We couldn\'t generate an answer—please try again.',
+            success: false,
+            error: result.reason?.message || 'Unknown error'
+          });
+        }
+      });
+    }
+
+    const processingTimeMs = Date.now() - startTime;
+
+    res.json({
+      answers: results,
+      metadata: {
+        totalQuestions: questions.length,
+        successfulAnswers,
+        failedAnswers,
+        processingTimeMs,
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error: any) {
+    console.error('Error in batch answer generation:', error);
     res.status(500).json({ error: error.message || 'Internal server error' });
   }
 });

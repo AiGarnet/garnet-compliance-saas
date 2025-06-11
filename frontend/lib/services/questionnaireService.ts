@@ -85,7 +85,7 @@ export const QuestionnaireService = {
           processingTimeMs: number;
           timestamp: string;
         };
-      }>('/api/answer', {
+      }>('/api/generate-answers', {
         questions: questions
       });
 

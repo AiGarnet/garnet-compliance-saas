@@ -8,5 +8,5 @@
 # API redirects to Railway backend
 /api/vendors/* https://garnet-compliance-saas-production.up.railway.app/api/vendors/:splat 200
 
-# SPA fallback - let React Router handle all routing
-/* /index.html 200 
+# 404 fallback for non-existent pages only
+/404 /404.html 200 

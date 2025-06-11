@@ -36,6 +36,13 @@ export class VendorService {
   async getVendorsByStatus(status: VendorStatus): Promise<Vendor[]> {
     return this.vendorRepository.getVendorsByStatus(status);
   }
+
+  /**
+   * Get vendors with AI suggestions
+   */
+  async getVendorsWithSuggestions(): Promise<Vendor[]> {
+    return this.vendorRepository.getVendorsWithSuggestions();
+  }
   
   /**
    * Get high risk vendors (convenience method)

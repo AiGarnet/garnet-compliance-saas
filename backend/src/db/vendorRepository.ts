@@ -28,6 +28,20 @@ export class VendorRepository {
     const result = await pool.query(query, [status]);
     return this.mapVendorsWithAnswers(result.rows);
   }
+
+  /**
+   * Get vendors with AI suggestions
+   */
+  async getVendorsWithSuggestions(): Promise<Vendor[]> {
+    const query = `
+      SELECT * FROM vendors
+      WHERE has_suggestions = TRUE
+      ORDER BY company_name ASC
+    `;
+    
+    const result = await pool.query(query);
+    return this.mapVendorsWithAnswers(result.rows);
+  }
   
   /**
    * Get a vendor by ID with all questionnaire answers
@@ -231,6 +245,13 @@ export class VendorRepository {
         });
       }
       
+      // Update has_suggestions flag to true since answers have been saved
+      await client.query(`
+        UPDATE vendors 
+        SET has_suggestions = TRUE, updated_at = CURRENT_TIMESTAMP 
+        WHERE vendor_id = $1
+      `, [vendorId]);
+      
       await client.query('COMMIT');
       return savedAnswers;
       
@@ -299,6 +320,7 @@ export class VendorRepository {
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       questionnaireAnswers: answers,
+      hasSuggestions: row.has_suggestions || false,
       
       // Backward compatibility
       id: row.uuid, // Map UUID to old id field

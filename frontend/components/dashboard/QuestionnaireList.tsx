@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { PlusCircle, ArrowUpDown, AlertTriangle, Loader2, Eye, Edit, Trash, AlertCircle, FileEdit, Check, X, RefreshCw } from 'lucide-react';
+import { PlusCircle, ArrowUpDown, AlertTriangle, Loader2, Eye, Edit, Trash, AlertCircle, FileEdit, Check, X, RefreshCw, Sparkles } from 'lucide-react';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { FilterPills } from '@/components/ui/FilterPills';
 import { 
@@ -27,6 +27,7 @@ export interface Questionnaire {
   answers?: any[];
   vendorId?: string;
   vendorName?: string;
+  hasSuggestions?: boolean; // Flag to indicate if questionnaire has AI-generated suggestions
 }
 
 export interface QuestionnaireListProps {
@@ -61,6 +62,7 @@ export function QuestionnaireList({
   
   // State for filtering
   const [statusFilter, setStatusFilter] = useState<QuestionnaireStatus | 'All'>('All');
+  const [suggestionsFilter, setSuggestionsFilter] = useState<'All' | 'With Suggestions' | 'Without Suggestions'>('All');
   
   // State for search
   const [searchTerm, setSearchTerm] = useState('');
@@ -122,6 +124,13 @@ export function QuestionnaireList({
       result = result.filter(q => q.status === statusFilter);
     }
     
+    // Apply suggestions filter
+    if (suggestionsFilter === 'With Suggestions') {
+      result = result.filter(q => q.hasSuggestions === true);
+    } else if (suggestionsFilter === 'Without Suggestions') {
+      result = result.filter(q => q.hasSuggestions !== true);
+    }
+    
     // Apply search filter
     if (searchTerm.trim() !== '') {
       const lowercaseSearch = searchTerm.toLowerCase();
@@ -131,7 +140,7 @@ export function QuestionnaireList({
     }
     
     // Apply sorting
-    return result.sort((a, b) => {
+          return result.sort((a, b) => {
       if (sortField === 'name') {
         return sortDirection === 'asc' 
           ? a.name.localeCompare(b.name)
@@ -155,7 +164,7 @@ export function QuestionnaireList({
       }
       return 0;
     });
-  }, [initialQuestionnaires, statusFilter, searchTerm, sortField, sortDirection]);
+  }, [initialQuestionnaires, statusFilter, suggestionsFilter, searchTerm, sortField, sortDirection]);
   
   // Get status badge styling based on status
   const getStatusBadgeStyle = (status: QuestionnaireStatus) => {
@@ -302,19 +311,56 @@ export function QuestionnaireList({
       return answer.includes('We couldn\'t generate an answer');
     }).length;
   };
+
+  // Helper function to detect if questionnaire has AI suggestions
+  const hasAISuggestions = (questionnaire: Questionnaire): boolean => {
+    if (questionnaire.hasSuggestions !== undefined) {
+      return questionnaire.hasSuggestions;
+    }
+    
+    // Fallback: check if any answers exist and look for AI-generated content
+    if (!questionnaire.answers || questionnaire.answers.length === 0) return false;
+    
+    return questionnaire.answers.some((a: any) => {
+      const answer = a.answer || '';
+      return answer.trim() !== '' && 
+        !answer.includes('AI answer will be generated') &&
+        !answer.includes('Generating...');
+    });
+  };
   
   // Render filter pills
   const renderFilterPills = () => {
     const statuses: (QuestionnaireStatus | 'All')[] = ['All', 'Not Started', 'Draft', 'In Progress', 'In Review', 'Completed'];
+    const suggestions: ('All' | 'With Suggestions' | 'Without Suggestions')[] = ['All', 'With Suggestions', 'Without Suggestions'];
     
     return (
-      <FilterPills
-        options={statuses}
-        selectedOption={statusFilter}
-        onChange={setStatusFilter}
-        className="mb-4"
-        label="Filter questionnaires by status"
-      />
+      <div className="mb-4 space-y-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
+          <FilterPills
+            options={statuses}
+            selectedOption={statusFilter}
+            onChange={setStatusFilter}
+            label="Filter questionnaires by status"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Filter by AI Suggestions
+            <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+              <Sparkles className="h-3 w-3 mr-1" />
+              AI
+            </span>
+          </label>
+          <FilterPills
+            options={suggestions}
+            selectedOption={suggestionsFilter}
+            onChange={setSuggestionsFilter}
+            label="Filter questionnaires by AI suggestions"
+          />
+        </div>
+      </div>
     );
   };
 
@@ -391,6 +437,7 @@ export function QuestionnaireList({
             onClick={() => {
               setSearchTerm('');
               setStatusFilter('All');
+              setSuggestionsFilter('All');
             }}
           >
             Clear all filters
@@ -456,7 +503,20 @@ export function QuestionnaireList({
                   key={questionnaire.id}
                   className="hover:bg-gray-50 transition-colors"
                 >
-                  <TableCell className="font-medium">{questionnaire.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center">
+                      {questionnaire.name}
+                      {hasAISuggestions(questionnaire) && (
+                        <span 
+                          className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800"
+                          title="This questionnaire has AI-generated suggestions"
+                        >
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          AI
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <span 
                       className={cn(
@@ -575,7 +635,18 @@ export function QuestionnaireList({
                 className="garnet-card p-5 animate-fade-in"
               >
                 <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-semibold text-gray-800">{questionnaire.name}</h3>
+                  <div className="flex items-center">
+                    <h3 className="text-lg font-semibold text-gray-800">{questionnaire.name}</h3>
+                    {hasAISuggestions(questionnaire) && (
+                      <span 
+                        className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800"
+                        title="This questionnaire has AI-generated suggestions"
+                      >
+                        <Sparkles className="h-3 w-3 mr-1" />
+                        AI
+                      </span>
+                    )}
+                  </div>
                   <span 
                     className={cn(
                       "px-2 py-1 rounded-full text-xs font-medium flex items-center cursor-help",

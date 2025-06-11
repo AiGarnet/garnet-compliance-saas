@@ -13,6 +13,9 @@ router.get('/stats', vendorController.getVendorStats.bind(vendorController));
 // Get vendors by status
 router.get('/status/:status', vendorController.getVendorsByStatus.bind(vendorController));
 
+// Get vendors with AI suggestions
+router.get('/with-suggestions', vendorController.getVendorsWithSuggestions.bind(vendorController));
+
 // Get a vendor by ID
 router.get('/:id', vendorController.getVendorById.bind(vendorController));
 

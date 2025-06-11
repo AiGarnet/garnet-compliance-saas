@@ -49,6 +49,7 @@ export interface Vendor {
   website?: string;
   industry?: string;
   description?: string;
+  hasSuggestions?: boolean; // Flag to indicate if vendor has AI-generated suggestions
   
   id?: string;
   name?: string;

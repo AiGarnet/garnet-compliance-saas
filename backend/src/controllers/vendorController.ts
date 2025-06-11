@@ -194,6 +194,19 @@ export class VendorController {
       res.status(500).json({ error: error.message || 'Internal server error' });
     }
   }
+
+  /**
+   * Get vendors with AI suggestions
+   */
+  async getVendorsWithSuggestions(req: Request, res: Response) {
+    try {
+      const vendors = await vendorService.getVendorsWithSuggestions();
+      res.json({ vendors });
+    } catch (error: any) {
+      console.error('Error fetching vendors with suggestions:', error);
+      res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+  }
   
   /**
    * Save questionnaire answers for a vendor

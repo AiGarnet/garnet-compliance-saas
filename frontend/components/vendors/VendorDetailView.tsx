@@ -11,7 +11,7 @@ import { EditVendorModal } from '@/components/vendors/EditVendorModal';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import Header from '@/components/Header';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { vendors as vendorAPI } from '@/lib/api';
 import { VendorFormData } from '@/types/vendor';
@@ -23,13 +23,13 @@ interface VendorDetailViewProps {
 export function VendorDetailView({ vendorId }: VendorDetailViewProps) {
   const { vendor, isLoading, error, fetchVendor } = useVendor(vendorId);
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Check if edit mode is requested via URL parameter
+  // Check if edit mode is requested via URL parameter (client-side only)
   useEffect(() => {
-    if (searchParams) {
-      const editParam = searchParams.get('edit');
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const editParam = urlParams.get('edit');
       if (editParam === 'true' && vendor) {
         setIsEditModalOpen(true);
         // Remove the edit parameter from URL
@@ -38,7 +38,7 @@ export function VendorDetailView({ vendorId }: VendorDetailViewProps) {
         window.history.replaceState({}, '', newUrl.toString());
       }
     }
-  }, [searchParams, vendor]);
+  }, [vendor]);
 
   // Handle vendor update
   const handleUpdateVendor = async (vendorData: VendorFormData) => {
