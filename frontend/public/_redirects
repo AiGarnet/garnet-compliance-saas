@@ -5,5 +5,23 @@
 /health https://garnet-compliance-saas-production.up.railway.app/health  200
 /ping   https://garnet-compliance-saas-production.up.railway.app/ping  200
 
-# SPA fallback
-/*      /index.html  200 
+# API redirects to Railway backend
+/api/vendors/* https://garnet-compliance-saas-production.up.railway.app/api/vendors/:splat 200
+
+# Vendor detail pages
+/vendors/ce268669-b2e5-424e-8f1e-ea898dc057ab /vendors/ce268669-b2e5-424e-8f1e-ea898dc057ab/index.html 200
+/vendors/1 /vendors/1/index.html 200
+/vendors/2 /vendors/2/index.html 200
+/vendors/3 /vendors/3/index.html 200
+/vendors/4 /vendors/4/index.html 200
+/vendors/5 /vendors/5/index.html 200
+/vendors/6 /vendors/6/index.html 200
+
+# Vendor pages with edit parameter
+/vendors/*/edit /vendors/:splat/index.html 200
+
+# General vendor detail pattern
+/vendors/* /vendors/:splat/index.html 200
+
+# SPA fallback (must be last)
+/* /index.html 200 

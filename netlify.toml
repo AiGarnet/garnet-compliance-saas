@@ -75,6 +75,30 @@
   to = "/.netlify/functions/vendor-by-id?id=:id"
   status = 200
 
+# Handle vendor detail pages specifically - try different patterns
+[[redirects]]
+  from = "/vendors/:id"
+  to = "/vendors/:id/index.html"
+  status = 200
+
+# Fallback for vendor detail pages
+[[redirects]]
+  from = "/vendors/:id/*"
+  to = "/vendors/:id/index.html"
+  status = 200
+
+# Handle vendor list page
+[[redirects]]
+  from = "/vendors"
+  to = "/vendors/index.html"
+  status = 200
+
+# Handle dashboard and other protected routes
+[[redirects]]
+  from = "/dashboard"
+  to = "/dashboard/index.html"
+  status = 200
+
 # Redirects for SPA routing (must be last)
 [[redirects]]
   from = "/*"

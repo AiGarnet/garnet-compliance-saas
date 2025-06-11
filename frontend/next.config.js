@@ -5,12 +5,19 @@ const nextConfig = {
   output: 'export',
   trailingSlash: true,
   distDir: '.next',
+  // Ensure proper static generation
+  generateBuildId: () => 'build',
   // Static export output directory - Next.js 13+ with output: 'export' outputs to 'out' by default
   images: {
     // Static export requires unoptimized images
     unoptimized: true,
   },
   swcMinify: true,
+  
+  // Environment variables for static export
+  env: {
+    NEXT_PUBLIC_STATIC_EXPORT: 'true',
+  },
   
   // Skip static generation for dynamic routes
   skipTrailingSlashRedirect: true,
