@@ -42,24 +42,29 @@ const VendorsPage = () => {
         console.log('Frontend: Using mock vendor data as fallback');
         const mockVendors = [
           {
-            id: 'ce268669-b2e5-424e-8f1e-ea898dc057ab',
+            id: '9321c032-0146-4751-be7b-1683d8b5a1b9',
             name: 'Acme Payments',
             status: 'In Review'
           },
           {
-            id: '1',
+            id: 'ce268669-b2e5-424e-8f1e-ea898dc057ab',
             name: 'TechSecure Solutions',
             status: 'Approved'
           },
           {
-            id: '2',
+            id: '1',
             name: 'Global Data Services',
             status: 'Questionnaire Pending'
           },
           {
-            id: '3',
+            id: '2',
             name: 'SecureCloud Inc',
             status: 'In Review'
+          },
+          {
+            id: '3',
+            name: 'DataFlow Systems',
+            status: 'Approved'
           }
         ];
         setVendors(mockVendors);
@@ -73,30 +78,35 @@ const VendorsPage = () => {
       console.error("Error fetching vendors:", err);
       console.error("Error details:", err);
       
-      // Use mock data as fallback when API fails
-      console.log('Frontend: API failed, using mock vendor data');
-      const mockVendors = [
-        {
-          id: 'ce268669-b2e5-424e-8f1e-ea898dc057ab',
-          name: 'Acme Payments',
-          status: 'In Review'
-        },
-        {
-          id: '1',
-          name: 'TechSecure Solutions',
-          status: 'Approved'
-        },
-        {
-          id: '2',
-          name: 'Global Data Services',
-          status: 'Questionnaire Pending'
-        },
-        {
-          id: '3',
-          name: 'SecureCloud Inc',
-          status: 'In Review'
-        }
-      ];
+             // Use mock data as fallback when API fails
+       console.log('Frontend: API failed, using mock vendor data');
+       const mockVendors = [
+         {
+           id: '9321c032-0146-4751-be7b-1683d8b5a1b9',
+           name: 'Acme Payments',
+           status: 'In Review'
+         },
+         {
+           id: 'ce268669-b2e5-424e-8f1e-ea898dc057ab',
+           name: 'TechSecure Solutions',
+           status: 'Approved'
+         },
+         {
+           id: '1',
+           name: 'Global Data Services',
+           status: 'Questionnaire Pending'
+         },
+         {
+           id: '2',
+           name: 'SecureCloud Inc',
+           status: 'In Review'
+         },
+         {
+           id: '3',
+           name: 'DataFlow Systems',
+           status: 'Approved'
+         }
+       ];
       setVendors(mockVendors);
       setIsLoading(false);
     }
