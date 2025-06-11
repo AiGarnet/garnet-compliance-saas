@@ -306,20 +306,6 @@ export function ChatClient({ params }: { params: { id: string } }) {
     if (params.id) {
       loadQuestionnaire();
     }
-      } catch (error) {
-        console.error('Error loading questionnaire:', error);
-        // On error, redirect to questionnaires list
-        setTimeout(() => {
-          router.push('/questionnaires');
-        }, 2000);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (params.id) {
-      loadQuestionnaire();
-    }
   }, [params.id, router]);
 
   // Auto-scroll to bottom when messages change
