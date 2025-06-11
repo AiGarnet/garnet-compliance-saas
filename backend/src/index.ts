@@ -48,6 +48,12 @@ app.options('*', cors(corsOptions));
 
 // Register API routes
 app.use('/api/vendors', vendorRoutes);
+
+// Enhanced logging for questionnaire routes
+app.use('/api/questionnaires', (req: Request, res: Response, next: Function) => {
+  console.log(`🔍 Questionnaire route accessed: ${req.method} ${req.originalUrl}`);
+  next();
+});
 app.use('/api/questionnaires', questionnaireRoutes);
 
 // Debug endpoint to test questionnaire functionality
@@ -136,7 +142,7 @@ app.get('/', (req: Request, res: Response) => {
   res.status(200).json({ 
     status: 'ok',
     service: 'GarnetAI Compliance Backend API',
-    version: '1.0.0',
+    version: '1.0.1',
     endpoints: {
       '/': 'API documentation (this response)',
       '/ask': 'POST - Submit a question to the AI chatbot',
@@ -196,6 +202,21 @@ app.get('/ping', (req: Request, res: Response) => {
   res.status(200).json({
     message: 'pong',
     timestamp: new Date().toISOString()
+  });
+});
+
+// Simple questionnaire test endpoint
+app.get('/test-simple', (req: Request, res: Response) => {
+  res.status(200).json({
+    message: 'Questionnaire routes are accessible',
+    timestamp: new Date().toISOString(),
+    routes: [
+      'GET /api/questionnaires',
+      'POST /api/questionnaires', 
+      'GET /api/questionnaires/:id',
+      'PUT /api/questionnaires/:id',
+      'DELETE /api/questionnaires/:id'
+    ]
   });
 });
 
