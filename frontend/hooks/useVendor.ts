@@ -43,7 +43,7 @@ interface UseVendorResult {
  * @param id - The ID of the vendor to fetch
  * @param mockMode - Whether to use mock data instead of real API calls
  */
-export function useVendor(id: string, mockMode = true): UseVendorResult {
+export function useVendor(id: string, mockMode = false): UseVendorResult {
   const [vendor, setVendor] = useState<VendorDetail | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -174,17 +174,48 @@ export function useVendor(id: string, mockMode = true): UseVendorResult {
         }
         
         // Transform the API response to match our VendorDetail interface
+        const apiVendor = response.vendor;
         const vendorDetail: VendorDetail = {
-          ...response.vendor,
+          // Map backend fields to frontend interface
+          id: apiVendor.uuid || apiVendor.id || id,
+          name: apiVendor.companyName || apiVendor.name || 'Unknown Vendor',
+          status: apiVendor.status || 'Questionnaire Pending',
+          riskScore: apiVendor.riskScore || 50,
+          riskLevel: apiVendor.riskLevel || 'Medium',
+          createdAt: apiVendor.createdAt || new Date().toISOString(),
+          updatedAt: apiVendor.updatedAt || new Date().toISOString(),
+          contactName: apiVendor.contactName || null,
+          contactEmail: apiVendor.contactEmail || null,
+          website: apiVendor.website || null,
+          industry: apiVendor.industry || null,
+          description: apiVendor.description || null,
+          
+          // Map questionnaire answers from backend format
+          questionnaireAnswers: (apiVendor.questionnaireAnswers || []).map((qa: any) => ({
+            question: qa.question,
+            answer: qa.answer
+          })),
+          
+          // Generate mock activities for now
           activities: [
             {
               id: '1',
               type: 'status_change',
-              message: `Status changed to ${response.vendor.status}`,
+              message: `Status changed to ${apiVendor.status}`,
               timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
               user: {
                 name: 'System',
                 avatar: '/images/avatars/system.jpg'
+              }
+            },
+            {
+              id: '2',
+              type: 'comment',
+              message: 'Vendor assessment completed successfully.',
+              timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+              user: {
+                name: 'Compliance Team',
+                avatar: '/images/avatars/compliance.jpg'
               }
             }
           ]

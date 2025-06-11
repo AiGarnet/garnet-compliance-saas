@@ -37,8 +37,16 @@ const VendorsPage = () => {
       const response = await vendorAPI.getAll();
       console.log('Frontend: API response:', response);
       
-      // If API fails, use mock data as fallback
-      if (!response.vendors || response.vendors.length === 0) {
+      // Transform API response to match frontend interface
+      if (response.vendors && response.vendors.length > 0) {
+        const transformedVendors = response.vendors.map((vendor: any) => ({
+          id: vendor.uuid || vendor.id || vendor.vendorId?.toString(),
+          name: vendor.companyName || vendor.name || 'Unknown Vendor',
+          status: vendor.status || 'Questionnaire Pending'
+        }));
+        setVendors(transformedVendors);
+      } else {
+        // If API returns empty, use mock data as fallback
         console.log('Frontend: Using mock vendor data as fallback');
         const mockVendors = [
           {
@@ -68,8 +76,6 @@ const VendorsPage = () => {
           }
         ];
         setVendors(mockVendors);
-      } else {
-        setVendors(response.vendors || []);
       }
       
       console.log('Frontend: Set vendors:', response.vendors || []);
@@ -78,7 +84,7 @@ const VendorsPage = () => {
       console.error("Error fetching vendors:", err);
       console.error("Error details:", err);
       
-             // Use mock data as fallback when API fails
+                    // Use mock data as fallback when API fails
        console.log('Frontend: API failed, using mock vendor data');
        const mockVendors = [
          {
@@ -107,8 +113,8 @@ const VendorsPage = () => {
            status: 'Approved'
          }
        ];
-      setVendors(mockVendors);
-      setIsLoading(false);
+       setVendors(mockVendors);
+       setIsLoading(false);
     }
   };
 
