@@ -9,6 +9,7 @@ import { WaitlistService } from './services/waitlistService';
 import { WaitlistSignupRequest } from './types/user';
 import http from 'http';
 import vendorRoutes from './routes/vendorRoutes';
+import questionnaireRoutes from './routes/questionnaireRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -41,6 +42,7 @@ app.options('*', cors(corsOptions));
 
 // Register API routes
 app.use('/api/vendors', vendorRoutes);
+app.use('/api/questionnaires', questionnaireRoutes);
 
 // Global error handling middleware
 app.use((err: any, req: Request, res: Response, next: Function) => {
