@@ -12,6 +12,7 @@ import vendorRoutes from './routes/vendorRoutes';
 import questionnaireRoutes from './routes/questionnaireRoutes';
 import systemRoutes from './routes/systemRoutes';
 import waitlistRoutes from './routes/waitlistRoutes';
+import evidenceRoutes from './routes/evidenceRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -50,6 +51,7 @@ app.options('*', cors(corsOptions));
 
 // Register API routes
 app.use('/api/vendors', vendorRoutes);
+app.use('/api', evidenceRoutes);
 
 // Enhanced logging for questionnaire routes
 app.use('/api/questionnaires', (req: Request, res: Response, next: Function) => {
