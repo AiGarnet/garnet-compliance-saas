@@ -8,6 +8,7 @@ import { VendorQuestionnaireAnswers } from '@/components/vendors/VendorQuestionn
 import { VendorActivityFeed } from '@/components/vendors/VendorActivityFeed';
 import { VendorDetailSkeleton } from '@/components/vendors/VendorDetailSkeleton';
 import { EditVendorModal } from '@/components/vendors/EditVendorModal';
+import { VendorEvidenceSection } from '@/components/vendors/VendorEvidenceSection';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import Header from '@/components/Header';
@@ -102,6 +103,7 @@ export function VendorDetailView({ vendorId }: VendorDetailViewProps) {
             <div className="lg:col-span-2 space-y-6">
               <QuestionnaireStatus vendor={vendor} />
               <VendorQuestionnaireAnswers vendor={vendor} />
+              <VendorEvidenceSection vendor={vendor} />
               <VendorActivityFeed vendor={vendor} />
             </div>
             
