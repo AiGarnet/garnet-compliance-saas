@@ -33,88 +33,40 @@ const VendorsPage = () => {
     setError('');
     
     try {
-      console.log('Frontend: Fetching vendors...');
+      console.log('Frontend: Fetching vendors from API...');
       const response = await vendorAPI.getAll();
       console.log('Frontend: API response:', response);
       
-      // Transform API response to match frontend interface
-      if (response.vendors && response.vendors.length > 0) {
+      // Handle the API response structure properly
+      if (response.vendors && Array.isArray(response.vendors)) {
         const transformedVendors = response.vendors.map((vendor: any) => ({
           id: vendor.uuid || vendor.id || vendor.vendorId?.toString(),
           name: vendor.companyName || vendor.name || 'Unknown Vendor',
           status: vendor.status || 'Questionnaire Pending'
         }));
         setVendors(transformedVendors);
+        console.log('Frontend: Successfully loaded vendors from database:', transformedVendors);
+      } else if (response.length && Array.isArray(response)) {
+        // Handle case where response is directly an array
+        const transformedVendors = response.map((vendor: any) => ({
+          id: vendor.uuid || vendor.id || vendor.vendorId?.toString(),
+          name: vendor.companyName || vendor.name || 'Unknown Vendor',
+          status: vendor.status || 'Questionnaire Pending'
+        }));
+        setVendors(transformedVendors);
+        console.log('Frontend: Successfully loaded vendors from database:', transformedVendors);
       } else {
-        // If API returns empty, use mock data as fallback
-        console.log('Frontend: Using mock vendor data as fallback');
-        const mockVendors = [
-          {
-            id: '9321c032-0146-4751-be7b-1683d8b5a1b9',
-            name: 'Acme Payments',
-            status: 'In Review'
-          },
-          {
-            id: 'ce268669-b2e5-424e-8f1e-ea898dc057ab',
-            name: 'TechSecure Solutions',
-            status: 'Approved'
-          },
-          {
-            id: '1',
-            name: 'Global Data Services',
-            status: 'Questionnaire Pending'
-          },
-          {
-            id: '2',
-            name: 'SecureCloud Inc',
-            status: 'In Review'
-          },
-          {
-            id: '3',
-            name: 'DataFlow Systems',
-            status: 'Approved'
-          }
-        ];
-        setVendors(mockVendors);
+        // No vendors found in database
+        console.log('Frontend: No vendors found in database');
+        setVendors([]);
       }
       
-      console.log('Frontend: Set vendors:', response.vendors || []);
       setIsLoading(false);
     } catch (err: any) {
-      console.error("Error fetching vendors:", err);
-      console.error("Error details:", err);
-      
-                    // Use mock data as fallback when API fails
-       console.log('Frontend: API failed, using mock vendor data');
-       const mockVendors = [
-         {
-           id: '9321c032-0146-4751-be7b-1683d8b5a1b9',
-           name: 'Acme Payments',
-           status: 'In Review'
-         },
-         {
-           id: 'ce268669-b2e5-424e-8f1e-ea898dc057ab',
-           name: 'TechSecure Solutions',
-           status: 'Approved'
-         },
-         {
-           id: '1',
-           name: 'Global Data Services',
-           status: 'Questionnaire Pending'
-         },
-         {
-           id: '2',
-           name: 'SecureCloud Inc',
-           status: 'In Review'
-         },
-         {
-           id: '3',
-           name: 'DataFlow Systems',
-           status: 'Approved'
-         }
-       ];
-       setVendors(mockVendors);
-       setIsLoading(false);
+      console.error("Error fetching vendors from API:", err);
+      setError('Failed to load vendors from database. Please check your connection and try again.');
+      setVendors([]);
+      setIsLoading(false);
     }
   };
 
@@ -122,8 +74,17 @@ const VendorsPage = () => {
   const handleAddVendor = async (vendorData: VendorFormData) => {
     try {
       const response = await vendorAPI.create(vendorData);
-      setVendors(prev => [...prev, response.vendor]);
+      
+      // Transform the new vendor to match our interface
+      const newVendor = {
+        id: response.vendor.uuid || response.vendor.id || response.vendor.vendorId?.toString(),
+        name: response.vendor.companyName || response.vendor.name || vendorData.name,
+        status: response.vendor.status || 'Questionnaire Pending'
+      };
+      
+      setVendors(prev => [...prev, newVendor]);
       setIsAddModalOpen(false);
+      console.log('Frontend: Successfully created new vendor:', newVendor);
     } catch (err: any) {
       console.error("Error creating vendor:", err);
       throw new Error(err.message || 'Failed to create vendor');
@@ -185,12 +146,12 @@ const VendorsPage = () => {
           </div>
         </div>
         
-        {/* Simple Vendor List */}
+        {/* Vendor List */}
         <div className="mt-8">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <span className="ml-3 text-gray-600">Loading vendors...</span>
+              <span className="ml-3 text-gray-600">Loading vendors from database...</span>
             </div>
           ) : error ? (
             <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
@@ -199,69 +160,100 @@ const VendorsPage = () => {
                 onClick={fetchVendors}
                 className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
               >
-                Try Again
+                Retry Loading
               </button>
             </div>
           ) : vendors.length === 0 ? (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
-              <Building2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No vendors yet</h3>
-              <p className="text-gray-600 mb-6">Get started by adding your first vendor</p>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+              <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No vendors found</h3>
+              <p className="text-gray-600 mb-4">
+                Start by adding your first vendor to begin the compliance assessment process.
+              </p>
               <button 
                 onClick={() => setIsAddModalOpen(true)}
-                className="bg-primary text-white px-6 py-3 rounded-md hover:bg-primary/90 transition-colors"
+                className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
               >
                 Add Your First Vendor
               </button>
             </div>
           ) : (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">Your Vendors</h2>
-              </div>
-              <div className="divide-y divide-gray-200">
-                {vendors.map((vendor) => (
-                  <div key={vendor.id} className="px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Building2 className="h-5 w-5 text-gray-400 mr-3" />
-                      <div>
-                        <h3 
-                          className="text-sm font-medium text-gray-900 hover:text-primary cursor-pointer transition-colors"
-                          onClick={() => handleViewVendor(vendor.id)}
-                        >
-                          {vendor.name}
-                        </h3>
-                        <p className="text-sm text-gray-500">Status: {vendor.status}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={() => handleViewVendor(vendor.id)}
-                        className="text-primary hover:text-primary/80 text-sm font-medium transition-colors"
-                      >
-                        View
-                      </button>
-                      <button 
-                        onClick={() => handleEditVendor(vendor.id)}
-                        className="text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors"
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Vendor Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {vendors.map((vendor) => (
+                      <tr key={vendor.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10">
+                              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                <Building2 className="h-5 w-5 text-primary" />
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {vendor.name}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            vendor.status === 'Approved' 
+                              ? 'bg-green-100 text-green-800'
+                              : vendor.status === 'In Review' || vendor.status === 'Pending Review'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {vendor.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => handleViewVendor(vendor.id)}
+                            className="text-primary hover:text-primary/80 mr-4"
+                          >
+                            View
+                          </button>
+                          <button
+                            onClick={() => handleEditVendor(vendor.id)}
+                            className="text-gray-600 hover:text-gray-900"
+                          >
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
         </div>
-
-        {/* Add Vendor Modal */}
-        <AddVendorModal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          onSubmit={handleAddVendor}
-        />
       </main>
+
+      <MobileNavigation />
+      
+      {/* Add Vendor Modal */}
+      <AddVendorModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSubmit={handleAddVendor}
+      />
     </>
   );
 };
