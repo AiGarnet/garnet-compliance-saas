@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { EvidenceService, FileUploadData } from '../services/evidenceService';
 import multer from 'multer';
+import { VendorRepository } from '../db/vendorRepository';
 
 // Extend Express Request to include file upload
 interface MulterRequest extends Request {
@@ -9,9 +10,39 @@ interface MulterRequest extends Request {
 
 export class EvidenceController {
   private evidenceService: EvidenceService;
+  private vendorRepository: VendorRepository;
 
   constructor() {
     this.evidenceService = new EvidenceService();
+    this.vendorRepository = new VendorRepository();
+  }
+
+  /**
+   * Helper method to resolve vendor ID from UUID or numeric ID
+   */
+  private async resolveVendorId(vendorIdParam: string): Promise<number> {
+    // Check if it's a UUID (contains hyphens and is 36 chars)
+    if (vendorIdParam.includes('-') && vendorIdParam.length === 36) {
+      const vendor = await this.vendorRepository.getVendorByUuid(vendorIdParam);
+      if (!vendor) {
+        throw new Error('Vendor not found');
+      }
+      return vendor.vendorId;
+    }
+    
+    // Try to parse as numeric ID
+    const numericId = parseInt(vendorIdParam);
+    if (isNaN(numericId)) {
+      throw new Error('Invalid vendor ID format');
+    }
+    
+    // Verify vendor exists
+    const vendor = await this.vendorRepository.getVendorById(numericId);
+    if (!vendor) {
+      throw new Error('Vendor not found');
+    }
+    
+    return numericId;
   }
 
   /**
@@ -19,10 +50,10 @@ export class EvidenceController {
    */
   uploadEvidence = async (req: MulterRequest, res: Response) => {
     try {
-      const { vendorId } = req.params;
-      const { answerId, metadata, uploadedBy } = req.body;
+      const { vendorId: vendorIdParam } = req.params;
+      const { answerId, uploadedBy, metadata } = req.body;
 
-      if (!vendorId) {
+      if (!vendorIdParam) {
         return res.status(400).json({ 
           error: 'Vendor ID is required' 
         });
@@ -33,6 +64,9 @@ export class EvidenceController {
           error: 'No file uploaded' 
         });
       }
+
+      // Resolve vendor ID (UUID to numeric)
+      const vendorId = await this.resolveVendorId(vendorIdParam);
 
       // For now, we'll use a placeholder user ID - in production this would come from auth
       const actualUploadedBy = uploadedBy || 'system-user-id';
@@ -45,7 +79,7 @@ export class EvidenceController {
       };
 
       const evidenceFile = await this.evidenceService.uploadEvidenceFile({
-        vendorId: parseInt(vendorId),
+        vendorId: vendorId,
         answerId: answerId || undefined,
         file: fileData,
         uploadedBy: actualUploadedBy,
@@ -67,6 +101,15 @@ export class EvidenceController {
 
     } catch (error: any) {
       console.error('Error uploading evidence file:', error);
+      
+      if (error.message === 'Vendor not found') {
+        return res.status(404).json({ error: 'Vendor not found' });
+      }
+      
+      if (error.message === 'Invalid vendor ID format') {
+        return res.status(400).json({ error: 'Invalid vendor ID format' });
+      }
+      
       res.status(500).json({ 
         error: error.message || 'Failed to upload evidence file' 
       });
@@ -78,15 +121,18 @@ export class EvidenceController {
    */
   getVendorEvidence = async (req: Request, res: Response) => {
     try {
-      const { vendorId } = req.params;
+      const { vendorId: vendorIdParam } = req.params;
 
-      if (!vendorId) {
+      if (!vendorIdParam) {
         return res.status(400).json({ 
           error: 'Vendor ID is required' 
         });
       }
 
-      const evidenceFiles = await this.evidenceService.getVendorEvidenceFiles(parseInt(vendorId));
+      // Resolve vendor ID (UUID to numeric)
+      const vendorId = await this.resolveVendorId(vendorIdParam);
+
+      const evidenceFiles = await this.evidenceService.getVendorEvidenceFiles(vendorId);
 
       const formattedFiles = evidenceFiles.map(file => ({
         id: file.id,
@@ -106,6 +152,15 @@ export class EvidenceController {
 
     } catch (error: any) {
       console.error('Error getting vendor evidence files:', error);
+      
+      if (error.message === 'Vendor not found') {
+        return res.status(404).json({ error: 'Vendor not found' });
+      }
+      
+      if (error.message === 'Invalid vendor ID format') {
+        return res.status(400).json({ error: 'Invalid vendor ID format' });
+      }
+      
       res.status(500).json({ 
         error: error.message || 'Failed to get evidence files' 
       });
@@ -117,17 +172,20 @@ export class EvidenceController {
    */
   downloadEvidence = async (req: Request, res: Response) => {
     try {
-      const { vendorId, evidenceId } = req.params;
+      const { vendorId: vendorIdParam, evidenceId } = req.params;
 
-      if (!vendorId || !evidenceId) {
+      if (!vendorIdParam || !evidenceId) {
         return res.status(400).json({ 
           error: 'Vendor ID and Evidence ID are required' 
         });
       }
 
+      // Resolve vendor ID (UUID to numeric)
+      const vendorId = await this.resolveVendorId(vendorIdParam);
+
       const { file, content } = await this.evidenceService.getEvidenceFileContent(
         evidenceId, 
-        parseInt(vendorId)
+        vendorId
       );
 
       // Set appropriate headers for file download
@@ -139,6 +197,14 @@ export class EvidenceController {
 
     } catch (error: any) {
       console.error('Error downloading evidence file:', error);
+      
+      if (error.message === 'Vendor not found') {
+        return res.status(404).json({ error: 'Vendor not found' });
+      }
+      
+      if (error.message === 'Invalid vendor ID format') {
+        return res.status(400).json({ error: 'Invalid vendor ID format' });
+      }
       
       if (error.message.includes('not found')) {
         return res.status(404).json({ 
@@ -163,17 +229,20 @@ export class EvidenceController {
    */
   deleteEvidence = async (req: Request, res: Response) => {
     try {
-      const { vendorId, evidenceId } = req.params;
+      const { vendorId: vendorIdParam, evidenceId } = req.params;
 
-      if (!vendorId || !evidenceId) {
+      if (!vendorIdParam || !evidenceId) {
         return res.status(400).json({ 
           error: 'Vendor ID and Evidence ID are required' 
         });
       }
 
+      // Resolve vendor ID (UUID to numeric)
+      const vendorId = await this.resolveVendorId(vendorIdParam);
+
       const deleted = await this.evidenceService.deleteEvidenceFile(
         evidenceId, 
-        parseInt(vendorId)
+        vendorId
       );
 
       if (deleted) {
@@ -189,6 +258,14 @@ export class EvidenceController {
 
     } catch (error: any) {
       console.error('Error deleting evidence file:', error);
+      
+      if (error.message === 'Vendor not found') {
+        return res.status(404).json({ error: 'Vendor not found' });
+      }
+      
+      if (error.message === 'Invalid vendor ID format') {
+        return res.status(400).json({ error: 'Invalid vendor ID format' });
+      }
       
       if (error.message.includes('not found')) {
         return res.status(404).json({ 
@@ -252,24 +329,35 @@ export class EvidenceController {
    */
   getVendorEvidenceCount = async (req: Request, res: Response) => {
     try {
-      const { vendorId } = req.params;
+      const { vendorId: vendorIdParam } = req.params;
 
-      if (!vendorId) {
+      if (!vendorIdParam) {
         return res.status(400).json({ 
           error: 'Vendor ID is required' 
         });
       }
 
-      const count = await this.evidenceService.getVendorEvidenceCount(parseInt(vendorId));
+      // Resolve vendor ID (UUID to numeric)
+      const vendorId = await this.resolveVendorId(vendorIdParam);
+
+      const count = await this.evidenceService.getVendorEvidenceCount(vendorId);
 
       res.json({
         success: true,
-        vendorId: parseInt(vendorId),
-        evidenceCount: count
+        count: count
       });
 
     } catch (error: any) {
       console.error('Error getting vendor evidence count:', error);
+      
+      if (error.message === 'Vendor not found') {
+        return res.status(404).json({ error: 'Vendor not found' });
+      }
+      
+      if (error.message === 'Invalid vendor ID format') {
+        return res.status(400).json({ error: 'Invalid vendor ID format' });
+      }
+      
       res.status(500).json({ 
         error: error.message || 'Failed to get evidence count' 
       });
