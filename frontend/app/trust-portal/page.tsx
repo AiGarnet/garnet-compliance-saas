@@ -1,17 +1,21 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Download, ExternalLink, Lock, Shield, ShieldCheck, User } from "lucide-react";
+import { Download, ExternalLink, Lock, Shield, ShieldCheck, User, AlertCircle } from "lucide-react";
 import { ComplianceReportList, ComplianceReport } from "@/components/dashboard/ComplianceReportList";
 import Header from "@/components/Header";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const TrustPortalPage = () => {
   const [reports, setReports] = useState<ComplianceReport[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoadingVendors, setIsLoadingVendors] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
-  const [vendors, setVendors] = useState<{ vendorId: number; companyName: string }[]>([]);
-  const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
+  const [vendors, setVendors] = useState<{ id: string; name: string; companyName?: string }[]>([]);
+  const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
+
+  // Railway backend URL
+  const BACKEND_URL = 'https://shortline.proxy.rlwy.net:28381';
 
   useEffect(() => {
     fetchVendors();
@@ -24,17 +28,30 @@ const TrustPortalPage = () => {
   }, [selectedVendorId]);
 
   const fetchVendors = async () => {
+    setIsLoadingVendors(true);
+    setError('');
+    
     try {
-      const response = await fetch('/api/trust-portal/vendors');
+      const response = await fetch(`${BACKEND_URL}/api/vendors`);
       if (!response.ok) throw new Error('Failed to fetch vendors');
       const data = await response.json();
-      setVendors(data);
-      if (data.length > 0) {
-        setSelectedVendorId(data[0].vendorId);
+      
+      // Transform the data to match our interface
+      const transformedVendors = data.map((vendor: any) => ({
+        id: vendor.id || vendor.vendorId?.toString() || vendor.uuid,
+        name: vendor.name || vendor.companyName,
+        companyName: vendor.companyName || vendor.name
+      }));
+      
+      setVendors(transformedVendors);
+      if (transformedVendors.length > 0) {
+        setSelectedVendorId(transformedVendors[0].id);
       }
     } catch (err) {
-      setError('Failed to load vendors');
+      setError('Failed to load vendors from backend');
       console.error('Error fetching vendors:', err);
+    } finally {
+      setIsLoadingVendors(false);
     }
   };
 
@@ -45,17 +62,68 @@ const TrustPortalPage = () => {
     setError('');
     
     try {
-      const response = await fetch(`/api/trust-portal/items?vendorId=${selectedVendorId}`);
-      if (!response.ok) throw new Error('Failed to fetch reports');
-      const data = await response.json();
-      setReports(data);
+      // First try to get trust portal items (if implemented)
+      let trustPortalItems = [];
+      try {
+        const trustPortalResponse = await fetch(`${BACKEND_URL}/api/trust-portal/items?vendorId=${selectedVendorId}`);
+        if (trustPortalResponse.ok) {
+          trustPortalItems = await trustPortalResponse.json();
+        }
+      } catch (trustPortalError) {
+        console.log('Trust portal endpoint not available yet, will show questionnaire data');
+      }
+
+      // Get vendor details including questionnaire answers
+      const vendorResponse = await fetch(`${BACKEND_URL}/api/vendors/${selectedVendorId}`);
+      if (!vendorResponse.ok) throw new Error('Failed to fetch vendor details');
+      const vendorData = await vendorResponse.json();
+
+      // Transform questionnaire answers to compliance reports format
+      const questionnaireReports = (vendorData.questionnaireAnswers || []).map((qa: any, index: number) => ({
+        id: `qa-${index}`,
+        name: qa.question,
+        date: new Date(qa.createdAt || Date.now()).toLocaleDateString(),
+        description: qa.answer,
+        fileSize: "N/A",
+        fileType: "Questionnaire Answer",
+        category: "Questionnaire" as const
+      }));
+
+      // Transform trust portal items to compliance reports format
+      const trustPortalReports = trustPortalItems.map((item: any) => ({
+        id: item.id.toString(),
+        name: item.title,
+        date: new Date(item.createdAt).toLocaleDateString(),
+        description: item.description || '',
+        fileSize: item.fileSize || "N/A",
+        fileType: item.fileType || "Document",
+        category: item.category as any
+      }));
+
+      const allReports = [...questionnaireReports, ...trustPortalReports];
+      setReports(allReports);
     } catch (err) {
-      setError('Failed to load reports');
+      setError('Failed to load vendor data');
       console.error('Error fetching reports:', err);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const EmptyState = () => (
+    <div className="text-center py-12">
+      <AlertCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        No Compliance Data Yet
+      </h3>
+      <p className="text-gray-600 dark:text-gray-400 mb-4">
+        This vendor hasn't started their compliance questionnaire or uploaded any evidence files yet.
+      </p>
+      <p className="text-sm text-gray-500 dark:text-gray-500">
+        Once they begin the process, their compliance reports and documentation will appear here.
+      </p>
+    </div>
+  );
 
   return (
     <>
@@ -93,31 +161,62 @@ const TrustPortalPage = () => {
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Select Vendor
           </label>
-          <Select
-            value={selectedVendorId?.toString()}
-            onValueChange={(value) => setSelectedVendorId(parseInt(value))}
-          >
-            <SelectTrigger className="w-full md:w-[300px]">
-              <SelectValue placeholder="Select a vendor" />
-            </SelectTrigger>
-            <SelectContent>
-              {vendors.map((vendor) => (
-                <SelectItem key={vendor.vendorId} value={vendor.vendorId.toString()}>
-                  {vendor.companyName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {isLoadingVendors ? (
+            <div className="w-full md:w-[300px] h-10 bg-gray-200 animate-pulse rounded-md"></div>
+          ) : vendors.length > 0 ? (
+            <Select
+              value={selectedVendorId || ''}
+              onValueChange={(value: string) => setSelectedVendorId(value)}
+            >
+              <SelectTrigger className="w-full md:w-[300px]">
+                <SelectValue placeholder="Select a vendor" />
+              </SelectTrigger>
+              <SelectContent>
+                {vendors.map((vendor) => (
+                  <SelectItem key={vendor.id} value={vendor.id}>
+                    {vendor.name || vendor.companyName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="text-gray-500 dark:text-gray-400">
+              No vendors found. Please add vendors to the system first.
+            </div>
+          )}
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700">{error}</p>
+          </div>
+        )}
         
         {/* Compliance Reports Section */}
         <section id="compliance" className="pt-8">
-          <ComplianceReportList
-            reports={reports}
-            isLoading={isLoading}
-            error={error}
-            onRetry={fetchReports}
-          />
+          {selectedVendorId ? (
+            reports.length > 0 || isLoading ? (
+              <ComplianceReportList
+                reports={reports}
+                isLoading={isLoading}
+                error={error}
+                onRetry={fetchReports}
+              />
+            ) : (
+              <div className="bg-white dark:bg-card-bg rounded-xl shadow-sm border border-gray-200 dark:border-card-border p-6">
+                <EmptyState />
+              </div>
+            )
+          ) : (
+            <div className="bg-white dark:bg-card-bg rounded-xl shadow-sm border border-gray-200 dark:border-card-border p-6">
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400">
+                  Please select a vendor to view their compliance information.
+                </p>
+              </div>
+            </div>
+          )}
         </section>
         
         {/* Security Practices Section */}
