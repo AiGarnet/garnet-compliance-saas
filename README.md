@@ -1,23 +1,14 @@
-# Vendor Onboarding Platform
+# Garnet AI Backend
 
-A comprehensive vendor compliance and onboarding platform with a modern UI built with Next.js and Tailwind CSS.
+Backend API and services for the Garnet AI vendor compliance and onboarding platform. Built with Node.js, TypeScript, Express, and PostgreSQL.
 
-## Project Status
+## Project Overview
 
-**Completed Features:**
-- Top navigation bar with consistent styling across all pages
-- Dashboard with overview metrics and activity tracking
-- Questionnaires management page with filterable list
-- Vendors catalog with risk assessment visualization
-- Trust Portal for public-facing compliance information
-- Compliance framework tracking and evidence management
-- **🤖 AI-Powered Chatbot Microservice** - Flask-based compliance Q&A system using OpenAI GPT-4
-- Responsive design that works on all devices
-- Accessible UI components following best practices
+This is the backend application for Garnet AI's vendor compliance platform. It provides REST APIs for managing vendor onboarding, compliance questionnaires, risk assessments, and trust portal functionality.
 
 ## Features
 
-### 🤖 AI Chatbot Microservice (NEW)
+### 🤖 AI Chatbot Microservice
 - **OpenAI GPT-4 Integration**: All answers generated using OpenAI API
 - **Compliance Context**: Uses internal policy data for accurate responses  
 - **Input Sanitization**: Automatically removes PII and sensitive information
@@ -26,443 +17,221 @@ A comprehensive vendor compliance and onboarding platform with a modern UI built
 - **Health Monitoring**: Built-in endpoints for service health and status
 - **Integration Ready**: Works seamlessly with existing questionnaire system
 
-### Dashboard
-- Overview of compliance status with key metrics
-- Quick access to high-risk vendors 
-- Pending tasks and recent activity tracking
-- Compliance scoring and progress visualization
+### Core APIs
+- **Vendor Management**: CRUD operations for vendor data and risk assessments
+- **Questionnaire System**: Manage compliance questionnaires and responses
+- **Trust Portal**: Public-facing compliance information endpoints
+- **Evidence Management**: File upload and compliance documentation
+- **User Management**: Authentication and authorization
+- **Waitlist System**: User registration and management
 
-### Questionnaires
-- Manage and track compliance questionnaires
-- **AI-powered question answering** using the chatbot microservice
-- Filter by type, status, and due dates
-- Progress tracking with visual indicators
-- Detailed status overview for each assessment
+### Database Features
+- **PostgreSQL Integration**: Robust relational database with migrations
+- **Data Validation**: Comprehensive input validation with Zod
+- **Migration System**: Database schema versioning and updates
+- **Seed Data**: Sample data for development and testing
 
-### Vendors
-- Vendor catalog with risk assessment indicators
-- Compliance scoring for each vendor
-- Filtering by category, risk level, and status
-- Quick-access vendor details and assessment tools
+## Tech Stack
 
-### Trust Portal
-- Public-facing trust and compliance information hub
-- Downloadable compliance certifications and reports
-- Security practices and infrastructure information
-- Designed to build customer confidence in security measures
+- **Runtime**: Node.js 18+
+- **Language**: TypeScript
+- **Framework**: Express.js
+- **Database**: PostgreSQL
+- **ORM**: Custom repository pattern
+- **Validation**: Zod
+- **Authentication**: bcryptjs
+- **AI Integration**: OpenAI GPT-4
+- **Deployment**: Railway, Docker
 
-### Compliance
-- Framework-specific compliance tracking (SOC 2, ISO 27001, GDPR, HIPAA)
-- Evidence management for compliance documentation
-- Progress tracking across all compliance frameworks
-- Detailed controls implementation status
+## Project Structure
 
-## Structure
-
-- `frontend/`: Next.js application with Tailwind CSS
-  - `app/`: Next.js app directory structure
-    - `dashboard/`: Main dashboard interface
-    - `questionnaires/`: Questionnaire management
-    - `vendors/`: Vendor management system
-    - `trust-portal/`: Customer-facing trust center
-    - `compliance/`: Compliance framework tracking
-  - `components/`: Reusable UI components
-  - `lib/`: Utility functions and shared code
-- `backend/`: Express.js API server
-- **`chatbot/`: Flask-based AI chatbot microservice**
-  - `app.py`: Main Flask application
-  - `services/`: OpenAI API client wrapper
-  - `models/`: Prompt templates for different compliance areas
-  - `utils/`: Input sanitization and validation
-  - `data/`: Compliance data (data_new.json)
-  - `tests/`: Comprehensive unit and integration tests
-- `.github/workflows/`: CI/CD configuration
-
-## Design System
-
-The application uses a consistent design system with:
-- Responsive layouts that work on mobile and desktop
-- Accessible UI components following WCAG guidelines
-- Color-coding for status indicators (success, warning, danger)
-- Consistent spacing, typography, and component designs
-- Interactive elements with proper hover and focus states
+```
+backend/
+├── src/
+│   ├── config/           # Database and app configuration
+│   ├── controllers/      # Request handlers
+│   ├── db/              # Database repositories and migrations
+│   ├── routes/          # API route definitions
+│   ├── services/        # Business logic layer
+│   └── types/           # TypeScript type definitions
+├── chatbot/             # Flask-based AI chatbot microservice
+├── test-*.js           # API and database tests
+└── *.js               # Utility scripts and migrations
+```
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js (v18 or higher)
+- PostgreSQL (v12 or higher)
 - npm or yarn
-- Docker and Docker Compose (for containerized setup)
+- Python 3.8+ (for chatbot service)
 
-### Local Installation
+### Installation
 
 1. Clone the repository
-2. Install dependencies for all projects:
+2. Install backend dependencies:
+   ```bash
+   cd backend
+   npm install
+   ```
+
+3. Install chatbot dependencies:
+   ```bash
+   cd chatbot
+   pip install -r requirements.txt
+   ```
+
+### Environment Setup
+
+Create a `.env` file in the backend directory:
 
 ```bash
-# Install frontend dependencies
-cd frontend
-npm install
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=garnet_ai
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
 
-# Install backend dependencies
-cd ../backend
-npm install
+# Server Configuration
+PORT=5000
+NODE_ENV=development
 
-# Install chatbot dependencies
-cd ../chatbot
-pip install -r requirements.txt
+# OpenAI Configuration (for chatbot)
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-### Local Development
+### Database Setup
 
-#### Frontend
+1. **Create PostgreSQL Database:**
+   ```bash
+   createdb garnet_ai
+   ```
 
-```bash
-cd frontend
-npm run dev
-```
+2. **Run Migrations:**
+   ```bash
+   npm run migrate
+   ```
 
-#### Backend
+3. **Seed Sample Data:**
+   ```bash
+   npm run seed
+   ```
+
+### Development
+
+#### Start Backend Server
 
 ```bash
 cd backend
 npm run dev
 ```
 
-#### 🤖 AI Chatbot Microservice
+The API will be available at [http://localhost:5000](http://localhost:5000).
+
+#### Start AI Chatbot Service
 
 ```bash
 cd chatbot
-
-# Create .env file with your OpenAI API key
-echo "OPENAI_API_KEY=your_openai_api_key_here" > .env
-
-# Start the Flask service
-python start_server.py
-
-# OR run directly
 python app.py
-
-# Test the service (in another terminal)
-python test_integration.py
 ```
 
-The chatbot service will start on http://localhost:5000 with these endpoints:
+The chatbot service will start on [http://localhost:5001](http://localhost:5001) with these endpoints:
 - `GET /health` - Health check
 - `GET /status` - Service status and configuration  
 - `POST /ask` - Ask compliance questions
 
-**Example Usage:**
-```bash
-curl -X POST http://localhost:5000/ask \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What are the GDPR data subject rights?"}'
-```
+### API Endpoints
 
-### 🧪 Running in Mock/Test Mode
+#### Vendors
+- `GET /api/vendors` - List all vendors
+- `GET /api/vendors/:id` - Get vendor details
+- `POST /api/vendors` - Create new vendor
+- `PUT /api/vendors/:id` - Update vendor
+- `DELETE /api/vendors/:id` - Delete vendor
 
-You can spin up the application using lightweight test data for development using:
+#### Questionnaires
+- `GET /api/questionnaires` - List questionnaires
+- `GET /api/questionnaires/:id` - Get questionnaire details
+- `POST /api/questionnaires` - Create questionnaire
+- `PUT /api/questionnaires/:id` - Update questionnaire
 
-```bash
-npm run dev:mock
-```
+#### Trust Portal
+- `GET /api/trust-portal` - Get public trust information
+- `GET /api/trust-portal/certifications` - Get certifications
 
-This command:
-- Seeds mock data from `data_new.json` using `scripts/seed-test-data.js`
-- Launches both frontend and backend servers with `NODE_ENV=mock`
+#### Evidence Management
+- `POST /api/evidence/upload` - Upload evidence files
+- `GET /api/evidence/:id` - Get evidence details
 
-### ⚙️ Environment Variables Setup
+### Testing
 
-Copy the sample file and populate values:
-
-```bash
-cp .env.example .env
-```
-
-Ensure you configure the following keys:
-
-- `DB_HOST`
-- `DB_PORT`
-- `DB_NAME`
-- `DB_USER`
-- `DB_PASSWORD`
-- `PORT`
-- `NEXT_PUBLIC_API_URL`
-
-### 💾 Database Setup
-
-You can run Postgres locally in one of two ways:
-
-**Option 1: Using Docker**
+Run the test suite:
 
 ```bash
-docker-compose up -d db
+# Test database connection
+npm run test:db
+
+# Test API endpoints
+npm run test:api
+
+# Run all tests
+npm test
 ```
 
-**Option 2: Manual Setup**
+### Docker Deployment
 
-Install Postgres and create the DB manually:
+Build and run with Docker:
 
 ```bash
-createdb garnet_ai
+# Build the image
+docker build -t garnet-ai-backend .
+
+# Run the container
+docker run -p 5000:5000 --env-file .env garnet-ai-backend
 ```
 
-Ensure .env values match your local database credentials.
+### Railway Deployment
 
-### 🚑 Troubleshooting
+This backend is configured for deployment on Railway:
 
-- **Port already in use:**  
-  Run `lsof -i :PORT` and then `kill -9 PID` to free the port.
+1. Connect your repository to Railway
+2. Set environment variables in Railway dashboard
+3. Deploy using the provided `railway.toml` configuration
 
-- **Database connection refused:**  
-  Make sure PostgreSQL is running and your .env values are correct.
+## Database Schema
 
-- **Reset Docker volumes:**  
-  Run `docker-compose down -v` to remove all persisted data.
+The application uses PostgreSQL with the following main tables:
 
-### 🌐 Environment Variables Setup
+- `vendors` - Vendor information and risk assessments
+- `questionnaires` - Compliance questionnaire templates
+- `questionnaire_responses` - User responses to questionnaires
+- `evidence_files` - Uploaded compliance documentation
+- `users` - User accounts and authentication
+- `waitlist` - User registration waitlist
 
-To configure environment-specific settings, copy the example `.env` file and fill in your details:
+## Contributing
 
-```bash
-cp .env.example .env
-```
+1. Create a feature branch from `main`
+2. Make your changes
+3. Run tests to ensure everything works
+4. Submit a pull request
 
-### Docker Setup
+## Security
 
-You can run both applications using Docker Compose:
+- Input validation on all endpoints
+- SQL injection prevention
+- XSS protection
+- Rate limiting ready
+- Environment variable configuration
+- Secure file upload handling
 
-```bash
-# Start both services
-docker-compose up
+## Performance
 
-# Start in detached mode
-docker-compose up -d
-
-# Stop services
-docker-compose down
-```
-
-- Frontend: http://localhost:3000
-- Backend: http://localhost:5000
-
-## CI/CD
-
-This project uses GitHub Actions for continuous integration. See `.github/workflows/ci.yml` for configuration details.
-
-# Garnet AI Compliance Framework Importer
-
-This tool imports compliance framework data from a JSON file into a PostgreSQL database for the Garnet AI SaaS vendor compliance platform.
-
-## Setup
-
-1. Ensure PostgreSQL is running and the `garnet_ai` database has been created using the schema in `schema.sql`
-2. Install dependencies:
-   ```
-   npm install
-   ```
-
-## Configuration
-
-The database connection details are configured in `import_data.js`. Modify these settings as needed:
-
-```javascript
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-});
-```
-
-## Data Format
-
-The import script expects a JSON file named `data_new.json` containing an array of compliance framework objects with the following structure:
-
-```json
-[
-  {
-        "name": "Privacy and Electronic Communications Regulations (PECR)",
-        "type": "Regulation",
-        "description": "UK regulations description....",
-        "jurisdiction": "United Kingdom",
-        "domains": ["Electronic Communications", "Cookies", "Direct Marketing", "Privacy"],
-        "region": "Europe",
-        "requirement": "Obtain user consent for cookies and ensure confidentiality of communications in direct marketing activities.",
-        "effective_date": "2003-12-11",
-        "last_updated": "2023-01-01",
-        "official_url": "url",
-        "category": "Data Privacy"
-      },
-  ...
-]
-```
-
-## Running the Import
-
-To run the import:
-
-```
-npm run import
-```
-
-The script will:
-- Read data from `data_new.json`
-- Parse each framework object
-- Insert records into the `compliance_frameworks` table in PostgreSQL
-- Log progress and results to the console
-
-## Security Questionnaire Module
-
-The Security Questionnaire Module helps enterprise sales and compliance teams respond accurately to security questionnaires using AI. This module analyzes security-related questions and generates precise answers based on the company's compliance data.
-
-### Setup
-
-1. **API Key**
-   - Create an OpenAI API key (if you don't have one)
-   - Create a `.env` file in the `/backend` directory using the `.env.example` template
-   - Add your OpenAI API key to the `.env` file (NEVER commit this to source control)
-
-2. **Backend Setup**
-   ```bash
-   cd backend
-   npm install
-   npm run dev
-   ```
-
-3. **Frontend Setup**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-4. **Access the Module**
-   - Navigate to `http://localhost:3000/security-questionnaire` in your browser
-   - Enter security questions and receive answers based on your company's compliance data
-
-### Security Considerations
-
-- Never expose your API key in client-side code or commit it to version control
-- All answers should be reviewed by a compliance officer before sending to customers
-- The system only uses information from your compliance dataset - it will not fabricate answers
-
-# Garnet Compliance UI Component Library
-
-A comprehensive Figma UI component library for the Garnet Compliance SaaS platform, providing consistent design elements for the compliance onboarding experience.
-
-## Project Overview
-
-This library contains the official UI components for Garnet Compliance, created and maintained as a single source of truth for designers and developers. All components are built with Figma Auto Layout, organized into component sets with variant properties, and published through Figma Team Library for easy access across projects.
-
-## Features
-
-- **Consistent Design System**: Standardized components reflecting Garnet's professional design language
-- **Auto Layout Components**: All elements built with Figma Auto Layout for responsive behavior
-- **Variant Management**: Complete component sets with all necessary states and variants
-- **Design Tokens**: Color variables, typography, and spacing tokens for consistent implementation
-- **Documentation**: Comprehensive usage guidelines for all components
-- **Developer Handoff**: Optimized for seamless developer implementation
-
-## Components Included
-
-### Core Elements
-- **Buttons**
-  - Primary (Default, Hover, Active, Disabled)
-  - Secondary (Default, Hover, Active, Disabled)
-  - Tertiary/Text Buttons
-
-### Form Controls
-- **Input Fields**
-  - Text Input (Default, Active, Error, Disabled)
-  - Textarea (Default, Active, Error, Disabled)
-  - Dropdown/Select (Default, Open, Disabled)
-  - Checkbox (Unchecked, Checked, Indeterminate, Disabled)
-  - Radio Buttons (Unselected, Selected, Disabled)
-
-### Content Containers
-- **Cards**
-  - Vendor Card
-  - Questionnaire Summary Card
-  - Information Card
-
-### Interactive Elements
-- **Modals** (various sizes and configurations)
-- **Navigation Bar**
-- **Tooltips**
-- **Notifications/Alerts**
-
-## File Structure & Organization
-
-The Figma file is organized on a single page with clearly labeled frames:
-
-```
-Garnet Compliance UI Library
-├── 🎨 Design Tokens
-│   ├── Colors
-│   ├── Typography
-│   ├── Spacing
-│   └── Shadows
-├── 🧩 Components
-│   ├── Buttons
-│   ├── Form Controls
-│   ├── Cards
-│   ├── Modals
-│   └── Navigation
-├── 📱 Responsive Patterns
-├── 📝 Examples
-└── 📚 Documentation
-```
-
-## How to Use the Library in Figma
-
-### For Designers
-1. Open your Figma file
-2. Navigate to the Assets panel (in the left sidebar)
-3. Select "Team Library" from the dropdown
-4. Enable the "Garnet Compliance UI Library"
-5. Access components through the Assets panel
-
-### For Developers
-1. Request access to the Figma file from your design team
-2. Reference the Documentation section for implementation details
-3. Use the Inspect tab (right sidebar) for specific CSS properties
-4. Follow the component specifications in the `components.md` file in the frontend repository
-
-## Setup Instructions for Contributors
-
-To contribute to this component library:
-
-1. Request edit access to the main Figma file
-2. Review the existing components and documentation
-3. Create your components following established patterns:
-   - Use Auto Layout for all components
-   - Create component sets with appropriate variants
-   - Document usage and properties
-4. Submit your additions for review before publishing
-
-## Best Practices
-
-- Always use existing components when available
-- Follow naming conventions for new components
-- Document any new variants or properties
-- Test components at different screen sizes
-- Ensure all interactive states are represented
-
-## Credits & Acknowledgments
-
-This component library was created by the Garnet Compliance design team based on specifications from the engineering team. Special thanks to all contributors who have helped establish and maintain these design standards.
-
-## License
-
-MIT License
-
-Copyright (c) 2023 Garnet Compliance
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+- Database connection pooling
+- Efficient query patterns
+- Proper indexing
+- Caching strategies
+- Optimized API responses 

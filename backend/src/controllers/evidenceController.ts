@@ -5,7 +5,7 @@ import { VendorRepository } from '../db/vendorRepository';
 
 // Extend Express Request to include file upload
 interface MulterRequest extends Request {
-  file?: Express.Multer.File;
+  file?: any; // Simplified to avoid Express namespace issues
 }
 
 export class EvidenceController {
@@ -371,7 +371,7 @@ export const upload = multer({
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB limit
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: any, file: any, cb: any) => {
     // Allowed file types
     const allowedMimeTypes = [
       'application/pdf',
