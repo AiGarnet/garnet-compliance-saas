@@ -15,7 +15,7 @@ const TrustPortalPage = () => {
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
 
   // Railway backend URL
-  const BACKEND_URL = 'https://shortline.proxy.rlwy.net:28381';
+  const BACKEND_URL = 'https://garnet-compliance-saas-production.up.railway.app';
 
   useEffect(() => {
     fetchVendors();
@@ -37,10 +37,11 @@ const TrustPortalPage = () => {
       const data = await response.json();
       
       // Transform the data to match our interface
-      const transformedVendors = data.map((vendor: any) => ({
+      const vendorsArray = data.vendors || data;
+      const transformedVendors = vendorsArray.map((vendor: any) => ({
         id: vendor.id || vendor.vendorId?.toString() || vendor.uuid,
-        name: vendor.name || vendor.companyName,
-        companyName: vendor.companyName || vendor.name
+        name: vendor.name || vendor.companyName || vendor.company_name,
+        companyName: vendor.companyName || vendor.company_name || vendor.name
       }));
       
       setVendors(transformedVendors);
@@ -77,9 +78,12 @@ const TrustPortalPage = () => {
       const vendorResponse = await fetch(`${BACKEND_URL}/api/vendors/${selectedVendorId}`);
       if (!vendorResponse.ok) throw new Error('Failed to fetch vendor details');
       const vendorData = await vendorResponse.json();
+      
+      // Handle both direct response and nested vendor object
+      const vendor = vendorData.vendor || vendorData;
 
       // Transform questionnaire answers to compliance reports format
-      const questionnaireReports = (vendorData.questionnaireAnswers || []).map((qa: any, index: number) => ({
+      const questionnaireReports = (vendor.questionnaireAnswers || []).map((qa: any, index: number) => ({
         id: `qa-${index}`,
         name: qa.question,
         date: new Date(qa.createdAt || Date.now()).toLocaleDateString(),
