@@ -13,6 +13,7 @@ import questionnaireRoutes from './routes/questionnaireRoutes';
 import systemRoutes from './routes/systemRoutes';
 import waitlistRoutes from './routes/waitlistRoutes';
 import evidenceRoutes from './routes/evidenceRoutes';
+import trustPortalRoutes from './routes/trustPortalRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -52,6 +53,7 @@ app.options('*', cors(corsOptions));
 // Register API routes
 app.use('/api/vendors', vendorRoutes);
 app.use('/api', evidenceRoutes);
+app.use('/api/trust-portal', trustPortalRoutes);
 
 // Enhanced logging for questionnaire routes
 app.use('/api/questionnaires', (req: Request, res: Response, next: Function) => {
@@ -172,6 +174,10 @@ app.get('/', (req: Request, res: Response) => {
       'DELETE /api/vendors/:id/evidence/:fileId': 'Delete evidence',
       'GET /api/answers/:id/evidence': 'Get answer evidence files',
       '/api/questionnaires': 'Questionnaire management',
+      '/api/trust-portal': 'Trust portal management',
+      'GET /api/trust-portal/vendors': 'Get vendors with trust portal items',
+      'GET /api/trust-portal/items': 'Get trust portal items for vendor',
+      'POST /api/trust-portal/items': 'Add item to trust portal',
       '/ask': 'POST - AI chatbot',
       '/api/answer': 'POST - Compliance answers',
       '/api/generate-answers': 'POST - Batch answer generation'
