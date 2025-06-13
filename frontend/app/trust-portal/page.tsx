@@ -4,84 +4,63 @@ import React, { useState, useEffect } from "react";
 import { Download, ExternalLink, Lock, Shield, ShieldCheck, User } from "lucide-react";
 import { ComplianceReportList, ComplianceReport } from "@/components/dashboard/ComplianceReportList";
 import Header from "@/components/Header";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const TrustPortalPage = () => {
-  // Sample data for demonstration
-  const mockReports = [
-    { 
-      id: "r1", 
-      name: "SOC 2 Type II Report", 
-      date: "July 2023",
-      description: "Independent assessment of our controls relevant to security, availability, and confidentiality.",
-      fileSize: "3.2 MB",
-      fileType: "PDF",
-      category: "Certification" as const
-    },
-    { 
-      id: "r2", 
-      name: "ISO 27001 Certificate", 
-      date: "March 2023",
-      description: "Certification for our Information Security Management System (ISMS).",
-      fileSize: "1.5 MB",
-      fileType: "PDF",
-      category: "Certification" as const
-    },
-    { 
-      id: "r3", 
-      name: "GDPR Compliance Statement", 
-      date: "May 2023",
-      description: "Details of our compliance with the General Data Protection Regulation.",
-      fileSize: "845 KB",
-      fileType: "PDF",
-      category: "Statement" as const
-    },
-    { 
-      id: "r4", 
-      name: "Privacy Policy", 
-      date: "June 2023",
-      description: "Our policy regarding the collection, use, and disclosure of personal information.",
-      fileSize: "720 KB",
-      fileType: "PDF",
-      category: "Policy" as const
-    },
-  ];
-
   const [reports, setReports] = useState<ComplianceReport[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  const [vendors, setVendors] = useState<{ vendorId: number; companyName: string }[]>([]);
+  const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
 
-  // Simulate API fetch with delay and potential error
+  useEffect(() => {
+    fetchVendors();
+  }, []);
+
+  useEffect(() => {
+    if (selectedVendorId) {
+      fetchReports();
+    }
+  }, [selectedVendorId]);
+
+  const fetchVendors = async () => {
+    try {
+      const response = await fetch('/api/trust-portal/vendors');
+      if (!response.ok) throw new Error('Failed to fetch vendors');
+      const data = await response.json();
+      setVendors(data);
+      if (data.length > 0) {
+        setSelectedVendorId(data[0].vendorId);
+      }
+    } catch (err) {
+      setError('Failed to load vendors');
+      console.error('Error fetching vendors:', err);
+    }
+  };
+
   const fetchReports = async () => {
+    if (!selectedVendorId) return;
+    
     setIsLoading(true);
     setError('');
     
     try {
-      // Simulate network request
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Uncomment to simulate error
-      // if (Math.random() > 0.7) throw new Error("Failed to fetch reports");
-      
-      setReports(mockReports);
-      setIsLoading(false);
+      const response = await fetch(`/api/trust-portal/items?vendorId=${selectedVendorId}`);
+      if (!response.ok) throw new Error('Failed to fetch reports');
+      const data = await response.json();
+      setReports(data);
     } catch (err) {
-      console.error("Error fetching compliance reports:", err);
-      setError('Unable to load compliance reports. Please try again.');
+      setError('Failed to load reports');
+      console.error('Error fetching reports:', err);
+    } finally {
       setIsLoading(false);
     }
   };
 
-  // Initial fetch on component mount
-  useEffect(() => {
-    fetchReports();
-  }, []);
-
   return (
     <>
       <Header />
-      
-      <main id="main-content" className="flex flex-col gap-8 px-4 md:px-8 py-8 bg-body-bg dark:bg-body-bg">
-        {/* Hero Section */}
+      <main className="container mx-auto px-4 py-8">
         <section className="bg-gradient-to-r from-primary/90 to-secondary/90 text-white rounded-2xl p-8 md:p-12">
           <div className="max-w-3xl">
             <h1 className="text-3xl md:text-4xl font-bold mb-4 flex items-center">
@@ -108,6 +87,28 @@ const TrustPortalPage = () => {
             </div>
           </div>
         </section>
+
+        {/* Vendor Selection */}
+        <div className="mt-8 mb-6">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Select Vendor
+          </label>
+          <Select
+            value={selectedVendorId?.toString()}
+            onValueChange={(value) => setSelectedVendorId(parseInt(value))}
+          >
+            <SelectTrigger className="w-full md:w-[300px]">
+              <SelectValue placeholder="Select a vendor" />
+            </SelectTrigger>
+            <SelectContent>
+              {vendors.map((vendor) => (
+                <SelectItem key={vendor.vendorId} value={vendor.vendorId.toString()}>
+                  {vendor.companyName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         
         {/* Compliance Reports Section */}
         <section id="compliance" className="pt-8">
@@ -120,7 +121,7 @@ const TrustPortalPage = () => {
         </section>
         
         {/* Security Practices Section */}
-        <section id="security" className="pt-12 pb-8">
+        <section id="security" className="pt-12">
           <div className="flex items-center mb-8">
             <Lock className="h-7 w-7 text-primary mr-3" />
             <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">Security Practices</h2>
@@ -178,62 +179,6 @@ const TrustPortalPage = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"></path>
                     </svg>
                     <span className="text-gray-600 dark:text-gray-300">Least privilege principle</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-            
-            <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200 dark:divide-gray-700 border-t border-gray-200 dark:border-gray-700">
-              <div className="p-8">
-                <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Infrastructure Security</h3>
-                <p className="text-gray-600 dark:text-gray-300 mb-4">
-                  Our infrastructure is designed with multiple layers of security to protect against threats.
-                </p>
-                <ul className="space-y-2">
-                  <li className="flex items-start">
-                    <svg className="h-5 w-5 text-success dark:text-success-color mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span className="text-gray-600 dark:text-gray-300">DDoS protection</span>
-                  </li>
-                  <li className="flex items-start">
-                    <svg className="h-5 w-5 text-success dark:text-success-color mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span className="text-gray-600 dark:text-gray-300">Web Application Firewall (WAF)</span>
-                  </li>
-                  <li className="flex items-start">
-                    <svg className="h-5 w-5 text-success dark:text-success-color mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span className="text-gray-600 dark:text-gray-300">Network segregation</span>
-                  </li>
-                </ul>
-              </div>
-              
-              <div className="p-8">
-                <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Monitoring & Incident Response</h3>
-                <p className="text-gray-600 dark:text-gray-300 mb-4">
-                  We continuously monitor our systems and have robust procedures for responding to security incidents.
-                </p>
-                <ul className="space-y-2">
-                  <li className="flex items-start">
-                    <svg className="h-5 w-5 text-success dark:text-success-color mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span className="text-gray-600 dark:text-gray-300">24/7 security monitoring</span>
-                  </li>
-                  <li className="flex items-start">
-                    <svg className="h-5 w-5 text-success dark:text-success-color mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span className="text-gray-600 dark:text-gray-300">Incident response team</span>
-                  </li>
-                  <li className="flex items-start">
-                    <svg className="h-5 w-5 text-success dark:text-success-color mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span className="text-gray-600 dark:text-gray-300">Regular security testing</span>
                   </li>
                 </ul>
               </div>

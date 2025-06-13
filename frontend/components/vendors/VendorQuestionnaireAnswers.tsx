@@ -1,14 +1,41 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { VendorDetail } from '@/hooks/useVendor';
 import { FileText, MessageSquare, CheckCircle } from 'lucide-react';
+import { TrustPortalRepository } from '@/lib/repositories/trustPortalRepository';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface VendorQuestionnaireAnswersProps {
   vendor: VendorDetail;
 }
 
 export function VendorQuestionnaireAnswers({ vendor }: VendorQuestionnaireAnswersProps) {
+  const [isAddingToTrustPortal, setIsAddingToTrustPortal] = useState<boolean>(false);
+  const trustPortalRepo = new TrustPortalRepository();
+
+  const addToTrustPortal = async (question: string, answer: string) => {
+    try {
+      setIsAddingToTrustPortal(true);
+      await trustPortalRepo.addTrustPortalItem({
+        vendorId: parseInt(vendor.id),
+        title: question,
+        description: answer,
+        category: 'Questionnaire',
+        isQuestionnaireAnswer: true,
+        questionnaireId: vendor.id,
+        content: answer
+      });
+      toast.success('Added to Trust Portal');
+    } catch (error) {
+      console.error('Error adding to trust portal:', error);
+      toast.error('Failed to add to Trust Portal');
+    } finally {
+      setIsAddingToTrustPortal(false);
+    }
+  };
+
   const questionnaireAnswers = vendor.questionnaireAnswers || [];
 
   if (questionnaireAnswers.length === 0) {
@@ -70,6 +97,16 @@ export function VendorQuestionnaireAnswers({ vendor }: VendorQuestionnaireAnswer
                     <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                       {qa.answer}
                     </p>
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addToTrustPortal(qa.question, qa.answer)}
+                        disabled={isAddingToTrustPortal}
+                      >
+                        {isAddingToTrustPortal ? 'Adding...' : 'Add to Trust Portal'}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>

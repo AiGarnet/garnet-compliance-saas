@@ -427,6 +427,110 @@ const InteractiveDemo = () => {
 //   return <></>;
 // };
 
+// Countdown Timer Component
+const CountdownTimer = () => {
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
+  });
+
+  useEffect(() => {
+    const launchDate = new Date('2025-07-02T00:00:00').getTime();
+
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const distance = launchDate - now;
+
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      setTimeLeft({ days, hours, minutes, seconds });
+    };
+
+    updateTimer();
+    const timer = setInterval(updateTimer, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <section className="py-12 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -left-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />
+        <div className="absolute -bottom-40 -right-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000" />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000" />
+      </div>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <motion.div
+          className="text-center mb-8"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <motion.h2 
+            className="text-3xl sm:text-4xl font-bold mb-3"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-blue-400 bg-clip-text text-transparent">
+              The Future Arrives in
+            </span>
+          </motion.h2>
+          <motion.p 
+            className="text-base sm:text-lg text-purple-200"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            Join us on our journey to revolutionize AI
+          </motion.p>
+        </motion.div>
+
+        <motion.div
+          className="flex flex-wrap justify-center items-center gap-3 sm:gap-6"
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+        >
+          {Object.entries(timeLeft).map(([unit, value], index) => (
+            <motion.div
+              key={unit}
+              className="text-center"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.8 + index * 0.1 }}
+              whileHover={{ scale: 1.05 }}
+            >
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-gradient-xy"></div>
+                <div className="relative bg-slate-900/80 backdrop-blur-xl rounded-xl p-4 sm:p-5 min-w-[70px] sm:min-w-[85px] border border-white/10">
+                  <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-500 to-blue-400 bg-clip-text text-transparent">
+                    {value.toString().padStart(2, '0')}
+                  </div>
+                  <div className="text-xs sm:text-sm text-purple-200 mt-1 font-medium tracking-wider uppercase">
+                    {unit}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
 const GarnetLandingPage = () => {
   const [activeFeature, setActiveFeature] = useState(0);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
@@ -546,7 +650,7 @@ const GarnetLandingPage = () => {
         {isLoading && <LoadingAnimation />}
       </AnimatePresence>
 
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         <style jsx global>{`
           html {
             scroll-behavior: smooth;
@@ -895,6 +999,8 @@ const GarnetLandingPage = () => {
           </div>
         </div>
       </section>
+
+      <CountdownTimer />
 
       {/* Features Section */}
       <section id="features" className="py-20 bg-gray-50">
