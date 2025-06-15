@@ -1,25 +1,61 @@
-# Ignore everything except the backend directory
-/*
-!/backend/
-
-# Then ignore node_modules inside backend
-/backend/node_modules/
-/backend/dist/
-
+# Dependencies
 node_modules
 npm-debug.log
-.git
-.gitignore
-README.md
+
+# Build outputs
+dist
+
+# Environment and config files
 .env
-.nyc_output
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+*.log
+logs
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
 coverage
 .nyc_output
+
+# IDE and editor files
 .vscode
+.idea
+*.swp
+*.swo
+
+# OS generated files
 .DS_Store
-*.log
-dist
-frontend/
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+
+# GitHub workflows
 .github/
-Dataset.json
-data_new.json 
+
+# Test files
+test/
+*.test.js
+*.spec.js
+
+# Development files
+src/**/*.spec.ts
+src/**/*.test.ts 
