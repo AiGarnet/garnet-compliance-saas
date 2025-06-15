@@ -11,4 +11,10 @@ restartPolicyMaxRetries = 10
 
 [env]
 NODE_ENV = "production"
-PORT = "8080" 
+PORT = "8080"
+
+# NestJS specific configuration
+[healthcheck]
+path = "/health"
+timeout = 30
+interval = 60 

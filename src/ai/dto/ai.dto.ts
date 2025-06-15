@@ -1,0 +1,70 @@
+import { IsString, IsOptional, IsArray, IsNumber, IsNotEmpty, Min, Max } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class GenerateAnswerDto {
+  @ApiProperty({ example: 'What is your data retention policy?' })
+  @IsString()
+  @IsNotEmpty()
+  question: string;
+
+  @ApiPropertyOptional({ example: 'This is for a financial services vendor' })
+  @IsOptional()
+  @IsString()
+  context?: string;
+
+  @ApiPropertyOptional({ example: 123 })
+  @IsOptional()
+  @IsNumber()
+  vendorId?: number;
+}
+
+export class BatchAnswerDto {
+  @ApiProperty({ 
+    example: [
+      'What is your data retention policy?',
+      'How do you handle data encryption?',
+      'What are your backup procedures?'
+    ]
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  questions: string[];
+
+  @ApiPropertyOptional({ example: 'This is for a financial services vendor' })
+  @IsOptional()
+  @IsString()
+  context?: string;
+
+  @ApiPropertyOptional({ example: 123 })
+  @IsOptional()
+  @IsNumber()
+  vendorId?: number;
+}
+
+export class CreateSuggestionDto {
+  @ApiProperty({ example: 123 })
+  @IsNumber()
+  vendorId: number;
+
+  @ApiPropertyOptional({ example: 'Q001' })
+  @IsOptional()
+  @IsString()
+  questionId?: string;
+
+  @ApiProperty({ example: 'Consider implementing multi-factor authentication' })
+  @IsString()
+  @IsNotEmpty()
+  suggestion: string;
+
+  @ApiProperty({ example: 0.85, minimum: 0, maximum: 1 })
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  confidence: number;
+
+  @ApiProperty({ example: 'security' })
+  @IsString()
+  @IsNotEmpty()
+  category: string;
+} 

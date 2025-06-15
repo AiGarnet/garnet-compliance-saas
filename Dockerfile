@@ -2,20 +2,20 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy backend package files
-COPY backend/package*.json ./
+# Copy package files
+COPY package*.json ./
 
-# Install backend dependencies
+# Install dependencies
 RUN npm install
 
-# Copy backend source
-COPY backend/ ./
+# Copy source code
+COPY . .
 
-# Build the backend
+# Build the NestJS application
 RUN npm run build
 
 # Expose the port
-EXPOSE 5000
+EXPOSE 8080
 
-# Start the backend
-CMD ["npm", "run", "start"] 
+# Start the NestJS application
+CMD ["npm", "run", "start:prod"] 
