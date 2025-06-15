@@ -1,4 +1,26 @@
 # Ignore everything
 *
 # Except backend directory
-!backend/ 
+!backend/
+node_modules
+.git
+.github
+frontend
+uploads
+*.log
+.env
+.env.local
+.env.example
+coverage
+.nyc_output
+.vscode
+.DS_Store
+README.md
+*.md
+test
+tests
+__tests__
+*.test.js
+*.spec.js
+*.test.ts
+*.spec.ts 
