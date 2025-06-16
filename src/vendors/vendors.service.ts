@@ -730,10 +730,182 @@ export class VendorsService {
   }
 
   /**
-   * Generate invite link for trust portal
+   * Get or create vendor record for authenticated user
    */
-  async generateTrustPortalInviteLink(vendorId: string): Promise<{ inviteLink: string; inviteToken: string }> {
-    const vendor = await this.getVendorById(vendorId);
+  async getOrCreateVendorForUser(userId: string, userEmail: string, userFullName: string): Promise<Vendor> {
+    // First try to find existing vendor by user_id if the column exists
+    // If not, we'll create a new vendor record
+    
+    let vendor: Vendor | null = null;
+    
+    // Try to find vendor by user_id (if the relationship exists)
+    try {
+      const userQuery = `
+        SELECT 
+          vendor_id as "vendorId",
+          uuid,
+          company_name as "companyName",
+          region,
+          status,
+          risk_score as "riskScore",
+          risk_level as "riskLevel",
+          contact_name as "contactName",
+          contact_email as "contactEmail",
+          website,
+          industry,
+          description,
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        FROM vendors 
+        WHERE contact_email = $1 OR uuid = $2
+      `;
+      
+      const result = await this.databaseService.query(userQuery, [userEmail, userId]);
+      if (result.rows.length > 0) {
+        vendor = result.rows[0];
+      }
+    } catch (error) {
+      console.log('No existing vendor found for user, will create new one');
+    }
+    
+    // If no vendor found, create a new one
+    if (!vendor) {
+      const createQuery = `
+        INSERT INTO vendors (
+          uuid, company_name, contact_name, contact_email, status, 
+          risk_score, risk_level, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+        RETURNING 
+          vendor_id as "vendorId",
+          uuid,
+          company_name as "companyName",
+          region,
+          status,
+          risk_score as "riskScore",
+          risk_level as "riskLevel",
+          contact_name as "contactName",
+          contact_email as "contactEmail",
+          website,
+          industry,
+          description,
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+      `;
+      
+      const values = [
+        userId, // Use user ID as vendor UUID for linking
+        userFullName || 'My Company', // Default company name
+        userFullName,
+        userEmail,
+        'Questionnaire Pending',
+        0,
+        'Low'
+      ];
+      
+      const createResult = await this.databaseService.query(createQuery, values);
+      vendor = createResult.rows[0];
+      
+      console.log(`Created new vendor record for user ${userId}:`, vendor);
+    }
+    
+    return {
+      ...vendor,
+      // Legacy compatibility
+      id: vendor.vendorId.toString(),
+      name: vendor.companyName
+    };
+  }
+
+  /**
+   * Get trust portal data for a vendor (public view) - Updated to handle user IDs
+   */
+  async getTrustPortalData(vendorId: string, userEmail?: string, userFullName?: string): Promise<any> {
+    let vendor: Vendor | null = null;
+    
+    // First try to get vendor by ID
+    vendor = await this.getVendorById(vendorId);
+    
+    // If no vendor found and we have user info, try to get/create vendor for user
+    if (!vendor && userEmail) {
+      vendor = await this.getOrCreateVendorForUser(vendorId, userEmail, userFullName);
+    }
+    
+    if (!vendor) {
+      throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
+    }
+
+    // Get shared works
+    const worksQuery = `
+      SELECT 
+        id,
+        project_name as "projectName",
+        description,
+        status,
+        start_date as "startDate",
+        end_date as "endDate",
+        client_name as "clientName",
+        technologies,
+        category,
+        created_at as "createdAt"
+      FROM vendor_works 
+      WHERE vendor_id = $1 AND share_to_trust_portal = true AND is_draft = false
+      ORDER BY created_at DESC
+    `;
+    
+    const worksResult = await this.databaseService.query(worksQuery, [vendor.vendorId]);
+    const works = worksResult.rows.map(work => ({
+      ...work,
+      technologies: JSON.parse(work.technologies || '[]')
+    }));
+
+    // Get shared questionnaire answers
+    const answersQuery = `
+      SELECT 
+        id,
+        question_id as "questionId",
+        question,
+        answer,
+        created_at as "createdAt"
+      FROM vendor_questionnaire_answers 
+      WHERE vendor_id = $1 AND share_to_trust_portal = true
+      ORDER BY created_at DESC
+    `;
+    
+    const answersResult = await this.databaseService.query(answersQuery, [vendor.vendorId]);
+    const questionnaireAnswers = answersResult.rows;
+
+    // Get shared evidence files (this would need to be implemented in evidence service)
+    // For now, return empty array
+    const evidenceFiles = [];
+
+    return {
+      vendor: {
+        companyName: vendor.companyName,
+        region: vendor.region,
+        industry: vendor.industry,
+        description: vendor.description,
+        website: vendor.website
+      },
+      works,
+      questionnaireAnswers,
+      evidenceFiles
+    };
+  }
+
+  /**
+   * Generate invite link for trust portal - Updated to handle user IDs
+   */
+  async generateTrustPortalInviteLink(vendorId: string, userEmail?: string, userFullName?: string): Promise<{ inviteLink: string; inviteToken: string }> {
+    let vendor: Vendor | null = null;
+    
+    // First try to get vendor by ID
+    vendor = await this.getVendorById(vendorId);
+    
+    // If no vendor found and we have user info, try to get/create vendor for user
+    if (!vendor && userEmail) {
+      vendor = await this.getOrCreateVendorForUser(vendorId, userEmail, userFullName);
+    }
+    
     if (!vendor) {
       throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
     }
@@ -817,72 +989,5 @@ export class VendorsService {
     const result = await this.databaseService.query(query, [shareToTrustPortal, answerId, vendor.vendorId]);
     
     return result.rowCount > 0;
-  }
-
-  /**
-   * Get trust portal data for a vendor (public view)
-   */
-  async getTrustPortalData(vendorId: string): Promise<any> {
-    const vendor = await this.getVendorById(vendorId);
-    if (!vendor) {
-      throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
-    }
-
-    // Get shared works
-    const worksQuery = `
-      SELECT 
-        id,
-        project_name as "projectName",
-        description,
-        status,
-        start_date as "startDate",
-        end_date as "endDate",
-        client_name as "clientName",
-        technologies,
-        category,
-        created_at as "createdAt"
-      FROM vendor_works 
-      WHERE vendor_id = $1 AND share_to_trust_portal = true AND is_draft = false
-      ORDER BY created_at DESC
-    `;
-    
-    const worksResult = await this.databaseService.query(worksQuery, [vendor.vendorId]);
-    const works = worksResult.rows.map(work => ({
-      ...work,
-      technologies: JSON.parse(work.technologies || '[]')
-    }));
-
-    // Get shared questionnaire answers
-    const answersQuery = `
-      SELECT 
-        id,
-        question_id as "questionId",
-        question,
-        answer,
-        created_at as "createdAt"
-      FROM vendor_questionnaire_answers 
-      WHERE vendor_id = $1 AND share_to_trust_portal = true
-      ORDER BY created_at DESC
-    `;
-    
-    const answersResult = await this.databaseService.query(answersQuery, [vendor.vendorId]);
-    const questionnaireAnswers = answersResult.rows;
-
-    // Get shared evidence files (this would need to be implemented in evidence service)
-    // For now, return empty array
-    const evidenceFiles = [];
-
-    return {
-      vendor: {
-        companyName: vendor.companyName,
-        region: vendor.region,
-        industry: vendor.industry,
-        description: vendor.description,
-        website: vendor.website
-      },
-      works,
-      questionnaireAnswers,
-      evidenceFiles
-    };
   }
 } 

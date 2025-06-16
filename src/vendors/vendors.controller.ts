@@ -10,6 +10,7 @@ import {
   HttpException,
   UseGuards,
   Patch,
+  Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { VendorsService } from './vendors.service';
@@ -376,9 +377,13 @@ export class VendorsController {
   @ApiOperation({ summary: 'Generate trust portal invite link for a vendor' })
   @ApiResponse({ status: 200, description: 'Invite link generated successfully' })
   @ApiResponse({ status: 404, description: 'Vendor not found' })
-  async generateTrustPortalInviteLink(@Param('id') id: string) {
+  async generateTrustPortalInviteLink(@Param('id') id: string, @Request() req) {
     try {
-      const result = await this.vendorsService.generateTrustPortalInviteLink(id);
+      // Get user info from JWT token
+      const userEmail = req.user?.email;
+      const userFullName = req.user?.full_name;
+      
+      const result = await this.vendorsService.generateTrustPortalInviteLink(id, userEmail, userFullName);
       return result;
     } catch (error: any) {
       if (error instanceof HttpException) {
@@ -431,9 +436,13 @@ export class VendorsController {
   @ApiOperation({ summary: 'Get trust portal data for a vendor (public view)' })
   @ApiResponse({ status: 200, description: 'Returns trust portal data' })
   @ApiResponse({ status: 404, description: 'Vendor not found' })
-  async getTrustPortalData(@Param('id') id: string) {
+  async getTrustPortalData(@Param('id') id: string, @Request() req) {
     try {
-      const data = await this.vendorsService.getTrustPortalData(id);
+      // For authenticated requests, get user info from JWT token
+      const userEmail = req.user?.email;
+      const userFullName = req.user?.full_name;
+      
+      const data = await this.vendorsService.getTrustPortalData(id, userEmail, userFullName);
       return data;
     } catch (error: any) {
       if (error instanceof HttpException) {
