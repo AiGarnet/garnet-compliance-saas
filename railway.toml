@@ -13,6 +13,7 @@ startCommand = "node dist/main.js"
 [env]
 NODE_ENV = "production"
 PORT = "8080"
+FRONTEND_URL = "https://garnetai.net"
 
 # NestJS specific configuration
 [healthcheck]
