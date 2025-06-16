@@ -22,7 +22,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { FileUploadData } from './entities/evidence.entity';
 
 @ApiTags('evidence')
-@Controller('api/evidence')
+@Controller('api')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class EvidenceController {
