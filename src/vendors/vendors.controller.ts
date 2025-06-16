@@ -15,6 +15,7 @@ import { VendorsService } from './vendors.service';
 import { CreateVendorDto, UpdateVendorDto, VendorQuestionnaireAnswerDto, CreateVendorWithAnswersDto } from './dto/vendor.dto';
 import { VendorStatus } from './entities/vendor.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Public } from '../common/decorators/public.decorator';
 
 @ApiTags('vendors')
 @Controller('api/vendors')
@@ -23,6 +24,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class VendorsController {
   constructor(private readonly vendorsService: VendorsService) {}
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Get all vendors' })
   @ApiResponse({ status: 200, description: 'Returns all vendors' })
@@ -38,6 +40,7 @@ export class VendorsController {
     }
   }
 
+  @Public()
   @Get('stats')
   @ApiOperation({ summary: 'Get vendor statistics' })
   @ApiResponse({ status: 200, description: 'Returns vendor statistics' })
@@ -53,6 +56,7 @@ export class VendorsController {
     }
   }
 
+  @Public()
   @Get('status/:status')
   @ApiOperation({ summary: 'Get vendors by status' })
   @ApiResponse({ status: 200, description: 'Returns vendors with specified status' })
@@ -79,6 +83,7 @@ export class VendorsController {
     }
   }
 
+  @Public()
   @Get('with-suggestions')
   @ApiOperation({ summary: 'Get vendors with AI suggestions' })
   @ApiResponse({ status: 200, description: 'Returns vendors that have AI suggestions' })
@@ -94,6 +99,7 @@ export class VendorsController {
     }
   }
 
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get a vendor by ID' })
   @ApiResponse({ status: 200, description: 'Returns the vendor' })
