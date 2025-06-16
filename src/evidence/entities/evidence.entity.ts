@@ -5,6 +5,7 @@ export interface EvidenceFile {
   id: string;
   vendorId: number;
   answerId?: string;
+  workId?: string;
   filename: string;
   originalFilename: string;
   mimeType: string;
@@ -12,6 +13,7 @@ export interface EvidenceFile {
   filePath: string;
   uploadedBy: string;
   uploadedAt: Date;
+  shareToTrustPortal: boolean;
   metadata?: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;

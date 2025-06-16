@@ -16,13 +16,18 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@ne
 import { TrustPortalService } from './trust-portal.service';
 import { CreateTrustPortalItemDto, UpdateTrustPortalItemDto } from './dto/trust-portal.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Public } from '../common/decorators/public.decorator';
+import { VendorsService } from '../vendors/vendors.service';
 
 @ApiTags('trust-portal')
 @Controller('api/trust-portal')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class TrustPortalController {
-  constructor(private readonly trustPortalService: TrustPortalService) {}
+  constructor(
+    private readonly trustPortalService: TrustPortalService,
+    private readonly vendorsService: VendorsService
+  ) {}
 
   @Get('vendors')
   @ApiOperation({ summary: 'Get all vendors that have trust portal items' })
@@ -154,6 +159,41 @@ export class TrustPortalController {
     } catch (error: any) {
       throw new HttpException(
         error.message || 'Failed to fetch trust portal items by category',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Public()
+  @Get('invite/:token')
+  @ApiOperation({ summary: 'Get trust portal data via invite token (public access)' })
+  @ApiResponse({ status: 200, description: 'Returns trust portal data for invited access' })
+  @ApiResponse({ status: 404, description: 'Invalid or expired invite token' })
+  async getTrustPortalByInviteToken(@Param('token') token: string) {
+    try {
+      // Get vendor by invite token (this will be implemented in vendors service)
+      const vendor = await this.vendorsService.getVendorByInviteToken(token);
+      
+      if (!vendor) {
+        throw new HttpException(
+          'Invalid or expired invite token',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      // Get trust portal data for the vendor
+      const trustPortalData = await this.vendorsService.getTrustPortalData(vendor.vendorId.toString());
+      
+      return {
+        ...trustPortalData,
+        inviteToken: token
+      };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Internal server error',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

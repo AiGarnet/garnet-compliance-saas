@@ -9,10 +9,11 @@ import {
   HttpStatus,
   HttpException,
   UseGuards,
+  Patch,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { VendorsService } from './vendors.service';
-import { CreateVendorDto, UpdateVendorDto, VendorQuestionnaireAnswerDto, CreateVendorWithAnswersDto } from './dto/vendor.dto';
+import { CreateVendorDto, UpdateVendorDto, VendorQuestionnaireAnswerDto, CreateVendorWithAnswersDto, CreateVendorWorkDto, UpdateVendorWorkDto, ShareToTrustPortalDto } from './dto/vendor.dto';
 import { VendorStatus } from './entities/vendor.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../common/decorators/public.decorator';
@@ -224,6 +225,216 @@ export class VendorsController {
     try {
       const savedAnswers = await this.vendorsService.saveVendorQuestionnaireAnswers(id, answers);
       return { answers: savedAnswers };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  // Vendor Work Management Endpoints
+
+  @Post(':id/works')
+  @ApiOperation({ summary: 'Create a new work submission for a vendor' })
+  @ApiResponse({ status: 201, description: 'Work created successfully' })
+  @ApiResponse({ status: 404, description: 'Vendor not found' })
+  async createVendorWork(
+    @Param('id') id: string,
+    @Body() createVendorWorkDto: CreateVendorWorkDto,
+  ) {
+    try {
+      const work = await this.vendorsService.createVendorWork(id, createVendorWorkDto);
+      return { work };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get(':id/works')
+  @ApiOperation({ summary: 'Get all work submissions for a vendor' })
+  @ApiResponse({ status: 200, description: 'Returns vendor works' })
+  @ApiResponse({ status: 404, description: 'Vendor not found' })
+  async getVendorWorks(@Param('id') id: string) {
+    try {
+      const works = await this.vendorsService.getVendorWorks(id);
+      return { works };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get(':id/works/:workId')
+  @ApiOperation({ summary: 'Get a specific work submission for a vendor' })
+  @ApiResponse({ status: 200, description: 'Returns the work' })
+  @ApiResponse({ status: 404, description: 'Vendor or work not found' })
+  async getVendorWorkById(
+    @Param('id') id: string,
+    @Param('workId') workId: string,
+  ) {
+    try {
+      const work = await this.vendorsService.getVendorWorkById(id, workId);
+      
+      if (!work) {
+        throw new HttpException(
+          `Work with ID ${workId} not found for vendor ${id}`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      
+      return { work };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Put(':id/works/:workId')
+  @ApiOperation({ summary: 'Update a work submission for a vendor' })
+  @ApiResponse({ status: 200, description: 'Work updated successfully' })
+  @ApiResponse({ status: 404, description: 'Vendor or work not found' })
+  async updateVendorWork(
+    @Param('id') id: string,
+    @Param('workId') workId: string,
+    @Body() updateVendorWorkDto: UpdateVendorWorkDto,
+  ) {
+    try {
+      const work = await this.vendorsService.updateVendorWork(id, workId, updateVendorWorkDto);
+      
+      if (!work) {
+        throw new HttpException(
+          `Work with ID ${workId} not found for vendor ${id}`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      
+      return { work };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Delete(':id/works/:workId')
+  @ApiOperation({ summary: 'Delete a work submission for a vendor' })
+  @ApiResponse({ status: 200, description: 'Work deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Vendor or work not found' })
+  async deleteVendorWork(
+    @Param('id') id: string,
+    @Param('workId') workId: string,
+  ) {
+    try {
+      const deleted = await this.vendorsService.deleteVendorWork(id, workId);
+      
+      if (!deleted) {
+        throw new HttpException(
+          `Work with ID ${workId} not found for vendor ${id}`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      
+      return { message: `Work with ID ${workId} has been deleted` };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  // Trust Portal Management Endpoints
+
+  @Post(':id/trust-portal/invite')
+  @ApiOperation({ summary: 'Generate trust portal invite link for a vendor' })
+  @ApiResponse({ status: 200, description: 'Invite link generated successfully' })
+  @ApiResponse({ status: 404, description: 'Vendor not found' })
+  async generateTrustPortalInviteLink(@Param('id') id: string) {
+    try {
+      const result = await this.vendorsService.generateTrustPortalInviteLink(id);
+      return result;
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Patch(':id/answers/:answerId/share')
+  @ApiOperation({ summary: 'Update share to trust portal status for questionnaire answer' })
+  @ApiResponse({ status: 200, description: 'Share status updated successfully' })
+  @ApiResponse({ status: 404, description: 'Vendor or answer not found' })
+  async updateQuestionnaireAnswerShareStatus(
+    @Param('id') id: string,
+    @Param('answerId') answerId: string,
+    @Body() shareDto: ShareToTrustPortalDto,
+  ) {
+    try {
+      const updated = await this.vendorsService.updateQuestionnaireAnswerShareStatus(
+        id,
+        answerId,
+        shareDto.shareToTrustPortal,
+      );
+      
+      if (!updated) {
+        throw new HttpException(
+          `Answer with ID ${answerId} not found for vendor ${id}`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      
+      return { message: 'Share status updated successfully' };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Public()
+  @Get(':id/trust-portal')
+  @ApiOperation({ summary: 'Get trust portal data for a vendor (public view)' })
+  @ApiResponse({ status: 200, description: 'Returns trust portal data' })
+  @ApiResponse({ status: 404, description: 'Vendor not found' })
+  async getTrustPortalData(@Param('id') id: string) {
+    try {
+      const data = await this.vendorsService.getTrustPortalData(id);
+      return data;
     } catch (error: any) {
       if (error instanceof HttpException) {
         throw error;

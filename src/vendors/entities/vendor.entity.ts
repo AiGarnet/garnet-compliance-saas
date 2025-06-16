@@ -18,6 +18,38 @@ export enum RiskLevel {
 }
 
 /**
+ * Work status for vendor projects
+ */
+export enum WorkStatus {
+  COMPLETED = 'Completed',
+  IN_PROGRESS = 'In Progress',
+  PLANNED = 'Planned'
+}
+
+/**
+ * Represents a vendor's work/project submission
+ */
+export interface VendorWork {
+  id: string;
+  vendorId: number;
+  projectName: string;
+  description?: string;
+  status: WorkStatus;
+  startDate?: Date;
+  endDate?: Date;
+  clientName?: string;
+  technologies?: string[];
+  category?: string;
+  shareToTrustPortal: boolean;
+  evidenceFiles?: string[]; // Array of evidence file IDs
+  questionnaireAnswers?: string[]; // Array of questionnaire answer IDs
+  createdAt: Date;
+  updatedAt: Date;
+  isDraft: boolean;
+  lastSavedAt?: Date;
+}
+
+/**
  * Represents an answer to a specific questionnaire question
  */
 export interface QuestionnaireAnswer {
@@ -26,6 +58,8 @@ export interface QuestionnaireAnswer {
   questionId: string;
   question: string;
   answer: string;
+  shareToTrustPortal: boolean; // New field for trust portal sharing
+  workId?: string; // Link to associated work submission
   createdAt: Date;
   updatedAt: Date;
 }
