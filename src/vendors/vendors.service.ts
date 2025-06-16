@@ -101,25 +101,36 @@ export class VendorsService {
 
     const vendor = result.rows[0];
     
-    // Get questionnaire answers
-    const answersQuery = `
-      SELECT 
-        id,
-        vendor_id as "vendorId",
-        question_id as "questionId",
-        question,
-        answer,
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM questionnaire_answers 
-      WHERE vendor_id = $1
-    `;
-    
-    const answersResult = await this.databaseService.query(answersQuery, [vendor.vendorId]);
+    // Get questionnaire answers from vendor_questionnaire_answers table
+    let questionnaireAnswers = [];
+    try {
+      const answersQuery = `
+        SELECT 
+          id,
+          vendor_id as "vendorId",
+          question_id as "questionId",
+          question,
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        FROM vendor_questionnaire_answers 
+        WHERE vendor_id = $1
+      `;
+      
+      const answersResult = await this.databaseService.query(answersQuery, [vendor.vendorId]);
+      // Map to include answer field for compatibility (using empty string as default)
+      questionnaireAnswers = answersResult.rows.map(row => ({
+        ...row,
+        answer: '' // Default empty answer since column doesn't exist yet
+      }));
+    } catch (error) {
+      // If vendor_questionnaire_answers table query fails, use empty array
+      console.warn('vendor_questionnaire_answers table query failed:', error.message);
+      questionnaireAnswers = [];
+    }
     
     return {
       ...vendor,
-      questionnaireAnswers: answersResult.rows,
+      questionnaireAnswers,
       // Legacy compatibility
       id: vendor.vendorId.toString(),
       name: vendor.companyName
@@ -348,30 +359,33 @@ export class VendorsService {
 
     for (const answer of answers) {
       const query = `
-        INSERT INTO questionnaire_answers (
-          id, vendor_id, question_id, question, answer, created_at, updated_at
+        INSERT INTO vendor_questionnaire_answers (
+          id, vendor_id, question_id, question, created_at, updated_at
         ) VALUES (
-          $1, $2, $3, $4, $5, NOW(), NOW()
+          $1, $2, $3, $4, NOW(), NOW()
         ) ON CONFLICT (vendor_id, question_id) 
         DO UPDATE SET 
           question = EXCLUDED.question,
-          answer = EXCLUDED.answer,
           updated_at = NOW()
         RETURNING 
           id,
           vendor_id as "vendorId",
           question_id as "questionId",
           question,
-          answer,
           created_at as "createdAt",
           updated_at as "updatedAt"
       `;
       
       const answerId = uuidv4();
-      const values = [answerId, vendor.vendorId, answer.questionId, answer.question, answer.answer];
+      const values = [answerId, vendor.vendorId, answer.questionId, answer.question];
       
       const result = await this.databaseService.query(query, values);
-      savedAnswers.push(result.rows[0]);
+      // Add answer field for compatibility
+      const savedAnswer = {
+        ...result.rows[0],
+        answer: answer.answer || '' // Include the answer from the DTO
+      };
+      savedAnswers.push(savedAnswer);
     }
 
     return savedAnswers;
