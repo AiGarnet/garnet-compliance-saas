@@ -45,25 +45,53 @@ export class VendorsService {
    * Get a vendor by ID
    */
   async getVendorById(id: string): Promise<Vendor | null> {
-    const query = `
-      SELECT 
-        vendor_id as "vendorId",
-        uuid,
-        company_name as "companyName",
-        region,
-        status,
-        risk_score as "riskScore",
-        risk_level as "riskLevel",
-        contact_name as "contactName",
-        contact_email as "contactEmail",
-        website,
-        industry,
-        description,
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM vendors 
-      WHERE vendor_id = $1 OR uuid = $1
-    `;
+    // Check if the ID is a number (vendor_id) or UUID
+    const isNumericId = /^\d+$/.test(id);
+    
+    let query: string;
+    if (isNumericId) {
+      // If it's numeric, search by vendor_id
+      query = `
+        SELECT 
+          vendor_id as "vendorId",
+          uuid,
+          company_name as "companyName",
+          region,
+          status,
+          risk_score as "riskScore",
+          risk_level as "riskLevel",
+          contact_name as "contactName",
+          contact_email as "contactEmail",
+          website,
+          industry,
+          description,
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        FROM vendors 
+        WHERE vendor_id = $1
+      `;
+    } else {
+      // If it's not numeric, search by UUID
+      query = `
+        SELECT 
+          vendor_id as "vendorId",
+          uuid,
+          company_name as "companyName",
+          region,
+          status,
+          risk_score as "riskScore",
+          risk_level as "riskLevel",
+          contact_name as "contactName",
+          contact_email as "contactEmail",
+          website,
+          industry,
+          description,
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        FROM vendors 
+        WHERE uuid = $1
+      `;
+    }
     
     const result = await this.databaseService.query(query, [id]);
     
@@ -224,7 +252,16 @@ export class VendorsService {
    * Delete a vendor
    */
   async deleteVendor(id: string): Promise<boolean> {
-    const query = `DELETE FROM vendors WHERE vendor_id = $1 OR uuid = $1`;
+    // Check if the ID is a number (vendor_id) or UUID
+    const isNumericId = /^\d+$/.test(id);
+    
+    let query: string;
+    if (isNumericId) {
+      query = `DELETE FROM vendors WHERE vendor_id = $1`;
+    } else {
+      query = `DELETE FROM vendors WHERE uuid = $1`;
+    }
+    
     const result = await this.databaseService.query(query, [id]);
     return result.rowCount > 0;
   }
