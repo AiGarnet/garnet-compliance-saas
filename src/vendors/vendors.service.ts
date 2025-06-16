@@ -753,7 +753,7 @@ export class VendorsService {
     
     await this.databaseService.query(query, [inviteToken, vendor.vendorId, expiresAt]);
 
-    const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/trust-portal?token=${inviteToken}`;
+    const inviteLink = `${process.env.FRONTEND_URL || 'https://garnetai.net'}/trust-portal?token=${inviteToken}`;
     
     return { inviteLink, inviteToken };
   }
