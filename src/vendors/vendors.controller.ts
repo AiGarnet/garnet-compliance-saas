@@ -129,6 +129,7 @@ export class VendorsController {
     }
   }
 
+  @Public()
   @Post()
   @ApiOperation({ summary: 'Create a new vendor' })
   @ApiResponse({ status: 201, description: 'Vendor created successfully' })
