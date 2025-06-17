@@ -26,6 +26,11 @@ export class CreateQuestionnaireDto {
   @IsNotEmpty()
   title: string;
 
+  @ApiPropertyOptional({ example: 1, description: 'Vendor ID to associate with questionnaire' })
+  @IsOptional()
+  @IsNumber()
+  vendorId?: number;
+
   @ApiProperty({ type: [CreateQuestionDto] })
   @IsArray()
   @ValidateNested({ each: true })

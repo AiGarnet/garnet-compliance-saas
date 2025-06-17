@@ -29,10 +29,13 @@ export interface Questionnaire {
   id: string;
   title: string;
   status: QuestionnaireStatus;
-  progress: number;
+  vendorId?: number;
+  vendorName?: string;
+  progress?: number;
   createdAt: Date;
   updatedAt: Date;
   questions?: QuestionnaireQuestion[];
+  answers?: any[]; // For compatibility with existing code
 }
 
 /**

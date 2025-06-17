@@ -12,29 +12,27 @@ export class QuestionnairesService {
    * Create a new questionnaire with questions
    */
   async createQuestionnaire(createQuestionnaireDto: CreateQuestionnaireDto): Promise<Questionnaire> {
-    const { title, questions } = createQuestionnaireDto;
-    const questionnaireId = uuidv4();
+    const { title, questions, vendorId } = createQuestionnaireDto;
 
     // Create the questionnaire
     const questionnaireQuery = `
       INSERT INTO questionnaires (
-        id, title, status, progress, created_at, updated_at
+        title, status, vendor_id, created_at, updated_at
       ) VALUES (
-        $1, $2, $3, $4, NOW(), NOW()
+        $1, $2, $3, NOW(), NOW()
       ) RETURNING 
-        id,
+        questionnaire_id as id,
         title,
         status,
-        progress,
+        vendor_id as "vendorId",
         created_at as "createdAt",
         updated_at as "updatedAt"
     `;
 
     const questionnaireValues = [
-      questionnaireId,
       title,
       QuestionnaireStatus.NOT_STARTED,
-      0
+      vendorId || null
     ];
 
     const questionnaireResult = await this.databaseService.query(questionnaireQuery, questionnaireValues);
@@ -43,38 +41,41 @@ export class QuestionnairesService {
     // Create the questions
     const createdQuestions: QuestionnaireQuestion[] = [];
     
-    for (const question of questions) {
-      const questionId = uuidv4();
-      const questionQuery = `
-        INSERT INTO questionnaire_questions (
-          id, questionnaire_id, question_text, question_order, is_required, created_at, updated_at
-        ) VALUES (
-          $1, $2, $3, $4, $5, NOW(), NOW()
-        ) RETURNING 
-          id,
-          questionnaire_id as "questionnaireId",
-          question_text as "questionText",
-          answer,
-          question_order as "questionOrder",
-          is_required as "isRequired",
-          created_at as "createdAt",
-          updated_at as "updatedAt"
-      `;
+    if (questions && questions.length > 0) {
+      for (const question of questions) {
+        const questionId = uuidv4();
+        const questionQuery = `
+          INSERT INTO questionnaire_questions (
+            id, questionnaire_id, question_text, question_order, is_required, created_at, updated_at
+          ) VALUES (
+            $1, $2, $3, $4, $5, NOW(), NOW()
+          ) RETURNING 
+            id,
+            questionnaire_id as "questionnaireId",
+            question_text as "questionText",
+            answer,
+            question_order as "questionOrder",
+            is_required as "isRequired",
+            created_at as "createdAt",
+            updated_at as "updatedAt"
+        `;
 
-      const questionValues = [
-        questionId,
-        questionnaireId,
-        question.questionText,
-        question.questionOrder,
-        question.isRequired || false
-      ];
+        const questionValues = [
+          questionId,
+          questionnaire.id,
+          question.questionText,
+          question.questionOrder,
+          question.isRequired || false
+        ];
 
-      const questionResult = await this.databaseService.query(questionQuery, questionValues);
-      createdQuestions.push(questionResult.rows[0]);
+        const questionResult = await this.databaseService.query(questionQuery, questionValues);
+        createdQuestions.push(questionResult.rows[0]);
+      }
     }
 
     return {
       ...questionnaire,
+      progress: 0,
       questions: createdQuestions
     };
   }
@@ -235,12 +236,12 @@ export class QuestionnairesService {
     const query = `
       UPDATE questionnaires 
       SET ${updateFields.join(', ')}
-      WHERE id = $${paramIndex}
+      WHERE questionnaire_id = $${paramIndex}
       RETURNING 
-        id,
+        questionnaire_id as id,
         title,
         status,
-        progress,
+        vendor_id as "vendorId",
         created_at as "createdAt",
         updated_at as "updatedAt"
     `;
@@ -324,10 +325,10 @@ export class QuestionnairesService {
    */
   async deleteQuestionnaire(id: string): Promise<boolean> {
     // Delete questions first (due to foreign key constraint)
-    await this.databaseService.query('DELETE FROM questionnaire_questions WHERE questionnaire_id = $1', [id]);
+    await this.databaseService.query('DELETE FROM questionnaire_questions WHERE questionnaire_id = $1', [parseInt(id)]);
     
     // Delete the questionnaire
-    const result = await this.databaseService.query('DELETE FROM questionnaires WHERE id = $1', [id]);
+    const result = await this.databaseService.query('DELETE FROM questionnaires WHERE questionnaire_id = $1', [parseInt(id)]);
     return result.rowCount > 0;
   }
 
