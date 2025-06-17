@@ -14,6 +14,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { QuestionnairesService } from './questionnaires.service';
 import { CreateQuestionnaireDto, UpdateQuestionnaireDto, UpdateQuestionDto } from './dto/questionnaire.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Public } from '../common/decorators/public.decorator';
 
 @ApiTags('questionnaires')
 @Controller('api/questionnaires')
@@ -22,6 +23,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class QuestionnairesController {
   constructor(private readonly questionnairesService: QuestionnairesService) {}
 
+  @Public()
   @Post()
   @ApiOperation({ summary: 'Create a new questionnaire' })
   @ApiResponse({ status: 201, description: 'Questionnaire created successfully' })
@@ -38,6 +40,7 @@ export class QuestionnairesController {
     }
   }
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Get all questionnaires' })
   @ApiResponse({ status: 200, description: 'Returns all questionnaires' })
@@ -53,6 +56,23 @@ export class QuestionnairesController {
     }
   }
 
+  @Public()
+  @Get('vendor/:vendorId')
+  @ApiOperation({ summary: 'Get questionnaires for a specific vendor' })
+  @ApiResponse({ status: 200, description: 'Returns questionnaires for the vendor' })
+  async getQuestionnairesByVendor(@Param('vendorId') vendorId: string) {
+    try {
+      const questionnaires = await this.questionnairesService.getQuestionnairesByVendor(vendorId);
+      return { questionnaires };
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get a specific questionnaire by ID' })
   @ApiResponse({ status: 200, description: 'Returns the questionnaire' })

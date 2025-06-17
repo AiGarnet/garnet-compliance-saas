@@ -85,17 +85,48 @@ export class QuestionnairesService {
   async getAllQuestionnaires(): Promise<Questionnaire[]> {
     const query = `
       SELECT 
-        id,
-        title,
-        status,
-        progress,
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM questionnaires 
-      ORDER BY created_at DESC
+        q.questionnaire_id as id,
+        q.title,
+        q.status,
+        q.vendor_id as "vendorId",
+        v.company_name as "vendorName",
+        q.created_at as "createdAt",
+        q.updated_at as "updatedAt",
+        COUNT(vqa.id) as "answerCount"
+      FROM questionnaires q 
+      LEFT JOIN vendors v ON q.vendor_id = v.vendor_id
+      LEFT JOIN vendor_questionnaire_answers vqa ON q.questionnaire_id = vqa.questionnaire_id
+      GROUP BY q.questionnaire_id, q.title, q.status, q.vendor_id, v.company_name, q.created_at, q.updated_at
+      ORDER BY q.created_at DESC
     `;
 
     const result = await this.databaseService.query(query);
+    return result.rows;
+  }
+
+  /**
+   * Get questionnaires for a specific vendor
+   */
+  async getQuestionnairesByVendor(vendorId: string): Promise<Questionnaire[]> {
+    const query = `
+      SELECT 
+        q.questionnaire_id as id,
+        q.title,
+        q.status,
+        q.vendor_id as "vendorId",
+        v.company_name as "vendorName",
+        q.created_at as "createdAt",
+        q.updated_at as "updatedAt",
+        COUNT(vqa.id) as "answerCount"
+      FROM questionnaires q 
+      LEFT JOIN vendors v ON q.vendor_id = v.vendor_id
+      LEFT JOIN vendor_questionnaire_answers vqa ON q.questionnaire_id = vqa.questionnaire_id
+      WHERE q.vendor_id = $1
+      GROUP BY q.questionnaire_id, q.title, q.status, q.vendor_id, v.company_name, q.created_at, q.updated_at
+      ORDER BY q.created_at DESC
+    `;
+
+    const result = await this.databaseService.query(query, [parseInt(vendorId)]);
     return result.rows;
   }
 
@@ -105,17 +136,19 @@ export class QuestionnairesService {
   async getQuestionnaireById(id: string): Promise<Questionnaire | null> {
     const questionnaireQuery = `
       SELECT 
-        id,
-        title,
-        status,
-        progress,
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM questionnaires 
-      WHERE id = $1
+        q.questionnaire_id as id,
+        q.title,
+        q.status,
+        q.vendor_id as "vendorId",
+        v.company_name as "vendorName",
+        q.created_at as "createdAt",
+        q.updated_at as "updatedAt"
+      FROM questionnaires q
+      LEFT JOIN vendors v ON q.vendor_id = v.vendor_id
+      WHERE q.questionnaire_id = $1
     `;
 
-    const questionnaireResult = await this.databaseService.query(questionnaireQuery, [id]);
+    const questionnaireResult = await this.databaseService.query(questionnaireQuery, [parseInt(id)]);
     
     if (questionnaireResult.rows.length === 0) {
       return null;
@@ -123,27 +156,27 @@ export class QuestionnairesService {
 
     const questionnaire = questionnaireResult.rows[0];
 
-    // Get questions for this questionnaire
-    const questionsQuery = `
+    // Get answers for this questionnaire
+    const answersQuery = `
       SELECT 
         id,
         questionnaire_id as "questionnaireId",
-        question_text as "questionText",
+        vendor_id as "vendorId",
+        question_id as "questionId",
+        question,
         answer,
-        question_order as "questionOrder",
-        is_required as "isRequired",
         created_at as "createdAt",
         updated_at as "updatedAt"
-      FROM questionnaire_questions 
+      FROM vendor_questionnaire_answers 
       WHERE questionnaire_id = $1
-      ORDER BY question_order ASC
+      ORDER BY created_at ASC
     `;
 
-    const questionsResult = await this.databaseService.query(questionsQuery, [id]);
+    const answersResult = await this.databaseService.query(answersQuery, [parseInt(id)]);
 
     return {
       ...questionnaire,
-      questions: questionsResult.rows
+      answers: answersResult.rows
     };
   }
 
