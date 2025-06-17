@@ -408,6 +408,7 @@ export class VendorsService {
         question_id as "questionId",
         question,
         answer,
+        status,
         share_to_trust_portal as "shareToTrustPortal",
         created_at as "createdAt",
         updated_at as "updatedAt"
