@@ -1,6 +1,6 @@
 import { IsString, IsEmail, IsOptional, IsEnum, IsNumber, IsNotEmpty, Min, Max, IsBoolean, IsArray, IsDateString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { VendorStatus, RiskLevel, WorkStatus } from '../entities/vendor.entity';
+import { VendorStatus, RiskLevel, WorkStatus, AnswerStatus } from '../entities/vendor.entity';
 
 export class CreateVendorDto {
   @ApiProperty({ example: 'Acme Corporation' })
@@ -274,4 +274,15 @@ export class ShareToTrustPortalDto {
   @ApiProperty({ example: true, description: 'Whether to share to trust portal' })
   @IsBoolean()
   shareToTrustPortal: boolean;
+}
+
+export class UpdateQuestionnaireAnswerStatusDto {
+  @ApiProperty({ enum: AnswerStatus, example: AnswerStatus.COMPLETED })
+  @IsEnum(AnswerStatus)
+  status: AnswerStatus;
+
+  @ApiPropertyOptional({ example: true, description: 'Whether to share to trust portal when completed' })
+  @IsOptional()
+  @IsBoolean()
+  shareToTrustPortal?: boolean;
 } 

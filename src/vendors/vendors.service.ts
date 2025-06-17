@@ -110,18 +110,19 @@ export class VendorsService {
           vendor_id as "vendorId",
           question_id as "questionId",
           question,
+          answer,
+          status,
+          share_to_trust_portal as "shareToTrustPortal",
+          work_id as "workId",
           created_at as "createdAt",
           updated_at as "updatedAt"
         FROM vendor_questionnaire_answers 
         WHERE vendor_id = $1
+        ORDER BY created_at DESC
       `;
       
       const answersResult = await this.databaseService.query(answersQuery, [vendor.vendorId]);
-      // Map to include answer field for compatibility (using empty string as default)
-      questionnaireAnswers = answersResult.rows.map(row => ({
-        ...row,
-        answer: '' // Default empty answer since column doesn't exist yet
-      }));
+      questionnaireAnswers = answersResult.rows;
     } catch (error) {
       // If vendor_questionnaire_answers table query fails, use empty array
       console.warn('vendor_questionnaire_answers table query failed:', error.message);
@@ -1015,6 +1016,37 @@ export class VendorsService {
     `;
     
     const result = await this.databaseService.query(query, [shareToTrustPortal, answerId, vendor.vendorId]);
+    
+    return result.rowCount > 0;
+  }
+
+  /**
+   * Update questionnaire answer completion status
+   */
+  async updateQuestionnaireAnswerStatus(vendorId: string, answerId: string, status: string, shareToTrustPortal?: boolean): Promise<boolean> {
+    const vendor = await this.getVendorById(vendorId);
+    if (!vendor) {
+      throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
+    }
+
+    let query = `
+      UPDATE vendor_questionnaire_answers 
+      SET status = $1, updated_at = NOW()
+    `;
+    const params: any[] = [status];
+    let paramIndex = 2;
+
+    // If shareToTrustPortal is provided, update it as well
+    if (shareToTrustPortal !== undefined) {
+      query += `, share_to_trust_portal = $${paramIndex}`;
+      params.push(shareToTrustPortal);
+      paramIndex++;
+    }
+
+    query += ` WHERE id = $${paramIndex} AND vendor_id = $${paramIndex + 1}`;
+    params.push(answerId, vendor.vendorId);
+    
+    const result = await this.databaseService.query(query, params);
     
     return result.rowCount > 0;
   }

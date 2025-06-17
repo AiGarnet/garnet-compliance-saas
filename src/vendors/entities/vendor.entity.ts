@@ -50,6 +50,15 @@ export interface VendorWork {
 }
 
 /**
+ * Answer completion status
+ */
+export enum AnswerStatus {
+  PENDING = 'Pending',
+  COMPLETED = 'Completed',
+  REVIEWED = 'Reviewed'
+}
+
+/**
  * Represents an answer to a specific questionnaire question
  */
 export interface QuestionnaireAnswer {
@@ -58,6 +67,7 @@ export interface QuestionnaireAnswer {
   questionId: string;
   question: string;
   answer: string;
+  status: AnswerStatus; // New field for answer completion status
   shareToTrustPortal: boolean; // New field for trust portal sharing
   workId?: string; // Link to associated work submission
   createdAt: Date;

@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { VendorsService } from './vendors.service';
-import { CreateVendorDto, UpdateVendorDto, VendorQuestionnaireAnswerDto, CreateVendorWithAnswersDto, CreateVendorWorkDto, UpdateVendorWorkDto, ShareToTrustPortalDto } from './dto/vendor.dto';
+import { CreateVendorDto, UpdateVendorDto, VendorQuestionnaireAnswerDto, CreateVendorWithAnswersDto, CreateVendorWorkDto, UpdateVendorWorkDto, ShareToTrustPortalDto, UpdateQuestionnaireAnswerStatusDto } from './dto/vendor.dto';
 import { VendorStatus } from './entities/vendor.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../common/decorators/public.decorator';
@@ -448,6 +448,46 @@ export class VendorsController {
       }
       
       return { message: 'Share status updated successfully' };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Patch(':id/answers/:answerId/status')
+  @ApiOperation({ summary: 'Update questionnaire answer completion status' })
+  @ApiResponse({ status: 200, description: 'Answer status updated successfully' })
+  @ApiResponse({ status: 404, description: 'Vendor or answer not found' })
+  async updateQuestionnaireAnswerStatus(
+    @Param('id') id: string,
+    @Param('answerId') answerId: string,
+    @Body() statusDto: UpdateQuestionnaireAnswerStatusDto,
+  ) {
+    try {
+      const updated = await this.vendorsService.updateQuestionnaireAnswerStatus(
+        id,
+        answerId,
+        statusDto.status,
+        statusDto.shareToTrustPortal,
+      );
+
+      if (!updated) {
+        throw new HttpException(
+          `Answer with ID ${answerId} not found for vendor ${id}`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      return {
+        message: 'Answer status updated successfully',
+        status: statusDto.status,
+        shareToTrustPortal: statusDto.shareToTrustPortal,
+      };
     } catch (error: any) {
       if (error instanceof HttpException) {
         throw error;
