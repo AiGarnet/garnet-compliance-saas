@@ -189,6 +189,7 @@ export class VendorsController {
     }
   }
 
+  @Public()
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a vendor' })
   @ApiResponse({ status: 200, description: 'Vendor deleted successfully' })
