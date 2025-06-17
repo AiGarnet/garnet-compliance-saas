@@ -392,6 +392,34 @@ export class VendorsService {
   }
 
   /**
+   * Get questionnaire answers for a vendor
+   */
+  async getVendorQuestionnaireAnswers(vendorId: string): Promise<QuestionnaireAnswer[]> {
+    const vendor = await this.getVendorById(vendorId);
+    if (!vendor) {
+      throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
+    }
+
+    const query = `
+      SELECT 
+        id,
+        vendor_id as "vendorId",
+        question_id as "questionId",
+        question,
+        answer,
+        share_to_trust_portal as "shareToTrustPortal",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM vendor_questionnaire_answers 
+      WHERE vendor_id = $1
+      ORDER BY created_at DESC
+    `;
+    
+    const result = await this.databaseService.query(query, [vendor.vendorId]);
+    return result.rows;
+  }
+
+  /**
    * Create a vendor with questionnaire answers
    */
   async createVendorWithAnswers(createVendorWithAnswersDto: CreateVendorWithAnswersDto): Promise<Vendor> {

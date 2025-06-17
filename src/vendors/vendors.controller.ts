@@ -217,6 +217,27 @@ export class VendorsController {
     }
   }
 
+  @Public()
+  @Get(':id/answers')
+  @ApiOperation({ summary: 'Get questionnaire answers for a vendor' })
+  @ApiResponse({ status: 200, description: 'Returns vendor questionnaire answers' })
+  @ApiResponse({ status: 404, description: 'Vendor not found' })
+  async getVendorQuestionnaireAnswers(@Param('id') id: string) {
+    try {
+      const answers = await this.vendorsService.getVendorQuestionnaireAnswers(id);
+      return { answers };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Public()
   @Post(':id/answers')
   @ApiOperation({ summary: 'Save questionnaire answers for a vendor' })
   @ApiResponse({ status: 200, description: 'Answers saved successfully' })
@@ -241,6 +262,7 @@ export class VendorsController {
 
   // Vendor Work Management Endpoints
 
+  @Public()
   @Post(':id/works')
   @ApiOperation({ summary: 'Create a new work submission for a vendor' })
   @ApiResponse({ status: 201, description: 'Work created successfully' })
@@ -263,6 +285,7 @@ export class VendorsController {
     }
   }
 
+  @Public()
   @Get(':id/works')
   @ApiOperation({ summary: 'Get all work submissions for a vendor' })
   @ApiResponse({ status: 200, description: 'Returns vendor works' })
@@ -282,6 +305,7 @@ export class VendorsController {
     }
   }
 
+  @Public()
   @Get(':id/works/:workId')
   @ApiOperation({ summary: 'Get a specific work submission for a vendor' })
   @ApiResponse({ status: 200, description: 'Returns the work' })
@@ -312,6 +336,7 @@ export class VendorsController {
     }
   }
 
+  @Public()
   @Put(':id/works/:workId')
   @ApiOperation({ summary: 'Update a work submission for a vendor' })
   @ApiResponse({ status: 200, description: 'Work updated successfully' })
@@ -343,6 +368,7 @@ export class VendorsController {
     }
   }
 
+  @Public()
   @Delete(':id/works/:workId')
   @ApiOperation({ summary: 'Delete a work submission for a vendor' })
   @ApiResponse({ status: 200, description: 'Work deleted successfully' })
