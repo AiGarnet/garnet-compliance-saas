@@ -1070,45 +1070,93 @@ export class VendorsService {
    * Calculate and update vendor risk assessment
    */
   async calculateAndUpdateRiskAssessment(vendorId: string): Promise<RiskAssessment> {
-    const vendor = await this.getVendorById(vendorId);
-    if (!vendor) {
-      throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
+    try {
+      const vendor = await this.getVendorById(vendorId);
+      if (!vendor) {
+        throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
+      }
+
+      // Get vendor works for risk assessment
+      let vendorWorks = [];
+      try {
+        vendorWorks = await this.getVendorWorks(vendorId);
+      } catch (error) {
+        console.log('Could not fetch vendor works, using empty array:', error.message);
+        vendorWorks = [];
+      }
+
+      // Calculate risk assessment
+      const riskAssessment = this.riskAssessmentService.calculateRiskAssessment(
+        vendor,
+        vendor.questionnaireAnswers,
+        vendorWorks
+      );
+
+      // Update vendor with new risk score and level
+      await this.updateVendorRiskData(vendorId, riskAssessment.overallScore, riskAssessment.riskLevel);
+
+      // Return a clean object without circular references
+      return {
+        overallScore: riskAssessment.overallScore,
+        riskLevel: riskAssessment.riskLevel,
+        factors: riskAssessment.factors.map(factor => ({
+          factor: factor.factor,
+          score: factor.score,
+          weight: factor.weight,
+          details: factor.details
+        })),
+        recommendations: riskAssessment.recommendations,
+        lastAssessed: riskAssessment.lastAssessed
+      };
+    } catch (error) {
+      console.error('Error in calculateAndUpdateRiskAssessment:', error);
+      throw error;
     }
-
-    // Get vendor works for risk assessment
-    const vendorWorks = await this.getVendorWorks(vendorId);
-
-    // Calculate risk assessment
-    const riskAssessment = this.riskAssessmentService.calculateRiskAssessment(
-      vendor,
-      vendor.questionnaireAnswers,
-      vendorWorks
-    );
-
-    // Update vendor with new risk score and level
-    await this.updateVendorRiskData(vendorId, riskAssessment.overallScore, riskAssessment.riskLevel);
-
-    return riskAssessment;
   }
 
   /**
    * Get detailed risk assessment for a vendor
    */
   async getVendorRiskAssessment(vendorId: string): Promise<RiskAssessment> {
-    const vendor = await this.getVendorById(vendorId);
-    if (!vendor) {
-      throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
+    try {
+      const vendor = await this.getVendorById(vendorId);
+      if (!vendor) {
+        throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
+      }
+
+      // Get vendor works for risk assessment
+      let vendorWorks = [];
+      try {
+        vendorWorks = await this.getVendorWorks(vendorId);
+      } catch (error) {
+        console.log('Could not fetch vendor works, using empty array:', error.message);
+        vendorWorks = [];
+      }
+
+      // Calculate and return risk assessment
+      const riskAssessment = this.riskAssessmentService.calculateRiskAssessment(
+        vendor,
+        vendor.questionnaireAnswers,
+        vendorWorks
+      );
+
+      // Return a clean object without circular references
+      return {
+        overallScore: riskAssessment.overallScore,
+        riskLevel: riskAssessment.riskLevel,
+        factors: riskAssessment.factors.map(factor => ({
+          factor: factor.factor,
+          score: factor.score,
+          weight: factor.weight,
+          details: factor.details
+        })),
+        recommendations: riskAssessment.recommendations,
+        lastAssessed: riskAssessment.lastAssessed
+      };
+    } catch (error) {
+      console.error('Error in getVendorRiskAssessment:', error);
+      throw error;
     }
-
-    // Get vendor works for risk assessment
-    const vendorWorks = await this.getVendorWorks(vendorId);
-
-    // Calculate and return risk assessment
-    return this.riskAssessmentService.calculateRiskAssessment(
-      vendor,
-      vendor.questionnaireAnswers,
-      vendorWorks
-    );
   }
 
   /**
