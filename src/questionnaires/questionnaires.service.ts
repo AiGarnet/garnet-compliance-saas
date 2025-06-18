@@ -26,9 +26,9 @@ export class QuestionnairesService {
     const titleQuestionId = `TITLE_${batchId}`;
     const titleQuery = `
       INSERT INTO vendor_questionnaire_answers (
-        id, vendor_id, question_id, question, answer, status, created_at, updated_at
+        id, vendor_id, question_id, question, answer, status, question_title, created_at, updated_at
       ) VALUES (
-        gen_random_uuid(), $1, $2, $3, $4, $5, NOW(), NOW()
+        gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW()
       )
     `;
     
@@ -37,7 +37,8 @@ export class QuestionnairesService {
       titleQuestionId,
       '__QUESTIONNAIRE_TITLE__', // Special marker for title
       title, // Store the title in the answer field
-      'Metadata'
+      'Metadata',
+      title // Store the title in the question_title column as well
     ]);
 
     if (questions && questions.length > 0) {
@@ -50,9 +51,9 @@ export class QuestionnairesService {
         // Save each question directly linked to vendor
         const query = `
           INSERT INTO vendor_questionnaire_answers (
-            id, vendor_id, question_id, question, answer, status, created_at, updated_at
+            id, vendor_id, question_id, question, answer, status, question_title, created_at, updated_at
           ) VALUES (
-            gen_random_uuid(), $1, $2, $3, $4, $5, NOW(), NOW()
+            gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW()
           ) RETURNING 
             id,
             vendor_id as "vendorId",
@@ -60,6 +61,7 @@ export class QuestionnairesService {
             question,
             answer,
             status,
+            question_title as "questionTitle",
             created_at as "createdAt",
             updated_at as "updatedAt"
         `;
@@ -69,7 +71,8 @@ export class QuestionnairesService {
           questionId,
           question.questionText,
           '', // Empty answer initially
-          initialStatus
+          initialStatus,
+          title // Store the questionnaire title for all questions
         ];
 
         const result = await this.databaseService.query(query, values);
@@ -155,9 +158,9 @@ export class QuestionnairesService {
         v.vendor_id as "vendorId",
         v.company_name as "vendorName",
         COALESCE(
-          MAX(CASE WHEN vqa.question = '__QUESTIONNAIRE_TITLE__' THEN vqa.answer END),
-          'Vendor Questionnaire'
-        ) as title,
+          MAX(CASE WHEN vqa.question = '__QUESTIONNAIRE_TITLE__' THEN vqa.question_title END),
+          CONCAT(v.company_name, '-Questionnaire')
+        ) as "questionTitle",
         CASE 
           WHEN COUNT(CASE WHEN vqa.status = 'Completed' AND vqa.question != '__QUESTIONNAIRE_TITLE__' THEN 1 END) = COUNT(CASE WHEN vqa.question != '__QUESTIONNAIRE_TITLE__' THEN 1 END) THEN 'Completed'
           WHEN COUNT(CASE WHEN vqa.status != 'Not Started' AND vqa.question != '__QUESTIONNAIRE_TITLE__' THEN 1 END) > 0 THEN 'In Progress'
@@ -178,10 +181,11 @@ export class QuestionnairesService {
     const result = await this.databaseService.query(query);
     return result.rows.map(row => ({
       id: row.vendorId.toString(),
-      title: row.title,
+      title: `${row.vendorName}-${row.questionTitle}`, // Format as {Vendor_name}-{question_title}
       status: row.status as QuestionnaireStatus,
       vendorId: row.vendorId,
       vendorName: row.vendorName,
+      questionTitle: row.questionTitle,
       progress: row.answerCount > 0 ? Math.round((row.answerCount / row.questionCount) * 100) : 0,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt
@@ -197,9 +201,9 @@ export class QuestionnairesService {
         v.vendor_id as "vendorId",
         v.company_name as "vendorName",
         COALESCE(
-          MAX(CASE WHEN vqa.question = '__QUESTIONNAIRE_TITLE__' THEN vqa.answer END),
-          'Vendor Questionnaire'
-        ) as title,
+          MAX(CASE WHEN vqa.question = '__QUESTIONNAIRE_TITLE__' THEN vqa.question_title END),
+          CONCAT(v.company_name, '-Questionnaire')
+        ) as "questionTitle",
         CASE 
           WHEN COUNT(CASE WHEN vqa.status = 'Completed' AND vqa.question != '__QUESTIONNAIRE_TITLE__' THEN 1 END) = COUNT(CASE WHEN vqa.question != '__QUESTIONNAIRE_TITLE__' THEN 1 END) THEN 'Completed'
           WHEN COUNT(CASE WHEN vqa.status != 'Not Started' AND vqa.question != '__QUESTIONNAIRE_TITLE__' THEN 1 END) > 0 THEN 'In Progress'
@@ -220,10 +224,11 @@ export class QuestionnairesService {
     const result = await this.databaseService.query(query, [parseInt(vendorId)]);
     return result.rows.map(row => ({
       id: row.vendorId.toString(),
-      title: row.title,
+      title: `${row.vendorName}-${row.questionTitle}`, // Format as {Vendor_name}-{question_title}
       status: row.status as QuestionnaireStatus,
       vendorId: row.vendorId,
       vendorName: row.vendorName,
+      questionTitle: row.questionTitle,
       progress: row.answerCount > 0 ? Math.round((row.answerCount / row.questionCount) * 100) : 0,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt
@@ -239,13 +244,13 @@ export class QuestionnairesService {
     
     // First get the title
     const titleQuery = `
-      SELECT answer as title 
+      SELECT question_title as title, answer as fallback_title 
       FROM vendor_questionnaire_answers 
       WHERE vendor_id = $1 AND question = '__QUESTIONNAIRE_TITLE__' 
       LIMIT 1
     `;
     const titleResult = await this.databaseService.query(titleQuery, [parseInt(vendorId)]);
-    const questionnaireTitle = titleResult.rows[0]?.title || `Vendor ${vendorId} Questionnaire`;
+    const questionnaireTitle = titleResult.rows[0]?.title || titleResult.rows[0]?.fallback_title || `Vendor ${vendorId} Questionnaire`;
 
     const query = `
       SELECT 
@@ -310,10 +315,11 @@ export class QuestionnairesService {
 
     return {
       id: vendorId,
-      title: questionnaireTitle,
+      title: `${firstRow.vendorName}-${questionnaireTitle}`, // Format as {Vendor_name}-{question_title}
       status: status,
       vendorId: firstRow.vendorId,
       vendorName: firstRow.vendorName,
+      questionTitle: questionnaireTitle,
       progress: progress,
       createdAt: firstRow.createdAt,
       updatedAt: firstRow.updatedAt,

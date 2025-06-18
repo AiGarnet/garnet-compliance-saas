@@ -28,6 +28,7 @@ export interface QuestionnaireQuestion {
 export interface Questionnaire {
   id: string;
   title: string;
+  questionTitle?: string; // The actual questionnaire title from question_title column
   status: QuestionnaireStatus;
   vendorId?: number;
   vendorName?: string;
