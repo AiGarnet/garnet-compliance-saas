@@ -424,6 +424,7 @@ export class VendorsController {
     }
   }
 
+  @Public()
   @Patch(':id/answers/:answerId/share')
   @ApiOperation({ summary: 'Update share to trust portal status for questionnaire answer' })
   @ApiResponse({ status: 200, description: 'Share status updated successfully' })
@@ -459,6 +460,7 @@ export class VendorsController {
     }
   }
 
+  @Public()
   @Patch(':id/answers/:answerId/status')
   @ApiOperation({ summary: 'Update questionnaire answer completion status' })
   @ApiResponse({ status: 200, description: 'Answer status updated successfully' })
