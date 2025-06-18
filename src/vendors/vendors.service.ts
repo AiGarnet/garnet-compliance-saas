@@ -1025,10 +1025,15 @@ export class VendorsService {
    * Update questionnaire answer completion status
    */
   async updateQuestionnaireAnswerStatus(vendorId: string, answerId: string, status: string, shareToTrustPortal?: boolean): Promise<boolean> {
+    console.log(`Service: Updating status for vendor ${vendorId}, answer ${answerId}, status: ${status}`);
+    
     const vendor = await this.getVendorById(vendorId);
     if (!vendor) {
+      console.log(`Vendor not found: ${vendorId}`);
       throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
     }
+
+    console.log(`Found vendor: ${vendor.vendorId} (${vendor.companyName})`);
 
     let query = `
       UPDATE vendor_questionnaire_answers 
@@ -1047,7 +1052,12 @@ export class VendorsService {
     query += ` WHERE id = $${paramIndex} AND vendor_id = $${paramIndex + 1}`;
     params.push(answerId, vendor.vendorId);
     
+    console.log(`Executing query: ${query}`);
+    console.log(`With params: ${JSON.stringify(params)}`);
+    
     const result = await this.databaseService.query(query, params);
+    
+    console.log(`Query result rowCount: ${result.rowCount}`);
     
     return result.rowCount > 0;
   }

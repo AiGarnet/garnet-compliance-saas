@@ -471,12 +471,16 @@ export class VendorsController {
     @Body() statusDto: UpdateQuestionnaireAnswerStatusDto,
   ) {
     try {
+      console.log(`Updating status for vendor ${id}, answer ${answerId}, status: ${statusDto.status}`);
+      
       const updated = await this.vendorsService.updateQuestionnaireAnswerStatus(
         id,
         answerId,
         statusDto.status,
         statusDto.shareToTrustPortal,
       );
+
+      console.log(`Update result: ${updated}`);
 
       if (!updated) {
         throw new HttpException(
@@ -489,8 +493,11 @@ export class VendorsController {
         message: 'Answer status updated successfully',
         status: statusDto.status,
         shareToTrustPortal: statusDto.shareToTrustPortal,
+        vendorId: id,
+        answerId: answerId,
       };
     } catch (error: any) {
+      console.error(`Error updating status: ${error.message}`, error);
       if (error instanceof HttpException) {
         throw error;
       }
