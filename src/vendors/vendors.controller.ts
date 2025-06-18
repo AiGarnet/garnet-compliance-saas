@@ -524,4 +524,12 @@ export class VendorsController {
       );
     }
   }
+
+  @Public()
+  @Get('test-public')
+  @ApiOperation({ summary: 'Test public endpoint' })
+  @ApiResponse({ status: 200, description: 'Test successful' })
+  async testPublicEndpoint() {
+    return { message: 'Public endpoint working', timestamp: new Date().toISOString() };
+  }
 } 
