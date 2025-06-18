@@ -1,18 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
+import { AiService } from '../ai/ai.service';
 import { CreateQuestionnaireDto, UpdateQuestionnaireDto, UpdateQuestionDto } from './dto/questionnaire.dto';
 import { Questionnaire, QuestionnaireQuestion, QuestionnaireStatus } from './entities/questionnaire.entity';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class QuestionnairesService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly aiService: AiService,
+  ) {}
 
   /**
    * Create a new questionnaire by saving questions as vendor answers
+   * Supports automatic AI answer generation for better UX
    */
   async createQuestionnaire(createQuestionnaireDto: CreateQuestionnaireDto): Promise<Questionnaire> {
-    const { title, questions, vendorId } = createQuestionnaireDto;
+    const { title, questions, vendorId, generateAnswers } = createQuestionnaireDto;
 
     // Generate a unique questionnaire ID for grouping
     const questionnaireId = Date.now();
@@ -22,6 +27,9 @@ export class QuestionnairesService {
     if (questions && questions.length > 0) {
       for (const question of questions) {
         const questionId = uuidv4();
+        
+        // Default status - if answers will be generated, mark as 'Pending', otherwise 'Not Started'
+        const initialStatus = generateAnswers ? 'Pending' : 'Not Started';
         
         // Save each question as a vendor questionnaire answer entry
         const query = `
@@ -46,8 +54,8 @@ export class QuestionnairesService {
           questionnaireId,
           questionId,
           question.questionText,
-          '', // Empty answer initially
-          'Not Started'
+          '', // Empty answer initially - will be filled by AI if generateAnswers is true
+          initialStatus
         ];
 
         const result = await this.databaseService.query(query, values);
@@ -55,12 +63,70 @@ export class QuestionnairesService {
       }
     }
 
+    // If generateAnswers is true, generate AI answers for all questions
+    if (generateAnswers && questions && questions.length > 0) {
+      try {
+        console.log(`🤖 Generating AI answers for ${questions.length} questions...`);
+        
+        // Extract question texts for AI generation
+        const questionTexts = questions.map(q => q.questionText);
+        
+        // Generate AI answers using batch processing
+        const aiResponse = await this.aiService.generateBatchAnswers({
+          questions: questionTexts,
+          vendorId: vendorId,
+          context: `Questionnaire: ${title}`
+        });
+
+        if (aiResponse.answers && aiResponse.answers.length > 0) {
+          // Update database with generated answers
+          for (let i = 0; i < aiResponse.answers.length; i++) {
+            const aiAnswer = aiResponse.answers[i];
+            const createdQuestion = createdQuestions[i];
+            
+            if (aiAnswer.success && aiAnswer.answer && createdQuestion) {
+              const updateQuery = `
+                UPDATE vendor_questionnaire_answers 
+                SET answer = $1, status = $2, updated_at = NOW()
+                WHERE questionnaire_id = $3 AND question_id = $4
+              `;
+              
+              await this.databaseService.query(updateQuery, [
+                aiAnswer.answer,
+                'Completed',
+                questionnaireId,
+                createdQuestion.questionId
+              ]);
+
+              // Update the returned question object
+              createdQuestion.answer = aiAnswer.answer;
+              createdQuestion.status = 'Completed';
+            }
+          }
+          
+          console.log(`✅ Generated ${aiResponse.metadata?.successfulAnswers || 0} AI answers successfully`);
+        }
+      } catch (error) {
+        console.error('❌ Error generating AI answers:', error);
+        // Continue without AI answers - don't fail the questionnaire creation
+      }
+    }
+
+    // Determine final status based on actual completion
+    const completedCount = createdQuestions.filter(q => q.status === 'Completed').length;
+    const finalStatus = completedCount === createdQuestions.length && createdQuestions.length > 0 ? 
+      QuestionnaireStatus.COMPLETED : 
+      (completedCount > 0 ? QuestionnaireStatus.IN_PROGRESS : QuestionnaireStatus.NOT_STARTED);
+
+    const finalProgress = createdQuestions.length > 0 ? 
+      Math.round((completedCount / createdQuestions.length) * 100) : 0;
+
     return {
       id: questionnaireId.toString(),
       title: title,
-      status: QuestionnaireStatus.NOT_STARTED,
+      status: finalStatus,
       vendorId: vendorId,
-      progress: 0,
+      progress: finalProgress,
       createdAt: new Date(),
       updatedAt: new Date(),
       questions: createdQuestions

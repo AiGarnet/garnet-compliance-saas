@@ -36,6 +36,11 @@ export class CreateQuestionnaireDto {
   @ValidateNested({ each: true })
   @Type(() => CreateQuestionDto)
   questions: CreateQuestionDto[];
+
+  @ApiPropertyOptional({ example: true, description: 'Whether to automatically generate AI answers for questions' })
+  @IsOptional()
+  @IsBoolean()
+  generateAnswers?: boolean = false;
 }
 
 export class UpdateQuestionnaireDto {
