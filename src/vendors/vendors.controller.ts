@@ -15,7 +15,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { VendorsService } from './vendors.service';
 import { CreateVendorDto, UpdateVendorDto, VendorQuestionnaireAnswerDto, CreateVendorWithAnswersDto, CreateVendorWorkDto, UpdateVendorWorkDto, ShareToTrustPortalDto, UpdateQuestionnaireAnswerStatusDto } from './dto/vendor.dto';
-import { VendorStatus } from './entities/vendor.entity';
+import { VendorStatus, RiskLevel } from './entities/vendor.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../common/decorators/public.decorator';
 
@@ -538,5 +538,112 @@ export class VendorsController {
   @ApiResponse({ status: 200, description: 'Test successful' })
   async testPublicEndpoint() {
     return { message: 'Public endpoint working', timestamp: new Date().toISOString() };
+  }
+
+  // Risk Assessment Endpoints
+
+  @Public()
+  @Get('risk/distribution')
+  @ApiOperation({ summary: 'Get risk distribution statistics' })
+  @ApiResponse({ status: 200, description: 'Returns risk distribution stats' })
+  async getRiskDistributionStats() {
+    try {
+      const stats = await this.vendorsService.getRiskDistributionStats();
+      return stats;
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Public()
+  @Get('risk/:riskLevel')
+  @ApiOperation({ summary: 'Get vendors by risk level' })
+  @ApiResponse({ status: 200, description: 'Returns vendors with specified risk level' })
+  async getVendorsByRiskLevel(@Param('riskLevel') riskLevel: string) {
+    try {
+      // Validate risk level
+      if (!Object.values(RiskLevel).includes(riskLevel as RiskLevel)) {
+        throw new HttpException(
+          `Invalid risk level. Must be one of: ${Object.values(RiskLevel).join(', ')}`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const vendors = await this.vendorsService.getVendorsByRiskLevel(riskLevel as RiskLevel);
+      return { vendors, riskLevel };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Public()
+  @Post('risk/recalculate')
+  @ApiOperation({ summary: 'Recalculate risk for all vendors' })
+  @ApiResponse({ status: 200, description: 'Risk recalculation completed' })
+  async recalculateAllVendorRisks() {
+    try {
+      const result = await this.vendorsService.recalculateAllVendorRisks();
+      return {
+        message: 'Risk recalculation completed',
+        ...result
+      };
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Public()
+  @Get(':id/risk/assessment')
+  @ApiOperation({ summary: 'Get detailed risk assessment for a vendor' })
+  @ApiResponse({ status: 200, description: 'Returns detailed risk assessment' })
+  @ApiResponse({ status: 404, description: 'Vendor not found' })
+  async getVendorRiskAssessment(@Param('id') id: string) {
+    try {
+      const assessment = await this.vendorsService.getVendorRiskAssessment(id);
+      return { assessment };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Public()
+  @Post(':id/risk/calculate')
+  @ApiOperation({ summary: 'Calculate and update risk assessment for a vendor' })
+  @ApiResponse({ status: 200, description: 'Risk assessment updated successfully' })
+  @ApiResponse({ status: 404, description: 'Vendor not found' })
+  async calculateAndUpdateRiskAssessment(@Param('id') id: string) {
+    try {
+      const assessment = await this.vendorsService.calculateAndUpdateRiskAssessment(id);
+      return {
+        message: 'Risk assessment updated successfully',
+        assessment
+      };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 } 

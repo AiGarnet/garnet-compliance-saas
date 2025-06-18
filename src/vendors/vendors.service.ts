@@ -2,11 +2,15 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { DatabaseService } from '../database/database.service';
 import { CreateVendorDto, UpdateVendorDto, VendorQuestionnaireAnswerDto, CreateVendorWithAnswersDto, CreateVendorWorkDto, UpdateVendorWorkDto, ShareToTrustPortalDto } from './dto/vendor.dto';
 import { Vendor, VendorStatus, RiskLevel, QuestionnaireAnswer, VendorWork, WorkStatus } from './entities/vendor.entity';
+import { RiskAssessmentService, RiskAssessment } from './services/risk-assessment.service';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class VendorsService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly riskAssessmentService: RiskAssessmentService
+  ) {}
 
   /**
    * Get all vendors
@@ -1060,5 +1064,175 @@ export class VendorsService {
     console.log(`Query result rowCount: ${result.rowCount}`);
     
     return result.rowCount > 0;
+  }
+
+  /**
+   * Calculate and update vendor risk assessment
+   */
+  async calculateAndUpdateRiskAssessment(vendorId: string): Promise<RiskAssessment> {
+    const vendor = await this.getVendorById(vendorId);
+    if (!vendor) {
+      throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
+    }
+
+    // Get vendor works for risk assessment
+    const vendorWorks = await this.getVendorWorks(vendorId);
+
+    // Calculate risk assessment
+    const riskAssessment = this.riskAssessmentService.calculateRiskAssessment(
+      vendor,
+      vendor.questionnaireAnswers,
+      vendorWorks
+    );
+
+    // Update vendor with new risk score and level
+    await this.updateVendorRiskData(vendorId, riskAssessment.overallScore, riskAssessment.riskLevel);
+
+    return riskAssessment;
+  }
+
+  /**
+   * Get detailed risk assessment for a vendor
+   */
+  async getVendorRiskAssessment(vendorId: string): Promise<RiskAssessment> {
+    const vendor = await this.getVendorById(vendorId);
+    if (!vendor) {
+      throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
+    }
+
+    // Get vendor works for risk assessment
+    const vendorWorks = await this.getVendorWorks(vendorId);
+
+    // Calculate and return risk assessment
+    return this.riskAssessmentService.calculateRiskAssessment(
+      vendor,
+      vendor.questionnaireAnswers,
+      vendorWorks
+    );
+  }
+
+  /**
+   * Update vendor risk score and level in database
+   */
+  private async updateVendorRiskData(vendorId: string, riskScore: number, riskLevel: RiskLevel): Promise<void> {
+    const query = `
+      UPDATE vendors 
+      SET risk_score = $1, risk_level = $2, updated_at = NOW()
+      WHERE vendor_id = $3 OR uuid = $3
+    `;
+    
+    await this.databaseService.query(query, [riskScore, riskLevel, vendorId]);
+  }
+
+  /**
+   * Recalculate risk for all vendors (batch operation)
+   */
+  async recalculateAllVendorRisks(): Promise<{ updated: number; errors: string[] }> {
+    const vendors = await this.getAllVendors();
+    let updated = 0;
+    const errors: string[] = [];
+
+    for (const vendor of vendors) {
+      try {
+        await this.calculateAndUpdateRiskAssessment(vendor.vendorId.toString());
+        updated++;
+      } catch (error) {
+        errors.push(`Vendor ${vendor.companyName} (ID: ${vendor.vendorId}): ${error.message}`);
+      }
+    }
+
+    return { updated, errors };
+  }
+
+  /**
+   * Get vendors by risk level
+   */
+  async getVendorsByRiskLevel(riskLevel: RiskLevel): Promise<Vendor[]> {
+    const query = `
+      SELECT 
+        vendor_id as "vendorId",
+        uuid,
+        company_name as "companyName",
+        region,
+        status,
+        risk_score as "riskScore",
+        risk_level as "riskLevel",
+        contact_name as "contactName",
+        contact_email as "contactEmail",
+        website,
+        industry,
+        description,
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM vendors 
+      WHERE risk_level = $1
+      ORDER BY risk_score DESC, created_at DESC
+    `;
+    
+    const result = await this.databaseService.query(query, [riskLevel]);
+    return result.rows.map(row => ({
+      ...row,
+      // Legacy compatibility
+      id: row.vendorId.toString(),
+      name: row.companyName
+    }));
+  }
+
+  /**
+   * Get risk distribution statistics
+   */
+  async getRiskDistributionStats(): Promise<{
+    high: number;
+    medium: number;
+    low: number;
+    total: number;
+    averageScore: number;
+  }> {
+    const query = `
+      SELECT 
+        risk_level,
+        COUNT(*) as count,
+        AVG(risk_score) as avg_score
+      FROM vendors 
+      GROUP BY risk_level
+    `;
+    
+    const result = await this.databaseService.query(query);
+    
+    const stats = {
+      high: 0,
+      medium: 0,
+      low: 0,
+      total: 0,
+      averageScore: 0
+    };
+
+    let totalScore = 0;
+    let totalCount = 0;
+
+    result.rows.forEach(row => {
+      const count = parseInt(row.count);
+      const avgScore = parseFloat(row.avg_score) || 0;
+      
+      totalCount += count;
+      totalScore += avgScore * count;
+      
+      switch (row.risk_level) {
+        case RiskLevel.HIGH:
+          stats.high = count;
+          break;
+        case RiskLevel.MEDIUM:
+          stats.medium = count;
+          break;
+        case RiskLevel.LOW:
+          stats.low = count;
+          break;
+      }
+    });
+
+    stats.total = totalCount;
+    stats.averageScore = totalCount > 0 ? Math.round(totalScore / totalCount) : 0;
+
+    return stats;
   }
 } 
