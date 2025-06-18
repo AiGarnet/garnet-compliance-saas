@@ -44,6 +44,31 @@ export class AiController {
     }
   }
 
+  @Post('api/answer')
+  @Public()
+  @ApiOperation({ summary: 'Generate AI answer for frontend compatibility' })
+  @ApiResponse({ status: 200, description: 'AI answer generated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input or OpenAI not configured' })
+  async answerQuestion(@Body() generateAnswerDto: GenerateAnswerDto) {
+    try {
+      const result = await this.aiService.generateAnswer({
+        question: generateAnswerDto.question,
+        context: generateAnswerDto.context,
+        vendorId: generateAnswerDto.vendorId,
+      });
+
+      return { answer: result.answer };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Failed to generate AI answer',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Post('api/ai/ask')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

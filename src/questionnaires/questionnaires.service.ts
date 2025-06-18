@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 export class QuestionnairesService {
   constructor(
     private readonly databaseService: DatabaseService,
-    private readonly aiService: AiService,
+    private readonly aiService?: AiService,
   ) {}
 
   /**
@@ -64,7 +64,7 @@ export class QuestionnairesService {
     }
 
     // If generateAnswers is true, generate AI answers for all questions
-    if (generateAnswers && questions && questions.length > 0) {
+    if (generateAnswers && questions && questions.length > 0 && this.aiService) {
       try {
         console.log(`🤖 Generating AI answers for ${questions.length} questions...`);
         
