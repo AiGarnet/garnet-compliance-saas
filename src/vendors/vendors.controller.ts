@@ -533,7 +533,7 @@ export class VendorsController {
   }
 
   @Public()
-  @Get('test-public')
+  @Get('public-test')
   @ApiOperation({ summary: 'Test public endpoint' })
   @ApiResponse({ status: 200, description: 'Test successful' })
   async testPublicEndpoint() {
