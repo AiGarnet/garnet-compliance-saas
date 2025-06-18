@@ -18,6 +18,36 @@ export class QuestionnairesService {
   async createQuestionnaire(createQuestionnaireDto: CreateQuestionnaireDto): Promise<Questionnaire> {
     const { title, questions, vendorId, generateAnswers } = createQuestionnaireDto;
 
+    // If no vendorId provided, create a dummy vendor
+    let finalVendorId = vendorId;
+    if (!finalVendorId) {
+      try {
+        // Create a vendor for this questionnaire
+        const vendorName = title.includes('Questionnaire') ? 
+          title.replace('Questionnaire', '').trim() || `Company for ${title}` :
+          `Company for ${title}`;
+
+        const createVendorQuery = `
+          INSERT INTO vendors (company_name, region, status, description, created_at, updated_at)
+          VALUES ($1, $2, $3, $4, NOW(), NOW())
+          RETURNING vendor_id
+        `;
+        
+        const vendorResult = await this.databaseService.query(createVendorQuery, [
+          vendorName,
+          'Unknown',
+          'QUESTIONNAIRE_PENDING',
+          `Auto-created vendor for questionnaire: ${title}`
+        ]);
+        
+        finalVendorId = vendorResult.rows[0].vendor_id;
+        console.log(`✅ Auto-created vendor ${finalVendorId} for questionnaire: ${title}`);
+      } catch (vendorError) {
+        console.error('❌ Failed to create vendor:', vendorError);
+        throw new Error(`Failed to create vendor for questionnaire: ${vendorError.message}`);
+      }
+    }
+
     // Generate a simple batch ID for this questionnaire
     const batchId = Date.now();
     const createdQuestions: any[] = [];
@@ -33,7 +63,7 @@ export class QuestionnairesService {
     `;
     
     await this.databaseService.query(titleQuery, [
-      vendorId || null,
+      finalVendorId,
       titleQuestionId,
       '__QUESTIONNAIRE_TITLE__', // Special marker for title
       title, // Store the title in the answer field
@@ -67,7 +97,7 @@ export class QuestionnairesService {
         `;
 
         const values = [
-          vendorId || null,
+          finalVendorId,
           questionId,
           question.questionText,
           '', // Empty answer initially
@@ -91,7 +121,7 @@ export class QuestionnairesService {
         // Generate AI answers using batch processing
         const aiResponse = await this.aiService.generateBatchAnswers({
           questions: questionTexts,
-          vendorId: vendorId,
+          vendorId: finalVendorId,
           context: `Questionnaire: ${title}`
         });
 
@@ -138,10 +168,10 @@ export class QuestionnairesService {
       Math.round((completedCount / createdQuestions.length) * 100) : 0;
 
     return {
-      id: batchId.toString(),
+      id: finalVendorId.toString(),
       title: title,
       status: finalStatus,
-      vendorId: vendorId,
+      vendorId: finalVendorId,
       progress: finalProgress,
       createdAt: new Date(),
       updatedAt: new Date(),
