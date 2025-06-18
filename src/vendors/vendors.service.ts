@@ -110,19 +110,22 @@ export class VendorsService {
     try {
       const answersQuery = `
         SELECT 
-          id,
-          vendor_id as "vendorId",
-          question_id as "questionId",
-          question,
-          answer,
-          status,
-          share_to_trust_portal as "shareToTrustPortal",
-          work_id as "workId",
-          created_at as "createdAt",
-          updated_at as "updatedAt"
-        FROM vendor_questionnaire_answers 
-        WHERE vendor_id = $1
-        ORDER BY created_at DESC
+          vqa.id,
+          vqa.vendor_id as "vendorId",
+          vqa.questionnaire_id as "questionnaireId",
+          vqa.question_id as "questionId",
+          vqa.question,
+          vqa.answer,
+          vqa.status,
+          vqa.share_to_trust_portal as "shareToTrustPortal",
+          vqa.work_id as "workId",
+          vqa.created_at as "createdAt",
+          vqa.updated_at as "updatedAt",
+          q.title as "questionnaireTitle"
+        FROM vendor_questionnaire_answers vqa
+        LEFT JOIN questionnaires q ON vqa.questionnaire_id = q.questionnaire_id
+        WHERE vqa.vendor_id = $1
+        ORDER BY vqa.created_at DESC
       `;
       
       const answersResult = await this.databaseService.query(answersQuery, [vendor.vendorId]);

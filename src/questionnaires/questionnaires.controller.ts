@@ -199,4 +199,49 @@ export class QuestionnairesController {
       );
     }
   }
+
+  @Public()
+  @Post(':id/vendor/:vendorId/answers')
+  @ApiOperation({ summary: 'Save vendor answers for a questionnaire' })
+  @ApiResponse({ status: 201, description: 'Vendor answers saved successfully' })
+  @ApiResponse({ status: 404, description: 'Questionnaire or vendor not found' })
+  async saveVendorAnswers(
+    @Param('id') questionnaireId: string,
+    @Param('vendorId') vendorId: string,
+    @Body() answers: Array<{ questionId?: string; question: string; answer: string }>
+  ) {
+    try {
+      const savedAnswers = await this.questionnairesService.saveVendorAnswersForQuestionnaire(
+        questionnaireId,
+        vendorId,
+        answers
+      );
+      
+      return { 
+        message: 'Vendor answers saved successfully',
+        answers: savedAnswers 
+      };
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Public()
+  @Get('vendor/:vendorId/with-answers')
+  @ApiOperation({ summary: 'Get questionnaires with answers for a specific vendor' })
+  @ApiResponse({ status: 200, description: 'Returns questionnaires with vendor answers' })
+  async getQuestionnairesWithAnswersForVendor(@Param('vendorId') vendorId: string) {
+    try {
+      const questionnaires = await this.questionnairesService.getQuestionnairesWithAnswersForVendor(vendorId);
+      return { questionnaires };
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 } 

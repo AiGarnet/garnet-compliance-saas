@@ -9,100 +9,101 @@ export class QuestionnairesService {
   constructor(private readonly databaseService: DatabaseService) {}
 
   /**
-   * Create a new questionnaire with questions
+   * Create a new questionnaire by saving questions as vendor answers
    */
   async createQuestionnaire(createQuestionnaireDto: CreateQuestionnaireDto): Promise<Questionnaire> {
     const { title, questions, vendorId } = createQuestionnaireDto;
 
-    // Create the questionnaire
-    const questionnaireQuery = `
-      INSERT INTO questionnaires (
-        title, status, vendor_id, created_at, updated_at
-      ) VALUES (
-        $1, $2, $3, NOW(), NOW()
-      ) RETURNING 
-        questionnaire_id as id,
-        title,
-        status,
-        vendor_id as "vendorId",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-    `;
+    // Generate a unique questionnaire ID for grouping
+    const questionnaireId = Date.now();
 
-    const questionnaireValues = [
-      title,
-      QuestionnaireStatus.NOT_STARTED,
-      vendorId || null
-    ];
-
-    const questionnaireResult = await this.databaseService.query(questionnaireQuery, questionnaireValues);
-    const questionnaire = questionnaireResult.rows[0];
-
-    // Create the questions
-    const createdQuestions: QuestionnaireQuestion[] = [];
+    const createdQuestions: any[] = [];
     
     if (questions && questions.length > 0) {
       for (const question of questions) {
         const questionId = uuidv4();
-        const questionQuery = `
-          INSERT INTO questionnaire_questions (
-            id, questionnaire_id, question_text, question_order, is_required, created_at, updated_at
+        
+        // Save each question as a vendor questionnaire answer entry
+        const query = `
+          INSERT INTO vendor_questionnaire_answers (
+            id, vendor_id, questionnaire_id, question_id, question, answer, status, created_at, updated_at
           ) VALUES (
-            $1, $2, $3, $4, $5, NOW(), NOW()
+            gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW()
           ) RETURNING 
             id,
+            vendor_id as "vendorId",
             questionnaire_id as "questionnaireId",
-            question_text as "questionText",
+            question_id as "questionId",
+            question,
             answer,
-            question_order as "questionOrder",
-            is_required as "isRequired",
+            status,
             created_at as "createdAt",
             updated_at as "updatedAt"
         `;
 
-        const questionValues = [
+        const values = [
+          vendorId || null,
+          questionnaireId,
           questionId,
-          questionnaire.id,
           question.questionText,
-          question.questionOrder,
-          question.isRequired || false
+          '', // Empty answer initially
+          'Not Started'
         ];
 
-        const questionResult = await this.databaseService.query(questionQuery, questionValues);
-        createdQuestions.push(questionResult.rows[0]);
+        const result = await this.databaseService.query(query, values);
+        createdQuestions.push(result.rows[0]);
       }
     }
 
     return {
-      ...questionnaire,
+      id: questionnaireId.toString(),
+      title: title,
+      status: QuestionnaireStatus.NOT_STARTED,
+      vendorId: vendorId,
       progress: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
       questions: createdQuestions
     };
   }
 
   /**
-   * Get all questionnaires
+   * Get all questionnaires (grouped by questionnaire_id)
    */
   async getAllQuestionnaires(): Promise<Questionnaire[]> {
     const query = `
       SELECT 
-        q.questionnaire_id as id,
-        q.title,
-        q.status,
-        q.vendor_id as "vendorId",
+        vqa.questionnaire_id as id,
+        'Questionnaire ' || vqa.questionnaire_id as title,
+        CASE 
+          WHEN COUNT(CASE WHEN vqa.status = 'Completed' THEN 1 END) = COUNT(*) THEN 'Completed'
+          WHEN COUNT(CASE WHEN vqa.status != 'Not Started' THEN 1 END) > 0 THEN 'In Progress'
+          ELSE 'Not Started'
+        END as status,
+        vqa.vendor_id as "vendorId",
         v.company_name as "vendorName",
-        q.created_at as "createdAt",
-        q.updated_at as "updatedAt",
-        COUNT(vqa.id) as "answerCount"
-      FROM questionnaires q 
-      LEFT JOIN vendors v ON q.vendor_id = v.vendor_id
-      LEFT JOIN vendor_questionnaire_answers vqa ON q.questionnaire_id = vqa.questionnaire_id
-      GROUP BY q.questionnaire_id, q.title, q.status, q.vendor_id, v.company_name, q.created_at, q.updated_at
-      ORDER BY q.created_at DESC
+        MIN(vqa.created_at) as "createdAt",
+        MAX(vqa.updated_at) as "updatedAt",
+        COUNT(*) as "questionCount",
+        COUNT(CASE WHEN vqa.answer != '' THEN 1 END) as "answerCount"
+      FROM vendor_questionnaire_answers vqa 
+      LEFT JOIN vendors v ON vqa.vendor_id = v.vendor_id
+      WHERE vqa.questionnaire_id IS NOT NULL
+      GROUP BY vqa.questionnaire_id, vqa.vendor_id, v.company_name
+      ORDER BY MIN(vqa.created_at) DESC
     `;
 
     const result = await this.databaseService.query(query);
-    return result.rows;
+    return result.rows.map(row => ({
+      id: row.id,
+      title: row.title,
+      status: row.status as QuestionnaireStatus,
+      vendorId: row.vendorId,
+      vendorName: row.vendorName,
+      progress: row.answerCount > 0 ? Math.round((row.answerCount / row.questionCount) * 100) : 0,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt
+    }));
   }
 
   /**
@@ -111,61 +112,131 @@ export class QuestionnairesService {
   async getQuestionnairesByVendor(vendorId: string): Promise<Questionnaire[]> {
     const query = `
       SELECT 
-        q.questionnaire_id as id,
-        q.title,
-        q.status,
-        q.vendor_id as "vendorId",
+        vqa.questionnaire_id as id,
+        'Questionnaire ' || vqa.questionnaire_id as title,
+        CASE 
+          WHEN COUNT(CASE WHEN vqa.status = 'Completed' THEN 1 END) = COUNT(*) THEN 'Completed'
+          WHEN COUNT(CASE WHEN vqa.status != 'Not Started' THEN 1 END) > 0 THEN 'In Progress'
+          ELSE 'Not Started'
+        END as status,
+        vqa.vendor_id as "vendorId",
         v.company_name as "vendorName",
-        q.created_at as "createdAt",
-        q.updated_at as "updatedAt",
-        COUNT(vqa.id) as "answerCount"
-      FROM questionnaires q 
-      LEFT JOIN vendors v ON q.vendor_id = v.vendor_id
-      LEFT JOIN vendor_questionnaire_answers vqa ON q.questionnaire_id = vqa.questionnaire_id
-      WHERE q.vendor_id = $1
-      GROUP BY q.questionnaire_id, q.title, q.status, q.vendor_id, v.company_name, q.created_at, q.updated_at
-      ORDER BY q.created_at DESC
+        MIN(vqa.created_at) as "createdAt",
+        MAX(vqa.updated_at) as "updatedAt",
+        COUNT(*) as "questionCount",
+        COUNT(CASE WHEN vqa.answer != '' THEN 1 END) as "answerCount"
+      FROM vendor_questionnaire_answers vqa 
+      LEFT JOIN vendors v ON vqa.vendor_id = v.vendor_id
+      WHERE vqa.vendor_id = $1 AND vqa.questionnaire_id IS NOT NULL
+      GROUP BY vqa.questionnaire_id, vqa.vendor_id, v.company_name
+      ORDER BY MIN(vqa.created_at) DESC
     `;
 
     const result = await this.databaseService.query(query, [parseInt(vendorId)]);
-    return result.rows;
+    return result.rows.map(row => ({
+      id: row.id,
+      title: row.title,
+      status: row.status as QuestionnaireStatus,
+      vendorId: row.vendorId,
+      vendorName: row.vendorName,
+      progress: row.answerCount > 0 ? Math.round((row.answerCount / row.questionCount) * 100) : 0,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt
+    }));
   }
 
   /**
-   * Get a questionnaire by ID with questions
+   * Get a questionnaire by ID with questions and answers
    */
   async getQuestionnaireById(id: string): Promise<Questionnaire | null> {
-    const questionnaireQuery = `
+    const query = `
       SELECT 
-        q.questionnaire_id as id,
-        q.title,
-        q.status,
-        q.vendor_id as "vendorId",
+        vqa.id,
+        vqa.questionnaire_id as "questionnaireId",
+        vqa.vendor_id as "vendorId",
         v.company_name as "vendorName",
-        q.created_at as "createdAt",
-        q.updated_at as "updatedAt"
-      FROM questionnaires q
-      LEFT JOIN vendors v ON q.vendor_id = v.vendor_id
-      WHERE q.questionnaire_id = $1
+        vqa.question_id as "questionId",
+        vqa.question,
+        vqa.answer,
+        vqa.status,
+        vqa.share_to_trust_portal as "shareToTrustPortal",
+        vqa.created_at as "createdAt",
+        vqa.updated_at as "updatedAt"
+      FROM vendor_questionnaire_answers vqa
+      LEFT JOIN vendors v ON vqa.vendor_id = v.vendor_id
+      WHERE vqa.questionnaire_id = $1
+      ORDER BY vqa.created_at ASC
     `;
 
-    const questionnaireResult = await this.databaseService.query(questionnaireQuery, [parseInt(id)]);
+    const result = await this.databaseService.query(query, [parseInt(id)]);
     
-    if (questionnaireResult.rows.length === 0) {
+    if (result.rows.length === 0) {
       return null;
     }
 
-    const questionnaire = questionnaireResult.rows[0];
+    const firstRow = result.rows[0];
+    const questions = result.rows.map(row => ({
+      id: row.questionId,
+      questionnaireId: row.questionnaireId,
+      questionText: row.question,
+      answer: row.answer,
+      questionOrder: 1, // Not tracked anymore, but kept for compatibility
+      isRequired: true,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt
+    }));
 
-    // Get answers for this questionnaire
-    const answersQuery = `
+    const answers = result.rows.map(row => ({
+      id: row.id,
+      questionnaireId: row.questionnaireId,
+      vendorId: row.vendorId,
+      questionId: row.questionId,
+      question: row.question,
+      answer: row.answer,
+      status: row.status,
+      shareToTrustPortal: row.shareToTrustPortal,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt
+    }));
+
+    // Calculate status and progress
+    const completedAnswers = answers.filter(a => a.status === 'Completed').length;
+    const totalQuestions = answers.length;
+    const progress = totalQuestions > 0 ? Math.round((completedAnswers / totalQuestions) * 100) : 0;
+    
+    let status: QuestionnaireStatus = QuestionnaireStatus.NOT_STARTED;
+    if (completedAnswers === totalQuestions) {
+      status = QuestionnaireStatus.COMPLETED;
+    } else if (completedAnswers > 0) {
+      status = QuestionnaireStatus.IN_PROGRESS;
+    }
+
+    return {
+      id: id,
+      title: `Questionnaire ${id}`,
+      status: status,
+      vendorId: firstRow.vendorId,
+      vendorName: firstRow.vendorName,
+      progress: progress,
+      createdAt: firstRow.createdAt,
+      updatedAt: firstRow.updatedAt,
+      questions: questions,
+      answers: answers
+    };
+  }
+
+  /**
+   * Get questions for a specific questionnaire (same as answers now)
+   */
+  async getQuestionnaireQuestions(questionnaireId: string): Promise<QuestionnaireQuestion[]> {
+    const query = `
       SELECT 
-        id,
+        question_id as id,
         questionnaire_id as "questionnaireId",
-        vendor_id as "vendorId",
-        question_id as "questionId",
-        question,
+        question as "questionText",
         answer,
+        1 as "questionOrder",
+        true as "isRequired",
         created_at as "createdAt",
         updated_at as "updatedAt"
       FROM vendor_questionnaire_answers 
@@ -173,106 +244,37 @@ export class QuestionnairesService {
       ORDER BY created_at ASC
     `;
 
-    const answersResult = await this.databaseService.query(answersQuery, [parseInt(id)]);
-
-    return {
-      ...questionnaire,
-      answers: answersResult.rows
-    };
-  }
-
-  /**
-   * Get questions for a specific questionnaire
-   */
-  async getQuestionnaireQuestions(questionnaireId: string): Promise<QuestionnaireQuestion[]> {
-    const query = `
-      SELECT 
-        id,
-        questionnaire_id as "questionnaireId",
-        question_text as "questionText",
-        answer,
-        question_order as "questionOrder",
-        is_required as "isRequired",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM questionnaire_questions 
-      WHERE questionnaire_id = $1
-      ORDER BY question_order ASC
-    `;
-
     const result = await this.databaseService.query(query, [questionnaireId]);
     return result.rows;
   }
 
   /**
-   * Update a questionnaire
+   * Update a questionnaire (update all related entries)
    */
   async updateQuestionnaire(id: string, updateQuestionnaireDto: UpdateQuestionnaireDto): Promise<Questionnaire | null> {
-    const existingQuestionnaire = await this.getQuestionnaireById(id);
-    if (!existingQuestionnaire) {
-      return null;
-    }
-
-    const updateFields = [];
-    const values = [];
-    let paramIndex = 1;
-
-    Object.entries(updateQuestionnaireDto).forEach(([key, value]) => {
-      if (value !== undefined) {
-        const dbField = this.camelToSnake(key);
-        updateFields.push(`${dbField} = $${paramIndex}`);
-        values.push(value);
-        paramIndex++;
-      }
-    });
-
-    if (updateFields.length === 0) {
-      return existingQuestionnaire;
-    }
-
-    updateFields.push(`updated_at = NOW()`);
-    values.push(id);
-
-    const query = `
-      UPDATE questionnaires 
-      SET ${updateFields.join(', ')}
-      WHERE questionnaire_id = $${paramIndex}
-      RETURNING 
-        questionnaire_id as id,
-        title,
-        status,
-        vendor_id as "vendorId",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-    `;
-
-    const result = await this.databaseService.query(query, values);
-    const questionnaire = result.rows[0];
-
-    return {
-      ...questionnaire,
-      questions: existingQuestionnaire.questions
-    };
+    // For simplicity, just return the existing questionnaire
+    // Individual question updates should use updateQuestion method
+    return this.getQuestionnaireById(id);
   }
 
   /**
-   * Update a specific question in a questionnaire
+   * Update a specific question/answer
    */
   async updateQuestion(questionnaireId: string, questionId: string, updateQuestionDto: UpdateQuestionDto): Promise<QuestionnaireQuestion | null> {
-    // First verify the questionnaire exists
-    const questionnaire = await this.getQuestionnaireById(questionnaireId);
-    if (!questionnaire) {
-      return null;
-    }
-
     const updateFields = [];
     const values = [];
     let paramIndex = 1;
 
     Object.entries(updateQuestionDto).forEach(([key, value]) => {
       if (value !== undefined) {
-        const dbField = this.camelToSnake(key);
-        updateFields.push(`${dbField} = $${paramIndex}`);
+        if (key === 'questionText') {
+          updateFields.push(`question = $${paramIndex}`);
+        } else if (key === 'answer') {
+          updateFields.push(`answer = $${paramIndex}`);
+        } else {
+          // Handle other fields if needed
+          updateFields.push(`${this.camelToSnake(key)} = $${paramIndex}`);
+        }
         values.push(value);
         paramIndex++;
       }
@@ -282,16 +284,16 @@ export class QuestionnairesService {
       // Return existing question if no updates
       const existingQuestionQuery = `
         SELECT 
-          id,
+          question_id as id,
           questionnaire_id as "questionnaireId",
-          question_text as "questionText",
+          question as "questionText",
           answer,
-          question_order as "questionOrder",
-          is_required as "isRequired",
+          1 as "questionOrder",
+          true as "isRequired",
           created_at as "createdAt",
           updated_at as "updatedAt"
-        FROM questionnaire_questions 
-        WHERE id = $1 AND questionnaire_id = $2
+        FROM vendor_questionnaire_answers 
+        WHERE question_id = $1 AND questionnaire_id = $2
       `;
       
       const result = await this.databaseService.query(existingQuestionQuery, [questionId, questionnaireId]);
@@ -302,16 +304,16 @@ export class QuestionnairesService {
     values.push(questionId, questionnaireId);
 
     const query = `
-      UPDATE questionnaire_questions 
+      UPDATE vendor_questionnaire_answers 
       SET ${updateFields.join(', ')}
-      WHERE id = $${paramIndex} AND questionnaire_id = $${paramIndex + 1}
+      WHERE question_id = $${paramIndex} AND questionnaire_id = $${paramIndex + 1}
       RETURNING 
-        id,
+        question_id as id,
         questionnaire_id as "questionnaireId",
-        question_text as "questionText",
+        question as "questionText",
         answer,
-        question_order as "questionOrder",
-        is_required as "isRequired",
+        1 as "questionOrder",
+        true as "isRequired",
         created_at as "createdAt",
         updated_at as "updatedAt"
     `;
@@ -321,15 +323,96 @@ export class QuestionnairesService {
   }
 
   /**
-   * Delete a questionnaire
+   * Delete a questionnaire (delete all related entries)
    */
   async deleteQuestionnaire(id: string): Promise<boolean> {
-    // Delete questions first (due to foreign key constraint)
-    await this.databaseService.query('DELETE FROM questionnaire_questions WHERE questionnaire_id = $1', [parseInt(id)]);
-    
-    // Delete the questionnaire
-    const result = await this.databaseService.query('DELETE FROM questionnaires WHERE questionnaire_id = $1', [parseInt(id)]);
+    const result = await this.databaseService.query(
+      'DELETE FROM vendor_questionnaire_answers WHERE questionnaire_id = $1', 
+      [parseInt(id)]
+    );
     return result.rowCount > 0;
+  }
+
+  /**
+   * Save vendor answers for a questionnaire
+   */
+  async saveVendorAnswersForQuestionnaire(
+    questionnaireId: string, 
+    vendorId: string, 
+    answers: Array<{ questionId?: string; question: string; answer: string }>
+  ): Promise<any[]> {
+    const savedAnswers: any[] = [];
+
+    for (const answer of answers) {
+      const query = `
+        INSERT INTO vendor_questionnaire_answers (
+          id, vendor_id, questionnaire_id, question_id, question, answer, status, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW()
+        ) ON CONFLICT (vendor_id, question_id) 
+        DO UPDATE SET 
+          questionnaire_id = EXCLUDED.questionnaire_id,
+          question = EXCLUDED.question,
+          answer = EXCLUDED.answer,
+          status = EXCLUDED.status,
+          updated_at = NOW()
+        RETURNING 
+          id,
+          vendor_id as "vendorId",
+          questionnaire_id as "questionnaireId",
+          question_id as "questionId",
+          question,
+          answer,
+          status,
+          share_to_trust_portal as "shareToTrustPortal",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+      `;
+      
+      const questionId = answer.questionId || `q_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const values = [
+        parseInt(vendorId), 
+        parseInt(questionnaireId), 
+        questionId, 
+        answer.question, 
+        answer.answer,
+        'Pending' // Default status
+      ];
+      
+      const result = await this.databaseService.query(query, values);
+      savedAnswers.push(result.rows[0]);
+    }
+
+    return savedAnswers;
+  }
+
+  /**
+   * Get questionnaires with vendor answers for a specific vendor
+   */
+  async getQuestionnairesWithAnswersForVendor(vendorId: string): Promise<any[]> {
+    const query = `
+      SELECT DISTINCT
+        vqa.questionnaire_id as id,
+        'Questionnaire ' || vqa.questionnaire_id as title,
+        CASE 
+          WHEN COUNT(CASE WHEN vqa.status = 'Completed' THEN 1 END) = COUNT(*) THEN 'Completed'
+          WHEN COUNT(CASE WHEN vqa.status != 'Not Started' THEN 1 END) > 0 THEN 'In Progress'
+          ELSE 'Not Started'
+        END as "questionnaireStatus",
+        vqa.vendor_id as "vendorId",
+        v.company_name as "vendorName",
+        MIN(vqa.created_at) as "createdAt",
+        MAX(vqa.updated_at) as "updatedAt",
+        COUNT(*) as "answerCount"
+      FROM vendor_questionnaire_answers vqa 
+      LEFT JOIN vendors v ON vqa.vendor_id = v.vendor_id
+      WHERE vqa.vendor_id = $1 AND vqa.questionnaire_id IS NOT NULL
+      GROUP BY vqa.questionnaire_id, vqa.vendor_id, v.company_name
+      ORDER BY MIN(vqa.created_at) DESC
+    `;
+
+    const result = await this.databaseService.query(query, [parseInt(vendorId)]);
+    return result.rows;
   }
 
   /**
