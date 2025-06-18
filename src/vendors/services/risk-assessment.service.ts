@@ -23,75 +23,112 @@ export class RiskAssessmentService {
    * Calculate comprehensive risk score for a vendor
    */
   calculateRiskAssessment(vendor: Vendor, questionnaireAnswers?: QuestionnaireAnswer[], vendorWorks?: VendorWork[]): RiskAssessment {
-    const factors: RiskFactor[] = [];
-    
-    // 1. Questionnaire Completion Risk (25% weight)
-    factors.push(this.assessQuestionnaireCompletion(questionnaireAnswers || vendor.questionnaireAnswers || []));
-    
-    // 2. Compliance Indicators Risk (30% weight)
-    factors.push(this.assessComplianceIndicators(questionnaireAnswers || vendor.questionnaireAnswers || []));
-    
-    // 3. Security Posture Risk (25% weight)
-    factors.push(this.assessSecurityPosture(questionnaireAnswers || vendor.questionnaireAnswers || []));
-    
-    // 4. Business Context Risk (10% weight)
-    factors.push(this.assessBusinessContext(vendor));
-    
-    // 5. Track Record Risk (10% weight)
-    factors.push(this.assessTrackRecord(vendorWorks || []));
-    
-    // Calculate weighted risk score
-    const overallScore = this.calculateWeightedScore(factors);
-    const riskLevel = this.determineRiskLevel(overallScore);
-    const recommendations = this.generateRecommendations(factors, riskLevel);
-    
-    return {
-      overallScore,
-      riskLevel,
-      factors,
-      recommendations,
-      lastAssessed: new Date()
-    };
+    try {
+      if (!vendor) {
+        throw new Error('Vendor data is required for risk assessment');
+      }
+
+      const factors: RiskFactor[] = [];
+      
+      // Ensure arrays are properly initialized
+      const answers = questionnaireAnswers || vendor.questionnaireAnswers || [];
+      const works = vendorWorks || [];
+      
+      // 1. Questionnaire Completion Risk (25% weight)
+      factors.push(this.assessQuestionnaireCompletion(answers));
+      
+      // 2. Compliance Indicators Risk (30% weight)
+      factors.push(this.assessComplianceIndicators(answers));
+      
+      // 3. Security Posture Risk (25% weight)
+      factors.push(this.assessSecurityPosture(answers));
+      
+      // 4. Business Context Risk (10% weight)
+      factors.push(this.assessBusinessContext(vendor));
+      
+      // 5. Track Record Risk (10% weight)
+      factors.push(this.assessTrackRecord(works));
+      
+      // Calculate weighted risk score
+      const overallScore = this.calculateWeightedScore(factors);
+      const riskLevel = this.determineRiskLevel(overallScore);
+      const recommendations = this.generateRecommendations(factors, riskLevel);
+      
+      return {
+        overallScore,
+        riskLevel,
+        factors,
+        recommendations,
+        lastAssessed: new Date()
+      };
+    } catch (error) {
+      console.error('Error calculating risk assessment:', error);
+      
+      // Return a default high-risk assessment on error
+      return {
+        overallScore: 75,
+        riskLevel: RiskLevel.HIGH,
+        factors: [{
+          factor: 'Assessment Error',
+          score: 75,
+          weight: 1.0,
+          details: `Risk assessment failed: ${error.message}`
+        }],
+        recommendations: ['Risk assessment failed - manual review required'],
+        lastAssessed: new Date()
+      };
+    }
   }
 
   /**
    * Assess risk based on questionnaire completion rate and answer quality
    */
   private assessQuestionnaireCompletion(answers: QuestionnaireAnswer[]): RiskFactor {
-    const totalAnswers = answers.length;
-    const completedAnswers = answers.filter(a => a.status === AnswerStatus.COMPLETED).length;
-    const pendingAnswers = totalAnswers - completedAnswers;
-    
-    let score = 0;
-    let details = '';
-    
-    if (totalAnswers === 0) {
-      score = 95; // Very high risk - no questionnaire data
-      details = 'No questionnaire responses available';
-    } else {
-      const completionRate = completedAnswers / totalAnswers;
+    try {
+      const safeAnswers = Array.isArray(answers) ? answers : [];
+      const totalAnswers = safeAnswers.length;
+      const completedAnswers = safeAnswers.filter(a => a && a.status === AnswerStatus.COMPLETED).length;
+      const pendingAnswers = totalAnswers - completedAnswers;
       
-      if (completionRate >= 0.9) {
-        score = 10; // Low risk
-        details = `${completedAnswers}/${totalAnswers} questions completed (${Math.round(completionRate * 100)}%)`;
-      } else if (completionRate >= 0.7) {
-        score = 30; // Medium risk
-        details = `${completedAnswers}/${totalAnswers} questions completed (${Math.round(completionRate * 100)}%) - ${pendingAnswers} pending`;
-      } else if (completionRate >= 0.5) {
-        score = 60; // High risk
-        details = `Only ${completedAnswers}/${totalAnswers} questions completed (${Math.round(completionRate * 100)}%) - significant gaps`;
+      let score = 0;
+      let details = '';
+      
+      if (totalAnswers === 0) {
+        score = 95; // Very high risk - no questionnaire data
+        details = 'No questionnaire responses available';
       } else {
-        score = 85; // Very high risk
-        details = `Poor completion rate: ${completedAnswers}/${totalAnswers} (${Math.round(completionRate * 100)}%) - major concerns`;
+        const completionRate = completedAnswers / totalAnswers;
+        
+        if (completionRate >= 0.9) {
+          score = 10; // Low risk
+          details = `${completedAnswers}/${totalAnswers} questions completed (${Math.round(completionRate * 100)}%)`;
+        } else if (completionRate >= 0.7) {
+          score = 30; // Medium risk
+          details = `${completedAnswers}/${totalAnswers} questions completed (${Math.round(completionRate * 100)}%) - ${pendingAnswers} pending`;
+        } else if (completionRate >= 0.5) {
+          score = 60; // High risk
+          details = `Only ${completedAnswers}/${totalAnswers} questions completed (${Math.round(completionRate * 100)}%) - significant gaps`;
+        } else {
+          score = 85; // Very high risk
+          details = `Poor completion rate: ${completedAnswers}/${totalAnswers} (${Math.round(completionRate * 100)}%) - major concerns`;
+        }
       }
+      
+      return {
+        factor: 'Questionnaire Completion',
+        score,
+        weight: 0.25,
+        details
+      };
+    } catch (error) {
+      console.error('Error in questionnaire completion assessment:', error);
+      return {
+        factor: 'Questionnaire Completion',
+        score: 90, // High risk on error
+        weight: 0.25,
+        details: 'Error assessing questionnaire completion'
+      };
     }
-    
-    return {
-      factor: 'Questionnaire Completion',
-      score,
-      weight: 0.25,
-      details
-    };
   }
 
   /**
@@ -264,38 +301,44 @@ export class RiskAssessmentService {
     let details = '';
     const riskFactors: string[] = [];
     
-    // Industry-based risk assessment
-    const highRiskIndustries = ['finance', 'healthcare', 'government', 'defense', 'banking'];
-    const mediumRiskIndustries = ['technology', 'retail', 'education', 'insurance'];
-    
-    if (vendor.industry) {
-      const industry = vendor.industry.toLowerCase();
+    try {
+      // Industry-based risk assessment
+      const highRiskIndustries = ['finance', 'healthcare', 'government', 'defense', 'banking'];
+      const mediumRiskIndustries = ['technology', 'retail', 'education', 'insurance'];
       
-      if (highRiskIndustries.some(risky => industry.includes(risky))) {
-        score += 15;
-        riskFactors.push(`High-risk industry: ${vendor.industry}`);
-      } else if (mediumRiskIndustries.some(medium => industry.includes(medium))) {
-        score += 5;
-        riskFactors.push(`Medium-risk industry: ${vendor.industry}`);
+      if (vendor.industry && typeof vendor.industry === 'string') {
+        const industry = vendor.industry.toLowerCase().trim();
+        
+        if (highRiskIndustries.some(risky => industry.includes(risky))) {
+          score += 15;
+          riskFactors.push(`High-risk industry: ${vendor.industry}`);
+        } else if (mediumRiskIndustries.some(medium => industry.includes(medium))) {
+          score += 5;
+          riskFactors.push(`Medium-risk industry: ${vendor.industry}`);
+        } else {
+          riskFactors.push(`Industry: ${vendor.industry}`);
+        }
       } else {
-        riskFactors.push(`Industry: ${vendor.industry}`);
+        score += 10;
+        riskFactors.push('Industry not specified');
       }
-    } else {
-      score += 10;
-      riskFactors.push('Industry not specified');
-    }
-    
-    // Region-based assessment (basic example)
-    if (vendor.region) {
-      // High-risk regions might have different compliance requirements
-      const complexRegions = ['eu', 'california', 'canada'];
-      if (complexRegions.some(region => vendor.region.toLowerCase().includes(region))) {
-        score += 5;
-        riskFactors.push(`Complex regulatory region: ${vendor.region}`);
+      
+      // Region-based assessment (basic example)
+      if (vendor.region && typeof vendor.region === 'string') {
+        // High-risk regions might have different compliance requirements
+        const complexRegions = ['eu', 'california', 'canada'];
+        if (complexRegions.some(region => vendor.region.toLowerCase().includes(region))) {
+          score += 5;
+          riskFactors.push(`Complex regulatory region: ${vendor.region}`);
+        }
       }
+      
+      details = riskFactors.join(', ') || 'Business context assessment';
+    } catch (error) {
+      console.error('Error in business context assessment:', error);
+      score = 50; // Default to medium risk on error
+      details = 'Business context assessment error';
     }
-    
-    details = riskFactors.join(', ');
     
     return {
       factor: 'Business Context',
