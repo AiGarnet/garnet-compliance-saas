@@ -36,10 +36,11 @@ async function bootstrap() {
     origin: [
       'https://testinggarnet.netlify.app',
       'https://garnetai.net',
+      'https://www.garnetai.net',
       /\.netlify\.app$/,
       /\.garnetai\.net$/,
     ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: false,
   });
 
