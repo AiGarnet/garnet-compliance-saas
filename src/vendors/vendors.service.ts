@@ -120,10 +120,8 @@ export class VendorsService {
           vqa.share_to_trust_portal as "shareToTrustPortal",
           vqa.work_id as "workId",
           vqa.created_at as "createdAt",
-          vqa.updated_at as "updatedAt",
-          q.title as "questionnaireTitle"
+          vqa.updated_at as "updatedAt"
         FROM vendor_questionnaire_answers vqa
-        LEFT JOIN questionnaires q ON vqa.questionnaire_id = q.questionnaire_id
         WHERE vqa.vendor_id = $1
         ORDER BY vqa.created_at DESC
       `;
