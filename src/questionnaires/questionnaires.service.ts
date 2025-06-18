@@ -429,14 +429,40 @@ export class QuestionnairesService {
   }
 
   /**
-   * Delete a questionnaire (delete all related entries)
+   * Delete a questionnaire (delete all related entries from vendor_questionnaire_answers table)
    */
   async deleteQuestionnaire(id: string): Promise<boolean> {
-    const result = await this.databaseService.query(
-      'DELETE FROM vendor_questionnaire_answers WHERE questionnaire_id = $1', 
-      [parseInt(id)]
-    );
-    return result.rowCount > 0;
+    try {
+      console.log(`🗑️ Attempting to delete questionnaire ${id} from vendor_questionnaire_answers table`);
+      
+      // First, check if the questionnaire exists
+      const checkQuery = `
+        SELECT COUNT(*) as count 
+        FROM vendor_questionnaire_answers 
+        WHERE questionnaire_id = $1
+      `;
+      const checkResult = await this.databaseService.query(checkQuery, [parseInt(id)]);
+      const recordCount = parseInt(checkResult.rows[0].count);
+      
+      console.log(`📊 Found ${recordCount} records for questionnaire ${id}`);
+      
+      if (recordCount === 0) {
+        console.log(`⚠️ No records found for questionnaire ${id}`);
+        return false;
+      }
+      
+      // Delete all records for this questionnaire
+      const deleteQuery = 'DELETE FROM vendor_questionnaire_answers WHERE questionnaire_id = $1';
+      const deleteResult = await this.databaseService.query(deleteQuery, [parseInt(id)]);
+      
+      const deletedCount = deleteResult.rowCount || 0;
+      console.log(`✅ Successfully deleted ${deletedCount} records for questionnaire ${id}`);
+      
+      return deletedCount > 0;
+    } catch (error) {
+      console.error(`❌ Error deleting questionnaire ${id}:`, error);
+      throw new Error(`Failed to delete questionnaire: ${error.message}`);
+    }
   }
 
   /**
