@@ -24,6 +24,25 @@ export class QuestionnairesService {
 
     const createdQuestions: any[] = [];
     
+    // First, store the questionnaire title as metadata in a special record
+    const titleRecordId = uuidv4();
+    const titleQuery = `
+      INSERT INTO vendor_questionnaire_answers (
+        id, vendor_id, questionnaire_id, question_id, question, answer, status, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW()
+      )
+    `;
+    
+    await this.databaseService.query(titleQuery, [
+      vendorId || null,
+      questionnaireId,
+      titleRecordId,
+      '__QUESTIONNAIRE_TITLE__', // Special marker for title record
+      title, // Store the title in the answer field
+      'Metadata'
+    ]);
+
     if (questions && questions.length > 0) {
       for (const question of questions) {
         const questionId = uuidv4();
@@ -140,18 +159,23 @@ export class QuestionnairesService {
     const query = `
       SELECT 
         vqa.questionnaire_id as id,
-        'Questionnaire ' || vqa.questionnaire_id as title,
+        COALESCE(
+          (SELECT answer FROM vendor_questionnaire_answers vqa_title 
+           WHERE vqa_title.questionnaire_id = vqa.questionnaire_id 
+           AND vqa_title.question = '__QUESTIONNAIRE_TITLE__' LIMIT 1),
+          'Questionnaire ' || vqa.questionnaire_id
+        ) as title,
         CASE 
-          WHEN COUNT(CASE WHEN vqa.status = 'Completed' THEN 1 END) = COUNT(*) THEN 'Completed'
-          WHEN COUNT(CASE WHEN vqa.status != 'Not Started' THEN 1 END) > 0 THEN 'In Progress'
+          WHEN COUNT(CASE WHEN vqa.status = 'Completed' AND vqa.question != '__QUESTIONNAIRE_TITLE__' THEN 1 END) = COUNT(CASE WHEN vqa.question != '__QUESTIONNAIRE_TITLE__' THEN 1 END) THEN 'Completed'
+          WHEN COUNT(CASE WHEN vqa.status != 'Not Started' AND vqa.question != '__QUESTIONNAIRE_TITLE__' THEN 1 END) > 0 THEN 'In Progress'
           ELSE 'Not Started'
         END as status,
         vqa.vendor_id as "vendorId",
         v.company_name as "vendorName",
         MIN(vqa.created_at) as "createdAt",
         MAX(vqa.updated_at) as "updatedAt",
-        COUNT(*) as "questionCount",
-        COUNT(CASE WHEN vqa.answer != '' THEN 1 END) as "answerCount"
+        COUNT(CASE WHEN vqa.question != '__QUESTIONNAIRE_TITLE__' THEN 1 END) as "questionCount",
+        COUNT(CASE WHEN vqa.answer != '' AND vqa.question != '__QUESTIONNAIRE_TITLE__' THEN 1 END) as "answerCount"
       FROM vendor_questionnaire_answers vqa 
       LEFT JOIN vendors v ON vqa.vendor_id = v.vendor_id
       WHERE vqa.questionnaire_id IS NOT NULL
@@ -179,18 +203,23 @@ export class QuestionnairesService {
     const query = `
       SELECT 
         vqa.questionnaire_id as id,
-        'Questionnaire ' || vqa.questionnaire_id as title,
+        COALESCE(
+          (SELECT answer FROM vendor_questionnaire_answers vqa_title 
+           WHERE vqa_title.questionnaire_id = vqa.questionnaire_id 
+           AND vqa_title.question = '__QUESTIONNAIRE_TITLE__' LIMIT 1),
+          'Questionnaire ' || vqa.questionnaire_id
+        ) as title,
         CASE 
-          WHEN COUNT(CASE WHEN vqa.status = 'Completed' THEN 1 END) = COUNT(*) THEN 'Completed'
-          WHEN COUNT(CASE WHEN vqa.status != 'Not Started' THEN 1 END) > 0 THEN 'In Progress'
+          WHEN COUNT(CASE WHEN vqa.status = 'Completed' AND vqa.question != '__QUESTIONNAIRE_TITLE__' THEN 1 END) = COUNT(CASE WHEN vqa.question != '__QUESTIONNAIRE_TITLE__' THEN 1 END) THEN 'Completed'
+          WHEN COUNT(CASE WHEN vqa.status != 'Not Started' AND vqa.question != '__QUESTIONNAIRE_TITLE__' THEN 1 END) > 0 THEN 'In Progress'
           ELSE 'Not Started'
         END as status,
         vqa.vendor_id as "vendorId",
         v.company_name as "vendorName",
         MIN(vqa.created_at) as "createdAt",
         MAX(vqa.updated_at) as "updatedAt",
-        COUNT(*) as "questionCount",
-        COUNT(CASE WHEN vqa.answer != '' THEN 1 END) as "answerCount"
+        COUNT(CASE WHEN vqa.question != '__QUESTIONNAIRE_TITLE__' THEN 1 END) as "questionCount",
+        COUNT(CASE WHEN vqa.answer != '' AND vqa.question != '__QUESTIONNAIRE_TITLE__' THEN 1 END) as "answerCount"
       FROM vendor_questionnaire_answers vqa 
       LEFT JOIN vendors v ON vqa.vendor_id = v.vendor_id
       WHERE vqa.vendor_id = $1 AND vqa.questionnaire_id IS NOT NULL
@@ -215,6 +244,16 @@ export class QuestionnairesService {
    * Get a questionnaire by ID with questions and answers
    */
   async getQuestionnaireById(id: string): Promise<Questionnaire | null> {
+    // First get the title
+    const titleQuery = `
+      SELECT answer as title 
+      FROM vendor_questionnaire_answers 
+      WHERE questionnaire_id = $1 AND question = '__QUESTIONNAIRE_TITLE__' 
+      LIMIT 1
+    `;
+    const titleResult = await this.databaseService.query(titleQuery, [parseInt(id)]);
+    const questionnaireTitle = titleResult.rows[0]?.title || `Questionnaire ${id}`;
+
     const query = `
       SELECT 
         vqa.id,
@@ -230,7 +269,7 @@ export class QuestionnairesService {
         vqa.updated_at as "updatedAt"
       FROM vendor_questionnaire_answers vqa
       LEFT JOIN vendors v ON vqa.vendor_id = v.vendor_id
-      WHERE vqa.questionnaire_id = $1
+      WHERE vqa.questionnaire_id = $1 AND vqa.question != '__QUESTIONNAIRE_TITLE__'
       ORDER BY vqa.created_at ASC
     `;
 
@@ -280,7 +319,7 @@ export class QuestionnairesService {
 
     return {
       id: id,
-      title: `Questionnaire ${id}`,
+      title: questionnaireTitle,
       status: status,
       vendorId: firstRow.vendorId,
       vendorName: firstRow.vendorName,
@@ -307,7 +346,7 @@ export class QuestionnairesService {
         created_at as "createdAt",
         updated_at as "updatedAt"
       FROM vendor_questionnaire_answers 
-      WHERE questionnaire_id = $1
+      WHERE questionnaire_id = $1 AND question != '__QUESTIONNAIRE_TITLE__'
       ORDER BY created_at ASC
     `;
 
