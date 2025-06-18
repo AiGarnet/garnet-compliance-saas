@@ -173,6 +173,7 @@ export class QuestionnairesController {
     }
   }
 
+  @Public()
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a questionnaire' })
   @ApiResponse({ status: 200, description: 'Questionnaire deleted successfully' })

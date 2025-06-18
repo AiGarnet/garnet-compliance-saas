@@ -244,6 +244,17 @@ export class QuestionnairesService {
    * Get a questionnaire by ID with questions and answers
    */
   async getQuestionnaireById(id: string): Promise<Questionnaire | null> {
+    // Extract questionnaire ID from compound ID if needed (format: vendorId-questionnaireId or just questionnaireId)
+    let questionnaireId: string;
+    if (id.includes('-')) {
+      // Handle compound ID like "6-1750269211825"
+      const parts = id.split('-');
+      questionnaireId = parts[parts.length - 1]; // Take the last part as questionnaire ID
+      console.log(`📝 Extracted questionnaire ID: ${questionnaireId} from compound ID: ${id}`);
+    } else {
+      questionnaireId = id;
+    }
+    
     // First get the title
     const titleQuery = `
       SELECT answer as title 
@@ -251,8 +262,8 @@ export class QuestionnairesService {
       WHERE questionnaire_id = $1 AND question = '__QUESTIONNAIRE_TITLE__' 
       LIMIT 1
     `;
-    const titleResult = await this.databaseService.query(titleQuery, [parseInt(id)]);
-    const questionnaireTitle = titleResult.rows[0]?.title || `Questionnaire ${id}`;
+    const titleResult = await this.databaseService.query(titleQuery, [parseInt(questionnaireId)]);
+    const questionnaireTitle = titleResult.rows[0]?.title || `Questionnaire ${questionnaireId}`;
 
     const query = `
       SELECT 
@@ -273,7 +284,7 @@ export class QuestionnairesService {
       ORDER BY vqa.created_at ASC
     `;
 
-    const result = await this.databaseService.query(query, [parseInt(id)]);
+    const result = await this.databaseService.query(query, [parseInt(questionnaireId)]);
     
     if (result.rows.length === 0) {
       return null;
@@ -318,7 +329,7 @@ export class QuestionnairesService {
     }
 
     return {
-      id: id,
+      id: questionnaireId,
       title: questionnaireTitle,
       status: status,
       vendorId: firstRow.vendorId,
@@ -435,28 +446,39 @@ export class QuestionnairesService {
     try {
       console.log(`🗑️ Attempting to delete questionnaire ${id} from vendor_questionnaire_answers table`);
       
+      // Extract questionnaire ID from compound ID if needed (format: vendorId-questionnaireId or just questionnaireId)
+      let questionnaireId: string;
+      if (id.includes('-')) {
+        // Handle compound ID like "6-1750269211825"
+        const parts = id.split('-');
+        questionnaireId = parts[parts.length - 1]; // Take the last part as questionnaire ID
+        console.log(`📝 Extracted questionnaire ID: ${questionnaireId} from compound ID: ${id}`);
+      } else {
+        questionnaireId = id;
+      }
+      
       // First, check if the questionnaire exists
       const checkQuery = `
         SELECT COUNT(*) as count 
         FROM vendor_questionnaire_answers 
         WHERE questionnaire_id = $1
       `;
-      const checkResult = await this.databaseService.query(checkQuery, [parseInt(id)]);
+      const checkResult = await this.databaseService.query(checkQuery, [parseInt(questionnaireId)]);
       const recordCount = parseInt(checkResult.rows[0].count);
       
-      console.log(`📊 Found ${recordCount} records for questionnaire ${id}`);
+      console.log(`📊 Found ${recordCount} records for questionnaire ${questionnaireId}`);
       
       if (recordCount === 0) {
-        console.log(`⚠️ No records found for questionnaire ${id}`);
+        console.log(`⚠️ No records found for questionnaire ${questionnaireId}`);
         return false;
       }
       
       // Delete all records for this questionnaire
       const deleteQuery = 'DELETE FROM vendor_questionnaire_answers WHERE questionnaire_id = $1';
-      const deleteResult = await this.databaseService.query(deleteQuery, [parseInt(id)]);
+      const deleteResult = await this.databaseService.query(deleteQuery, [parseInt(questionnaireId)]);
       
       const deletedCount = deleteResult.rowCount || 0;
-      console.log(`✅ Successfully deleted ${deletedCount} records for questionnaire ${id}`);
+      console.log(`✅ Successfully deleted ${deletedCount} records for questionnaire ${questionnaireId}`);
       
       return deletedCount > 0;
     } catch (error) {
