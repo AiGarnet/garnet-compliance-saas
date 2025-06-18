@@ -666,6 +666,9 @@ export class VendorsService {
       throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
     }
 
+    // The vendor_works table uses the integer vendor_id, not the UUID
+    const numericVendorId = vendor.vendorId; // This is the integer ID from the vendor record
+
     const query = `
       SELECT 
         id,
@@ -690,7 +693,7 @@ export class VendorsService {
       ORDER BY created_at DESC
     `;
     
-    const result = await this.databaseService.query(query, [vendor.vendorId]);
+    const result = await this.databaseService.query(query, [numericVendorId]);
     
     return result.rows.map(work => ({
       ...work,
@@ -708,6 +711,9 @@ export class VendorsService {
     if (!vendor) {
       throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
     }
+
+    // The vendor_works table uses the integer vendor_id, not the UUID
+    const numericVendorId = vendor.vendorId; // This is the integer ID from the vendor record
 
     const query = `
       SELECT 
@@ -732,7 +738,7 @@ export class VendorsService {
       WHERE id = $1 AND vendor_id = $2
     `;
     
-    const result = await this.databaseService.query(query, [workId, vendor.vendorId]);
+    const result = await this.databaseService.query(query, [workId, numericVendorId]);
     
     if (result.rows.length === 0) {
       return null;
@@ -757,8 +763,11 @@ export class VendorsService {
       throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
     }
 
+    // The vendor_works table uses the integer vendor_id, not the UUID
+    const numericVendorId = vendor.vendorId; // This is the integer ID from the vendor record
+
     const query = `DELETE FROM vendor_works WHERE id = $1 AND vendor_id = $2`;
-    const result = await this.databaseService.query(query, [workId, vendor.vendorId]);
+    const result = await this.databaseService.query(query, [workId, numericVendorId]);
     
     return result.rowCount > 0;
   }
