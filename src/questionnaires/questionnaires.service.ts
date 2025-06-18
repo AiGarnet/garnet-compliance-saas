@@ -248,6 +248,7 @@ export class QuestionnairesService {
       answer: row.answer,
       questionOrder: 1, // Not tracked anymore, but kept for compatibility
       isRequired: true,
+      status: row.status,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt
     }));
