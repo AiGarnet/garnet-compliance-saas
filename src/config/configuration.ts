@@ -50,13 +50,14 @@ export const configuration = () => ({
   // CORS configuration
   cors: {
     origin: [
+      'http://localhost:3000', // Frontend development
       'https://testinggarnet.netlify.app',
       'https://garnetai.net',
       /\.netlify\.app$/,
       /\.garnetai\.net$/,
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    credentials: false,
+    credentials: true, // Enable for authentication
   },
 
   // Rate limiting

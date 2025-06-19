@@ -19,6 +19,7 @@ import { TrustPortalModule } from './trust-portal/trust-portal.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
 import { AiModule } from './ai/ai.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { ActivitiesModule } from './activities/activities.module';
 
 // Global providers
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -54,6 +55,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     WaitlistModule,
     AiModule,
     AnalyticsModule,
+    ActivitiesModule,
   ],
   providers: [
     // Global exception filter

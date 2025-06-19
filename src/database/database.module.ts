@@ -1,11 +1,33 @@
 import { Module, Global } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { Pool } from 'pg';
 import { DatabaseService } from './database.service';
 
+// Import all entities that need TypeORM
+import { Activity } from '../activities/entities/activity.entity';
+
 @Global()
 @Module({
-  imports: [ConfigModule],
+  imports: [
+    ConfigModule,
+    // TypeORM configuration
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        type: 'postgres',
+        url: configService.get<string>('database.url'),
+        ssl: configService.get<boolean>('database.ssl') 
+          ? { rejectUnauthorized: false } 
+          : false,
+        entities: [Activity], // Add entities here as they are created
+        synchronize: false, // Set to false in production, use migrations instead
+        logging: configService.get<string>('nodeEnv') === 'development',
+        autoLoadEntities: true,
+      }),
+      inject: [ConfigService],
+    }),
+  ],
   providers: [
     {
       provide: 'DATABASE_POOL',
