@@ -1,3 +1,6 @@
+// Import polyfills first to ensure they're loaded before any other modules
+import './polyfills';
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
