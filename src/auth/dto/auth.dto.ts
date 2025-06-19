@@ -60,7 +60,7 @@ export class WaitlistSignupDto {
   @IsNotEmpty()
   full_name: string;
 
-  @ApiProperty({ example: 'vendor', description: 'Must be either "vendor" or "enterprise"' })
+  @ApiProperty({ example: 'sales_professional', description: 'Must be either "sales_professional" or "founder"' })
   @IsString()
   @IsNotEmpty()
   role: string;

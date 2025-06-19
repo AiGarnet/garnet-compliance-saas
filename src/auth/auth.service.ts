@@ -98,9 +98,9 @@ export class AuthService {
       throw new ConflictException('Email already registered');
     }
 
-    // Validate role (must be vendor or enterprise)
-    if (!['vendor', 'enterprise'].includes(waitlistDto.role)) {
-      throw new UnauthorizedException('Role must be either "vendor" or "enterprise"');
+    // Validate role (must be sales_professional or founder)
+    if (!['sales_professional', 'founder'].includes(waitlistDto.role)) {
+      throw new UnauthorizedException('Role must be either "Sales Professional" or "Founder"');
     }
 
     const hashedPassword = await bcrypt.hash(waitlistDto.password, 10);

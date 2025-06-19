@@ -9,15 +9,6 @@ export enum VendorStatus {
 }
 
 /**
- * Risk level classification for vendors
- */
-export enum RiskLevel {
-  LOW = 'Low',
-  MEDIUM = 'Medium',
-  HIGH = 'High'
-}
-
-/**
  * Work status for vendor projects
  */
 export enum WorkStatus {
@@ -83,8 +74,6 @@ export interface Vendor {
   companyName: string;
   region: string;
   status: VendorStatus;
-  riskScore: number;
-  riskLevel: RiskLevel;
   createdAt: Date;
   updatedAt: Date;
   questionnaireAnswers?: QuestionnaireAnswer[];
@@ -108,8 +97,6 @@ export interface CreateVendorRequest {
   region: string;
   contactEmail: string;
   status?: VendorStatus;
-  riskScore?: number;
-  riskLevel?: RiskLevel;
   contactName?: string;
   website?: string;
   industry?: string;
@@ -125,8 +112,6 @@ export interface UpdateVendorRequest {
   region?: string;
   contactEmail?: string;
   status?: VendorStatus;
-  riskScore?: number;
-  riskLevel?: RiskLevel;
   contactName?: string;
   website?: string;
   industry?: string;
