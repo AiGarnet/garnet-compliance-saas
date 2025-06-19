@@ -18,7 +18,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../common/decorators/public.decorator';
 import { VendorStatus } from './entities/vendor.entity';
 
-@Controller('vendors')
+@Controller('api/vendors')
 export class VendorsController {
   private readonly logger = new Logger(VendorsController.name);
 
