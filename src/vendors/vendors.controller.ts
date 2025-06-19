@@ -25,11 +25,11 @@ export class VendorsController {
   constructor(private readonly vendorsService: VendorsService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @Public()
   async getAllVendors() {
     try {
       const vendors = await this.vendorsService.findAll();
-      return { vendors };
+      return vendors;
     } catch (error) {
       this.logger.error('Error getting vendors:', error);
       throw new InternalServerErrorException('Failed to retrieve vendors');
