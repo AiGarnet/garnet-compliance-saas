@@ -1,22 +1,38 @@
 [build]
 builder = "DOCKERFILE"
 dockerfile = "Dockerfile"
+# Increase build timeout for npm install
+buildTimeout = 900
 
 [deploy]
 runtime = "V2"
 numReplicas = 1
 sleepApplication = false
 restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 10
-startCommand = "node dist/main.js"
+restartPolicyMaxRetries = 3
+# Use dumb-init from Dockerfile for proper signal handling
+startCommand = "dumb-init node dist/main.js"
+# Increase memory limit to prevent OOM during startup
+memoryLimit = 1024
+# Set CPU limits
+cpuLimit = 1000
 
 [env]
 NODE_ENV = "production"
 PORT = "8080"
 FRONTEND_URL = "https://garnetai.net"
+# Node.js optimization flags for production
+NODE_OPTIONS = "--max-old-space-size=512 --optimize-for-size"
+# npm configuration for Railway environment
+npm_config_registry = "https://registry.npmjs.org/"
+npm_config_fetch_retries = "3"
+npm_config_fetch_retry_mintimeout = "20000"
+npm_config_fetch_retry_maxtimeout = "120000"
 
 # NestJS specific configuration
 [healthcheck]
 path = "/health"
-timeout = 10
-interval = 30 
+timeout = 15
+interval = 30
+# Increase startup grace period
+initialDelaySeconds = 60 
