@@ -1,6 +1,6 @@
 import { IsString, IsEmail, IsOptional, IsEnum, IsNumber, IsNotEmpty, Min, Max, IsBoolean, IsArray, IsDateString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { VendorStatus, RiskLevel, WorkStatus, AnswerStatus } from '../entities/vendor.entity';
+import { VendorStatus, WorkStatus, AnswerStatus } from '../entities/vendor.entity';
 
 export class CreateVendorDto {
   @ApiProperty({ example: 'Acme Corporation' })
@@ -22,18 +22,6 @@ export class CreateVendorDto {
   @IsOptional()
   @IsEnum(VendorStatus)
   status?: VendorStatus;
-
-  @ApiPropertyOptional({ example: 75, minimum: 0, maximum: 100 })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(100)
-  riskScore?: number;
-
-  @ApiPropertyOptional({ enum: RiskLevel, example: RiskLevel.MEDIUM })
-  @IsOptional()
-  @IsEnum(RiskLevel)
-  riskLevel?: RiskLevel;
 
   @ApiPropertyOptional({ example: 'John Doe' })
   @IsOptional()
@@ -76,18 +64,6 @@ export class UpdateVendorDto {
   @IsOptional()
   @IsEnum(VendorStatus)
   status?: VendorStatus;
-
-  @ApiPropertyOptional({ example: 85, minimum: 0, maximum: 100 })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(100)
-  riskScore?: number;
-
-  @ApiPropertyOptional({ enum: RiskLevel, example: RiskLevel.LOW })
-  @IsOptional()
-  @IsEnum(RiskLevel)
-  riskLevel?: RiskLevel;
 
   @ApiPropertyOptional({ example: 'Jane Smith' })
   @IsOptional()
