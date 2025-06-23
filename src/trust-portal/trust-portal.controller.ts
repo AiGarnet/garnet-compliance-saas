@@ -43,12 +43,26 @@ export class TrustPortalController {
   async getVendorsWithTrustPortalItems() {
     try {
       const vendors = await this.trustPortalService.getAllVendorsForTrustPortal();
-      return { vendors };
+      return {
+        success: true,
+        data: vendors,
+        meta: {
+          timestamp: new Date().toISOString(),
+          count: vendors.length
+        }
+      };
     } catch (error: any) {
-      throw new HttpException(
-        error.message || 'Failed to fetch vendors',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return {
+        success: false,
+        error: {
+          code: 'FETCH_VENDORS_FAILED',
+          message: error.message || 'Failed to fetch vendors',
+          details: error
+        },
+        meta: {
+          timestamp: new Date().toISOString()
+        }
+      };
     }
   }
 
