@@ -332,5 +332,89 @@ export class VendorsService {
     }
   }
 
-  // ... existing code ...
+  async generateInviteToken(vendorId: number): Promise<{ token: string; expiresAt: Date; inviteLink: string }> {
+    // Verify vendor exists
+    const vendor = await this.findById(vendorId);
+    if (!vendor) {
+      throw new NotFoundException(`Vendor with ID ${vendorId} not found`);
+    }
+
+    // Generate UUID token
+    const token = `${Date.now()}_${Math.random().toString(36).substr(2, 16)}`;
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days from now
+
+    try {
+      // First, delete any existing token for this vendor (only one active token per vendor)
+      await this.databaseService.query(
+        'DELETE FROM vendor_invite_tokens WHERE vendor_id = $1',
+        [vendorId]
+      );
+
+      // Insert new token
+      const insertQuery = `
+        INSERT INTO vendor_invite_tokens (token, vendor_id, expires_at, used, created_at)
+        VALUES ($1, $2, $3, false, NOW())
+        RETURNING token, expires_at
+      `;
+
+      const result = await this.databaseService.query(insertQuery, [
+        token,
+        vendorId,
+        expiresAt
+      ]);
+
+      const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/trust-portal/public/${token}`;
+
+      return {
+        token: result.rows[0].token,
+        expiresAt: result.rows[0].expires_at,
+        inviteLink
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(`Failed to generate invite token: ${error.message}`);
+    }
+  }
+
+  async markInviteTokenAsUsed(token: string): Promise<void> {
+    try {
+      await this.databaseService.query(
+        'UPDATE vendor_invite_tokens SET used = true WHERE token = $1',
+        [token]
+      );
+    } catch (error) {
+      throw new InternalServerErrorException(`Failed to mark invite token as used: ${error.message}`);
+    }
+  }
+
+  async getActiveInviteToken(vendorId: number): Promise<{ token: string; expiresAt: Date; inviteLink: string } | null> {
+    try {
+      const query = `
+        SELECT token, expires_at
+        FROM vendor_invite_tokens
+        WHERE vendor_id = $1 
+          AND expires_at > NOW()
+          AND used = false
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+
+      const result = await this.databaseService.query(query, [vendorId]);
+      
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      const row = result.rows[0];
+      const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/trust-portal/public/${row.token}`;
+
+      return {
+        token: row.token,
+        expiresAt: row.expires_at,
+        inviteLink
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(`Failed to get active invite token: ${error.message}`);
+    }
+  }
 } 
