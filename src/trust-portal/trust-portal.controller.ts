@@ -225,9 +225,34 @@ export class TrustPortalController {
   @Get('vendor/:vendorId')
   @ApiOperation({ summary: 'Get complete trust portal data for a vendor' })
   @ApiResponse({ status: 200, description: 'Returns complete trust portal data' })
-  async getVendorTrustPortalData(@Param('vendorId', ParseIntPipe) vendorId: number) {
+  async getVendorTrustPortalData(@Param('vendorId') vendorId: string) {
     try {
-      const data = await this.trustPortalService.getVendorTrustPortalData(vendorId, true);
+      // Check if the ID is a number (vendor_id) or UUID
+      const isNumericId = /^\d+$/.test(vendorId);
+      
+      let vendor;
+      let actualVendorId: number;
+      
+      if (isNumericId) {
+        // Direct numeric vendor ID
+        actualVendorId = parseInt(vendorId);
+        vendor = await this.vendorsService.findById(actualVendorId);
+      } else {
+        // UUID - need to find the vendor first to get the numeric ID
+        vendor = await this.vendorsService.findByUuid(vendorId);
+        if (vendor) {
+          actualVendorId = vendor.vendorId;
+        }
+      }
+      
+      if (!vendor) {
+        throw new HttpException(
+          `Vendor with ID ${vendorId} not found`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      
+      const data = await this.trustPortalService.getVendorTrustPortalData(actualVendorId, true);
       return data;
     } catch (error: any) {
       if (error instanceof HttpException) {
@@ -260,9 +285,34 @@ export class TrustPortalController {
   @Get('vendor/:vendorId/feedback')
   @ApiOperation({ summary: 'Get feedback for a vendor' })
   @ApiResponse({ status: 200, description: 'Returns feedback for the vendor' })
-  async getVendorFeedback(@Param('vendorId', ParseIntPipe) vendorId: number) {
+  async getVendorFeedback(@Param('vendorId') vendorId: string) {
     try {
-      const feedback = await this.trustPortalService.getVendorFeedback(vendorId);
+      // Check if the ID is a number (vendor_id) or UUID
+      const isNumericId = /^\d+$/.test(vendorId);
+      
+      let vendor;
+      let actualVendorId: number;
+      
+      if (isNumericId) {
+        // Direct numeric vendor ID
+        actualVendorId = parseInt(vendorId);
+        vendor = await this.vendorsService.findById(actualVendorId);
+      } else {
+        // UUID - need to find the vendor first to get the numeric ID
+        vendor = await this.vendorsService.findByUuid(vendorId);
+        if (vendor) {
+          actualVendorId = vendor.vendorId;
+        }
+      }
+      
+      if (!vendor) {
+        throw new HttpException(
+          `Vendor with ID ${vendorId} not found`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      
+      const feedback = await this.trustPortalService.getVendorFeedback(actualVendorId);
       return feedback;
     } catch (error: any) {
       throw new HttpException(
@@ -332,9 +382,34 @@ export class TrustPortalController {
   @Get('vendor/:vendorId/documents')
   @ApiOperation({ summary: 'Get shared documents for a vendor' })
   @ApiResponse({ status: 200, description: 'Returns shared documents for the vendor' })
-  async getVendorSharedDocuments(@Param('vendorId', ParseIntPipe) vendorId: number) {
+  async getVendorSharedDocuments(@Param('vendorId') vendorId: string) {
     try {
-      const data = await this.trustPortalService.getVendorTrustPortalData(vendorId, false);
+      // Check if the ID is a number (vendor_id) or UUID
+      const isNumericId = /^\d+$/.test(vendorId);
+      
+      let vendor;
+      let actualVendorId: number;
+      
+      if (isNumericId) {
+        // Direct numeric vendor ID
+        actualVendorId = parseInt(vendorId);
+        vendor = await this.vendorsService.findById(actualVendorId);
+      } else {
+        // UUID - need to find the vendor first to get the numeric ID
+        vendor = await this.vendorsService.findByUuid(vendorId);
+        if (vendor) {
+          actualVendorId = vendor.vendorId;
+        }
+      }
+      
+      if (!vendor) {
+        throw new HttpException(
+          `Vendor with ID ${vendorId} not found`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      
+      const data = await this.trustPortalService.getVendorTrustPortalData(actualVendorId, false);
       return data.sharedDocuments;
     } catch (error: any) {
       throw new HttpException(
