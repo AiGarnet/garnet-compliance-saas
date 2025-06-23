@@ -216,7 +216,33 @@ export class TrustPortalService {
   }
 
   /**
-   * Get all vendors that have trust portal items
+   * Get all vendors for trust portal (public view)
+   */
+  async getAllVendorsForTrustPortal(): Promise<any[]> {
+    const query = `
+      SELECT 
+        vendor_id as "vendorId",
+        uuid,
+        company_name as "companyName",
+        region,
+        industry,
+        description,
+        website,
+        contact_email as "contactEmail",
+        contact_name as "contactName",
+        status,
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM vendors 
+      ORDER BY company_name ASC
+    `;
+    
+    const result = await this.databaseService.query(query);
+    return result.rows;
+  }
+
+  /**
+   * Get vendors with trust portal items (original method)
    */
   async getVendorsWithTrustPortalItems(): Promise<VendorWithTrustPortal[]> {
     const query = `

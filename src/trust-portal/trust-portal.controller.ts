@@ -36,13 +36,14 @@ export class TrustPortalController {
     private readonly vendorsService: VendorsService
   ) {}
 
+  @Public()
   @Get('vendors')
-  @ApiOperation({ summary: 'Get all vendors that have trust portal items' })
-  @ApiResponse({ status: 200, description: 'Returns vendors with trust portal items' })
+  @ApiOperation({ summary: 'Get all vendors for trust portal' })
+  @ApiResponse({ status: 200, description: 'Returns all vendors for trust portal' })
   async getVendorsWithTrustPortalItems() {
     try {
-      const vendors = await this.trustPortalService.getVendorsWithTrustPortalItems();
-      return vendors;
+      const vendors = await this.trustPortalService.getAllVendorsForTrustPortal();
+      return { vendors };
     } catch (error: any) {
       throw new HttpException(
         error.message || 'Failed to fetch vendors',
@@ -206,6 +207,7 @@ export class TrustPortalController {
     }
   }
 
+  @Public()
   @Get('vendor/:vendorId')
   @ApiOperation({ summary: 'Get complete trust portal data for a vendor' })
   @ApiResponse({ status: 200, description: 'Returns complete trust portal data' })
