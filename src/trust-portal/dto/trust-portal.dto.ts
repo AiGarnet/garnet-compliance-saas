@@ -1,6 +1,34 @@
-import { IsString, IsOptional, IsNumber, IsNotEmpty, IsBoolean, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsNotEmpty, IsBoolean, IsIn, IsEnum, IsArray, IsEmail, IsUrl } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TrustPortalCategory } from '../entities/trust-portal.entity';
+
+export enum FeedbackType {
+  GENERAL = 'general',
+  DOCUMENT_REQUEST = 'document_request',
+  CLARIFICATION = 'clarification',
+  COMPLIANCE_ISSUE = 'compliance_issue',
+  FOLLOW_UP = 'follow_up'
+}
+
+export enum FeedbackStatus {
+  PENDING = 'pending',
+  IN_PROGRESS = 'in_progress',
+  RESOLVED = 'resolved',
+  CLOSED = 'closed'
+}
+
+export enum FeedbackPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  URGENT = 'urgent'
+}
+
+export enum ResponderType {
+  VENDOR = 'vendor',
+  ENTERPRISE = 'enterprise',
+  ADMIN = 'admin'
+}
 
 export class CreateTrustPortalItemDto {
   @ApiProperty({ example: 123 })
@@ -106,4 +134,150 @@ export class UpdateTrustPortalItemDto {
   @IsOptional()
   @IsString()
   questionnaireId?: string;
+}
+
+export class CreateTrustPortalFeedbackDto {
+  @ApiProperty()
+  @IsNumber()
+  vendorId: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  enterpriseContactName?: string;
+
+  @ApiProperty()
+  @IsEmail()
+  enterpriseContactEmail: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  enterpriseCompanyName?: string;
+
+  @ApiProperty({ enum: FeedbackType })
+  @IsEnum(FeedbackType)
+  feedbackType: FeedbackType;
+
+  @ApiProperty()
+  @IsString()
+  subject: string;
+
+  @ApiProperty()
+  @IsString()
+  message: string;
+
+  @ApiPropertyOptional({ enum: FeedbackPriority })
+  @IsOptional()
+  @IsEnum(FeedbackPriority)
+  priority?: FeedbackPriority;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  inviteToken?: string;
+}
+
+export class CreateFeedbackResponseDto {
+  @ApiProperty()
+  @IsNumber()
+  feedbackId: number;
+
+  @ApiProperty({ enum: ResponderType })
+  @IsEnum(ResponderType)
+  responderType: ResponderType;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  responderName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsEmail()
+  responderEmail?: string;
+
+  @ApiProperty()
+  @IsString()
+  message: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsArray()
+  attachments?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isInternalNote?: boolean;
+}
+
+export class UpdateFeedbackStatusDto {
+  @ApiProperty({ enum: FeedbackStatus })
+  @IsEnum(FeedbackStatus)
+  status: FeedbackStatus;
+}
+
+export class CreateSharedDocumentDto {
+  @ApiProperty()
+  @IsNumber()
+  vendorId: number;
+
+  @ApiProperty()
+  @IsString()
+  documentTitle: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  documentDescription?: string;
+
+  @ApiProperty()
+  @IsString()
+  documentCategory: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUrl()
+  fileUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  fileName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  fileType?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  fileSize?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isEvidenceFile?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  isQuestionnaireAnswer?: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  questionnaireId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  workId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  displayOrder?: number;
 } 

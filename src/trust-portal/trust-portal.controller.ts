@@ -14,7 +14,14 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { TrustPortalService } from './trust-portal.service';
-import { CreateTrustPortalItemDto, UpdateTrustPortalItemDto } from './dto/trust-portal.dto';
+import { 
+  CreateTrustPortalItemDto, 
+  UpdateTrustPortalItemDto,
+  CreateTrustPortalFeedbackDto,
+  CreateFeedbackResponseDto,
+  UpdateFeedbackStatusDto,
+  CreateSharedDocumentDto
+} from './dto/trust-portal.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../common/decorators/public.decorator';
 import { VendorsService } from '../vendors/vendors.service';
@@ -181,8 +188,8 @@ export class TrustPortalController {
         );
       }
 
-      // Get trust portal data for the vendor
-      const trustPortalData = await this.vendorsService.getTrustPortalData(vendor.vendorId.toString());
+      // Get trust portal data for the vendor (public view - no private data)
+      const trustPortalData = await this.trustPortalService.getVendorTrustPortalData(vendor.vendorId, false);
       
       return {
         ...trustPortalData,
@@ -194,6 +201,128 @@ export class TrustPortalController {
       }
       throw new HttpException(
         error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('vendor/:vendorId')
+  @ApiOperation({ summary: 'Get complete trust portal data for a vendor' })
+  @ApiResponse({ status: 200, description: 'Returns complete trust portal data' })
+  async getVendorTrustPortalData(@Param('vendorId', ParseIntPipe) vendorId: number) {
+    try {
+      const data = await this.trustPortalService.getVendorTrustPortalData(vendorId, true);
+      return data;
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Failed to fetch trust portal data',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  // Feedback Management
+  @Public()
+  @Post('feedback')
+  @ApiOperation({ summary: 'Submit feedback from enterprise (public access)' })
+  @ApiResponse({ status: 201, description: 'Feedback submitted successfully' })
+  async createFeedback(@Body() createFeedbackDto: CreateTrustPortalFeedbackDto) {
+    try {
+      const feedback = await this.trustPortalService.createFeedback(createFeedbackDto);
+      return feedback;
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to submit feedback',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('vendor/:vendorId/feedback')
+  @ApiOperation({ summary: 'Get feedback for a vendor' })
+  @ApiResponse({ status: 200, description: 'Returns feedback for the vendor' })
+  async getVendorFeedback(@Param('vendorId', ParseIntPipe) vendorId: number) {
+    try {
+      const feedback = await this.trustPortalService.getVendorFeedback(vendorId);
+      return feedback;
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to fetch feedback',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('feedback/:feedbackId/response')
+  @ApiOperation({ summary: 'Add response to feedback' })
+  @ApiResponse({ status: 201, description: 'Response added successfully' })
+  async addFeedbackResponse(
+    @Param('feedbackId', ParseIntPipe) feedbackId: number,
+    @Body() createResponseDto: CreateFeedbackResponseDto
+  ) {
+    try {
+      // Set feedbackId from URL parameter
+      createResponseDto.feedbackId = feedbackId;
+      const response = await this.trustPortalService.addFeedbackResponse(createResponseDto);
+      return response;
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to add response',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Put('feedback/:feedbackId/status')
+  @ApiOperation({ summary: 'Update feedback status' })
+  @ApiResponse({ status: 200, description: 'Feedback status updated successfully' })
+  async updateFeedbackStatus(
+    @Param('feedbackId', ParseIntPipe) feedbackId: number,
+    @Body() updateStatusDto: UpdateFeedbackStatusDto
+  ) {
+    try {
+      const feedback = await this.trustPortalService.updateFeedbackStatus(feedbackId, updateStatusDto);
+      return feedback;
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Failed to update feedback status',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  // Shared Documents Management
+  @Post('documents')
+  @ApiOperation({ summary: 'Add a document to trust portal' })
+  @ApiResponse({ status: 201, description: 'Document added successfully' })
+  async createSharedDocument(@Body() createDocumentDto: CreateSharedDocumentDto) {
+    try {
+      const document = await this.trustPortalService.createSharedDocument(createDocumentDto);
+      return document;
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to add document',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('vendor/:vendorId/documents')
+  @ApiOperation({ summary: 'Get shared documents for a vendor' })
+  @ApiResponse({ status: 200, description: 'Returns shared documents for the vendor' })
+  async getVendorSharedDocuments(@Param('vendorId', ParseIntPipe) vendorId: number) {
+    try {
+      const data = await this.trustPortalService.getVendorTrustPortalData(vendorId, false);
+      return data.sharedDocuments;
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to fetch documents',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
