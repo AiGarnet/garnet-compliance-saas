@@ -602,4 +602,230 @@ export class TrustPortalService {
     const result = await this.databaseService.query(query, values);
     return result.rows[0];
   }
+
+  /**
+   * Approve a vendor submission
+   */
+  async approveSubmission(
+    submissionId: string, 
+    enterpriseId: string, 
+    approvalDetails: { approverName?: string; comments?: string }
+  ): Promise<any> {
+    const query = `
+      UPDATE trust_portal_items 
+      SET 
+        content = jsonb_set(
+          COALESCE(content::jsonb, '{}'),
+          '{status}',
+          '"Approved"'
+        ),
+        content = jsonb_set(
+          content::jsonb,
+          '{approvalDate}',
+          $3
+        ),
+        content = jsonb_set(
+          content::jsonb,
+          '{approvedBy}',
+          $4
+        ),
+        content = jsonb_set(
+          content::jsonb,
+          '{approverComments}',
+          $5
+        ),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE questionnaire_id = $1 AND is_questionnaire_answer = true
+      RETURNING 
+        id,
+        vendor_id as "vendorId",
+        title,
+        content,
+        updated_at as "updatedAt"
+    `;
+    
+    const result = await this.databaseService.query(query, [
+      submissionId,
+      enterpriseId,
+      JSON.stringify(new Date().toISOString()),
+      JSON.stringify(approvalDetails.approverName || 'Enterprise User'),
+      JSON.stringify(approvalDetails.comments || '')
+    ]);
+    
+    if (result.rows.length === 0) {
+      throw new Error('Submission not found');
+    }
+    
+    return result.rows[0];
+  }
+
+  /**
+   * Create follow-on questionnaire
+   */
+  async createFollowOnQuestionnaire(
+    parentSubmissionId: string,
+    enterpriseId: string,
+    followOnData: { questions: string[]; title: string; comments?: string }
+  ): Promise<any> {
+    // First, get the vendor ID from the parent submission
+    const parentQuery = `
+      SELECT vendor_id as "vendorId" 
+      FROM trust_portal_items 
+      WHERE questionnaire_id = $1 AND is_questionnaire_answer = true
+      LIMIT 1
+    `;
+    
+    const parentResult = await this.databaseService.query(parentQuery, [parentSubmissionId]);
+    
+    if (parentResult.rows.length === 0) {
+      throw new Error('Parent submission not found');
+    }
+    
+    const vendorId = parentResult.rows[0].vendorId;
+    
+    // Create a new trust portal item representing the follow-on requirement
+    const insertQuery = `
+      INSERT INTO trust_portal_items (
+        vendor_id, title, description, category, content, 
+        is_questionnaire_answer, questionnaire_id
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING 
+        id,
+        vendor_id as "vendorId",
+        title,
+        description,
+        content,
+        created_at as "createdAt"
+    `;
+    
+    const followOnId = `followon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const result = await this.databaseService.query(insertQuery, [
+      vendorId,
+      followOnData.title,
+      `Follow-on questionnaire requested for submission ${parentSubmissionId}`,
+      'Follow-on Questionnaire',
+      JSON.stringify({
+        parentSubmissionId,
+        enterpriseId,
+        questions: followOnData.questions,
+        comments: followOnData.comments,
+        status: 'Pending Response',
+        createdDate: new Date().toISOString()
+      }),
+      false,
+      followOnId
+    ]);
+    
+    return result.rows[0];
+  }
+
+  /**
+   * Get submission status
+   */
+  async getSubmissionStatus(submissionId: string): Promise<any> {
+    const query = `
+      SELECT 
+        id,
+        vendor_id as "vendorId",
+        title,
+        content,
+        is_questionnaire_answer as "isQuestionnaireAnswer",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM trust_portal_items
+      WHERE questionnaire_id = $1
+      ORDER BY created_at DESC
+    `;
+    
+    const result = await this.databaseService.query(query, [submissionId]);
+    
+    if (result.rows.length === 0) {
+      throw new Error('Submission not found');
+    }
+    
+    const submission = result.rows.find(r => r.isQuestionnaireAnswer);
+    const followOns = result.rows.filter(r => !r.isQuestionnaireAnswer);
+    
+    let status = 'In Review';
+    let statusDetails = {};
+    
+    if (submission?.content) {
+      const content = typeof submission.content === 'string' 
+        ? JSON.parse(submission.content) 
+        : submission.content;
+      
+      status = content.status || 'In Review';
+      statusDetails = {
+        approvedBy: content.approvedBy,
+        approvalDate: content.approvalDate,
+        approverComments: content.approverComments
+      };
+    }
+    
+    return {
+      submissionId,
+      vendorId: submission?.vendorId,
+      status,
+      statusDetails,
+      followOnQuestionnaires: followOns.map(f => ({
+        id: f.id,
+        title: f.title,
+        content: typeof f.content === 'string' ? JSON.parse(f.content) : f.content,
+        createdAt: f.createdAt
+      })),
+      lastUpdated: submission?.updatedAt
+    };
+  }
+
+  /**
+   * Send enterprise invitation
+   */
+  async sendEnterpriseInvitation(
+    vendorId: number,
+    enterpriseEmail: string,
+    submissionId: string,
+    message?: string
+  ): Promise<any> {
+    // In a real implementation, this would integrate with an email service
+    // For now, we'll log the invitation and return success
+    
+    const invitationData = {
+      vendorId,
+      enterpriseEmail,
+      submissionId,
+      message: message || 'You have been invited to review a vendor submission.',
+      invitationUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/trust-portal/review/${submissionId}`,
+      sentAt: new Date().toISOString()
+    };
+    
+    // Log the invitation (in production, you'd send actual email)
+    console.log('Enterprise invitation:', invitationData);
+    
+    // Store invitation record in the database
+    const logQuery = `
+      INSERT INTO trust_portal_items (
+        vendor_id, title, description, category, content, 
+        is_questionnaire_answer, questionnaire_id
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id
+    `;
+    
+    const result = await this.databaseService.query(logQuery, [
+      vendorId,
+      'Enterprise Invitation Sent',
+      `Invitation sent to ${enterpriseEmail} for submission review`,
+      'System Log',
+      JSON.stringify(invitationData),
+      false,
+      `invitation_${Date.now()}`
+    ]);
+    
+    return {
+      invitationId: result.rows[0].id,
+      ...invitationData
+    };
+  }
 } 

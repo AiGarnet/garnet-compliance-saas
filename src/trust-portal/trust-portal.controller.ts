@@ -418,4 +418,122 @@ export class TrustPortalController {
       );
     }
   }
+
+  @Post('submissions/:submissionId/approve')
+  @ApiOperation({ summary: 'Approve a vendor submission' })
+  @ApiResponse({ status: 200, description: 'Submission approved successfully' })
+  @ApiResponse({ status: 404, description: 'Submission not found' })
+  async approveSubmission(
+    @Param('submissionId') submissionId: string,
+    @Body() approvalData: { enterpriseId: string; approverName?: string; comments?: string }
+  ) {
+    try {
+      const result = await this.trustPortalService.approveSubmission(
+        submissionId, 
+        approvalData.enterpriseId,
+        {
+          approverName: approvalData.approverName,
+          comments: approvalData.comments
+        }
+      );
+      
+      return {
+        success: true,
+        data: result,
+        message: 'Submission approved successfully'
+      };
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to approve submission',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('submissions/:submissionId/follow-on')
+  @ApiOperation({ summary: 'Upload a follow-on questionnaire for a submission' })
+  @ApiResponse({ status: 201, description: 'Follow-on questionnaire created successfully' })
+  @ApiResponse({ status: 404, description: 'Submission not found' })
+  async uploadFollowOnQuestionnaire(
+    @Param('submissionId') submissionId: string,
+    @Body() followOnData: { 
+      enterpriseId: string; 
+      questions: string[];
+      title?: string;
+      comments?: string;
+    }
+  ) {
+    try {
+      const result = await this.trustPortalService.createFollowOnQuestionnaire(
+        submissionId,
+        followOnData.enterpriseId,
+        {
+          questions: followOnData.questions,
+          title: followOnData.title || `Follow-on Questions - ${new Date().toLocaleDateString()}`,
+          comments: followOnData.comments
+        }
+      );
+      
+      return {
+        success: true,
+        data: result,
+        message: 'Follow-on questionnaire created successfully'
+      };
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to create follow-on questionnaire',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('submissions/:submissionId/status')
+  @ApiOperation({ summary: 'Get submission status and workflow state' })
+  @ApiResponse({ status: 200, description: 'Returns submission status' })
+  async getSubmissionStatus(@Param('submissionId') submissionId: string) {
+    try {
+      const status = await this.trustPortalService.getSubmissionStatus(submissionId);
+      return {
+        success: true,
+        data: status
+      };
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to get submission status',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('vendor/:vendorId/invite-enterprise')
+  @ApiOperation({ summary: 'Send invitation to enterprise for submission review' })
+  @ApiResponse({ status: 200, description: 'Invitation sent successfully' })
+  async inviteEnterpriseToReview(
+    @Param('vendorId') vendorId: string,
+    @Body() inviteData: {
+      enterpriseEmail: string;
+      submissionId: string;
+      message?: string;
+    }
+  ) {
+    try {
+      const result = await this.trustPortalService.sendEnterpriseInvitation(
+        parseInt(vendorId),
+        inviteData.enterpriseEmail,
+        inviteData.submissionId,
+        inviteData.message
+      );
+      
+      return {
+        success: true,
+        data: result,
+        message: 'Enterprise invitation sent successfully'
+      };
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Failed to send enterprise invitation',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 } 
