@@ -60,10 +60,10 @@ export const CommonActivityConfigs = {
     type: ActivityType.CLIENT_CREATED,
     entityType: 'client',
     getEntityId: (result: any) => result.data?.id,
-    getEntityName: (result: any) => result.data?.name,
+    getEntityName: (result: any) => result.data?.companyName || result.data?.name,
     getToastConfig: (result: any) => ({
       title: 'Client Created',
-      message: `Client "${result.data?.name}" has been created successfully`,
+      message: `Client "${result.data?.companyName || result.data?.name}" has been created successfully`,
       type: 'success' as const,
       duration: 5000,
       actions: [
@@ -71,7 +71,7 @@ export const CommonActivityConfigs = {
       ]
     }),
     getMetadata: (result: any) => ({
-      clientName: result.data?.name,
+      clientName: result.data?.companyName || result.data?.name,
       clientId: result.data?.id,
       status: result.data?.status
     })
@@ -81,10 +81,10 @@ export const CommonActivityConfigs = {
     type: ActivityType.CLIENT_UPDATED,
     entityType: 'client',
     getEntityId: (result: any, req: any) => req.params?.id || result.data?.id,
-    getEntityName: (result: any) => result.data?.name,
+    getEntityName: (result: any) => result.data?.companyName || result.data?.name,
     getToastConfig: (result: any) => ({
       title: 'Client Updated',
-      message: `Client "${result.data?.name}" has been updated successfully`,
+      message: `Client "${result.data?.companyName || result.data?.name}" has been updated successfully`,
       type: 'success' as const,
       duration: 4000,
       actions: [
@@ -92,7 +92,7 @@ export const CommonActivityConfigs = {
       ]
     }),
     getMetadata: (result: any, req: any) => ({
-      clientName: result.data?.name,
+      clientName: result.data?.companyName || result.data?.name,
       clientId: result.data?.id,
       updatedFields: Object.keys(req.body || {}),
       previousStatus: req.body?.previousStatus,
@@ -104,15 +104,15 @@ export const CommonActivityConfigs = {
     type: ActivityType.CLIENT_DELETED,
     entityType: 'client',
     getEntityId: (result: any, req: any) => req.params?.id,
-    getEntityName: (result: any, req: any) => req.body?.name || req.params?.id,
+    getEntityName: (result: any, req: any) => result.meta?.entityName || 'Unknown Client',
     getToastConfig: (result: any, req: any) => ({
       title: 'Client Deleted',
-      message: `Client has been deleted successfully`,
+      message: `Client "${result.meta?.entityName || 'Client'}" has been deleted successfully`,
       type: 'success' as const,
       duration: 4000
     }),
     getMetadata: (result: any, req: any) => ({
-      clientName: req.body?.name || 'Unknown',
+      clientName: result.meta?.entityName || 'Unknown',
       clientId: req.params?.id
     })
   },
