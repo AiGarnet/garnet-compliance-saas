@@ -38,24 +38,44 @@ export class AiService {
     }
 
     try {
-      // Find relevant compliance data
+      console.log('Processing AI request:', request);
+
+      // Load relevant compliance data
       const relevantData = await this.findRelevantComplianceData(request.question);
       
-      // Generate answer using OpenAI
-      const answer = await this.generateOpenAIAnswer(request.question, relevantData, request.context);
-      
+      // Determine if this is a chat mode request
+      const isChatMode = request.context?.includes('chatbot') || request.question.toLowerCase().includes('chat');
+
+      let answer: string;
+      let confidence: number;
+      let sources: string[];
+
+      if (isChatMode) {
+        // Handle chatbot response with new format
+        const chatbotResponse = await this.generateChatbotResponse(request.question, [], request.vendorId);
+        answer = chatbotResponse.answer;
+        confidence = chatbotResponse.confidence;
+        sources = relevantData.map(data => data.name);
+      } else {
+        // Generate standard answer
+        answer = await this.generateOpenAIAnswer(request.question, relevantData, request.context);
+        confidence = this.calculateConfidence(request.question, relevantData, answer);
+        sources = relevantData.map(data => data.name);
+      }
+
       return {
         question: request.question,
         answer,
         success: true,
-        confidence: 0.8, // Default confidence score
-        sources: relevantData.map(data => data.name),
+        confidence,
+        sources,
       };
+
     } catch (error: any) {
-      console.error('Error generating AI answer:', error);
+      console.error('Error generating answer:', error);
       return {
         question: request.question,
-        answer: 'We couldn\'t generate an answer—please try again.',
+        answer: this.generateFallbackResponse(),
         success: false,
         error: error.message,
       };
@@ -458,5 +478,680 @@ Answer:`;
     });
 
     return completion.choices[0]?.message?.content || 'We apologize, but we couldn\'t generate a response at this time. Please contact our compliance team directly for this information.';
+  }
+
+  /**
+   * Generate chatbot response with enhanced training and conversation context
+   */
+  async generateChatbotResponse(
+    question: string,
+    conversationHistory: any[] = [],
+    vendorId?: number
+  ): Promise<{
+    answer: string;
+    category: string;
+    confidence: number;
+    metadata: any;
+    canRegenerate: boolean;
+  }> {
+    try {
+      console.log('Generating chatbot response for question:', question);
+
+      // Check if question is compliance-related
+      if (!this.isComplianceRelated(question)) {
+        return {
+          answer: this.generateOutOfDomainResponse(),
+          category: 'Out of Domain',
+          confidence: 0.1,
+          metadata: {
+            reason: 'Question outside compliance domain',
+            suggestedTopics: ['Data Privacy', 'Cybersecurity', 'Financial Crime Prevention']
+          },
+          canRegenerate: false
+        };
+      }
+
+      // Build enhanced system and user prompts with training
+      const systemPrompt = this.buildChatbotSystemPrompt();
+      const userPrompt = await this.buildChatbotUserPrompt(
+        question, 
+        conversationHistory, 
+        vendorId?.toString()
+      );
+
+      console.log('Using enhanced training prompts for OpenAI request');
+
+      // Generate response with enhanced context
+      const completion = await this.openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.3, // Lower temperature for more consistent, professional responses
+        max_tokens: 800,
+        presence_penalty: 0.1,
+        frequency_penalty: 0.1
+      });
+
+      const response = completion.choices[0].message.content || 'I apologize, but I was unable to generate a response. Please try asking your question again or rephrase it.';
+
+      // Enhanced confidence calculation
+      const confidence = this.calculateEnhancedConfidence(question, response, conversationHistory);
+      
+      // Detect compliance category
+      const category = this.detectComplianceCategory(question);
+
+      // Enhanced metadata with conversation insights
+      const metadata = {
+        complianceCategory: category,
+        conversationTurn: conversationHistory.length + 1,
+        trainingPatternUsed: this.getMatchedTrainingPattern(question),
+        responseLength: response.length,
+        keywordsMatched: this.getComplianceKeywords(question.toLowerCase()),
+        suggestedFollowUps: this.generateFollowUpSuggestions(question, category),
+        model: 'gpt-3.5-turbo',
+        timestamp: new Date().toISOString()
+      };
+
+      console.log('Generated enhanced chatbot response with metadata:', metadata);
+
+      return {
+        answer: response,
+        category,
+        confidence,
+        metadata,
+        canRegenerate: true
+      };
+
+    } catch (error) {
+      console.error('Error in generateChatbotResponse:', error);
+      
+      return {
+        answer: this.generateFallbackResponse(),
+        category: 'Error',
+        confidence: 0.2,
+        metadata: {
+          error: error.message,
+          fallbackUsed: true,
+          timestamp: new Date().toISOString()
+        },
+        canRegenerate: true
+      };
+    }
+  }
+
+  /**
+   * Calculate enhanced confidence with multiple factors
+   */
+  private calculateEnhancedConfidence(
+    question: string, 
+    response: string, 
+    conversationHistory: any[]
+  ): number {
+    let confidence = 0.5; // Base confidence
+
+    // Question clarity and compliance relevance
+    const complianceKeywords = this.getComplianceKeywords(question.toLowerCase());
+    if (complianceKeywords.length > 0) {
+      confidence += 0.2;
+    }
+
+    // Response quality indicators
+    if (response.length > 200) confidence += 0.1;
+    if (response.includes('We implement') || response.includes('Our organization')) confidence += 0.1;
+    if (response.match(/\d+\s*(days?|hours?|months?|years?)/)) confidence += 0.1; // Contains specific timelines
+    if (response.match(/(ISO|SOC|NIST|GDPR|CCPA|FCPA)/i)) confidence += 0.1; // Contains standards/regulations
+
+    // Conversation context
+    if (conversationHistory.length > 0) {
+      confidence += Math.min(0.1, conversationHistory.length * 0.02); // Bonus for context
+    }
+
+    // Cap at 0.95 to indicate AI uncertainty
+    return Math.min(0.95, confidence);
+  }
+
+  /**
+   * Get matched training pattern for metadata
+   */
+  private getMatchedTrainingPattern(question: string): string {
+    const questionLower = question.toLowerCase();
+    
+    const patterns = [
+      { name: 'Data Privacy', pattern: /data.*protection|privacy|gdpr|ccpa|personal.*data|consent|retention|breach/ },
+      { name: 'Financial Crime', pattern: /aml|kyc|sanctions|beneficial.*ownership|pep|money.*laundering|fatf/ },
+      { name: 'Cybersecurity', pattern: /security|cyber|iso.*27001|soc.*2|nist|incident.*response|penetration|vulnerability/ },
+      { name: 'Operational Resilience', pattern: /business.*continuity|disaster.*recovery|backup|resilience|availability|uptime/ },
+      { name: 'Anti-Bribery', pattern: /bribery|corruption|fcpa|gifts|entertainment|third.*party.*due.*diligence/ }
+    ];
+
+    for (const pattern of patterns) {
+      if (pattern.pattern.test(questionLower)) {
+        return pattern.name;
+      }
+    }
+
+    return 'General Compliance';
+  }
+
+  /**
+   * Generate follow-up suggestions based on question and category
+   */
+  private generateFollowUpSuggestions(question: string, category: string): string[] {
+    const suggestions: Record<string, string[]> = {
+      'Data Privacy': [
+        'Would you like details about our data retention policies?',
+        'Can I explain our approach to consent management?',
+        'Should I elaborate on our cross-border transfer safeguards?'
+      ],
+      'Financial Crime Prevention': [
+        'Would you like more details about our transaction monitoring?',
+        'Can I explain our enhanced due diligence procedures?',
+        'Should I describe our suspicious activity reporting process?'
+      ],
+      'Cybersecurity': [
+        'Would you like details about our security certifications?',
+        'Can I explain our incident response procedures?',
+        'Should I elaborate on our vulnerability management program?'
+      ],
+      'Operational Resilience': [
+        'Would you like more details about our testing procedures?',
+        'Can I explain our crisis management protocols?',
+        'Should I describe our supplier risk management?'
+      ],
+      'Anti-Bribery & Corruption': [
+        'Would you like details about our training programs?',
+        'Can I explain our third-party risk assessment process?',
+        'Should I elaborate on our monitoring and reporting procedures?'
+      ]
+    };
+
+    return suggestions[category] || [
+      'Would you like me to elaborate on any specific aspect?',
+      'Can I provide more details about our compliance framework?',
+      'Should I explain related regulatory requirements?'
+    ];
+  }
+
+  /**
+   * Check if question is compliance-related
+   */
+  private isComplianceRelated(question: string): boolean {
+    const complianceKeywords = [
+      // Data Privacy
+      'gdpr', 'ccpa', 'pipeda', 'privacy', 'data protection', 'consent', 'breach', 'dpo', 'data subject',
+      'personal data', 'processing', 'controller', 'processor', 'lawful basis', 'privacy policy',
+      
+      // Financial Crime
+      'aml', 'kyc', 'cdd', 'beneficial ownership', 'pep', 'sanctions', 'ofac', 'suspicious activity',
+      'money laundering', 'terrorist financing', 'fatf', 'screening', 'transaction monitoring',
+      
+      // Anti-Bribery & Corruption
+      'fcpa', 'bribery', 'corruption', 'facilitation payments', 'gifts', 'entertainment',
+      'third party', 'due diligence', 'anti-bribery', 'uk bribery act', 'adequate procedures',
+      
+      // Cybersecurity
+      'iso 27001', 'soc 2', 'nist', 'cybersecurity', 'information security', 'isms', 'incident response',
+      'security controls', 'vulnerability', 'penetration testing', 'encryption', 'access control',
+      'multi-factor authentication', 'business continuity', 'disaster recovery',
+      
+      // General Compliance
+      'compliance', 'regulation', 'regulatory', 'audit', 'assessment', 'certification', 'framework',
+      'standard', 'policy', 'procedure', 'training', 'monitoring', 'reporting', 'governance',
+      'risk management', 'internal controls', 'documentation', 'evidence'
+    ];
+
+    const questionLower = question.toLowerCase();
+    return complianceKeywords.some(keyword => questionLower.includes(keyword));
+  }
+
+  /**
+   * Generate out-of-domain response for non-compliance questions
+   */
+  private generateOutOfDomainResponse(): string {
+    const responses = [
+      "I'm here to help with compliance and regulatory questions. Could you ask about data privacy, cybersecurity, financial crime prevention, or another compliance topic?",
+      "That question seems to be outside my compliance expertise. I'd be happy to help with questions about GDPR, AML/KYC, cybersecurity frameworks, or other regulatory topics.",
+      "I specialize in compliance matters. Would you like to ask about our data protection measures, security controls, or risk management procedures?",
+      "I focus on compliance and regulatory topics. Perhaps you'd like to know about our privacy policies, security certifications, or anti-bribery procedures?",
+      "I'm designed to assist with compliance questionnaires. Can I help you with questions about data privacy, financial crime prevention, or operational resilience?"
+    ];
+    
+    return responses[Math.floor(Math.random() * responses.length)];
+  }
+
+  /**
+   * Build chatbot system prompt with role-playing
+   */
+  private buildChatbotSystemPrompt(): string {
+    return `You are Garnet AI's expert compliance assistant chatbot - a sophisticated AI trained on thousands of vendor due diligence questionnaires and compliance frameworks.
+
+CORE IDENTITY & EXPERTISE:
+You are responding AS the vendor/service provider being assessed. You represent a mature, compliance-aware organization with robust governance frameworks across multiple jurisdictions.
+
+SPECIALIZED KNOWLEDGE AREAS:
+• Data Privacy: GDPR, CCPA, PIPEDA, UK GDPR, ePrivacy Directive
+• Financial Crime Prevention: AML/CFT, KYC/CDD, Sanctions (OFAC, EU, UN), Beneficial Ownership, PEP Screening
+• Anti-Bribery & Corruption: FCPA, UK Bribery Act 2010, Third-Party Due Diligence
+• Cybersecurity: ISO 27001, SOC 2 Type II, NIST Cybersecurity Framework, Cloud Security
+• Operational Resilience: Business Continuity, Disaster Recovery, Risk Management
+
+COMMUNICATION STYLE:
+• Professional yet conversational and approachable
+• Authoritative but patient and helpful
+• Always use organizational first-person language
+• Provide specific, actionable implementation details
+• Include relevant metrics, timelines, and thresholds
+
+RESPONSE FRAMEWORK:
+1. Acknowledge the specific compliance area being discussed
+2. Provide concrete implementation details and procedures
+3. Include relevant timelines, thresholds, or frequencies
+4. Reference applicable standards, frameworks, or regulations
+5. Mention related processes, training, or monitoring activities
+6. Offer to elaborate on specific aspects if needed
+
+VENDOR RESPONSE PATTERNS (Training Examples):
+
+Data Privacy Responses:
+"We maintain GDPR compliance through our comprehensive data protection program. Our appointed Data Protection Officer oversees all processing activities. We respond to data subject requests within 30 days, maintain detailed records of processing activities, and conduct Data Protection Impact Assessments for high-risk processing. Our lawful bases are clearly documented, and we have explicit consent mechanisms for marketing communications."
+
+Financial Crime Responses:
+"Our AML/KYC program follows FATF recommendations and local regulatory requirements. We conduct enhanced due diligence using World-Check and proprietary databases, screen against OFAC and consolidated sanctions lists daily, and maintain beneficial ownership information with a 25% disclosure threshold. Our transaction monitoring system flags suspicious activities for investigation within 24 hours."
+
+Cybersecurity Responses:
+"We implement ISO 27001-certified information security management systems with SOC 2 Type II audits. Our incident response team follows NIST guidelines with 1-hour detection, 4-hour containment, and immediate stakeholder notification procedures. We conduct quarterly penetration testing, maintain 99.9% uptime SLAs, and require MFA for all administrative access."
+
+CONVERSATION GUIDELINES:
+• Build on previous discussion context naturally
+• Proactively suggest related compliance topics
+• Offer to regenerate or clarify responses when appropriate
+• Maintain consistency with established organizational capabilities
+• End responses with helpful follow-up suggestions when relevant
+
+DOMAIN BOUNDARIES:
+Politely redirect non-compliance questions to relevant compliance topics. Always stay within your role as a compliance-focused vendor representative.`;
+  }
+
+  /**
+   * Enhanced chatbot user prompt with conversation context and training
+   */
+  private async buildChatbotUserPrompt(
+    question: string,
+    conversation: any[],
+    vendorId?: string
+  ): Promise<string> {
+    // Get context from dataset and vendor patterns
+    const datasetContext = await this.loadDatasetContext(question);
+    
+    // Build conversation history
+    const conversationContext = conversation.length > 0 
+      ? `\nConversation History (last 6 messages):\n${conversation
+          .slice(-6)
+          .map(msg => `${msg.role === 'user' ? 'Question' : 'Response'}: ${msg.content}`)
+          .join('\n')}`
+      : '';
+
+    // Detect compliance category for specialized responses
+    const complianceCategory = this.detectComplianceCategory(question);
+    
+    // Vendor-specific context if available
+    let vendorContext = '';
+    if (vendorId) {
+      vendorContext = `\nVendor ID: ${vendorId} - Provide responses specific to this vendor's context.`;
+    }
+
+    // Build enhanced training examples based on question type
+    const trainingExamples = this.getAdvancedTrainingExamples(question);
+
+    return `${datasetContext}
+${trainingExamples}
+${conversationContext}
+${vendorContext}
+
+Current Question: "${question}"
+Compliance Category: ${complianceCategory}
+
+Instructions:
+1. Respond as the vendor/service provider being assessed
+2. Provide specific, implementation-focused answers with concrete details
+3. Include relevant metrics, timelines, and compliance standards
+4. Use professional organizational language ("We implement...", "Our organization maintains...")
+5. Offer to elaborate on specific aspects or suggest related compliance topics
+6. If question is vague or out of domain, politely redirect to compliance topics
+7. Build naturally on the conversation history when relevant
+
+Generate a comprehensive, helpful response that demonstrates deep compliance expertise.`;
+  }
+
+  /**
+   * Get advanced training examples based on question analysis
+   */
+  private getAdvancedTrainingExamples(question: string): string {
+    const questionLower = question.toLowerCase();
+    
+    // Advanced training patterns with specific implementation examples
+    const advancedTraining = {
+      dataPrivacy: {
+        trigger: /data.*protection|privacy|gdpr|ccpa|personal.*data|consent|retention|breach/,
+        examples: `
+Advanced Training Examples for Data Privacy:
+
+Q: "How do you handle GDPR Article 30 records of processing?"
+A: "We maintain comprehensive Article 30 records through our centralized data mapping platform. Each processing activity includes: legal basis determination, data categories processed, recipient details, retention schedules, and international transfer safeguards. Our Data Protection Officer reviews these quarterly, and we can generate compliant documentation within 72 hours for regulatory requests."
+
+Q: "What's your approach to Privacy by Design?"
+A: "We embed Privacy by Design principles throughout our development lifecycle. This includes: conducting Data Protection Impact Assessments for new features, implementing data minimization at the database level, using pseudonymization techniques, and ensuring default privacy settings. Our engineering teams complete privacy training, and we conduct privacy reviews at each sprint milestone."
+
+Q: "How do you manage cross-border data transfers?"
+A: "We rely on Standard Contractual Clauses (SCCs) for EU transfers, supplemented by additional safeguards including encryption in transit and at rest, access controls limiting data processing to authorized personnel, and transfer impact assessments. We maintain an up-to-date inventory of all international transfers and review adequacy decisions quarterly."`
+      },
+      
+      financialCrime: {
+        trigger: /aml|kyc|sanctions|beneficial.*ownership|pep|money.*laundering|fatf/,
+        examples: `
+Advanced Training Examples for Financial Crime Prevention:
+
+Q: "Describe your KYC process for corporate entities"
+A: "Our corporate KYC process follows the FATF 40 Recommendations. We collect: incorporation documents, beneficial ownership declarations (25% threshold), authorized signatory information, and business purpose verification. Enhanced due diligence applies to shell companies, complex ownership structures, and high-risk jurisdictions. We utilize automated screening against global databases and conduct ongoing monitoring with quarterly reviews."
+
+Q: "How do you handle sanctions screening?"
+A: "We implement real-time sanctions screening using consolidated lists (OFAC, EU, UN, HMT). Our system performs fuzzy matching with configurable thresholds, screens beneficial owners and related parties, and maintains audit trails. We conduct daily list updates, quarterly screening effectiveness reviews, and immediate escalation procedures for potential matches. Our compliance team investigates all hits within 4 hours."
+
+Q: "What's your approach to Suspicious Activity Reporting?"
+A: "We maintain transaction monitoring rules calibrated to our risk appetite, with automated alerts for unusual patterns. Our investigation team completes reviews within 30 days, escalating to senior management for SAR filing decisions. We file SARs within regulatory timeframes, maintain confidentiality protocols, and conduct annual effectiveness reviews with our compliance consultant."`
+      },
+      
+      cybersecurity: {
+        trigger: /security|cyber|iso.*27001|soc.*2|nist|incident.*response|penetration|vulnerability/,
+        examples: `
+Advanced Training Examples for Cybersecurity:
+
+Q: "Describe your ISO 27001 implementation"
+A: "We maintain ISO 27001:2013 certification with annual surveillance audits. Our Information Security Management System covers: risk assessment methodologies, control implementation across 14 domains, management review processes, and continuous improvement cycles. We conduct internal audits quarterly, maintain a risk register with 134 identified risks, and ensure 98% control effectiveness through automated monitoring."
+
+Q: "What's your incident response capability?"
+A: "Our incident response follows NIST guidelines with a 24/7 SOC capability. Detection occurs within 15 minutes through SIEM correlation, containment within 1 hour, and stakeholder notification within 4 hours. We maintain incident playbooks for 12 attack vectors, conduct quarterly tabletop exercises, and provide post-incident reports within 72 hours including root cause analysis and remediation plans."
+
+Q: "How do you manage third-party security risks?"
+A: "We implement a comprehensive vendor risk assessment program. All vendors complete security questionnaires, provide certifications (SOC 2, ISO 27001), and undergo risk scoring. Critical vendors receive on-site assessments, penetration testing verification, and contractual security requirements. We maintain a vendor risk register, conduct annual reviews, and require immediate notification of security incidents."`
+      },
+      
+      operationalResilience: {
+        trigger: /business.*continuity|disaster.*recovery|backup|resilience|availability|uptime/,
+        examples: `
+Advanced Training Examples for Operational Resilience:
+
+Q: "What are your business continuity capabilities?"
+A: "We maintain comprehensive business continuity plans with Recovery Time Objectives (RTO) of 4 hours and Recovery Point Objectives (RPO) of 1 hour for critical systems. Our plans cover: crisis management procedures, alternate site operations, communication protocols, and supplier dependencies. We conduct annual testing, maintain emergency contacts, and ensure 99.9% availability through redundant infrastructure."
+
+Q: "Describe your disaster recovery testing"
+A: "We perform quarterly disaster recovery tests including: full system failover, data restoration verification, communication system activation, and staff notification procedures. Each test includes defined success criteria, timing measurements, and improvement recommendations. Annual tests involve complete site failover with staff working from alternate locations for 48 hours."
+
+Q: "How do you ensure operational resilience in cloud environments?"
+A: "We implement multi-region cloud architecture with automated failover capabilities. Our approach includes: geographic distribution across 3 availability zones, real-time data replication, automated backup verification, and continuous health monitoring. We maintain cloud-native disaster recovery with sub-15-minute failover times and conduct monthly resilience testing."`
+      }
+    };
+
+    // Find matching training category
+    for (const [category, training] of Object.entries(advancedTraining)) {
+      if (training.trigger.test(questionLower)) {
+        return training.examples;
+      }
+    }
+
+    // General compliance training
+    return `
+General Compliance Training Examples:
+
+Focus on providing:
+• Specific implementation details and procedures
+• Concrete timelines, thresholds, and metrics
+• Reference to relevant standards and frameworks
+• Training and monitoring activities
+• Escalation and review procedures
+• Evidence of continuous improvement
+
+Use organizational perspective and demonstrate mature compliance posture.`;
+  }
+
+  /**
+   * Enhanced compliance category detection
+   */
+  private detectComplianceCategory(question: string): string {
+    const questionLower = question.toLowerCase();
+    
+    const categories = [
+      { name: 'Data Privacy', keywords: ['data protection', 'privacy', 'gdpr', 'ccpa', 'pipeda', 'consent', 'breach notification', 'data subject'] },
+      { name: 'Financial Crime Prevention', keywords: ['aml', 'kyc', 'sanctions', 'beneficial ownership', 'pep screening', 'transaction monitoring'] },
+      { name: 'Anti-Bribery & Corruption', keywords: ['bribery', 'corruption', 'fcpa', 'uk bribery act', 'gifts', 'entertainment', 'third party due diligence'] },
+      { name: 'Cybersecurity', keywords: ['security controls', 'cybersecurity', 'iso 27001', 'soc 2', 'nist', 'incident response', 'penetration testing'] },
+      { name: 'Operational Resilience', keywords: ['business continuity', 'disaster recovery', 'backup', 'availability', 'uptime', 'resilience'] },
+      { name: 'Environmental & Social Governance', keywords: ['esg', 'sustainability', 'environmental', 'social responsibility', 'governance'] },
+      { name: 'Regulatory Compliance', keywords: ['regulatory', 'compliance program', 'risk management', 'audit', 'policies', 'procedures'] }
+    ];
+
+    for (const category of categories) {
+      if (category.keywords.some(keyword => questionLower.includes(keyword))) {
+        return category.name;
+      }
+    }
+
+    return 'General Compliance';
+  }
+
+  /**
+   * Load relevant context from dataset and vendor question patterns
+   */
+  private async loadDatasetContext(question: string): Promise<string> {
+    try {
+      // Load and search the dataset for relevant information
+      const fs = require('fs');
+      const path = require('path');
+      const datasetPath = path.join(process.cwd(), 'data_new.json');
+      
+      if (!fs.existsSync(datasetPath)) {
+        return this.getVendorQuestionPatterns(question);
+      }
+
+      const dataset = JSON.parse(fs.readFileSync(datasetPath, 'utf8'));
+      const questionLower = question.toLowerCase();
+      
+      // Find relevant entries from dataset with enhanced matching
+      const relevantEntries = dataset
+        .filter((entry: any) => {
+          const searchFields = [
+            entry.name || '',
+            entry.description || '',
+            (entry.domains || []).join(' '),
+            entry.category || '',
+            entry.requirement || '',
+            entry.jurisdiction || ''
+          ].join(' ').toLowerCase();
+          
+          // Enhanced keyword matching for compliance questions
+          const questionWords = questionLower.split(/\s+/).filter(word => word.length > 2);
+          return questionWords.some(word => searchFields.includes(word)) ||
+                 this.getComplianceKeywords(questionLower).some(keyword => searchFields.includes(keyword));
+        })
+        .slice(0, 5); // Top 5 most relevant
+
+      let datasetContext = '';
+      if (relevantEntries.length > 0) {
+        datasetContext = `Regulatory Context:\n${relevantEntries.map((entry: any) => 
+          `- ${entry.name}: ${entry.requirement || entry.description}\n  Jurisdiction: ${entry.jurisdiction || 'Global'}`
+        ).join('\n')}`;
+      }
+
+      // Add vendor question patterns for better training
+      const vendorPatterns = this.getVendorQuestionPatterns(question);
+      
+      return datasetContext + (datasetContext ? '\n\n' : '') + vendorPatterns;
+
+    } catch (error) {
+      console.error('Error loading dataset context:', error);
+      return this.getVendorQuestionPatterns(question);
+    }
+  }
+
+  /**
+   * Get compliance-specific keywords for better matching
+   */
+  private getComplianceKeywords(question: string): string[] {
+    const keywordMap: Record<string, string[]> = {
+      'data privacy': ['gdpr', 'ccpa', 'pipeda', 'data protection', 'privacy policy', 'consent', 'breach notification'],
+      'financial crime': ['aml', 'kyc', 'sanctions', 'beneficial ownership', 'pep screening', 'transaction monitoring'],
+      'cybersecurity': ['iso 27001', 'soc 2', 'nist', 'incident response', 'vulnerability management', 'penetration testing'],
+      'anti-bribery': ['fcpa', 'uk bribery act', 'due diligence', 'third party risk', 'gifts and entertainment']
+    };
+
+    const foundKeywords: string[] = [];
+    for (const [category, keywords] of Object.entries(keywordMap)) {
+      if (keywords.some(keyword => question.includes(keyword))) {
+        foundKeywords.push(...keywords);
+      }
+    }
+    
+    return foundKeywords;
+  }
+
+  /**
+   * Get vendor question patterns and training examples
+   */
+  private getVendorQuestionPatterns(question: string): string {
+    const questionLower = question.toLowerCase();
+    
+    // Common vendor question patterns with example responses
+    const vendorQuestionPatterns = [
+      // Data Privacy Questions
+      {
+        pattern: /data.*protection|privacy.*policy|gdpr|ccpa|personal.*data/,
+        category: 'Data Privacy',
+        examples: [
+          'How do you handle GDPR data subject requests?',
+          'What is your data retention policy?',
+          'Do you have a Data Protection Officer?',
+          'How do you obtain consent for data processing?'
+        ],
+        responseGuidance: 'Provide specific procedures, timelines (e.g., 30 days for GDPR requests), mention DPO appointment, describe consent mechanisms, and reference legal bases for processing.'
+      },
+      
+      // Security Questions
+      {
+        pattern: /security.*control|cybersecurity|incident.*response|iso.*27001|soc.*2/,
+        category: 'Cybersecurity',
+        examples: [
+          'What cybersecurity frameworks do you follow?',
+          'How do you handle security incidents?',
+          'Do you perform regular penetration testing?',
+          'What access controls do you have in place?'
+        ],
+        responseGuidance: 'Reference specific standards (ISO 27001, SOC 2), describe ISMS implementation, mention incident response timelines, and detail technical controls like MFA, encryption.'
+      },
+      
+      // Financial Crime Questions
+      {
+        pattern: /aml|kyc|sanctions|beneficial.*ownership|pep.*screening|money.*laundering/,
+        category: 'Financial Crime',
+        examples: [
+          'How do you conduct AML/KYC screening?',
+          'What is your sanctions compliance process?',
+          'How do you verify beneficial ownership?',
+          'Do you screen against PEP lists?'
+        ],
+        responseGuidance: 'Mention specific screening databases (World-Check, OFAC), describe 25% beneficial ownership thresholds, detail ongoing monitoring processes, and reference FATF recommendations.'
+      },
+      
+      // Anti-Bribery Questions
+      {
+        pattern: /bribery|corruption|fcpa|gifts|entertainment|third.*party.*due.*diligence/,
+        category: 'Anti-Bribery',
+        examples: [
+          'What is your anti-bribery policy?',
+          'How do you handle gifts and entertainment?',
+          'Do you conduct third-party due diligence?',
+          'Are you FCPA compliant?'
+        ],
+        responseGuidance: 'Reference zero-tolerance policies, mention specific monetary thresholds for gifts, describe third-party risk assessments, and detail training programs.'
+      },
+      
+      // Operational Resilience
+      {
+        pattern: /business.*continuity|disaster.*recovery|backup|availability|uptime/,
+        category: 'Operational Resilience',
+        examples: [
+          'What is your business continuity plan?',
+          'How do you handle disaster recovery?',
+          'What are your uptime guarantees?',
+          'How often do you test your backups?'
+        ],
+        responseGuidance: 'Provide specific RTOs/RPOs, mention testing frequencies, describe backup strategies, and reference industry standards for availability.'
+      }
+    ];
+
+    // Find matching pattern
+    const matchedPattern = vendorQuestionPatterns.find(pattern => 
+      pattern.pattern.test(questionLower)
+    );
+
+    if (matchedPattern) {
+      return `
+Vendor Question Training Context:
+Category: ${matchedPattern.category}
+
+Similar Questions Vendors Ask:
+${matchedPattern.examples.map(q => `• ${q}`).join('\n')}
+
+Response Guidance: ${matchedPattern.responseGuidance}
+
+Expected Response Style: Professional, specific, implementation-focused with concrete details, timelines, and standards references.`;
+    }
+
+    // Generic vendor guidance
+    return `
+Vendor Question Training Context:
+General compliance inquiry detected.
+
+Response Guidelines:
+• Use organizational first-person language ("We implement...", "Our organization maintains...")
+• Provide specific procedures and timelines where applicable
+• Reference relevant standards and frameworks
+• Include compliance measures and controls
+• Mention training and monitoring programs
+• Be professional and implementation-focused
+`;
+  }
+
+  /**
+   * Calculate confidence score based on various factors
+   */
+  private calculateConfidence(question: string, relevantData: ComplianceData[], answer: string): number {
+    let confidence = 0.5; // Base confidence
+
+    // Boost confidence based on relevant data found
+    if (relevantData.length > 0) {
+      confidence += 0.2;
+      if (relevantData.length >= 3) confidence += 0.1;
+    }
+
+    // Boost confidence for specific compliance keywords
+    const specificKeywords = ['gdpr', 'iso 27001', 'soc 2', 'fcpa', 'aml', 'kyc'];
+    if (specificKeywords.some(keyword => question.toLowerCase().includes(keyword))) {
+      confidence += 0.15;
+    }
+
+    // Boost confidence for comprehensive answers
+    if (answer.length > 500) confidence += 0.1;
+    if (answer.includes('We implement') || answer.includes('Our organization')) confidence += 0.05;
+
+    return Math.min(confidence, 0.95); // Cap at 95%
+  }
+
+  /**
+   * Generate fallback response for errors
+   */
+  private generateFallbackResponse(): string {
+    return "I apologize, but I'm experiencing some technical difficulties. Please try rephrasing your compliance question, and I'll do my best to provide a helpful response about our regulatory procedures and controls.";
   }
 } 
