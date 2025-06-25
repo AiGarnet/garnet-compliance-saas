@@ -12,7 +12,7 @@ import { DatabaseService } from '../database/database.service';
 import { Public } from '../common/decorators/public.decorator';
 
 @ApiTags('health')
-@Controller()
+@Controller('health')
 @Public()
 export class HealthController {
   constructor(

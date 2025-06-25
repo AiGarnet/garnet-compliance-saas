@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 import { CreateQuestionnaireDto, UpdateQuestionnaireDto, UpdateQuestionDto } from './dto/questionnaire.dto';
 import { Questionnaire, QuestionnaireStatus, QuestionnaireQuestion } from './entities/questionnaire.entity';
@@ -7,6 +7,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class QuestionnairesService {
+  private readonly logger = new Logger(QuestionnairesService.name);
+
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly aiService?: AiService,
@@ -41,9 +43,9 @@ export class QuestionnairesService {
         ]);
         
         finalVendorId = vendorResult.rows[0].vendor_id;
-        console.log(`✅ Auto-created vendor ${finalVendorId} for questionnaire: ${title}`);
+        this.logger.log(`✅ Auto-created vendor ${finalVendorId} for questionnaire: ${title}`);
       } catch (vendorError) {
-        console.error('❌ Failed to create vendor:', vendorError);
+        this.logger.error('❌ Failed to create vendor:', vendorError);
         throw new Error(`Failed to create vendor for questionnaire: ${vendorError.message}`);
       }
     }
@@ -113,7 +115,7 @@ export class QuestionnairesService {
     // If generateAnswers is true, generate AI answers for all questions
     if (generateAnswers && questions && questions.length > 0 && this.aiService) {
       try {
-        console.log(`🤖 Generating AI answers for ${questions.length} questions...`);
+        this.logger.log(`🤖 Generating AI answers for ${questions.length} questions...`);
         
         // Extract question texts for AI generation
         const questionTexts = questions.map(q => q.questionText);
@@ -150,7 +152,7 @@ export class QuestionnairesService {
             }
           }
           
-          console.log(`✅ Generated ${aiResponse.metadata?.successfulAnswers || 0} AI answers successfully`);
+          this.logger.log(`✅ Generated ${aiResponse.metadata?.successfulAnswers || 0} AI answers successfully`);
         }
       } catch (error) {
         console.error('❌ Error generating AI answers:', error);

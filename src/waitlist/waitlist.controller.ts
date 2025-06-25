@@ -1,30 +1,33 @@
-import { Controller, Post, Get, Body, HttpStatus, HttpException } from '@nestjs/common';
+import { Controller, Post, Get, Body, HttpStatus, HttpException, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { WaitlistService } from './waitlist.service';
 import { JoinWaitlistDto } from './dto/waitlist.dto';
 import { Public } from '../common/decorators/public.decorator';
 
 @ApiTags('Waitlist')
-@Controller()
+@Controller('api/waitlist')
 export class WaitlistController {
+  private readonly logger = new Logger(WaitlistController.name);
+
   constructor(private readonly waitlistService: WaitlistService) {}
 
   @Public()
-  @Post('join-waitlist')
+  @Post('join')
   @ApiOperation({ summary: 'Join the waitlist (simple form - no password)' })
   @ApiResponse({ status: 201, description: 'Successfully joined waitlist' })
   @ApiResponse({ status: 400, description: 'Missing required fields or invalid email' })
   @ApiResponse({ status: 409, description: 'Email already registered in waitlist' })
   async joinWaitlist(@Body() joinWaitlistDto: JoinWaitlistDto) {
     try {
-      console.log('Received waitlist request at:', new Date().toISOString());
-      console.log('Request body:', joinWaitlistDto);
+      this.logger.log(`Received waitlist request at: ${new Date().toISOString()}`);
+      this.logger.debug('Request body:', joinWaitlistDto);
 
       // Validate required fields (email and full_name are required)
       if (!joinWaitlistDto.email || !joinWaitlistDto.full_name) {
-        console.error('Missing required fields');
+        this.logger.error('Missing required fields');
         throw new HttpException(
           {
+            success: false,
             error: 'Missing required fields: email and full_name are required',
           },
           HttpStatus.BAD_REQUEST,
@@ -34,19 +37,19 @@ export class WaitlistController {
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(joinWaitlistDto.email)) {
-        console.error('Invalid email format:', joinWaitlistDto.email);
+        this.logger.error(`Invalid email format: ${joinWaitlistDto.email}`);
         throw new HttpException(
-          { error: 'Invalid email format' },
+          { success: false, error: 'Invalid email format' },
           HttpStatus.BAD_REQUEST,
         );
       }
 
-      console.log('Adding to waitlist table...');
+      this.logger.log('Adding to waitlist table...');
 
       // Add to waitlist using the service
       const waitlistEntry = await this.waitlistService.addToWaitlist(joinWaitlistDto);
 
-      console.log('Successfully added to waitlist:', waitlistEntry);
+      this.logger.log('Successfully added to waitlist:', waitlistEntry);
 
       // Return success response matching original format
       return {
@@ -55,7 +58,7 @@ export class WaitlistController {
         data: waitlistEntry,
       };
     } catch (error: any) {
-      console.error('Error in join-waitlist endpoint:', error);
+      this.logger.error('Error in join-waitlist endpoint:', error);
 
       // Check for duplicate email
       if (error.message === 'Email already exists in waitlist') {
@@ -81,34 +84,40 @@ export class WaitlistController {
   }
 
   @Public()
-  @Get('api/waitlist/stats')
+  @Get('stats')
   @ApiOperation({ summary: 'Get waitlist statistics' })
   @ApiResponse({ status: 200, description: 'Waitlist statistics retrieved' })
   async getWaitlistStats() {
     try {
       const stats = await this.waitlistService.getWaitlistStats();
-      return stats;
+      return {
+        success: true,
+        data: stats
+      };
     } catch (error: any) {
-      console.error('Error fetching waitlist stats:', error);
+      this.logger.error('Error fetching waitlist stats:', error);
       throw new HttpException(
-        { error: 'Internal server error' },
+        { success: false, error: 'Internal server error' },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
   @Public()
-  @Get('api/waitlist/users')
+  @Get('users')
   @ApiOperation({ summary: 'Get all waitlist entries' })
   @ApiResponse({ status: 200, description: 'Waitlist users retrieved' })
   async getWaitlistUsers() {
     try {
       const users = await this.waitlistService.getAllWaitlistEntries();
-      return { users };
+      return { 
+        success: true,
+        data: { users }
+      };
     } catch (error: any) {
-      console.error('Error fetching waitlist users:', error);
+      this.logger.error('Error fetching waitlist users:', error);
       throw new HttpException(
-        { error: 'Internal server error' },
+        { success: false, error: 'Internal server error' },
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

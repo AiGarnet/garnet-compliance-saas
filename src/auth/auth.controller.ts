@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, UseGuards, Request, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Request, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SignupDto, LoginDto, WaitlistSignupDto, AuthResponseDto } from './dto/auth.dto';
@@ -8,6 +8,8 @@ import { Public } from '../common/decorators/public.decorator';
 @ApiTags('Authentication')
 @Controller('api/auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(private readonly authService: AuthService) {}
 
   @Public()
@@ -50,6 +52,8 @@ export class AuthController {
 @ApiTags('Authentication - Waitlist Signup')
 @Controller()
 export class AuthWaitlistController {
+  private readonly logger = new Logger(AuthWaitlistController.name);
+
   constructor(private readonly authService: AuthService) {}
 
   @Public()
@@ -84,7 +88,7 @@ export class AuthWaitlistController {
 
       return await this.authService.waitlistSignup(waitlistDto);
     } catch (error: any) {
-      console.error('Waitlist signup error:', error);
+      this.logger.error('Waitlist signup error:', error);
       if (error.message === 'Email already registered') {
         throw new HttpException({ error: 'Email already registered' }, HttpStatus.CONFLICT);
       }
@@ -103,7 +107,7 @@ export class AuthWaitlistController {
     try {
       return await this.authService.getWaitlistStats();
     } catch (error: any) {
-      console.error('Error fetching waitlist stats:', error);
+      this.logger.error('Error fetching waitlist stats:', error);
       throw new HttpException({ error: 'Internal server error' }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -117,7 +121,7 @@ export class AuthWaitlistController {
       const users = await this.authService.getAllWaitlistUsers();
       return { users };
     } catch (error: any) {
-      console.error('Error fetching waitlist users:', error);
+      this.logger.error('Error fetching waitlist users:', error);
       throw new HttpException({ error: 'Internal server error' }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../database/database.service';
 import OpenAI from 'openai';
@@ -15,6 +15,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class AiService {
+  private readonly logger = new Logger(AiService.name);
   private openai: OpenAI;
 
   constructor(
@@ -38,7 +39,7 @@ export class AiService {
     }
 
     try {
-      console.log('Processing AI request:', request);
+      this.logger.debug('Processing AI request:', request);
 
       // Load relevant compliance data
       const relevantData = await this.findRelevantComplianceData(request.question);
@@ -72,7 +73,7 @@ export class AiService {
       };
 
     } catch (error: any) {
-      console.error('Error generating answer:', error);
+      this.logger.error('Error generating answer:', error);
       return {
         question: request.question,
         answer: this.generateFallbackResponse(),
@@ -117,7 +118,7 @@ export class AiService {
           
           return result;
         } catch (error: any) {
-          console.error(`Error generating answer for question: "${question}"`, error);
+          this.logger.error(`Error generating answer for question: "${question}"`, error);
           failedAnswers++;
           return {
             question,

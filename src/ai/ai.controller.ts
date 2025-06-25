@@ -15,7 +15,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../common/decorators/public.decorator';
 
 @ApiTags('ai')
-@Controller()
+@Controller('api/ai')
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
