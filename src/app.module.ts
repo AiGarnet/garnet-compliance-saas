@@ -22,6 +22,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { AnswerModule } from './answer/answer.module';
 import { GenerateAnswersModule } from './generate-answers/generate-answers.module';
+import { ChecklistsModule } from './checklists/checklists.module';
 
 // Global providers
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -64,6 +65,7 @@ import { AppController } from './app.controller';
     ActivitiesModule,
     AnswerModule,
     GenerateAnswersModule,
+    ChecklistsModule,
   ],
   providers: [
     // Global exception filter
