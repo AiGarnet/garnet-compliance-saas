@@ -20,13 +20,19 @@ import { WaitlistModule } from './waitlist/waitlist.module';
 import { AiModule } from './ai/ai.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { ActivitiesModule } from './activities/activities.module';
+import { AnswerModule } from './answer/answer.module';
+import { GenerateAnswersModule } from './generate-answers/generate-answers.module';
 
 // Global providers
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
+// Root controller
+import { AppController } from './app.controller';
+
 @Module({
+  controllers: [AppController],
   imports: [
     // Global configuration
     ConfigModule.forRoot({
@@ -56,6 +62,8 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     AiModule,
     AnalyticsModule,
     ActivitiesModule,
+    AnswerModule,
+    GenerateAnswersModule,
   ],
   providers: [
     // Global exception filter

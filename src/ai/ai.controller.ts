@@ -19,32 +19,9 @@ import { Public } from '../common/decorators/public.decorator';
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
-  @Post('ask')
-  @Public()
-  @ApiOperation({ summary: 'Generate AI answer for a single question (public endpoint)' })
-  @ApiResponse({ status: 200, description: 'AI answer generated successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid input or OpenAI not configured' })
-  async askPublic(@Body() generateAnswerDto: GenerateAnswerDto) {
-    try {
-      const result = await this.aiService.generateAnswer({
-        question: generateAnswerDto.question,
-        context: generateAnswerDto.context,
-        vendorId: generateAnswerDto.vendorId,
-      });
 
-      return { answer: result.answer };
-    } catch (error: any) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new HttpException(
-        error.message || 'Failed to generate AI answer',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
 
-  @Post('api/answer')
+  @Post('generate')
   @Public()
   @ApiOperation({ summary: 'Generate AI answer for frontend compatibility' })
   @ApiResponse({ status: 200, description: 'AI answer generated successfully' })
@@ -69,7 +46,7 @@ export class AiController {
     }
   }
 
-  @Post('api/ai/ask')
+  @Post('ask')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Generate AI answer for a single question (authenticated)' })
@@ -95,9 +72,8 @@ export class AiController {
     }
   }
 
-  @Post('api/ai/batch-ask')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @Post('batch')
+  @Public()
   @ApiOperation({ summary: 'Generate AI answers for multiple questions' })
   @ApiResponse({ status: 200, description: 'AI answers generated successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input or OpenAI not configured' })
@@ -121,7 +97,7 @@ export class AiController {
     }
   }
 
-  @Post('api/ai/suggestions')
+  @Post('suggestions')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create AI suggestion for a vendor' })
@@ -139,7 +115,7 @@ export class AiController {
     }
   }
 
-  @Get('api/ai/vendors/:vendorId/suggestions')
+  @Get('vendors/:vendorId/suggestions')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get AI suggestions for a vendor' })
