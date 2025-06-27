@@ -34,15 +34,19 @@ export class AiService {
    * Generate AI answer for a single question
    */
   async generateAnswer(request: GenerateAnswerRequest): Promise<AiAnswerResponse> {
+    this.logger.debug(`🤖 AI SERVICE: Starting generateAnswer for question: "${request.question.substring(0, 100)}..."`);
+    
     if (!this.openai) {
+      this.logger.error('❌ AI SERVICE: OpenAI API key not configured');
       throw new BadRequestException('OpenAI API key not configured');
     }
 
     try {
-      this.logger.debug('Processing AI request:', request);
+      this.logger.debug(`🤖 AI SERVICE: Processing AI request for vendor ${request.vendorId}`);
 
       // Load relevant compliance data
       const relevantData = await this.findRelevantComplianceData(request.question);
+      this.logger.debug(`🤖 AI SERVICE: Found ${relevantData.length} relevant compliance data entries`);
       
       // Determine if this is a chat mode request
       const isChatMode = request.context?.includes('chatbot') || request.question.toLowerCase().includes('chat');
@@ -52,17 +56,22 @@ export class AiService {
       let sources: string[];
 
       if (isChatMode) {
+        this.logger.debug('🤖 AI SERVICE: Using chatbot response mode');
         // Handle chatbot response with new format
         const chatbotResponse = await this.generateChatbotResponse(request.question, [], request.vendorId);
         answer = chatbotResponse.answer;
         confidence = chatbotResponse.confidence;
         sources = relevantData.map(data => data.name);
       } else {
+        this.logger.debug('🤖 AI SERVICE: Using standard OpenAI answer generation');
         // Generate standard answer
         answer = await this.generateOpenAIAnswer(request.question, relevantData, request.context);
         confidence = this.calculateConfidence(request.question, relevantData, answer);
         sources = relevantData.map(data => data.name);
       }
+
+      this.logger.debug(`🤖 AI SERVICE: Successfully generated answer with confidence ${confidence}`);
+      this.logger.debug(`🤖 AI SERVICE: Answer preview: "${answer.substring(0, 200)}..."`);
 
       return {
         question: request.question,
@@ -73,7 +82,7 @@ export class AiService {
       };
 
     } catch (error: any) {
-      this.logger.error('Error generating answer:', error);
+      this.logger.error(`❌ AI SERVICE: Error generating answer: ${error.message}`, error.stack);
       return {
         question: request.question,
         answer: this.generateFallbackResponse(),
