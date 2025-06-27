@@ -47,9 +47,8 @@ export class AiController {
   }
 
   @Post('ask')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Generate AI answer for a single question (authenticated)' })
+  @Public()
+  @ApiOperation({ summary: 'Generate AI answer for a single question' })
   @ApiResponse({ status: 200, description: 'AI answer generated successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input or OpenAI not configured' })
   async generateAnswer(@Body() generateAnswerDto: GenerateAnswerDto) {
@@ -116,8 +115,7 @@ export class AiController {
   }
 
   @Get('vendors/:vendorId/suggestions')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @Public()
   @ApiOperation({ summary: 'Get AI suggestions for a vendor' })
   @ApiResponse({ status: 200, description: 'Returns vendor AI suggestions' })
   @ApiResponse({ status: 404, description: 'Vendor not found' })

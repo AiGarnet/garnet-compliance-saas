@@ -19,6 +19,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Public } from '../common/decorators/public.decorator';
 import { ChecklistsService } from './checklists.service';
 import { AiService } from '../ai/ai.service';
 import {
@@ -45,6 +46,7 @@ export class ChecklistsController {
 
   // Upload and process checklist file with DigitalOcean Spaces integration
   @Post('upload')
+  @Public()
   @UseInterceptors(FileInterceptor('file'))
   async uploadChecklist(
     @UploadedFile() file: Express.Multer.File,
@@ -79,6 +81,7 @@ export class ChecklistsController {
 
   // Get all checklists for a vendor
   @Get('vendor/:vendorId')
+  @Public()
   async getVendorChecklists(
     @Param('vendorId', ParseUUIDPipe) vendorId: string
   ): Promise<ChecklistResponseDto[]> {
@@ -88,6 +91,7 @@ export class ChecklistsController {
 
   // Get specific checklist with questions
   @Get(':checklistId/vendor/:vendorId')
+  @Public()
   async getChecklist(
     @Param('checklistId', ParseUUIDPipe) checklistId: string,
     @Param('vendorId', ParseUUIDPipe) vendorId: string
@@ -103,6 +107,7 @@ export class ChecklistsController {
 
   // Get questions for a checklist
   @Get(':checklistId/questions/vendor/:vendorId')
+  @Public()
   async getChecklistQuestions(
     @Param('checklistId', ParseUUIDPipe) checklistId: string,
     @Param('vendorId', ParseUUIDPipe) vendorId: string
@@ -113,6 +118,7 @@ export class ChecklistsController {
 
   // Generate AI answers for questions
   @Post('generate-answers')
+  @Public()
   async generateAnswers(
     @Body() generateDto: GenerateAnswersDto,
     @Request() req
@@ -178,6 +184,7 @@ export class ChecklistsController {
 
   // Update question status or answer
   @Put('questions/:questionId/vendor/:vendorId')
+  @Public()
   async updateQuestion(
     @Param('questionId', ParseUUIDPipe) questionId: string,
     @Param('vendorId', ParseUUIDPipe) vendorId: string,
@@ -189,6 +196,7 @@ export class ChecklistsController {
 
   // Upload supporting document for a question with DigitalOcean Spaces integration
   @Post('questions/:questionId/documents/vendor/:vendorId')
+  @Public()
   @UseInterceptors(FileInterceptor('file'))
   async uploadSupportingDocument(
     @Param('questionId', ParseUUIDPipe) questionId: string,
@@ -224,6 +232,7 @@ export class ChecklistsController {
 
   // Get vendor questions (for AI questionnaire section)
   @Get('vendor/:vendorId/questions')
+  @Public()
   async getVendorQuestions(
     @Param('vendorId', ParseUUIDPipe) vendorId: string,
     @Query('status') status?: QuestionStatus
@@ -234,6 +243,7 @@ export class ChecklistsController {
 
   // Delete checklist
   @Delete(':checklistId/vendor/:vendorId')
+  @Public()
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteChecklist(
     @Param('checklistId', ParseUUIDPipe) checklistId: string,

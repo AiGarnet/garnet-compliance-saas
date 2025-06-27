@@ -19,6 +19,7 @@ import { Response, Request } from 'express';
 import { EvidenceService } from './evidence.service';
 import { UploadEvidenceDto } from './dto/evidence.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Public } from '../common/decorators/public.decorator';
 import { FileUploadData } from './entities/evidence.entity';
 
 @ApiTags('evidence')
@@ -29,6 +30,7 @@ export class EvidenceController {
   constructor(private readonly evidenceService: EvidenceService) {}
 
   @Post('vendors/:vendorId/evidence')
+  @Public()
   @ApiOperation({ summary: 'Upload evidence file for a vendor' })
   @ApiResponse({ status: 201, description: 'Evidence file uploaded successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input or no file uploaded' })
@@ -101,6 +103,7 @@ export class EvidenceController {
   }
 
   @Get('vendors/:vendorId/evidence')
+  @Public()
   @ApiOperation({ summary: 'Get evidence files for a vendor' })
   @ApiResponse({ status: 200, description: 'Returns vendor evidence files' })
   @ApiResponse({ status: 404, description: 'Vendor not found' })
@@ -128,6 +131,7 @@ export class EvidenceController {
   }
 
   @Get('vendors/:vendorId/evidence/count')
+  @Public()
   @ApiOperation({ summary: 'Get evidence file count for a vendor' })
   @ApiResponse({ status: 200, description: 'Returns evidence file count' })
   @ApiResponse({ status: 404, description: 'Vendor not found' })
@@ -154,6 +158,7 @@ export class EvidenceController {
   }
 
   @Get('vendors/:vendorId/evidence/:evidenceId/download')
+  @Public()
   @ApiOperation({ summary: 'Download evidence file' })
   @ApiResponse({ status: 200, description: 'Evidence file download' })
   @ApiResponse({ status: 404, description: 'Evidence file not found' })

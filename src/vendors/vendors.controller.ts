@@ -78,7 +78,7 @@ export class VendorsController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @Public()
   async getVendor(@Param('id') id: string): Promise<ApiResponse<any>> {
     try {
       // Check if the ID is a number (vendor_id) or UUID
@@ -131,7 +131,7 @@ export class VendorsController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @Public()
   @LogClientCreated()
   async createVendor(
     @Body() createVendorDto: CreateVendorDto,
@@ -169,7 +169,7 @@ export class VendorsController {
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard)
+  @Public()
   @LogClientUpdated()
   async updateVendor(
     @Param('id') id: string,
@@ -359,7 +359,7 @@ export class VendorsController {
   }
 
   @Post(':id/trust-portal/invite')
-  @UseGuards(JwtAuthGuard)
+  @Public()
   async generateInviteLink(@Param('id') id: string): Promise<ApiResponse<any>> {
     try {
       // Check if the ID is a number (vendor_id) or UUID

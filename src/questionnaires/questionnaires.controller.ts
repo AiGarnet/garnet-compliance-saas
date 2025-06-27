@@ -101,6 +101,7 @@ export class QuestionnairesController {
   }
 
   @Get(':id/questions')
+  @Public()
   @ApiOperation({ summary: 'Get questions for a specific questionnaire' })
   @ApiResponse({ status: 200, description: 'Returns the questions' })
   async getQuestionnaireQuestions(@Param('id') id: string) {
@@ -116,6 +117,7 @@ export class QuestionnairesController {
   }
 
   @Put(':id')
+  @Public()
   @ApiOperation({ summary: 'Update a specific questionnaire' })
   @ApiResponse({ status: 200, description: 'Questionnaire updated successfully' })
   @ApiResponse({ status: 404, description: 'Questionnaire not found' })
@@ -143,6 +145,7 @@ export class QuestionnairesController {
   }
 
   @Put(':id/questions/:questionId')
+  @Public()
   @ApiOperation({ summary: 'Update a specific question in a questionnaire' })
   @ApiResponse({ status: 200, description: 'Question updated successfully' })
   @ApiResponse({ status: 404, description: 'Question or questionnaire not found' })

@@ -67,6 +67,7 @@ export class TrustPortalController {
   }
 
   @Get('items')
+  @Public()
   @ApiOperation({ summary: 'Get all trust portal items for a specific vendor' })
   @ApiResponse({ status: 200, description: 'Returns trust portal items for the vendor' })
   @ApiResponse({ status: 400, description: 'Vendor ID is required' })
@@ -107,6 +108,7 @@ export class TrustPortalController {
   }
 
   @Get('items/:id')
+  @Public()
   @ApiOperation({ summary: 'Get a specific trust portal item by ID' })
   @ApiResponse({ status: 200, description: 'Returns the trust portal item' })
   @ApiResponse({ status: 404, description: 'Trust portal item not found' })
@@ -172,6 +174,7 @@ export class TrustPortalController {
   }
 
   @Get('items/category/:category')
+  @Public()
   @ApiOperation({ summary: 'Get trust portal items by category' })
   @ApiResponse({ status: 200, description: 'Returns trust portal items for the category' })
   async getTrustPortalItemsByCategory(@Param('category') category: string) {

@@ -26,7 +26,7 @@ export class ActivitiesController {
    * Get recent activities for the dashboard
    */
   @Get('recent')
-  @UseGuards(JwtAuthGuard)
+  @Public()
   async getRecentActivities(
     @Query('limit') limit?: string,
     @Query('userId') userId?: string,
@@ -70,7 +70,7 @@ export class ActivitiesController {
    * Get all activities with filtering
    */
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @Public()
   async getActivities(
     @Query('userId') userId?: string,
     @Query('type') type?: string,
@@ -139,7 +139,7 @@ export class ActivitiesController {
    * Get activity summary/statistics
    */
   @Get('summary')
-  @UseGuards(JwtAuthGuard)
+  @Public()
   async getActivitySummary(
     @Query('userId') userId?: string,
     @Request() req?: any,
@@ -175,7 +175,7 @@ export class ActivitiesController {
    * Get activity by ID
    */
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @Public()
   async getActivity(@Param('id') id: string): Promise<ApiResponse<Activity>> {
     try {
       const activities = await this.activitiesService.getActivities({ 
