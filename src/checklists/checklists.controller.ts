@@ -44,6 +44,20 @@ export class ChecklistsController {
     private readonly aiService: AiService,
   ) {}
 
+  // Handle GET requests to upload endpoint with helpful message
+  @Get('upload')
+  @Public()
+  async getUploadInfo() {
+    return {
+      message: 'Checklist upload endpoint',
+      method: 'POST',
+      description: 'To upload a checklist file, send a POST request with a multipart form containing the file and vendorId',
+      endpoint: '/api/checklists/upload',
+      requiredFields: ['file (multipart)', 'vendorId (string)', 'name (optional string)'],
+      example: 'FormData with file attachment and vendorId'
+    };
+  }
+
   // Upload and process checklist file with DigitalOcean Spaces integration
   @Post('upload')
   @Public()
