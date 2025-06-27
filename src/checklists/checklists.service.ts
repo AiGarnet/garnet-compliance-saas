@@ -29,17 +29,54 @@ export class ChecklistsService {
     private databaseService: DatabaseService,
   ) {}
 
+  // Generate a unique checklist name for a vendor
+  private async generateUniqueChecklistName(vendorId: string, baseName: string): Promise<string> {
+    let uniqueName = baseName;
+    let counter = 1;
+
+    while (true) {
+      const existingChecklist = await this.checklistRepository.findOne({
+        where: { vendorId, name: uniqueName }
+      });
+
+      if (!existingChecklist) {
+        return uniqueName;
+      }
+
+      // If name exists, append counter
+      const nameWithoutExtension = baseName.replace(/\.[^/.]+$/, '');
+      const extension = baseName.includes('.') ? baseName.substring(baseName.lastIndexOf('.')) : '';
+      uniqueName = `${nameWithoutExtension} (${counter})${extension}`;
+      counter++;
+
+      // Safety check to prevent infinite loop
+      if (counter > 100) {
+        uniqueName = `${nameWithoutExtension}_${Date.now()}${extension}`;
+        break;
+      }
+    }
+
+    return uniqueName;
+  }
+
   // Create a new checklist for a vendor
   async createChecklist(createChecklistDto: CreateChecklistDto, userId?: string): Promise<Checklist> {
     try {
+      // Generate unique name to avoid constraint violations
+      const uniqueName = await this.generateUniqueChecklistName(
+        createChecklistDto.vendorId, 
+        createChecklistDto.name
+      );
+
       const checklist = this.checklistRepository.create({
         ...createChecklistDto,
+        name: uniqueName,
         uploadedBy: userId,
         extractionStatus: ChecklistExtractionStatus.PENDING,
       });
 
       const savedChecklist = await this.checklistRepository.save(checklist);
-      this.logger.log(`Created checklist ${savedChecklist.id} for vendor ${createChecklistDto.vendorId}`);
+      this.logger.log(`Created checklist ${savedChecklist.id} for vendor ${createChecklistDto.vendorId} with name: ${uniqueName}`);
       
       return savedChecklist;
     } catch (error) {
