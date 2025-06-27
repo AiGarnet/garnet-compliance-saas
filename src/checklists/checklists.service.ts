@@ -12,6 +12,7 @@ import {
   QuestionStatus
 } from './dto/checklist.dto';
 import { DigitalOceanSpacesService } from '../common/services/digitalocean-spaces.service';
+import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class ChecklistsService {
@@ -25,6 +26,7 @@ export class ChecklistsService {
     @InjectRepository(ChecklistSupportingDocument)
     private documentRepository: Repository<ChecklistSupportingDocument>,
     private spacesService: DigitalOceanSpacesService,
+    private databaseService: DatabaseService,
   ) {}
 
   // Create a new checklist for a vendor
@@ -73,50 +75,64 @@ export class ChecklistsService {
       // Step 3: Save questions to database
       const questions = await this.addQuestionsToChecklist(checklist.id, vendorId, questionDtos);
 
-      // Step 4: Prepare checklist data for upload to Spaces
-      const checklistData = {
-        checklist: {
-          id: checklist.id,
-          vendorId: checklist.vendorId,
-          name: checklist.name,
-          originalFilename: checklist.originalFilename,
-          fileType: checklist.fileType,
-          fileSize: checklist.fileSize,
-          uploadDate: checklist.uploadDate,
-          extractionStatus: checklist.extractionStatus,
-        },
-        questions: questions.map(q => ({
-          id: q.id,
-          questionText: q.questionText,
-          questionOrder: q.questionOrder,
-          status: q.status,
-          requiresDocument: q.requiresDocument,
-          documentDescription: q.documentDescription,
-        })),
-        extractedText,
-        metadata: {
-          extractionDate: new Date().toISOString(),
-          questionCount: questions.length,
-          userId,
+      // Step 4: Update checklist status
+      let spacesKey: string | undefined;
+      let spacesUrl: string | undefined;
+
+      // Only upload to Spaces if we have extracted content
+      if (extractedText && questions.length > 0) {
+        try {
+          // Prepare checklist data for upload to Spaces
+          const checklistData = {
+            checklist: {
+              id: checklist.id,
+              vendorId: checklist.vendorId,
+              name: checklist.name,
+              originalFilename: checklist.originalFilename,
+              fileType: checklist.fileType,
+              fileSize: checklist.fileSize,
+              uploadDate: checklist.uploadDate,
+              extractionStatus: checklist.extractionStatus,
+            },
+            questions: questions.map(q => ({
+              id: q.id,
+              questionText: q.questionText,
+              questionOrder: q.questionOrder,
+              status: q.status,
+              requiresDocument: q.requiresDocument,
+              documentDescription: q.documentDescription,
+            })),
+            extractedText,
+            metadata: {
+              extractionDate: new Date().toISOString(),
+              questionCount: questions.length,
+              userId,
+            }
+          };
+
+          // Upload to DigitalOcean Spaces
+          const uploadResult = await this.spacesService.uploadChecklist(
+            checklistData,
+            vendorId,
+            checklist.id,
+            file.originalname
+          );
+
+          spacesKey = uploadResult.key;
+          spacesUrl = uploadResult.url;
+          this.logger.log(`Successfully uploaded checklist ${checklist.id} to Spaces: ${uploadResult.key}`);
+        } catch (spacesError) {
+          this.logger.error(`Failed to upload to Spaces, but continuing: ${spacesError.message}`);
+          // Continue without Spaces upload - checklist will still work
         }
-      };
+      }
 
-      // Step 5: Upload to DigitalOcean Spaces
-      const uploadResult = await this.spacesService.uploadChecklist(
-        checklistData,
-        vendorId,
-        checklist.id,
-        file.originalname
-      );
-
-      // Step 6: Update checklist with storage information
+      // Step 5: Update checklist with final status and storage information
       await this.checklistRepository.update(checklist.id, {
         extractionStatus: ChecklistExtractionStatus.COMPLETED,
-        spacesKey: uploadResult.key,
-        spacesUrl: uploadResult.url,
+        spacesKey,
+        spacesUrl,
       });
-
-      this.logger.log(`Successfully uploaded checklist ${checklist.id} to Spaces: ${uploadResult.key}`);
 
       return {
         checklist: { ...checklist, extractionStatus: ChecklistExtractionStatus.COMPLETED },
@@ -387,28 +403,40 @@ export class ChecklistsService {
     }
   }
 
-  // Extract text content from uploaded file (placeholder for actual implementation)
+  // Extract text content from uploaded file
   async extractTextFromFile(file: Express.Multer.File): Promise<string> {
-    // TODO: Implement actual file parsing for PDF, DOC, DOCX
-    // For now, return sample questions for demonstration
-    const sampleQuestions = [
-      "Do you have a documented information security policy?",
-      "Are user access controls implemented and regularly reviewed?",
-      "Do you conduct regular security awareness training?",
-      "Is data encrypted both at rest and in transit?",
-      "Do you have an incident response plan in place?",
-      "Are regular security assessments and penetration tests conducted?",
-      "Do you have a business continuity and disaster recovery plan?",
-      "Are vendor security assessments performed before onboarding?",
-      "Do you maintain an inventory of all IT assets?",
-      "Are software vulnerabilities managed through a formal process?"
-    ];
-
-    return sampleQuestions.join('\n');
+    try {
+      // For now, convert buffer to string assuming text-based files
+      // TODO: Implement proper parsing for PDF, DOC, DOCX files using libraries
+      if (file.mimetype === 'text/plain' || file.mimetype === 'text/csv') {
+        return file.buffer.toString('utf-8');
+      } else if (file.mimetype === 'application/json') {
+        const jsonData = JSON.parse(file.buffer.toString('utf-8'));
+        // Extract questions from JSON structure
+        if (Array.isArray(jsonData)) {
+          return jsonData.map(item => typeof item === 'string' ? item : item.question || JSON.stringify(item)).join('\n');
+        } else if (jsonData.questions && Array.isArray(jsonData.questions)) {
+          return jsonData.questions.map(q => typeof q === 'string' ? q : q.text || q.question || JSON.stringify(q)).join('\n');
+        }
+        return JSON.stringify(jsonData, null, 2);
+      }
+      
+      // For unsupported file types, return empty string (no questions)
+      this.logger.warn(`Unsupported file type for text extraction: ${file.mimetype}`);
+      return '';
+    } catch (error) {
+      this.logger.error(`Failed to extract text from file: ${error.message}`);
+      return '';
+    }
   }
 
   // Parse questions from extracted text
   parseQuestionsFromText(text: string): CreateQuestionDto[] {
+    if (!text || text.trim().length === 0) {
+      this.logger.warn('No text content found in uploaded file for question extraction');
+      return [];
+    }
+
     const lines = text.split('\n').filter(line => line.trim().length > 0);
     
     return lines.map((line, index) => ({
@@ -443,4 +471,85 @@ export class ChecklistsService {
       throw new BadRequestException('Failed to delete checklist');
     }
   }
+
+  // Sync checklist questions to vendor_questionnaire_answers table for questionnaire chat interface
+  async syncQuestionsToQuestionnaire(checklistId: string, vendorId: string): Promise<void> {
+    try {
+      // Get the checklist and its questions
+      const checklist = await this.getChecklist(checklistId, vendorId);
+      const questions = await this.getChecklistQuestions(checklistId, vendorId);
+
+      if (questions.length === 0) {
+        this.logger.warn(`No questions found for checklist ${checklistId}`);
+        return;
+      }
+
+      // Create questionnaire title entry
+      const titleQuery = `
+        INSERT INTO vendor_questionnaire_answers (
+          id, vendor_id, question_id, question, answer, status, question_title, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW()
+        )
+        ON CONFLICT (vendor_id, question_id) DO UPDATE SET
+          answer = EXCLUDED.answer,
+          status = EXCLUDED.status,
+          updated_at = NOW()
+      `;
+
+      await this.databaseService.query(titleQuery, [
+        vendorId,
+        `CHECKLIST_${checklistId}`,
+        '__QUESTIONNAIRE_TITLE__',
+        checklist.name,
+        'Metadata',
+        checklist.name
+      ]);
+
+      // Sync each question to vendor_questionnaire_answers
+      for (const question of questions) {
+        const syncQuery = `
+          INSERT INTO vendor_questionnaire_answers (
+            id, vendor_id, question_id, question, answer, status, question_title, created_at, updated_at
+          ) VALUES (
+            gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW()
+          )
+          ON CONFLICT (vendor_id, question_id) DO UPDATE SET
+            question = EXCLUDED.question,
+            answer = EXCLUDED.answer,
+            status = EXCLUDED.status,
+            question_title = EXCLUDED.question_title,
+            updated_at = NOW()
+        `;
+
+        // Map statuses between systems
+        let questionnaireStatus = 'Not Started';
+        if (question.status === 'completed' && question.aiAnswer) {
+          questionnaireStatus = 'Completed';
+        } else if (question.status === 'in-progress') {
+          questionnaireStatus = 'In Progress';
+        } else if (question.status === 'pending') {
+          questionnaireStatus = 'Pending';
+        } else if (question.status === 'needs-support') {
+          questionnaireStatus = 'Needs Support';
+        }
+
+        await this.databaseService.query(syncQuery, [
+          vendorId,
+          question.id, // Use checklist question ID as question_id
+          question.questionText,
+          question.aiAnswer || '',
+          questionnaireStatus,
+          checklist.name
+        ]);
+      }
+
+      this.logger.log(`Successfully synced ${questions.length} questions from checklist ${checklistId} to questionnaire system`);
+    } catch (error) {
+      this.logger.error(`Failed to sync questions to questionnaire: ${error.message}`);
+      throw new BadRequestException('Failed to sync questions to questionnaire system');
+    }
+  }
+
+
 } 

@@ -53,7 +53,7 @@ export const configuration = () => ({
     secretAccessKey: process.env.DO_SPACE_SECRET_KEY,
     region: process.env.DO_SPACE_REGION || 'ams3',
     bucket: process.env.DO_SPACE_NAME || 'vendor-onboarding',
-    endpoint: process.env.DO_SPACE_ENDPOINT || 'https://vendor-onboarding.ams3.digitaloceanspaces.com',
+    endpoint: process.env.DO_SPACE_ENDPOINT || 'https://ams3.digitaloceanspaces.com',
     cdnEndpoint: process.env.DO_SPACE_CDN_ENDPOINT || 'https://vendor-onboarding.ams3.cdn.digitaloceanspaces.com',
     folders: {
       checklists: 'checklists/',

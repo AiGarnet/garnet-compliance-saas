@@ -187,6 +187,17 @@ export class ChecklistsController {
 
       this.logger.log(`Generated ${aiAnswers.length} AI answers for vendor ${generateDto.vendorId}`);
 
+      // Auto-sync questions to questionnaire system after generating answers
+      if (generateDto.checklistId) {
+        try {
+          await this.checklistsService.syncQuestionsToQuestionnaire(generateDto.checklistId, generateDto.vendorId);
+          this.logger.log(`Auto-synced checklist ${generateDto.checklistId} to questionnaire system`);
+        } catch (syncError) {
+          this.logger.warn(`Failed to auto-sync to questionnaire system: ${syncError.message}`);
+          // Don't fail the main operation if sync fails
+        }
+      }
+
       return {
         answers: aiAnswers.map(({ questionId, ...rest }) => rest)
       };
@@ -264,6 +275,30 @@ export class ChecklistsController {
     @Param('vendorId', ParseUUIDPipe) vendorId: string
   ): Promise<void> {
     await this.checklistsService.deleteChecklist(checklistId, vendorId);
+  }
+
+  // Sync checklist questions to questionnaire system for chat interface
+  @Post(':checklistId/vendor/:vendorId/sync-to-questionnaire')
+  @Public()
+  async syncToQuestionnaire(
+    @Param('checklistId', ParseUUIDPipe) checklistId: string,
+    @Param('vendorId', ParseUUIDPipe) vendorId: string
+  ): Promise<{ message: string; questionCount: number }> {
+    try {
+      await this.checklistsService.syncQuestionsToQuestionnaire(checklistId, vendorId);
+      
+      // Get question count for response
+      const questions = await this.checklistsService.getChecklistQuestions(checklistId, vendorId);
+      
+      this.logger.log(`Successfully synced checklist ${checklistId} to questionnaire system`);
+      return {
+        message: 'Checklist questions successfully synced to questionnaire system',
+        questionCount: questions.length
+      };
+    } catch (error) {
+      this.logger.error(`Failed to sync checklist to questionnaire: ${error.message}`);
+      throw new BadRequestException('Failed to sync checklist to questionnaire system');
+    }
   }
 
   // Helper methods for response mapping
