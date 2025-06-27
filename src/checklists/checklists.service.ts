@@ -11,6 +11,7 @@ import {
   ChecklistExtractionStatus,
   QuestionStatus
 } from './dto/checklist.dto';
+import { DigitalOceanSpacesService } from '../common/services/digitalocean-spaces.service';
 
 @Injectable()
 export class ChecklistsService {
@@ -23,6 +24,7 @@ export class ChecklistsService {
     private questionRepository: Repository<ChecklistQuestion>,
     @InjectRepository(ChecklistSupportingDocument)
     private documentRepository: Repository<ChecklistSupportingDocument>,
+    private spacesService: DigitalOceanSpacesService,
   ) {}
 
   // Create a new checklist for a vendor
@@ -41,6 +43,89 @@ export class ChecklistsService {
     } catch (error) {
       this.logger.error(`Failed to create checklist: ${error.message}`);
       throw new BadRequestException('Failed to create checklist');
+    }
+  }
+
+  // Upload and process checklist file with DigitalOcean Spaces integration
+  async uploadChecklistFile(
+    file: Express.Multer.File,
+    vendorId: string,
+    name?: string,
+    userId?: string
+  ): Promise<{ checklist: Checklist; questions: ChecklistQuestion[] }> {
+    try {
+      // Step 1: Create checklist record
+      const createChecklistDto: CreateChecklistDto = {
+        vendorId,
+        name: name || file.originalname,
+        fileType: file.mimetype,
+        fileSize: file.size,
+        originalFilename: file.originalname,
+        extractionStatus: ChecklistExtractionStatus.EXTRACTING,
+      };
+
+      const checklist = await this.createChecklist(createChecklistDto, userId);
+
+      // Step 2: Extract text and parse questions
+      const extractedText = await this.extractTextFromFile(file);
+      const questionDtos = this.parseQuestionsFromText(extractedText);
+
+      // Step 3: Save questions to database
+      const questions = await this.addQuestionsToChecklist(checklist.id, vendorId, questionDtos);
+
+      // Step 4: Prepare checklist data for upload to Spaces
+      const checklistData = {
+        checklist: {
+          id: checklist.id,
+          vendorId: checklist.vendorId,
+          name: checklist.name,
+          originalFilename: checklist.originalFilename,
+          fileType: checklist.fileType,
+          fileSize: checklist.fileSize,
+          uploadDate: checklist.uploadDate,
+          extractionStatus: checklist.extractionStatus,
+        },
+        questions: questions.map(q => ({
+          id: q.id,
+          questionText: q.questionText,
+          questionOrder: q.questionOrder,
+          status: q.status,
+          requiresDocument: q.requiresDocument,
+          documentDescription: q.documentDescription,
+        })),
+        extractedText,
+        metadata: {
+          extractionDate: new Date().toISOString(),
+          questionCount: questions.length,
+          userId,
+        }
+      };
+
+      // Step 5: Upload to DigitalOcean Spaces
+      const uploadResult = await this.spacesService.uploadChecklist(
+        checklistData,
+        vendorId,
+        checklist.id,
+        file.originalname
+      );
+
+      // Step 6: Update checklist with storage information
+      await this.checklistRepository.update(checklist.id, {
+        extractionStatus: ChecklistExtractionStatus.COMPLETED,
+        spacesKey: uploadResult.key,
+        spacesUrl: uploadResult.url,
+      });
+
+      this.logger.log(`Successfully uploaded checklist ${checklist.id} to Spaces: ${uploadResult.key}`);
+
+      return {
+        checklist: { ...checklist, extractionStatus: ChecklistExtractionStatus.COMPLETED },
+        questions
+      };
+
+    } catch (error) {
+      this.logger.error(`Failed to upload checklist file: ${error.message}`);
+      throw new BadRequestException(`Failed to process checklist file: ${error.message}`);
     }
   }
 
@@ -198,6 +283,61 @@ export class ChecklistsService {
       if (error instanceof NotFoundException) throw error;
       this.logger.error(`Failed to add supporting document: ${error.message}`);
       throw new BadRequestException('Failed to add supporting document');
+    }
+  }
+
+  // Upload supporting document file to DigitalOcean Spaces
+  async uploadSupportingDocumentFile(
+    file: Express.Multer.File,
+    vendorId: string,
+    questionId: string,
+    userId?: string
+  ): Promise<ChecklistSupportingDocument> {
+    try {
+      // Verify question belongs to vendor
+      const question = await this.questionRepository.findOne({
+        where: { id: questionId, vendorId }
+      });
+
+      if (!question) {
+        throw new NotFoundException('Question not found or access denied');
+      }
+
+      // Upload file to DigitalOcean Spaces
+      const uploadResult = await this.spacesService.uploadSupportingDocument(
+        file.buffer,
+        file.originalname,
+        file.mimetype,
+        vendorId,
+        questionId
+      );
+
+      // Create document record with Spaces information
+      const createDocDto: CreateSupportingDocumentDto = {
+        questionId,
+        filename: file.originalname,
+        fileType: file.mimetype,
+        fileSize: file.size,
+        filePath: uploadResult.url, // Store the direct URL for backwards compatibility
+      };
+
+      const document = this.documentRepository.create({
+        ...createDocDto,
+        vendorId,
+        uploadedBy: userId,
+        spacesKey: uploadResult.key,
+        spacesUrl: uploadResult.url,
+      });
+
+      const savedDocument = await this.documentRepository.save(document);
+      
+      this.logger.log(`Uploaded supporting document ${savedDocument.id} to Spaces: ${uploadResult.key}`);
+      
+      return savedDocument;
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      this.logger.error(`Failed to upload supporting document: ${error.message}`);
+      throw new BadRequestException(`Failed to upload supporting document: ${error.message}`);
     }
   }
 

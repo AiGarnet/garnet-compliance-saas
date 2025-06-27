@@ -47,6 +47,20 @@ export const configuration = () => ({
     uploadPath: process.env.UPLOAD_PATH || './uploads',
   },
 
+  // DigitalOcean Spaces configuration
+  digitalOceanSpaces: {
+    accessKeyId: process.env.DO_SPACE_ACCESS_KEY,
+    secretAccessKey: process.env.DO_SPACE_SECRET_KEY,
+    region: process.env.DO_SPACE_REGION || 'ams3',
+    bucket: process.env.DO_SPACE_NAME || 'vendor-onboarding',
+    endpoint: process.env.DO_SPACE_ENDPOINT || 'https://vendor-onboarding.ams3.digitaloceanspaces.com',
+    cdnEndpoint: process.env.DO_SPACE_CDN_ENDPOINT || 'https://vendor-onboarding.ams3.cdn.digitaloceanspaces.com',
+    folders: {
+      checklists: 'checklists/',
+      supportingDocs: 'supporting-docs/',
+    },
+  },
+
   // CORS configuration
   cors: {
     origin: [

@@ -4,6 +4,7 @@ import { ChecklistsController } from './checklists.controller';
 import { ChecklistsService } from './checklists.service';
 import { Checklist, ChecklistQuestion, ChecklistSupportingDocument } from './entities/checklist.entity';
 import { AiModule } from '../ai/ai.module';
+import { DigitalOceanSpacesService } from '../common/services/digitalocean-spaces.service';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { AiModule } from '../ai/ai.module';
     AiModule
   ],
   controllers: [ChecklistsController],
-  providers: [ChecklistsService],
+  providers: [ChecklistsService, DigitalOceanSpacesService],
   exports: [ChecklistsService]
 })
 export class ChecklistsModule {} 

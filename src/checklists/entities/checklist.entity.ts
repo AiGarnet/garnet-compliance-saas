@@ -35,6 +35,12 @@ export class Checklist {
   @Column('uuid', { name: 'uploaded_by', nullable: true })
   uploadedBy: string;
 
+  @Column('text', { name: 'spaces_key', nullable: true })
+  spacesKey: string;
+
+  @Column('text', { name: 'spaces_url', nullable: true })
+  spacesUrl: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
@@ -119,6 +125,12 @@ export class ChecklistSupportingDocument {
 
   @Column('uuid', { name: 'uploaded_by', nullable: true })
   uploadedBy: string;
+
+  @Column('text', { name: 'spaces_key', nullable: true })
+  spacesKey: string;
+
+  @Column('text', { name: 'spaces_url', nullable: true })
+  spacesUrl: string;
 
   @ManyToOne(() => ChecklistQuestion, question => question.supportingDocuments)
   @JoinColumn({ name: 'question_id' })

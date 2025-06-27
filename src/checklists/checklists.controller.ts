@@ -43,7 +43,7 @@ export class ChecklistsController {
     private readonly aiService: AiService,
   ) {}
 
-  // Upload and process checklist file
+  // Upload and process checklist file with DigitalOcean Spaces integration
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadChecklist(
@@ -57,39 +57,19 @@ export class ChecklistsController {
         throw new BadRequestException('No file uploaded');
       }
 
-      // Create checklist record
-      const createChecklistDto: CreateChecklistDto = {
+      // Use the new DigitalOcean Spaces integrated upload method
+      const result = await this.checklistsService.uploadChecklistFile(
+        file,
         vendorId,
-        name: name || file.originalname,
-        fileType: file.mimetype,
-        fileSize: file.size,
-        originalFilename: file.originalname,
-        fileContent: file.buffer.toString() // Store file content temporarily
-      };
-
-      const checklist = await this.checklistsService.createChecklist(
-        createChecklistDto, 
+        name,
         req.user?.id
       );
 
-      // Extract text from file
-      const extractedText = await this.checklistsService.extractTextFromFile(file);
-      
-      // Parse questions from text
-      const questionsData = this.checklistsService.parseQuestionsFromText(extractedText);
-      
-      // Save questions to database
-      const questions = await this.checklistsService.addQuestionsToChecklist(
-        checklist.id,
-        vendorId,
-        questionsData
-      );
-
-      this.logger.log(`Uploaded checklist ${checklist.id} with ${questions.length} questions for vendor ${vendorId}`);
+      this.logger.log(`Uploaded checklist ${result.checklist.id} with ${result.questions.length} questions to Spaces for vendor ${vendorId}`);
 
       return {
-        checklist: this.mapToChecklistResponse(checklist),
-        questions: questions.map(q => this.mapToQuestionResponse(q))
+        checklist: this.mapToChecklistResponse(result.checklist),
+        questions: result.questions.map(q => this.mapToQuestionResponse(q))
       };
     } catch (error) {
       this.logger.error(`Failed to upload checklist: ${error.message}`);
@@ -207,7 +187,7 @@ export class ChecklistsController {
     return this.mapToQuestionResponse(question);
   }
 
-  // Upload supporting document for a question
+  // Upload supporting document for a question with DigitalOcean Spaces integration
   @Post('questions/:questionId/documents/vendor/:vendorId')
   @UseInterceptors(FileInterceptor('file'))
   async uploadSupportingDocument(
@@ -220,20 +200,26 @@ export class ChecklistsController {
       throw new BadRequestException('No file uploaded');
     }
 
-    const createDocDto: CreateSupportingDocumentDto = {
-      questionId,
-      filename: file.originalname,
-      fileType: file.mimetype,
-      fileSize: file.size,
-      // TODO: Upload to DO/S3 and store path
-      filePath: `/uploads/${vendorId}/${questionId}/${file.originalname}`
-    };
-
-    return await this.checklistsService.addSupportingDocument(
+    // Use the new DigitalOcean Spaces integrated upload method
+    const document = await this.checklistsService.uploadSupportingDocumentFile(
+      file,
       vendorId,
-      createDocDto,
+      questionId,
       req.user?.id
     );
+
+    this.logger.log(`Uploaded supporting document ${document.id} to Spaces for question ${questionId}`);
+
+    return {
+      id: document.id,
+      questionId: document.questionId,
+      vendorId: document.vendorId,
+      filename: document.filename,
+      fileType: document.fileType,
+      fileSize: document.fileSize,
+      filePath: document.filePath,
+      uploadedAt: document.uploadedAt
+    };
   }
 
   // Get vendor questions (for AI questionnaire section)

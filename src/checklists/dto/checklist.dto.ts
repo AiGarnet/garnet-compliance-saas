@@ -35,6 +35,10 @@ export class CreateChecklistDto {
   @IsOptional()
   @IsString()
   fileContent?: string;
+
+  @IsOptional()
+  @IsEnum(ChecklistExtractionStatus)
+  extractionStatus?: ChecklistExtractionStatus;
 }
 
 export class CreateQuestionDto {
