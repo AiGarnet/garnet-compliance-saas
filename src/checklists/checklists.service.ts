@@ -499,13 +499,66 @@ export class ChecklistsService {
   // Delete checklist and all associated data (vendor verification)
   async deleteChecklist(checklistId: string, vendorId: string): Promise<void> {
     try {
+      // First, verify the checklist belongs to the vendor
       const checklist = await this.getChecklist(checklistId, vendorId);
       
+      this.logger.log(`Starting deletion of checklist ${checklistId} for vendor ${vendorId}`);
+      
+      // Get all questions for this checklist
+      const questions = await this.questionRepository.find({
+        where: { checklistId, vendorId },
+        relations: ['supportingDocuments']
+      });
+      
+      this.logger.log(`Found ${questions.length} questions to delete`);
+      
+      // Delete supporting documents first (both from database and DigitalOcean Spaces)
+      for (const question of questions) {
+        if (question.supportingDocuments && question.supportingDocuments.length > 0) {
+          this.logger.log(`Deleting ${question.supportingDocuments.length} supporting documents for question ${question.id}`);
+          
+          for (const doc of question.supportingDocuments) {
+            try {
+              // Delete from DigitalOcean Spaces if it exists
+              if (doc.spacesKey) {
+                await this.spacesService.deleteFile(doc.spacesKey);
+                this.logger.log(`Deleted file from Spaces: ${doc.spacesKey}`);
+              }
+            } catch (spacesError) {
+              this.logger.warn(`Failed to delete file from Spaces: ${doc.spacesKey}, error: ${spacesError.message}`);
+              // Continue with database deletion even if Spaces deletion fails
+            }
+            
+            // Delete from database
+            await this.documentRepository.remove(doc);
+          }
+        }
+      }
+      
+      // Delete all questions for this checklist
+      if (questions.length > 0) {
+        await this.questionRepository.remove(questions);
+        this.logger.log(`Deleted ${questions.length} questions`);
+      }
+      
+      // Finally, delete the checklist itself
+      // Also delete the checklist file from DigitalOcean Spaces if it exists
+      if (checklist.spacesKey) {
+        try {
+          await this.spacesService.deleteFile(checklist.spacesKey);
+          this.logger.log(`Deleted checklist file from Spaces: ${checklist.spacesKey}`);
+        } catch (spacesError) {
+          this.logger.warn(`Failed to delete checklist file from Spaces: ${checklist.spacesKey}, error: ${spacesError.message}`);
+          // Continue with database deletion even if Spaces deletion fails
+        }
+      }
+      
       await this.checklistRepository.remove(checklist);
-      this.logger.log(`Deleted checklist ${checklistId} for vendor ${vendorId}`);
+      
+      this.logger.log(`Successfully deleted checklist ${checklistId} and all associated data for vendor ${vendorId}`);
     } catch (error) {
       this.logger.error(`Failed to delete checklist ${checklistId}: ${error.message}`);
-      throw new BadRequestException('Failed to delete checklist');
+      throw new BadRequestException(`Failed to delete checklist: ${error.message}`);
     }
   }
 
