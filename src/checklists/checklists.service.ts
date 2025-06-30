@@ -652,5 +652,35 @@ export class ChecklistsService {
     }
   }
 
+  // Get all supporting documents for a vendor
+  async getVendorSupportingDocuments(vendorId: string): Promise<ChecklistSupportingDocument[]> {
+    try {
+      const documents = await this.documentRepository.find({
+        where: { vendorId },
+        order: { uploadedAt: 'DESC' }
+      });
 
+      this.logger.log(`Retrieved ${documents.length} supporting documents for vendor ${vendorId}`);
+      return documents;
+    } catch (error) {
+      this.logger.error(`Failed to get supporting documents for vendor ${vendorId}: ${error.message}`);
+      throw new BadRequestException(`Failed to get supporting documents: ${error.message}`);
+    }
+  }
+
+  async getChecklistsByVendor(vendorId: string): Promise<Checklist[]> {
+    try {
+      const checklists = await this.checklistRepository.find({
+        where: { vendorId },
+        relations: ['questions'],
+        order: { uploadDate: 'DESC' }
+      });
+
+      this.logger.log(`Retrieved ${checklists.length} checklists for vendor ${vendorId}`);
+      return checklists;
+    } catch (error) {
+      this.logger.error(`Failed to get checklists for vendor ${vendorId}: ${error.message}`);
+      throw new BadRequestException('Failed to retrieve checklists');
+    }
+  }
 } 

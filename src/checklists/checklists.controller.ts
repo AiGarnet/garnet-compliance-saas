@@ -303,6 +303,28 @@ export class ChecklistsController {
     }
   }
 
+  // Get all supporting documents for a vendor
+  @Get('vendor/:vendorId/documents')
+  @Public()
+  async getVendorSupportingDocuments(
+    @Param('vendorId', ParseUUIDPipe) vendorId: string
+  ) {
+    const documents = await this.checklistsService.getVendorSupportingDocuments(vendorId);
+    
+    return documents.map(doc => ({
+      id: doc.id,
+      questionId: doc.questionId,
+      vendorId: doc.vendorId,
+      filename: doc.filename,
+      fileType: doc.fileType,
+      fileSize: doc.fileSize,
+      filePath: doc.filePath,
+      spacesUrl: doc.spacesUrl,
+      spacesKey: doc.spacesKey,
+      uploadedAt: doc.uploadedAt
+    }));
+  }
+
   // Helper methods for response mapping
   private mapToChecklistResponse(checklist: Checklist): ChecklistResponseDto {
     return {
