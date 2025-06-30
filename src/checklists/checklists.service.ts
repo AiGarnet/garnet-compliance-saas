@@ -668,6 +668,34 @@ export class ChecklistsService {
     }
   }
 
+  // Get a supporting document by ID
+  async getSupportingDocumentById(documentId: string): Promise<ChecklistSupportingDocument> {
+    try {
+      const document = await this.documentRepository.findOne({
+        where: { id: documentId }
+      });
+
+      if (!document) {
+        throw new NotFoundException('Supporting document not found');
+      }
+
+      return document;
+    } catch (error) {
+      this.logger.error(`Failed to get supporting document ${documentId}: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Generate signed URL for a document
+  async generateDocumentSignedUrl(spacesKey: string, expiresIn: number = 3600): Promise<string> {
+    try {
+      return await this.spacesService.generateSignedUrl(spacesKey, expiresIn);
+    } catch (error) {
+      this.logger.error(`Failed to generate signed URL for ${spacesKey}: ${error.message}`);
+      throw new BadRequestException('Failed to generate document access URL');
+    }
+  }
+
   async getChecklistsByVendor(vendorId: string): Promise<Checklist[]> {
     try {
       const checklists = await this.checklistRepository.find({

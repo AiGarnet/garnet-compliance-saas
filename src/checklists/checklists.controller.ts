@@ -15,7 +15,9 @@ import {
   UseGuards,
   Request,
   BadRequestException,
-  Logger
+  Logger,
+  NotFoundException,
+  Response
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -323,6 +325,31 @@ export class ChecklistsController {
       spacesKey: doc.spacesKey,
       uploadedAt: doc.uploadedAt
     }));
+  }
+
+  // Serve supporting document with signed URL (for private files)
+  @Get('documents/:documentId/download')
+  @Public()
+  async downloadSupportingDocument(
+    @Param('documentId') documentId: string,
+    @Response() res
+  ) {
+    try {
+      const document = await this.checklistsService.getSupportingDocumentById(documentId);
+      
+      if (!document) {
+        throw new NotFoundException('Document not found');
+      }
+
+      // Generate signed URL for secure access
+      const signedUrl = await this.checklistsService.generateDocumentSignedUrl(document.spacesKey);
+      
+      // Redirect to the signed URL
+      return res.redirect(signedUrl);
+    } catch (error) {
+      this.logger.error(`Error serving document ${documentId}: ${error.message}`);
+      throw new BadRequestException('Failed to serve document');
+    }
   }
 
   // Helper methods for response mapping

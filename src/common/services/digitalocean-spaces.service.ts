@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Upload } from '@aws-sdk/lib-storage';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -125,7 +126,7 @@ export class DigitalOceanSpacesService {
           Key: key,
           Body: fileBuffer,
           ContentType: contentType,
-          ACL: 'private', // Keep supporting docs private
+          ACL: 'public-read', // Make supporting docs publicly readable
           Metadata: {
             vendorId,
             questionId: questionId || 'general',
@@ -202,9 +203,16 @@ export class DigitalOceanSpacesService {
    */
   async generateSignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
     try {
-      // Note: For DigitalOcean Spaces, you might need to implement signed URLs differently
-      // This is a placeholder implementation
-      return `${this.endpoint}/${key}?expires=${Date.now() + expiresIn * 1000}`;
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key
+      });
+
+      const signedUrl = await getSignedUrl(this.s3Client, command, {
+        expiresIn
+      });
+
+      return signedUrl;
     } catch (error) {
       this.logger.error(`Failed to generate signed URL: ${error.message}`, error.stack);
       throw new Error(`Failed to generate signed URL: ${error.message}`);
