@@ -352,6 +352,28 @@ export class ChecklistsController {
     }
   }
 
+  // Delete supporting document (from database and DigitalOcean Spaces)
+  @Delete('documents/:documentId/vendor/:vendorId')
+  @Public()
+  async deleteSupportingDocument(
+    @Param('documentId') documentId: string,
+    @Param('vendorId', ParseUUIDPipe) vendorId: string
+  ) {
+    try {
+      const result = await this.checklistsService.deleteSupportingDocument(documentId, vendorId);
+      
+      this.logger.log(`Deleted supporting document ${documentId} for vendor ${vendorId}`);
+      
+      return {
+        success: true,
+        message: 'Supporting document deleted successfully'
+      };
+    } catch (error) {
+      this.logger.error(`Error deleting document ${documentId}: ${error.message}`);
+      throw new BadRequestException('Failed to delete supporting document');
+    }
+  }
+
   // Helper methods for response mapping
   private mapToChecklistResponse(checklist: Checklist): ChecklistResponseDto {
     return {

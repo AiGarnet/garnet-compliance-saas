@@ -696,6 +696,49 @@ export class ChecklistsService {
     }
   }
 
+  // Delete supporting document (from database and DigitalOcean Spaces)
+  async deleteSupportingDocument(documentId: string, vendorId: string): Promise<boolean> {
+    try {
+      // First, get the document to verify ownership and get the spaces key
+      const document = await this.documentRepository.findOne({
+        where: { id: documentId, vendorId }
+      });
+
+      if (!document) {
+        throw new NotFoundException('Supporting document not found or access denied');
+      }
+
+      // Delete from DigitalOcean Spaces first
+      if (document.spacesKey) {
+        try {
+          await this.spacesService.deleteFile(document.spacesKey);
+          this.logger.log(`Deleted file from Spaces: ${document.spacesKey}`);
+        } catch (spacesError) {
+          // Log the error but continue with database deletion
+          this.logger.warn(`Failed to delete file from Spaces: ${spacesError.message}`);
+        }
+      }
+
+      // Delete from database
+      const deleteResult = await this.documentRepository.delete({
+        id: documentId,
+        vendorId
+      });
+
+      if (deleteResult.affected === 0) {
+        throw new NotFoundException('Supporting document not found');
+      }
+
+      this.logger.log(`Deleted supporting document ${documentId} for vendor ${vendorId}`);
+      return true;
+
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      this.logger.error(`Failed to delete supporting document ${documentId}: ${error.message}`);
+      throw new BadRequestException('Failed to delete supporting document');
+    }
+  }
+
   async getChecklistsByVendor(vendorId: string): Promise<Checklist[]> {
     try {
       const checklists = await this.checklistRepository.find({
