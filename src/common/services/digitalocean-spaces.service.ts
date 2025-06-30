@@ -88,7 +88,7 @@ export class DigitalOceanSpacesService {
 
       const result: UploadResult = {
         key,
-        url: `${this.endpoint}/${key}`,
+        url: `https://${this.bucketName}.${this.endpoint.replace('https://', '')}/${key}`,
         cdnUrl: `${this.cdnEndpoint}/${key}`,
         size: Buffer.byteLength(jsonContent, 'utf8'),
         contentType: 'application/json'
@@ -139,7 +139,7 @@ export class DigitalOceanSpacesService {
 
       const result: UploadResult = {
         key,
-        url: `${this.endpoint}/${key}`,
+        url: `https://${this.bucketName}.${this.endpoint.replace('https://', '')}/${key}`,
         cdnUrl: `${this.cdnEndpoint}/${key}`,
         size: fileBuffer.length,
         contentType
