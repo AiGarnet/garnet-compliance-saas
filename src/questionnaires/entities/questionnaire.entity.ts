@@ -5,6 +5,7 @@ export enum QuestionnaireStatus {
   NOT_STARTED = 'Not Started',
   IN_PROGRESS = 'In Progress',
   COMPLETED = 'Completed',
+  IN_REVIEW = 'In Review',
   REVIEWED = 'Reviewed'
 }
 

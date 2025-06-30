@@ -76,4 +76,26 @@ export class UpdateQuestionDto {
   @IsOptional()
   @IsBoolean()
   isRequired?: boolean;
+}
+
+export class SubmitQuestionnaireDto {
+  @ApiProperty({ example: 1, description: 'Vendor ID submitting the questionnaire' })
+  @IsNumber()
+  vendorId: number;
+
+  @ApiPropertyOptional({ example: 'enterprise@company.com', description: 'Enterprise email to notify' })
+  @IsOptional()
+  @IsString()
+  enterpriseEmail?: string;
+
+  @ApiPropertyOptional({ example: 'Ready for your review', description: 'Message to enterprise' })
+  @IsOptional()
+  @IsString()
+  message?: string;
+
+  @ApiPropertyOptional({ example: ['checklist-id-1', 'checklist-id-2'], description: 'Associated checklist IDs' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  checklistIds?: string[];
 } 

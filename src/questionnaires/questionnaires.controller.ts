@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { QuestionnairesService } from './questionnaires.service';
-import { CreateQuestionnaireDto, UpdateQuestionnaireDto, UpdateQuestionDto } from './dto/questionnaire.dto';
+import { CreateQuestionnaireDto, UpdateQuestionnaireDto, UpdateQuestionDto, SubmitQuestionnaireDto } from './dto/questionnaire.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../common/decorators/public.decorator';
 
@@ -242,6 +242,38 @@ export class QuestionnairesController {
       const questionnaires = await this.questionnairesService.getQuestionnairesWithAnswersForVendor(vendorId);
       return { questionnaires };
     } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Public()
+  @Post(':id/submit')
+  @ApiOperation({ summary: 'Submit questionnaire for enterprise review' })
+  @ApiResponse({ status: 200, description: 'Questionnaire submitted successfully' })
+  @ApiResponse({ status: 404, description: 'Questionnaire not found' })
+  @ApiResponse({ status: 400, description: 'Questionnaire not ready for submission' })
+  async submitQuestionnaireForReview(
+    @Param('id') questionnaireId: string,
+    @Body() submitData: SubmitQuestionnaireDto
+  ) {
+    try {
+      const submission = await this.questionnairesService.submitQuestionnaireForReview(
+        questionnaireId,
+        submitData
+      );
+      
+      return { 
+        message: 'Questionnaire submitted for enterprise review successfully',
+        submission,
+        trustPortalUrl: `/trust-portal/vendor/${submitData.vendorId}?submission=${submission.id}`
+      };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new HttpException(
         error.message || 'Internal server error',
         HttpStatus.INTERNAL_SERVER_ERROR,

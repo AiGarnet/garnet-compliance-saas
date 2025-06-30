@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { CreateQuestionnaireDto, UpdateQuestionnaireDto, UpdateQuestionDto } from './dto/questionnaire.dto';
+import { CreateQuestionnaireDto, UpdateQuestionnaireDto, UpdateQuestionDto, SubmitQuestionnaireDto } from './dto/questionnaire.dto';
 import { Questionnaire, QuestionnaireStatus, QuestionnaireQuestion } from './entities/questionnaire.entity';
 import { AiService } from '../ai/ai.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -580,5 +580,85 @@ export class QuestionnairesService {
    */
   private camelToSnake(str: string): string {
     return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+  }
+
+  /**
+   * Submit questionnaire for enterprise review
+   */
+  async submitQuestionnaireForReview(questionnaireId: string, submitData: SubmitQuestionnaireDto): Promise<any> {
+    const { vendorId, enterpriseEmail, message, checklistIds } = submitData;
+
+    try {
+      // 1. Verify questionnaire exists and belongs to vendor
+      const questionnaire = await this.getQuestionnaireById(questionnaireId);
+      if (!questionnaire) {
+        throw new Error('Questionnaire not found');
+      }
+
+      if (questionnaire.vendorId !== vendorId) {
+        throw new Error('Questionnaire does not belong to the specified vendor');
+      }
+
+      // 2. Check if questionnaire is ready for submission
+      const questions = await this.getQuestionnaireQuestions(questionnaireId);
+      const unansweredQuestions = questions.filter(q => !q.answer || q.answer.trim() === '');
+      
+      if (unansweredQuestions.length > 0) {
+        throw new Error(`Questionnaire has ${unansweredQuestions.length} unanswered questions and is not ready for submission`);
+      }
+
+      // 3. Update questionnaire status to IN_REVIEW
+      const updateStatusQuery = `
+        UPDATE vendor_questionnaire_answers 
+        SET status = $1, updated_at = NOW()
+        WHERE vendor_id = $2
+      `;
+      await this.databaseService.query(updateStatusQuery, [QuestionnaireStatus.IN_REVIEW, vendorId]);
+
+      // 4. Create submission record in trust portal
+      const submissionId = uuidv4();
+      const createSubmissionQuery = `
+        INSERT INTO trust_portal_submissions (
+          id, vendor_id, questionnaire_id, status, enterprise_email, message, 
+          checklist_ids, submitted_at, created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, NOW(), NOW(), NOW()
+        ) RETURNING *
+      `;
+
+      const submissionValues = [
+        submissionId,
+        vendorId,
+        questionnaireId,
+        'IN_REVIEW',
+        enterpriseEmail,
+        message || 'Questionnaire submitted for review',
+        checklistIds ? JSON.stringify(checklistIds) : null
+      ];
+
+      const submissionResult = await this.databaseService.query(createSubmissionQuery, submissionValues);
+      const submission = submissionResult.rows[0];
+
+      // 5. Log activity
+      this.logger.log(`✅ Questionnaire ${questionnaireId} submitted for review by vendor ${vendorId}`);
+
+      // 6. TODO: Send notification email to enterprise (if email provided)
+      if (enterpriseEmail) {
+        // This would integrate with email service
+        this.logger.log(`📧 Should send notification to ${enterpriseEmail} about submission ${submissionId}`);
+      }
+
+      return {
+        id: submissionId,
+        status: 'IN_REVIEW',
+        submittedAt: new Date(),
+        questionnaire: questionnaire,
+        trustPortalUrl: `/trust-portal/vendor/${vendorId}?submission=${submissionId}`
+      };
+
+    } catch (error) {
+      this.logger.error(`❌ Failed to submit questionnaire ${questionnaireId}:`, error);
+      throw error;
+    }
   }
 } 
