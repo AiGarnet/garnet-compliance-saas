@@ -211,7 +211,7 @@ export class ChecklistsController {
   @Put('questions/:questionId/vendor/:vendorId')
   @Public()
   async updateQuestion(
-    @Param('questionId', ParseUUIDPipe) questionId: string,
+    @Param('questionId') questionId: string,
     @Param('vendorId', ParseUUIDPipe) vendorId: string,
     @Body() updateDto: UpdateQuestionDto
   ): Promise<QuestionResponseDto> {
@@ -224,7 +224,7 @@ export class ChecklistsController {
   @Public()
   @UseInterceptors(FileInterceptor('file'))
   async uploadSupportingDocument(
-    @Param('questionId', ParseUUIDPipe) questionId: string,
+    @Param('questionId') questionId: string,
     @Param('vendorId', ParseUUIDPipe) vendorId: string,
     @UploadedFile() file: Express.Multer.File,
     @Request() req
@@ -251,6 +251,8 @@ export class ChecklistsController {
       fileType: document.fileType,
       fileSize: document.fileSize,
       filePath: document.filePath,
+      spacesUrl: document.spacesUrl,
+      spacesKey: document.spacesKey,
       uploadedAt: document.uploadedAt
     };
   }

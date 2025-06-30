@@ -347,13 +347,18 @@ export class ChecklistsService {
     userId?: string
   ): Promise<ChecklistSupportingDocument> {
     try {
-      // Verify question belongs to vendor
-      const question = await this.questionRepository.findOne({
-        where: { id: questionId, vendorId }
-      });
+      // Check if this is a standalone upload (doesn't require question verification)
+      const isStandaloneUpload = questionId.startsWith('standalone-');
+      
+      if (!isStandaloneUpload) {
+        // Verify question belongs to vendor for question-specific uploads
+        const question = await this.questionRepository.findOne({
+          where: { id: questionId, vendorId }
+        });
 
-      if (!question) {
-        throw new NotFoundException('Question not found or access denied');
+        if (!question) {
+          throw new NotFoundException('Question not found or access denied');
+        }
       }
 
       // Upload file to DigitalOcean Spaces
