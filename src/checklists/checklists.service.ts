@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 import { Checklist, ChecklistQuestion, ChecklistSupportingDocument } from './entities/checklist.entity';
 import { 
   CreateChecklistDto, 
@@ -349,8 +350,13 @@ export class ChecklistsService {
     try {
       // Check if this is a standalone upload (doesn't require question verification)
       const isStandaloneUpload = questionId.startsWith('standalone-');
+      let actualQuestionId = questionId;
       
-      if (!isStandaloneUpload) {
+      if (isStandaloneUpload) {
+        // Generate a proper UUID for standalone uploads to satisfy database constraints
+        actualQuestionId = uuidv4();
+        this.logger.log(`Converting standalone questionId ${questionId} to UUID ${actualQuestionId}`);
+      } else {
         // Verify question belongs to vendor for question-specific uploads
         const question = await this.questionRepository.findOne({
           where: { id: questionId, vendorId }
@@ -361,18 +367,18 @@ export class ChecklistsService {
         }
       }
 
-      // Upload file to DigitalOcean Spaces
+      // Upload file to DigitalOcean Spaces (use original questionId for file naming)
       const uploadResult = await this.spacesService.uploadSupportingDocument(
         file.buffer,
         file.originalname,
         file.mimetype,
         vendorId,
-        questionId
+        questionId // Use original questionId for file naming consistency
       );
 
       // Create document record with Spaces information
       const createDocDto: CreateSupportingDocumentDto = {
-        questionId,
+        questionId: actualQuestionId, // Use UUID for database
         filename: file.originalname,
         fileType: file.mimetype,
         fileSize: file.size,
