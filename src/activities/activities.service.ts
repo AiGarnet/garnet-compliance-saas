@@ -180,7 +180,7 @@ export class ActivitiesService {
       const query = this.activityRepository.createQueryBuilder('activity');
 
       if (filters.userId) {
-        query.andWhere('activity.userId = :userId', { userId: filters.userId });
+        query.andWhere('activity.user_id = :userId', { userId: filters.userId });
       }
 
       if (filters.type) {
@@ -196,22 +196,22 @@ export class ActivitiesService {
       }
 
       if (filters.entityType) {
-        query.andWhere('activity.entityType = :entityType', { entityType: filters.entityType });
+        query.andWhere('activity.entity_type = :entityType', { entityType: filters.entityType });
       }
 
       if (filters.entityId) {
-        query.andWhere('activity.entityId = :entityId', { entityId: filters.entityId });
+        query.andWhere('activity.entity_id = :entityId', { entityId: filters.entityId });
       }
 
       if (filters.startDate) {
-        query.andWhere('activity.createdAt >= :startDate', { startDate: filters.startDate });
+        query.andWhere('activity.created_at >= :startDate', { startDate: filters.startDate });
       }
 
       if (filters.endDate) {
-        query.andWhere('activity.createdAt <= :endDate', { endDate: filters.endDate });
+        query.andWhere('activity.created_at <= :endDate', { endDate: filters.endDate });
       }
 
-      query.orderBy('activity.createdAt', 'DESC');
+      query.orderBy('activity.created_at', 'DESC');
 
       if (filters.limit) {
         query.limit(filters.limit);
@@ -246,7 +246,7 @@ export class ActivitiesService {
       const baseQuery = this.activityRepository.createQueryBuilder('activity');
       
       if (userId) {
-        baseQuery.andWhere('activity.userId = :userId', { userId });
+        baseQuery.andWhere('activity.user_id = :userId', { userId });
       }
 
       // Total activities
@@ -259,21 +259,21 @@ export class ActivitiesService {
       tomorrow.setDate(tomorrow.getDate() + 1);
 
       const todayQuery = baseQuery.clone();
-      todayQuery.andWhere('activity.createdAt >= :today', { today })
-               .andWhere('activity.createdAt < :tomorrow', { tomorrow });
+      todayQuery.andWhere('activity.created_at >= :today', { today })
+               .andWhere('activity.created_at < :tomorrow', { tomorrow });
       const todayActivities = await todayQuery.getCount();
 
       // This week's activities
       const weekStart = new Date(today);
       weekStart.setDate(today.getDate() - today.getDay());
       const weekQuery = baseQuery.clone();
-      weekQuery.andWhere('activity.createdAt >= :weekStart', { weekStart });
+      weekQuery.andWhere('activity.created_at >= :weekStart', { weekStart });
       const weekActivities = await weekQuery.getCount();
 
       // This month's activities
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
       const monthQuery = baseQuery.clone();
-      monthQuery.andWhere('activity.createdAt >= :monthStart', { monthStart });
+      monthQuery.andWhere('activity.created_at >= :monthStart', { monthStart });
       const monthActivities = await monthQuery.getCount();
 
       // Activities by type
@@ -302,11 +302,11 @@ export class ActivitiesService {
       let mostActiveUsers = [];
       if (!userId) {
         const userQuery = baseQuery.clone();
-        userQuery.select('activity.userId', 'userId')
-                 .addSelect('activity.userName', 'userName')
+        userQuery.select('activity.user_id', 'userId')
+                 .addSelect('activity.user_name', 'userName')
                  .addSelect('COUNT(*)', 'count')
-                 .where('activity.userId IS NOT NULL')
-                 .groupBy('activity.userId, activity.userName')
+                 .where('activity.user_id IS NOT NULL')
+                 .groupBy('activity.user_id, activity.user_name')
                  .orderBy('COUNT(*)', 'DESC')
                  .limit(5);
         const userResults = await userQuery.getRawMany();
