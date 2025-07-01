@@ -829,19 +829,7 @@ export class ChecklistsService {
         throw new BadRequestException(`Found ${invalidQuestions.length} questions with invalid content. Please check the checklist file format.`);
       }
 
-      // Get vendor information to get the integer ID for AI requests
-      const vendorQuery = 'SELECT vendor_id, uuid FROM vendors WHERE uuid = $1';
-      this.logger.log(`Looking up vendor with UUID: ${vendorId}`);
-      
-      const vendorResult = await this.databaseService.query(vendorQuery, [vendorId]);
-      this.logger.log(`Vendor query result:`, vendorResult);
-      
-      if (!vendorResult || vendorResult.length === 0) {
-        throw new BadRequestException(`Vendor not found with UUID: ${vendorId}. Please check if vendor exists.`);
-      }
-
-      const vendorIntegerId = vendorResult[0].vendor_id;
-      this.logger.log(`Validated checklist for vendor ID ${vendorIntegerId} with ${questions.length} questions`);
+      this.logger.log(`Validated checklist ${checklistId} with ${questions.length} valid questions for vendor ${vendorId}`);
       
       // Return data for frontend to use with AI endpoints
       const questionnaireId = `CHECKLIST_${checklistId}`;
@@ -860,7 +848,7 @@ export class ChecklistsService {
 
     } catch (error) {
       this.logger.error(`Failed to send checklist to AI: ${error.message}`);
-      if (error instanceof BadRequestException) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
         throw error;
       }
       throw new BadRequestException(`Failed to send checklist to AI: ${error.message}`);
