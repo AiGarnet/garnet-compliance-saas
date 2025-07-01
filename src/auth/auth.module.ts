@@ -7,10 +7,12 @@ import { AuthController, AuthWaitlistController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { DatabaseModule } from '../database/database.module';
+import { OrganizationsModule } from '../organizations/organizations.module';
 
 @Module({
   imports: [
     DatabaseModule,
+    OrganizationsModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

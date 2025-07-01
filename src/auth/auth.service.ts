@@ -5,6 +5,7 @@ import * as bcrypt from 'bcryptjs';
 import { DatabaseService } from '../database/database.service';
 import { User, CreateUserRequest, WaitlistSignupRequest, JwtPayload } from './entities/user.entity';
 import { SignupDto, LoginDto, WaitlistSignupDto } from './dto/auth.dto';
+import { OrganizationsService } from '../organizations/organizations.service';
 
 @Injectable()
 export class AuthService {
@@ -12,6 +13,7 @@ export class AuthService {
     private readonly databaseService: DatabaseService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly organizationsService: OrganizationsService,
   ) {}
 
   async signup(signupDto: SignupDto): Promise<{ access_token: string; user: Partial<User> }> {
@@ -21,11 +23,45 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(signupDto.password, 10);
+    
+    let organizationId: string | null = null;
+    let organizationName = signupDto.organization;
+
+    // Auto-create or find organization if organization name is provided
+    if (organizationName && organizationName.trim()) {
+      try {
+        // First, try to find existing organization by name
+        const existingOrgs = await this.organizationsService.getAllOrganizations(1, 100);
+        const existingOrg = existingOrgs.organizations.find(
+          org => org.name.toLowerCase() === organizationName.toLowerCase()
+        );
+
+        if (existingOrg) {
+          // Organization exists, use it
+          organizationId = existingOrg.id;
+        } else {
+          // Organization doesn't exist, create it
+          const newOrganization = await this.organizationsService.createOrganization({
+            name: organizationName,
+            maxUsers: 25, // Default to 25 users for new organizations
+            settings: {
+              features: ['compliance', 'vendors', 'questionnaires'],
+              theme: 'default'
+            }
+          });
+          organizationId = newOrganization.id;
+        }
+      } catch (error) {
+        console.error('Error handling organization during signup:', error);
+        // Continue without organization if there's an error
+        organizationId = null;
+      }
+    }
 
     const query = `
-      INSERT INTO users (email, password_hash, full_name, role, organization, metadata, is_active)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING id, email, full_name, role, organization, created_at, updated_at
+      INSERT INTO users (email, password_hash, full_name, role, organization, organization_id, metadata, is_active)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id, email, full_name, role, organization, organization_id, created_at, updated_at
     `;
 
     const values = [
@@ -33,7 +69,8 @@ export class AuthService {
       hashedPassword,
       signupDto.full_name,
       signupDto.role,
-      signupDto.organization || null,
+      organizationName || null, // Keep legacy field for backwards compatibility
+      organizationId, // New organization_id field
       signupDto.metadata || {},
       true,
     ];
@@ -45,6 +82,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      organization_id: user.organization_id,
     };
 
     return {
@@ -55,6 +93,7 @@ export class AuthService {
         full_name: user.full_name,
         role: user.role,
         organization: user.organization,
+        organization_id: user.organization_id,
       },
     };
   }
@@ -105,12 +144,46 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(waitlistDto.password, 10);
 
+    let organizationId: string | null = null;
+    let organizationName = waitlistDto.organization;
+
+    // Auto-create or find organization if organization name is provided
+    if (organizationName && organizationName.trim()) {
+      try {
+        // First, try to find existing organization by name
+        const existingOrgs = await this.organizationsService.getAllOrganizations(1, 100);
+        const existingOrg = existingOrgs.organizations.find(
+          org => org.name.toLowerCase() === organizationName.toLowerCase()
+        );
+
+        if (existingOrg) {
+          // Organization exists, use it
+          organizationId = existingOrg.id;
+        } else {
+          // Organization doesn't exist, create it
+          const newOrganization = await this.organizationsService.createOrganization({
+            name: organizationName,
+            maxUsers: 25, // Default to 25 users for new organizations
+            settings: {
+              features: ['compliance', 'vendors', 'questionnaires'],
+              theme: 'default'
+            }
+          });
+          organizationId = newOrganization.id;
+        }
+      } catch (error) {
+        console.error('Error handling organization during waitlist signup:', error);
+        // Continue without organization if there's an error
+        organizationId = null;
+      }
+    }
+
     const query = `
       INSERT INTO users (
-        email, password_hash, full_name, role, organization, source, 
+        email, password_hash, full_name, role, organization, organization_id, source, 
         signup_date, metadata, is_active
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *
     `;
 
@@ -119,7 +192,8 @@ export class AuthService {
       hashedPassword,
       waitlistDto.full_name,
       waitlistDto.role,
-      waitlistDto.organization || null,
+      organizationName || null,
+      organizationId,
       waitlistDto.source || 'auth_signup',
       new Date(),
       {
@@ -139,6 +213,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      organization_id: user.organization_id,
     };
 
     const token = this.jwtService.sign(payload);
