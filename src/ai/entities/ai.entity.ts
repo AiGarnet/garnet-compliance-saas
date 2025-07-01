@@ -13,7 +13,7 @@ export interface AiSuggestion {
 }
 
 /**
- * Interface for AI answer generation request
+ * Request interface for generating an answer
  */
 export interface GenerateAnswerRequest {
   question: string;
@@ -34,7 +34,7 @@ export interface AiAnswerResponse {
 }
 
 /**
- * Interface for batch answer generation
+ * Request interface for batch answers
  */
 export interface BatchAnswerRequest {
   questions: string[];
@@ -46,24 +46,39 @@ export interface BatchAnswerRequest {
  * Interface for batch answer response
  */
 export interface BatchAnswerResponse {
-  answers: AiAnswerResponse[];
-  metadata: {
-    totalQuestions: number;
+  results: AiAnswerResponse[];
+  answers?: AiAnswerResponse[]; // For backward compatibility
+  totalQuestions: number;
+  successfulAnswers: number;
+  failedAnswers: number;
+  processingTimeMs: number;
+  metadata?: {
     successfulAnswers: number;
     failedAnswers: number;
-    processingTimeMs: number;
     timestamp: string;
   };
 }
 
 /**
- * Interface for compliance data used in AI context
+ * Interface for generated supporting document
+ */
+export interface GeneratedSupportingDocument {
+  title: string;
+  content: string;
+  success: boolean;
+  error?: string;
+}
+
+/**
+ * Interface for compliance data
  */
 export interface ComplianceData {
+  id?: string;
   name: string;
-  category: string;
   description: string;
-  jurisdiction?: string;
+  jurisdiction: string;
+  category?: string;
   domains?: string[];
+  content?: string;
   relevanceScore?: number;
 } 

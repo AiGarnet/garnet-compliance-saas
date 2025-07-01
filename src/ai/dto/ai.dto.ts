@@ -19,22 +19,37 @@ export class GenerateAnswerDto {
 }
 
 export class BatchAnswerDto {
-  @ApiProperty({ 
-    example: [
-      'What is your data retention policy?',
-      'How do you handle data encryption?',
-      'What are your backup procedures?'
-    ]
-  })
+  @ApiProperty({ example: ['What is your data retention policy?', 'How do you handle data breaches?'] })
   @IsArray()
   @IsString({ each: true })
-  @IsNotEmpty({ each: true })
   questions: string[];
 
   @ApiPropertyOptional({ example: 'This is for a financial services vendor' })
   @IsOptional()
   @IsString()
   context?: string;
+
+  @ApiPropertyOptional({ example: 123 })
+  @IsOptional()
+  @IsNumber()
+  vendorId?: number;
+}
+
+export class GenerateSupportingDocumentDto {
+  @ApiProperty({ example: 'Data Retention Policy' })
+  @IsString()
+  @IsNotEmpty()
+  documentTitle: string;
+
+  @ApiPropertyOptional({ example: 'Please generate a comprehensive data retention policy' })
+  @IsOptional()
+  @IsString()
+  instructions?: string;
+
+  @ApiPropertyOptional({ example: 'Data Privacy' })
+  @IsOptional()
+  @IsString()
+  category?: string;
 
   @ApiPropertyOptional({ example: 123 })
   @IsOptional()

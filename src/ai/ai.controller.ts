@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AiService } from './ai.service';
-import { GenerateAnswerDto, BatchAnswerDto, CreateSuggestionDto } from './dto/ai.dto';
+import { GenerateAnswerDto, BatchAnswerDto, CreateSuggestionDto, GenerateSupportingDocumentDto } from './dto/ai.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../common/decorators/public.decorator';
 
@@ -137,6 +137,32 @@ export class AiController {
       }
       throw new HttpException(
         error.message || 'Failed to get vendor suggestions',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('generate-document')
+  @Public()
+  @ApiOperation({ summary: 'Generate a supporting document using AI' })
+  @ApiResponse({ status: 200, description: 'Supporting document generated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input or OpenAI not configured' })
+  async generateSupportingDocument(@Body() generateDocDto: GenerateSupportingDocumentDto) {
+    try {
+      const result = await this.aiService.generateSupportingDocument(
+        generateDocDto.documentTitle,
+        generateDocDto.instructions,
+        generateDocDto.category,
+        generateDocDto.vendorId,
+      );
+
+      return result;
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Failed to generate supporting document',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

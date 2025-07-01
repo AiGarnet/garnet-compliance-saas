@@ -8,7 +8,8 @@ import {
   BatchAnswerRequest, 
   BatchAnswerResponse,
   ComplianceData,
-  AiSuggestion
+  AiSuggestion,
+  GeneratedSupportingDocument
 } from './entities/ai.entity';
 import { CreateSuggestionDto } from './dto/ai.dto';
 import { v4 as uuidv4 } from 'uuid';
@@ -159,14 +160,17 @@ export class AiService {
     const processingTimeMs = Date.now() - startTime;
 
     return {
+      results: results,
       answers: results,
+      totalQuestions: request.questions.length,
+      successfulAnswers: successfulAnswers,
+      failedAnswers: failedAnswers,
+      processingTimeMs: processingTimeMs,
       metadata: {
-        totalQuestions: request.questions.length,
-        successfulAnswers,
-        failedAnswers,
-        processingTimeMs,
-        timestamp: new Date().toISOString(),
-      },
+        successfulAnswers: successfulAnswers,
+        failedAnswers: failedAnswers,
+        timestamp: new Date().toISOString()
+      }
     };
   }
 
@@ -1163,5 +1167,97 @@ Response Guidelines:
    */
   private generateFallbackResponse(): string {
     return "I apologize, but I'm experiencing some technical difficulties. Please try rephrasing your compliance question, and I'll do my best to provide a helpful response about our regulatory procedures and controls.";
+  }
+
+  /**
+   * Generate a supporting document using OpenAI
+   */
+  async generateSupportingDocument(
+    title: string,
+    instructions?: string,
+    category?: string,
+    vendorId?: number
+  ): Promise<GeneratedSupportingDocument> {
+    this.logger.debug(`🤖 AI SERVICE: Starting generateSupportingDocument for "${title}"`);
+    
+    if (!this.openai) {
+      this.logger.error('❌ AI SERVICE: OpenAI API key not configured');
+      throw new BadRequestException('OpenAI API key not configured');
+    }
+
+    try {
+      // Build the prompt for document generation
+      let prompt = `Generate a comprehensive, professional supporting document titled "${title}".\n\n`;
+      
+      // Add category context if available
+      if (category) {
+        prompt += `This document falls under the "${category}" category.\n\n`;
+        
+        // Add specialized context based on category
+        if (category.toLowerCase().includes('privacy') || category.toLowerCase().includes('data')) {
+          prompt += `Include sections on data collection, storage, processing, retention, sharing, and deletion practices. Address compliance with relevant regulations like GDPR, CCPA, etc.\n\n`;
+        } else if (category.toLowerCase().includes('security') || category.toLowerCase().includes('cyber')) {
+          prompt += `Include sections on security controls, access management, encryption, incident response, vulnerability management, and compliance with frameworks like ISO 27001, SOC 2, etc.\n\n`;
+        } else if (category.toLowerCase().includes('policy') || category.toLowerCase().includes('procedure')) {
+          prompt += `Structure this as a formal policy document with purpose, scope, responsibilities, procedures, compliance requirements, and review/update processes.\n\n`;
+        }
+      }
+      
+      // Add specific instructions if provided
+      if (instructions) {
+        prompt += `Additional instructions: ${instructions}\n\n`;
+      }
+      
+      // Add general formatting instructions
+      prompt += `Format the document professionally with:
+- A clear title and introduction
+- Well-structured sections with headings
+- Bullet points for clarity where appropriate
+- Numbered lists for procedures or steps
+- A conclusion or summary section
+- References to relevant standards or regulations
+- Version control information
+
+The document should be comprehensive yet concise, using professional language appropriate for compliance purposes.`;
+
+      this.logger.debug('🤖 AI SERVICE: Sending request to OpenAI for document generation');
+      
+      // Call OpenAI with a more capable model for document generation
+      const completion = await this.openai.chat.completions.create({
+        model: "gpt-4o", // Using a more capable model for document generation
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert compliance document generator. Create professional, comprehensive compliance documents that adhere to industry standards and best practices. Format documents clearly with proper structure, headings, and sections."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 4000, // Increased for comprehensive document generation
+        temperature: 0.3, // Low temperature for professional, consistent output
+      });
+
+      const content = completion.choices[0]?.message?.content || 'Failed to generate document content.';
+      
+      // Log success
+      this.logger.debug(`🤖 AI SERVICE: Successfully generated supporting document "${title}"`);
+      
+      return {
+        title,
+        content,
+        success: true
+      };
+    } catch (error: any) {
+      this.logger.error(`❌ AI SERVICE: Error generating supporting document: ${error.message}`, error.stack);
+      
+      return {
+        title,
+        content: '',
+        success: false,
+        error: error.message || 'Failed to generate supporting document'
+      };
+    }
   }
 } 

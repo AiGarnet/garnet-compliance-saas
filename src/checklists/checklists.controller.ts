@@ -335,20 +335,32 @@ export class ChecklistsController {
     @Response() res
   ) {
     try {
+      this.logger.log(`Attempting to download document with ID: ${documentId}`);
+      
       const document = await this.checklistsService.getSupportingDocumentById(documentId);
       
       if (!document) {
         throw new NotFoundException('Document not found');
       }
 
+      this.logger.log(`Found document: ${JSON.stringify({
+        id: document.id,
+        filename: document.filename,
+        spacesKey: document.spacesKey,
+        spacesUrl: document.spacesUrl
+      })}`);
+
       // Generate signed URL for secure access
+      this.logger.log(`Generating signed URL for document with spacesKey: ${document.spacesKey}`);
       const signedUrl = await this.checklistsService.generateDocumentSignedUrl(document.spacesKey);
+      
+      this.logger.log(`Generated signed URL: ${signedUrl}`);
       
       // Redirect to the signed URL
       return res.redirect(signedUrl);
     } catch (error) {
-      this.logger.error(`Error serving document ${documentId}: ${error.message}`);
-      throw new BadRequestException('Failed to serve document');
+      this.logger.error(`Error serving document ${documentId}: ${error.message}`, error.stack);
+      throw new BadRequestException(`Failed to serve document: ${error.message}`);
     }
   }
 

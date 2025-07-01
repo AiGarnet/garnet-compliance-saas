@@ -119,11 +119,14 @@ export class DigitalOceanSpacesService {
     const key = `${this.folders.supportingDocs}${uniqueFilename}`;
 
     try {
+      // Log the bucket and key for debugging
+      this.logger.log(`Uploading to bucket: ${this.bucketName}, key: ${key}`);
+      
       const upload = new Upload({
         client: this.s3Client,
         params: {
-          Bucket: this.bucketName,
-          Key: key,
+          Bucket: this.bucketName, // Use the configured bucket name
+          Key: key, // Use the full path with folder
           Body: fileBuffer,
           ContentType: contentType,
           ACL: 'public-read', // Make supporting docs publicly readable
@@ -138,6 +141,7 @@ export class DigitalOceanSpacesService {
 
       const uploadResult = await upload.done();
 
+      // Create proper URLs for accessing the file
       const result: UploadResult = {
         key,
         url: `https://${this.bucketName}.${this.endpoint.replace('https://', '')}/${key}`,
@@ -203,6 +207,9 @@ export class DigitalOceanSpacesService {
    */
   async generateSignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
     try {
+      // Log the bucket and key for debugging
+      this.logger.log(`Generating signed URL for bucket: ${this.bucketName}, key: ${key}`);
+      
       const command = new GetObjectCommand({
         Bucket: this.bucketName,
         Key: key
