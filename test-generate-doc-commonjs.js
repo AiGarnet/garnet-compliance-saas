@@ -1,11 +1,9 @@
-// ES module version of the test script
-// Use dynamic import for fetch
+// CommonJS version of the test script
+const fetch = require('node-fetch');
+
 async function testGenerateDocument() {
   try {
     console.log('Testing generate-document API endpoint...');
-    
-    // Dynamically import node-fetch
-    const { default: fetch } = await import('node-fetch');
     
     const response = await fetch('http://localhost:8080/api/ai/generate-document', {
       method: 'POST',
