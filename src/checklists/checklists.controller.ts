@@ -85,15 +85,6 @@ export class ChecklistsController {
 
       this.logger.log(`Uploaded checklist ${result.checklist.id} with ${result.questions.length} questions to Spaces for vendor ${vendorId}`);
 
-      // Sync questions to questionnaire system after upload
-      try {
-        await this.checklistsService.syncQuestionsToQuestionnaire(result.checklist.id, vendorId);
-        this.logger.log(`Synced checklist ${result.checklist.id} to questionnaire system after upload`);
-      } catch (syncError) {
-        this.logger.warn(`Failed to sync checklist to questionnaire system after upload: ${syncError.message}`);
-        // Continue even if sync fails
-      }
-
       return {
         checklist: this.mapToChecklistResponse(result.checklist),
         questions: result.questions.map(q => this.mapToQuestionResponse(q))
@@ -290,27 +281,27 @@ export class ChecklistsController {
     await this.checklistsService.deleteChecklist(checklistId, vendorId);
   }
 
-  // Sync checklist questions to questionnaire system for chat interface
-  @Post(':checklistId/vendor/:vendorId/sync-to-questionnaire')
+
+
+  // NEW: Send checklist questions to AI for response generation
+  @Post(':checklistId/vendor/:vendorId/send-to-ai')
   @Public()
-  async syncToQuestionnaire(
+  async sendChecklistToAI(
     @Param('checklistId', ParseUUIDPipe) checklistId: string,
     @Param('vendorId', ParseUUIDPipe) vendorId: string
-  ): Promise<{ message: string; questionCount: number }> {
+  ): Promise<{ message: string; questionCount: number; questionnaireId: string }> {
     try {
-      await this.checklistsService.syncQuestionsToQuestionnaire(checklistId, vendorId);
+      const result = await this.checklistsService.sendChecklistToAI(checklistId, vendorId);
       
-      // Get question count for response
-      const questions = await this.checklistsService.getChecklistQuestions(checklistId, vendorId);
-      
-      this.logger.log(`Successfully synced checklist ${checklistId} to questionnaire system`);
+      this.logger.log(`Successfully sent checklist ${checklistId} questions to AI for vendor ${vendorId}`);
       return {
-        message: 'Checklist questions successfully synced to questionnaire system',
-        questionCount: questions.length
+        message: 'Checklist questions successfully sent to AI for response generation',
+        questionCount: result.questionCount,
+        questionnaireId: result.questionnaireId
       };
     } catch (error) {
-      this.logger.error(`Failed to sync checklist to questionnaire: ${error.message}`);
-      throw new BadRequestException('Failed to sync checklist to questionnaire system');
+      this.logger.error(`Failed to send checklist to AI: ${error.message}`);
+      throw new BadRequestException('Failed to send checklist to AI');
     }
   }
 
