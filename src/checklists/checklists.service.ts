@@ -794,6 +794,7 @@ export class ChecklistsService {
   }
 
   // NEW: Send checklist questions to AI and create questionnaire responses
+  // Fixed vendor lookup issue - Deploy version 2.1
   async sendChecklistToAI(checklistId: string, vendorId: string): Promise<{ questionCount: number; questionnaireId: string }> {
     try {
       // Get the checklist and its questions
