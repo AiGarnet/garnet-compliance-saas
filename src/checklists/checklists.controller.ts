@@ -85,6 +85,15 @@ export class ChecklistsController {
 
       this.logger.log(`Uploaded checklist ${result.checklist.id} with ${result.questions.length} questions to Spaces for vendor ${vendorId}`);
 
+      // Sync questions to questionnaire system after upload
+      try {
+        await this.checklistsService.syncQuestionsToQuestionnaire(result.checklist.id, vendorId);
+        this.logger.log(`Synced checklist ${result.checklist.id} to questionnaire system after upload`);
+      } catch (syncError) {
+        this.logger.warn(`Failed to sync checklist to questionnaire system after upload: ${syncError.message}`);
+        // Continue even if sync fails
+      }
+
       return {
         checklist: this.mapToChecklistResponse(result.checklist),
         questions: result.questions.map(q => this.mapToQuestionResponse(q))
