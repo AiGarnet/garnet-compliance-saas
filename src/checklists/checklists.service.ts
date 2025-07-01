@@ -754,4 +754,34 @@ export class ChecklistsService {
       throw new BadRequestException('Failed to retrieve checklists');
     }
   }
+
+  // Utility: Find all checklists whose Spaces file is missing
+  async findOrphanedChecklists(): Promise<Checklist[]> {
+    const allChecklists = await this.checklistRepository.find();
+    const orphaned: Checklist[] = [];
+    for (const checklist of allChecklists) {
+      if (checklist.spacesKey) {
+        try {
+          await this.spacesService.getFileMetadata(checklist.spacesKey);
+        } catch (err) {
+          // If file not found in Spaces, consider it orphaned
+          orphaned.push(checklist);
+        }
+      } else {
+        // No spacesKey, treat as orphaned
+        orphaned.push(checklist);
+      }
+    }
+    return orphaned;
+  }
+
+  // Utility: Delete a checklist and all related data by checklistId and vendorId
+  async forceDeleteChecklist(checklistId: string, vendorId: string): Promise<void> {
+    // This just calls the normal deleteChecklist, but ignores NotFound errors
+    try {
+      await this.deleteChecklist(checklistId, vendorId);
+    } catch (err) {
+      // Ignore not found
+    }
+  }
 } 

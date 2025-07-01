@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Upload } from '@aws-sdk/lib-storage';
 import { v4 as uuidv4 } from 'uuid';
@@ -241,6 +241,22 @@ export class DigitalOceanSpacesService {
     } catch (error) {
       this.logger.error(`Failed to list files: ${error.message}`, error.stack);
       throw new Error(`Failed to list files: ${error.message}`);
+    }
+  }
+
+  /**
+   * Check if a file exists in DigitalOcean Spaces (throws if not found)
+   */
+  async getFileMetadata(key: string): Promise<any> {
+    try {
+      const command = new HeadObjectCommand({
+        Bucket: this.bucketName,
+        Key: key
+      });
+      return await this.s3Client.send(command);
+    } catch (error) {
+      this.logger.warn(`File not found in Spaces: ${key}`);
+      throw error;
     }
   }
 } 
