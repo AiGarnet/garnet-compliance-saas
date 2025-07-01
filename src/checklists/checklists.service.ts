@@ -794,8 +794,8 @@ export class ChecklistsService {
   }
 
   // NEW: Send checklist questions to AI and create questionnaire responses
-  // Fixed vendor lookup issue - Deploy version 2.1
-  async sendChecklistToAI(checklistId: string, vendorId: string): Promise<{ questionCount: number; questionnaireId: string }> {
+  // Simplified version - just validate and return question data for frontend AI calls
+  async sendChecklistToAI(checklistId: string, vendorId: string): Promise<{ questionCount: number; questionnaireId: string; questions: any[] }> {
     try {
       this.logger.log(`Starting sendChecklistToAI for checklist ${checklistId}, vendor ${vendorId}`);
       
@@ -829,7 +829,7 @@ export class ChecklistsService {
         throw new BadRequestException(`Found ${invalidQuestions.length} questions with invalid content. Please check the checklist file format.`);
       }
 
-      // Get vendor information to get the integer ID for questionnaire system
+      // Get vendor information to get the integer ID for AI requests
       const vendorQuery = 'SELECT vendor_id, uuid FROM vendors WHERE uuid = $1';
       this.logger.log(`Looking up vendor with UUID: ${vendorId}`);
       
@@ -841,9 +841,22 @@ export class ChecklistsService {
       }
 
       const vendorIntegerId = vendorResult[0].vendor_id;
-      this.logger.log(`Proceeding with vendor ID ${vendorIntegerId} for ${questions.length} questions`);
+      this.logger.log(`Validated checklist for vendor ID ${vendorIntegerId} with ${questions.length} questions`);
       
-      return await this.processChecklistToAI(checklist, questions, vendorIntegerId, checklistId, vendorId);
+      // Return data for frontend to use with AI endpoints
+      const questionnaireId = `CHECKLIST_${checklistId}`;
+      
+      return {
+        questionCount: questions.length,
+        questionnaireId,
+        questions: questions.map(q => ({
+          id: q.id,
+          text: q.questionText,
+          order: q.questionOrder,
+          requiresDoc: q.requiresDocument,
+          docDescription: q.documentDescription
+        }))
+      };
 
     } catch (error) {
       this.logger.error(`Failed to send checklist to AI: ${error.message}`);
@@ -852,89 +865,5 @@ export class ChecklistsService {
       }
       throw new BadRequestException(`Failed to send checklist to AI: ${error.message}`);
     }
-  }
-
-  // Helper method to process checklist to AI
-  private async processChecklistToAI(
-    checklist: any, 
-    questions: any[], 
-    vendorIntegerId: number, 
-    checklistId: string, 
-    vendorId: string
-  ): Promise<{ questionCount: number; questionnaireId: string }> {
-    const questionnaireId = `CHECKLIST_${checklistId}`;
-
-    this.logger.log(`Sending checklist ${checklistId} to AI for vendor ${vendorId} (ID: ${vendorIntegerId})`);
-
-    // Create questionnaire title entry in vendor_questionnaire_answers
-    const titleQuery = `
-      INSERT INTO vendor_questionnaire_answers (
-        id, vendor_id, question_id, question, answer, status, question_title, created_at, updated_at
-      ) VALUES (
-        gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW()
-      )
-      ON CONFLICT (vendor_id, question_id) DO UPDATE SET
-        answer = EXCLUDED.answer,
-        status = EXCLUDED.status,
-        updated_at = NOW()
-    `;
-
-    await this.databaseService.query(titleQuery, [
-      vendorIntegerId,
-      questionnaireId,
-      '__QUESTIONNAIRE_TITLE__',
-      checklist.name,
-      'Generated from Checklist',
-      checklist.name
-    ]);
-
-    // Insert each question into vendor_questionnaire_answers for AI processing
-    let processedQuestions = 0;
-    for (const question of questions) {
-      const questionId = `${questionnaireId}_Q${question.questionOrder}`;
-      
-      const insertQuery = `
-        INSERT INTO vendor_questionnaire_answers (
-          id, vendor_id, question_id, question, answer, status, question_title, created_at, updated_at
-        ) VALUES (
-          gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW()
-        )
-        ON CONFLICT (vendor_id, question_id) DO UPDATE SET
-          question = EXCLUDED.question,
-          answer = EXCLUDED.answer,
-          status = EXCLUDED.status,
-          updated_at = NOW()
-      `;
-
-      // Map checklist status to questionnaire status
-      let questionnaireStatus = 'Not Started';
-      if (question.status === 'completed' && question.aiAnswer) {
-        questionnaireStatus = 'Completed';
-      } else if (question.status === 'in-progress') {
-        questionnaireStatus = 'In Progress';
-      } else if (question.status === 'pending') {
-        questionnaireStatus = 'Pending';
-      } else if (question.status === 'needs-support') {
-        questionnaireStatus = 'Needs Support';
-      }
-
-      await this.databaseService.query(insertQuery, [
-        vendorIntegerId,
-        questionId,
-        question.questionText,
-        question.aiAnswer || 'AI response pending...',
-        questionnaireStatus,
-        checklist.name
-      ]);
-
-      processedQuestions++;
-    }
-
-    this.logger.log(`Successfully sent ${processedQuestions} questions from checklist ${checklistId} to questionnaire system`);
-    
-    return {
-      questionCount: processedQuestions,
-      questionnaireId
-    };
   }
 } 
