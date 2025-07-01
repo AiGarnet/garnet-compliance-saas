@@ -87,27 +87,27 @@ export class Activity {
   @Column({ length: 500 })
   description: string;
 
-  @Column({ length: 255, nullable: true })
+  @Column({ name: 'user_id', length: 255, nullable: true })
   userId: string;
 
-  @Column({ length: 255, nullable: true })
+  @Column({ name: 'user_name', length: 255, nullable: true })
   userName: string;
 
-  @Column({ length: 255, nullable: true })
+  @Column({ name: 'user_email', length: 255, nullable: true })
   userEmail: string;
 
   // Entity references for relationships
-  @Column({ length: 255, nullable: true })
+  @Column({ name: 'entity_id', length: 255, nullable: true })
   entityId: string; // ID of the related entity (vendor, questionnaire, etc.)
 
-  @Column({ length: 100, nullable: true })
+  @Column({ name: 'entity_type', length: 100, nullable: true })
   entityType: string; // Type of entity (vendor, questionnaire, evidence, etc.)
 
-  @Column({ length: 255, nullable: true })
+  @Column({ name: 'entity_name', length: 255, nullable: true })
   entityName: string; // Name/title of the entity for display
 
   // Metadata stored as JSON
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ name: 'metadata', type: 'jsonb', nullable: true })
   metadata: {
     // Client related
     clientId?: string;
@@ -146,7 +146,7 @@ export class Activity {
   };
 
   // Toast notification data
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({ name: 'toast_config', type: 'jsonb', nullable: true })
   toastConfig: {
     title: string;
     message: string;
@@ -159,10 +159,10 @@ export class Activity {
     }>;
   };
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   // Virtual properties for display
