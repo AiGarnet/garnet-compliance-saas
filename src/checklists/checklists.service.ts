@@ -797,12 +797,36 @@ export class ChecklistsService {
   // Fixed vendor lookup issue - Deploy version 2.1
   async sendChecklistToAI(checklistId: string, vendorId: string): Promise<{ questionCount: number; questionnaireId: string }> {
     try {
+      this.logger.log(`Starting sendChecklistToAI for checklist ${checklistId}, vendor ${vendorId}`);
+      
       // Get the checklist and its questions
       const checklist = await this.getChecklist(checklistId, vendorId);
+      this.logger.log(`Found checklist: ${checklist.name}, status: ${checklist.extractionStatus}`);
+      
       const questions = await this.getChecklistQuestions(checklistId, vendorId);
+      this.logger.log(`Found ${questions.length} questions for checklist ${checklistId}`);
 
       if (questions.length === 0) {
-        throw new BadRequestException('No questions found in checklist');
+        this.logger.warn(`No questions found in checklist ${checklistId}. Extraction status: ${checklist.extractionStatus}`);
+        
+        // Check if extraction is still in progress
+        if (checklist.extractionStatus === 'extracting' || checklist.extractionStatus === 'pending') {
+          throw new BadRequestException('Question extraction is still in progress. Please wait and try again.');
+        }
+        
+        // Check if extraction failed
+        if (checklist.extractionStatus === 'error') {
+          throw new BadRequestException('Question extraction failed. Please re-upload the checklist file.');
+        }
+        
+        throw new BadRequestException('No questions found in checklist. The file might not contain valid questionnaire content.');
+      }
+
+      // Validate questions have required fields
+      const invalidQuestions = questions.filter(q => !q.questionText || q.questionText.trim().length === 0);
+      if (invalidQuestions.length > 0) {
+        this.logger.warn(`Found ${invalidQuestions.length} questions with empty text in checklist ${checklistId}`);
+        throw new BadRequestException(`Found ${invalidQuestions.length} questions with invalid content. Please check the checklist file format.`);
       }
 
       // Get vendor information to get the integer ID for questionnaire system
@@ -817,6 +841,8 @@ export class ChecklistsService {
       }
 
       const vendorIntegerId = vendorResult[0].vendor_id;
+      this.logger.log(`Proceeding with vendor ID ${vendorIntegerId} for ${questions.length} questions`);
+      
       return await this.processChecklistToAI(checklist, questions, vendorIntegerId, checklistId, vendorId);
 
     } catch (error) {
