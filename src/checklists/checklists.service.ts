@@ -806,91 +806,108 @@ export class ChecklistsService {
 
       // Get vendor information to get the integer ID for questionnaire system
       const vendorQuery = 'SELECT vendor_id, uuid FROM vendors WHERE uuid = $1';
+      this.logger.log(`Looking up vendor with UUID: ${vendorId}`);
+      
       const vendorResult = await this.databaseService.query(vendorQuery, [vendorId]);
+      this.logger.log(`Vendor query result:`, vendorResult);
       
       if (!vendorResult || vendorResult.length === 0) {
-        throw new BadRequestException('Vendor not found');
+        throw new BadRequestException(`Vendor not found with UUID: ${vendorId}. Please check if vendor exists.`);
       }
 
       const vendorIntegerId = vendorResult[0].vendor_id;
-      const questionnaireId = `CHECKLIST_${checklistId}`;
+      return await this.processChecklistToAI(checklist, questions, vendorIntegerId, checklistId, vendorId);
 
-      this.logger.log(`Sending checklist ${checklistId} to AI for vendor ${vendorId} (ID: ${vendorIntegerId})`);
+    } catch (error) {
+      this.logger.error(`Failed to send checklist to AI: ${error.message}`);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to send checklist to AI: ${error.message}`);
+    }
+  }
 
-      // Create questionnaire title entry in vendor_questionnaire_answers
-      const titleQuery = `
+  // Helper method to process checklist to AI
+  private async processChecklistToAI(
+    checklist: any, 
+    questions: any[], 
+    vendorIntegerId: number, 
+    checklistId: string, 
+    vendorId: string
+  ): Promise<{ questionCount: number; questionnaireId: string }> {
+    const questionnaireId = `CHECKLIST_${checklistId}`;
+
+    this.logger.log(`Sending checklist ${checklistId} to AI for vendor ${vendorId} (ID: ${vendorIntegerId})`);
+
+    // Create questionnaire title entry in vendor_questionnaire_answers
+    const titleQuery = `
+      INSERT INTO vendor_questionnaire_answers (
+        id, vendor_id, question_id, question, answer, status, question_title, created_at, updated_at
+      ) VALUES (
+        gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW()
+      )
+      ON CONFLICT (vendor_id, question_id) DO UPDATE SET
+        answer = EXCLUDED.answer,
+        status = EXCLUDED.status,
+        updated_at = NOW()
+    `;
+
+    await this.databaseService.query(titleQuery, [
+      vendorIntegerId,
+      questionnaireId,
+      '__QUESTIONNAIRE_TITLE__',
+      checklist.name,
+      'Generated from Checklist',
+      checklist.name
+    ]);
+
+    // Insert each question into vendor_questionnaire_answers for AI processing
+    let processedQuestions = 0;
+    for (const question of questions) {
+      const questionId = `${questionnaireId}_Q${question.questionOrder}`;
+      
+      const insertQuery = `
         INSERT INTO vendor_questionnaire_answers (
           id, vendor_id, question_id, question, answer, status, question_title, created_at, updated_at
         ) VALUES (
           gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW()
         )
         ON CONFLICT (vendor_id, question_id) DO UPDATE SET
+          question = EXCLUDED.question,
           answer = EXCLUDED.answer,
           status = EXCLUDED.status,
           updated_at = NOW()
       `;
 
-      await this.databaseService.query(titleQuery, [
+      // Map checklist status to questionnaire status
+      let questionnaireStatus = 'Not Started';
+      if (question.status === 'completed' && question.aiAnswer) {
+        questionnaireStatus = 'Completed';
+      } else if (question.status === 'in-progress') {
+        questionnaireStatus = 'In Progress';
+      } else if (question.status === 'pending') {
+        questionnaireStatus = 'Pending';
+      } else if (question.status === 'needs-support') {
+        questionnaireStatus = 'Needs Support';
+      }
+
+      await this.databaseService.query(insertQuery, [
         vendorIntegerId,
-        questionnaireId,
-        '__QUESTIONNAIRE_TITLE__',
-        checklist.name,
-        'Generated from Checklist',
+        questionId,
+        question.questionText,
+        question.aiAnswer || 'AI response pending...',
+        questionnaireStatus,
         checklist.name
       ]);
 
-      // Insert each question into vendor_questionnaire_answers for AI processing
-      let processedQuestions = 0;
-      for (const question of questions) {
-        const questionId = `${questionnaireId}_Q${question.questionOrder}`;
-        
-        const insertQuery = `
-          INSERT INTO vendor_questionnaire_answers (
-            id, vendor_id, question_id, question, answer, status, question_title, created_at, updated_at
-          ) VALUES (
-            gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW()
-          )
-          ON CONFLICT (vendor_id, question_id) DO UPDATE SET
-            question = EXCLUDED.question,
-            answer = EXCLUDED.answer,
-            status = EXCLUDED.status,
-            updated_at = NOW()
-        `;
-
-        // Map checklist status to questionnaire status
-        let questionnaireStatus = 'Not Started';
-        if (question.status === 'completed' && question.aiAnswer) {
-          questionnaireStatus = 'Completed';
-        } else if (question.status === 'in-progress') {
-          questionnaireStatus = 'In Progress';
-        } else if (question.status === 'pending') {
-          questionnaireStatus = 'Pending';
-        } else if (question.status === 'needs-support') {
-          questionnaireStatus = 'Needs Support';
-        }
-
-        await this.databaseService.query(insertQuery, [
-          vendorIntegerId,
-          questionId,
-          question.questionText,
-          question.aiAnswer || 'AI response pending...',
-          questionnaireStatus,
-          checklist.name
-        ]);
-
-        processedQuestions++;
-      }
-
-      this.logger.log(`Successfully sent ${processedQuestions} questions from checklist ${checklistId} to questionnaire system`);
-      
-      return {
-        questionCount: processedQuestions,
-        questionnaireId
-      };
-
-    } catch (error) {
-      this.logger.error(`Failed to send checklist to AI: ${error.message}`);
-      throw new BadRequestException(`Failed to send checklist to AI: ${error.message}`);
+      processedQuestions++;
     }
+
+    this.logger.log(`Successfully sent ${processedQuestions} questions from checklist ${checklistId} to questionnaire system`);
+    
+    return {
+      questionCount: processedQuestions,
+      questionnaireId
+    };
   }
 } 
