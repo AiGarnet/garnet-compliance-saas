@@ -172,8 +172,8 @@ export class VendorsService {
   }
 
   async create(createVendorRequest: CreateVendorRequest): Promise<Vendor> {
-    // Generate UUID for the vendor
-    const uuid = `vendor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Generate proper UUID for the vendor using PostgreSQL's built-in function
+    // Instead of custom string format, let PostgreSQL generate a proper UUID
     
     // Set default values
     const {
@@ -196,7 +196,7 @@ export class VendorsService {
         organization_id, created_by_user_id,
         created_at, updated_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW()
+        gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()
       ) RETURNING 
         vendor_id as "vendorId",
         uuid,
@@ -215,7 +215,7 @@ export class VendorsService {
     `;
 
     const values = [
-      uuid, companyName, region, status,
+      companyName, region, status,
       contactName, contactEmail, website, industry, description,
       organizationId, createdByUserId
     ];
