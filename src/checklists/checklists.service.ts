@@ -825,33 +825,166 @@ export class ChecklistsService {
       // Validate questions have required fields
       const invalidQuestions = questions.filter(q => !q.questionText || q.questionText.trim().length === 0);
       if (invalidQuestions.length > 0) {
-        this.logger.warn(`Found ${invalidQuestions.length} questions with empty text in checklist ${checklistId}`);
-        throw new BadRequestException(`Found ${invalidQuestions.length} questions with invalid content. Please check the checklist file format.`);
+        this.logger.warn(`Found ${invalidQuestions.length} invalid questions without text`);
       }
 
-      this.logger.log(`Validated checklist ${checklistId} with ${questions.length} valid questions for vendor ${vendorId}`);
-      
-      // Return data for frontend to use with AI endpoints
-      const questionnaireId = `CHECKLIST_${checklistId}`;
-      
+      // Filter to only valid questions with text
+      const validQuestions = questions.filter(q => q.questionText && q.questionText.trim().length > 0);
+      this.logger.log(`Found ${validQuestions.length} valid questions ready for AI processing`);
+
+      if (validQuestions.length === 0) {
+        throw new BadRequestException('No valid questions found for AI processing');
+      }
+
+      // Return data for frontend AI processing
       return {
-        questionCount: questions.length,
-        questionnaireId,
-        questions: questions.map(q => ({
+        questionCount: validQuestions.length,
+        questionnaireId: checklistId, // Use checklist ID as questionnaire ID
+        questions: validQuestions.map(q => ({
           id: q.id,
           text: q.questionText,
-          order: q.questionOrder,
-          requiresDoc: q.requiresDocument,
-          docDescription: q.documentDescription
+          status: q.status,
+          requiresDocument: q.requiresDocument,
+          documentDescription: q.documentDescription,
+          checklistId: q.checklistId,
+          vendorId: q.vendorId
         }))
       };
 
     } catch (error) {
-      this.logger.error(`Failed to send checklist to AI: ${error.message}`);
-      if (error instanceof BadRequestException || error instanceof NotFoundException) {
-        throw error;
+      this.logger.error(`Failed to process checklist ${checklistId} for AI: ${error.message}`);
+      throw error instanceof BadRequestException ? error : new BadRequestException('Failed to send checklist to AI');
+    }
+  }
+
+  // NEW: Send completed checklist to Trust Portal
+  async sendChecklistToTrustPortal(
+    checklistId: string, 
+    vendorId: string, 
+    submitData?: { message?: string; title?: string }
+  ): Promise<{ trustPortalId: string; itemCount: number }> {
+    try {
+      this.logger.log(`Starting sendChecklistToTrustPortal for checklist ${checklistId}, vendor ${vendorId}`);
+      
+      // Get the checklist and its questions
+      const checklist = await this.getChecklist(checklistId, vendorId);
+      const questions = await this.getChecklistQuestions(checklistId, vendorId);
+
+      if (questions.length === 0) {
+        throw new BadRequestException('No questions found in checklist');
       }
-      throw new BadRequestException(`Failed to send checklist to AI: ${error.message}`);
+
+      // Check if all questions are completed
+      const incompleteQuestions = questions.filter(q => 
+        q.status !== 'completed' || 
+        !q.aiAnswer || 
+        q.aiAnswer.trim().length === 0
+      );
+
+      if (incompleteQuestions.length > 0) {
+        this.logger.warn(`Found ${incompleteQuestions.length} incomplete questions in checklist ${checklistId}`);
+        throw new BadRequestException(`Cannot send to Trust Portal: ${incompleteQuestions.length} questions are not completed. All questions must have AI answers and be marked as completed.`);
+      }
+
+      // Check if questions requiring documents have supporting documents
+      const questionsNeedingDocs = questions.filter(q => q.requiresDocument);
+      for (const question of questionsNeedingDocs) {
+        const docsQuery = `
+          SELECT COUNT(*) as count 
+          FROM checklist_supporting_documents 
+          WHERE question_id = $1 AND vendor_id = $2
+        `;
+        const docsResult = await this.databaseService.query(docsQuery, [question.id, vendorId]);
+        const docCount = parseInt(docsResult.rows[0].count);
+        
+        if (docCount === 0) {
+          throw new BadRequestException(`Question "${question.questionText}" requires supporting documents but none are uploaded.`);
+        }
+      }
+
+      // Get vendor information for trust portal submission
+      const vendorQuery = `SELECT vendor_id, uuid, company_name FROM vendors WHERE uuid = $1`;
+      const vendorResult = await this.databaseService.query(vendorQuery, [vendorId]);
+      
+      if (vendorResult.rows.length === 0) {
+        throw new BadRequestException('Vendor not found');
+      }
+
+      const vendor = vendorResult.rows[0];
+
+      // Create trust portal submission data
+      const trustPortalData = {
+        title: submitData?.title || `${checklist.name} - Compliance Questionnaire`,
+        description: submitData?.message || `Completed compliance questionnaire with ${questions.length} answered questions from ${checklist.name}`,
+        category: 'Compliance Questionnaire',
+        vendorId: vendor.vendor_id,
+        isQuestionnaireAnswer: true,
+        questionnaireId: checklistId,
+        content: JSON.stringify({
+          checklistId,
+          checklistName: checklist.name,
+          vendorId,
+          vendorName: vendor.company_name,
+          questionCount: questions.length,
+          completedQuestions: questions.length,
+          submissionDate: new Date().toISOString(),
+          questions: questions.map(q => ({
+            id: q.id,
+            question: q.questionText,
+            answer: q.aiAnswer,
+            status: q.status,
+            requiresDocument: q.requiresDocument,
+            documentDescription: q.documentDescription,
+            confidenceScore: q.confidenceScore
+          }))
+        })
+      };
+
+      // Insert into trust_portal_items table
+      const insertQuery = `
+        INSERT INTO trust_portal_items (
+          vendor_id, title, description, category, content, 
+          is_questionnaire_answer, questionnaire_id, created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, NOW(), NOW()
+        ) RETURNING id
+      `;
+
+      const result = await this.databaseService.query(insertQuery, [
+        vendor.vendor_id,
+        trustPortalData.title,
+        trustPortalData.description,
+        trustPortalData.category,
+        trustPortalData.content,
+        trustPortalData.isQuestionnaireAnswer,
+        trustPortalData.questionnaireId
+      ]);
+
+      const trustPortalId = result.rows[0].id;
+
+      // Update checklist to mark it as sent to trust portal
+      await this.checklistRepository.update(checklistId, {
+        updatedAt: new Date()
+      });
+
+      // Update all questions to mark them as sent to trust portal
+      const updateQuestionsQuery = `
+        UPDATE checklist_questions 
+        SET updated_at = NOW()
+        WHERE checklist_id = $1 AND vendor_id = $2
+      `;
+      await this.databaseService.query(updateQuestionsQuery, [checklistId, vendorId]);
+
+      this.logger.log(`Successfully sent checklist ${checklistId} to Trust Portal with ID ${trustPortalId}`);
+
+      return {
+        trustPortalId: trustPortalId.toString(),
+        itemCount: 1 // One trust portal item created for the entire checklist
+      };
+
+    } catch (error) {
+      this.logger.error(`Failed to send checklist ${checklistId} to Trust Portal: ${error.message}`);
+      throw error instanceof BadRequestException ? error : new BadRequestException('Failed to send checklist to Trust Portal');
     }
   }
 

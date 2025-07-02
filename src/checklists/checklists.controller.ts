@@ -321,9 +321,7 @@ export class ChecklistsController {
     await this.checklistsService.deleteChecklist(checklistId, vendorId);
   }
 
-
-
-  // NEW: Send checklist questions to AI for response generation
+  // Send checklist questions to AI and create questionnaire responses
   @Post(':checklistId/vendor/:vendorId/send-to-ai')
   @Public()
   async sendChecklistToAI(
@@ -342,6 +340,32 @@ export class ChecklistsController {
     } catch (error) {
       this.logger.error(`Failed to send checklist to AI: ${error.message}`);
       throw new BadRequestException('Failed to send checklist to AI');
+    }
+  }
+
+  // NEW: Send completed checklist to Trust Portal
+  @Post(':checklistId/vendor/:vendorId/send-to-trust-portal')
+  @Public()
+  async sendChecklistToTrustPortal(
+    @Param('checklistId', ParseUUIDPipe) checklistId: string,
+    @Param('vendorId', ParseUUIDPipe) vendorId: string,
+    @Body() submitData?: { message?: string; title?: string }
+  ): Promise<{ message: string; trustPortalId: string; itemCount: number }> {
+    try {
+      const result = await this.checklistsService.sendChecklistToTrustPortal(checklistId, vendorId, submitData);
+      
+      this.logger.log(`Successfully sent checklist ${checklistId} to Trust Portal for vendor ${vendorId}`);
+      return {
+        message: 'Checklist successfully sent to Trust Portal',
+        trustPortalId: result.trustPortalId,
+        itemCount: result.itemCount
+      };
+    } catch (error) {
+      this.logger.error(`Failed to send checklist to Trust Portal: ${error.message}`);
+      if (error.message.includes('not completed')) {
+        throw new BadRequestException('All checklist questions must be completed before sending to Trust Portal');
+      }
+      throw new BadRequestException('Failed to send checklist to Trust Portal');
     }
   }
 
