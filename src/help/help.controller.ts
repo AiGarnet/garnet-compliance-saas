@@ -9,11 +9,14 @@ import {
   Logger,
   BadRequestException,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { HelpService } from './help.service';
 import { CreateHelpRequestDto, HelpRequestResponseDto } from './dto/help.dto';
 
-@Controller('help')
+@ApiTags('AI & Chatbot')
+@ApiBearerAuth()
+@Controller('api/help')
 @UseGuards(JwtAuthGuard)
 export class HelpController {
   private readonly logger = new Logger(HelpController.name);
@@ -21,6 +24,9 @@ export class HelpController {
   constructor(private readonly helpService: HelpService) {}
 
   @Post('request')
+  @ApiOperation({ summary: 'Create a help request' })
+  @ApiResponse({ status: 201, description: 'Help request created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
   async createHelpRequest(
     @Body() createHelpRequestDto: CreateHelpRequestDto,
   ): Promise<HelpRequestResponseDto> {
@@ -61,6 +67,9 @@ export class HelpController {
   }
 
   @Post('chat')
+  @ApiOperation({ summary: 'Chat with compliance assistant' })
+  @ApiResponse({ status: 200, description: 'Chat response generated successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
   async chatWithBot(@Body() body: { question: string; vendorId: string }) {
     this.logger.log(`Chat request from vendor ${body.vendorId}`);
 

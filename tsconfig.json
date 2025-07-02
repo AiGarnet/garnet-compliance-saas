@@ -30,7 +30,8 @@
       "@/waitlist/*": ["src/waitlist/*"],
       "@/ai/*": ["src/ai/*"],
       "@/analytics/*": ["src/analytics/*"],
-      "@/health/*": ["src/health/*"]
+      "@/health/*": ["src/health/*"],
+      "@/help/*": ["src/help/*"]
     }
   },
   "include": ["src/**/*"],
