@@ -37,7 +37,6 @@ export class TrustPortalController {
     private readonly vendorsService: VendorsService
   ) {}
 
-  @Public()
   @Get('vendors')
   @ApiOperation({ summary: 'Get all vendors for trust portal' })
   @ApiResponse({ status: 200, description: 'Returns all vendors for trust portal' })
