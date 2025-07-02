@@ -132,6 +132,46 @@ export class ChecklistsController {
     return questions.map(q => this.mapToQuestionResponse(q));
   }
 
+  // Add manual questions to a checklist
+  @Post(':checklistId/questions/vendor/:vendorId')
+  @Public()
+  async addManualQuestion(
+    @Param('checklistId', ParseUUIDPipe) checklistId: string,
+    @Param('vendorId', ParseUUIDPipe) vendorId: string,
+    @Body() createQuestionDto: CreateQuestionDto,
+    @Request() req
+  ): Promise<QuestionResponseDto> {
+    try {
+      // Verify checklist exists and belongs to vendor
+      await this.checklistsService.getChecklist(checklistId, vendorId);
+      
+      // Get current questions count to set proper order
+      const existingQuestions = await this.checklistsService.getChecklistQuestions(checklistId, vendorId);
+      const nextOrder = existingQuestions.length + 1;
+      
+      // Add the manual question
+      const questionData = {
+        ...createQuestionDto,
+        questionOrder: nextOrder,
+        status: QuestionStatus.PENDING
+      };
+      
+      const questions = await this.checklistsService.addQuestionsToChecklist(
+        checklistId,
+        vendorId,
+        [questionData]
+      );
+      
+      const addedQuestion = questions[0];
+      this.logger.log(`Added manual question ${addedQuestion.id} to checklist ${checklistId} for vendor ${vendorId}`);
+      
+      return this.mapToQuestionResponse(addedQuestion);
+    } catch (error) {
+      this.logger.error(`Failed to add manual question: ${error.message}`);
+      throw new BadRequestException('Failed to add manual question');
+    }
+  }
+
   // Generate AI answers for questions
   @Post('generate-answers')
   @Public()
