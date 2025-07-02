@@ -216,10 +216,10 @@ export class TrustPortalService {
   }
 
   /**
-   * Get all vendors for trust portal (public view)
+   * Get all vendors for trust portal (filtered by organization)
    */
-  async getAllVendorsForTrustPortal(): Promise<any[]> {
-    const query = `
+  async getAllVendorsForTrustPortal(organizationId?: string): Promise<any[]> {
+    let query = `
       SELECT 
         vendor_id as "vendorId",
         uuid,
@@ -231,13 +231,23 @@ export class TrustPortalService {
         contact_email as "contactEmail",
         contact_name as "contactName",
         status,
+        organization_id as "organizationId",
         created_at as "createdAt",
         updated_at as "updatedAt"
       FROM vendors 
-      ORDER BY company_name ASC
     `;
     
-    const result = await this.databaseService.query(query);
+    const params: any[] = [];
+    
+    // Filter by organization if provided
+    if (organizationId) {
+      query += ` WHERE organization_id = $1`;
+      params.push(organizationId);
+    }
+    
+    query += ` ORDER BY company_name ASC`;
+    
+    const result = await this.databaseService.query(query, params);
     return result.rows;
   }
 

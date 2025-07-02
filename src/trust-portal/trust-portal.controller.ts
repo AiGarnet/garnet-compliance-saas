@@ -25,6 +25,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../common/decorators/public.decorator';
 import { VendorsService } from '../vendors/vendors.service';
+import { CurrentUser } from '../common/decorators/log-activity.decorator';
 
 @ApiTags('trust-portal')
 @Controller('api/trust-portal')
@@ -40,15 +41,19 @@ export class TrustPortalController {
   @Get('vendors')
   @ApiOperation({ summary: 'Get all vendors for trust portal' })
   @ApiResponse({ status: 200, description: 'Returns all vendors for trust portal' })
-  async getVendorsWithTrustPortalItems() {
+  async getVendorsWithTrustPortalItems(@CurrentUser() user?: any) {
     try {
-      const vendors = await this.trustPortalService.getAllVendorsForTrustPortal();
+      // Get organization ID from authenticated user, if available
+      const organizationId = user?.organization_id;
+      
+      const vendors = await this.trustPortalService.getAllVendorsForTrustPortal(organizationId);
       return {
         success: true,
         data: vendors,
         meta: {
           timestamp: new Date().toISOString(),
-          count: vendors.length
+          count: vendors.length,
+          organizationId: organizationId || 'public'
         }
       };
     } catch (error: any) {
