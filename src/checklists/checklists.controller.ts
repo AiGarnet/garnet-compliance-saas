@@ -426,6 +426,44 @@ export class ChecklistsController {
     }
   }
 
+  // Get organization-wide checklist count
+  @Get('organizations/:organizationId/count')
+  @Public()
+  async getOrganizationChecklistCount(
+    @Param('organizationId') organizationId: string
+  ) {
+    try {
+      const count = await this.checklistsService.getOrganizationChecklistCount(organizationId);
+      
+      return {
+        success: true,
+        count,
+      };
+    } catch (error: any) {
+      this.logger.error(`Error getting organization checklist count for ${organizationId}:`, error);
+      throw new BadRequestException(`Failed to get organization checklist count: ${error.message}`);
+    }
+  }
+
+  // Get organization-wide supporting documents count
+  @Get('organizations/:organizationId/supporting-documents/count')
+  @Public()
+  async getOrganizationSupportingDocumentsCount(
+    @Param('organizationId') organizationId: string
+  ) {
+    try {
+      const count = await this.checklistsService.getOrganizationSupportingDocumentsCount(organizationId);
+      
+      return {
+        success: true,
+        count,
+      };
+    } catch (error: any) {
+      this.logger.error(`Error getting organization supporting documents count for ${organizationId}:`, error);
+      throw new BadRequestException(`Failed to get organization supporting documents count: ${error.message}`);
+    }
+  }
+
   // Helper methods for response mapping
   private mapToChecklistResponse(checklist: Checklist): ChecklistResponseDto {
     return {

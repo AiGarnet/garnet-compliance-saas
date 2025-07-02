@@ -854,4 +854,42 @@ export class ChecklistsService {
       throw new BadRequestException(`Failed to send checklist to AI: ${error.message}`);
     }
   }
+
+  /**
+   * Get total checklist count for an organization (across all vendors)
+   */
+  async getOrganizationChecklistCount(organizationId: string): Promise<number> {
+    try {
+      const query = `
+        SELECT COUNT(c.*) as count 
+        FROM checklists c
+        INNER JOIN vendors v ON c.vendor_id = v.uuid
+        WHERE v.organization_id = $1
+      `;
+      const result = await this.databaseService.query(query, [organizationId]);
+      return parseInt(result.rows[0].count);
+    } catch (error) {
+      this.logger.error(`Failed to get organization checklist count: ${error.message}`);
+      throw new BadRequestException('Failed to retrieve organization checklist count');
+    }
+  }
+
+  /**
+   * Get total supporting documents count for an organization (across all vendors)
+   */
+  async getOrganizationSupportingDocumentsCount(organizationId: string): Promise<number> {
+    try {
+      const query = `
+        SELECT COUNT(csd.*) as count 
+        FROM checklist_supporting_documents csd
+        INNER JOIN vendors v ON csd.vendor_id = v.uuid
+        WHERE v.organization_id = $1
+      `;
+      const result = await this.databaseService.query(query, [organizationId]);
+      return parseInt(result.rows[0].count);
+    } catch (error) {
+      this.logger.error(`Failed to get organization supporting documents count: ${error.message}`);
+      throw new BadRequestException('Failed to retrieve organization supporting documents count');
+    }
+  }
 } 

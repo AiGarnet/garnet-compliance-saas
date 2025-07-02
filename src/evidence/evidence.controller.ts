@@ -245,4 +245,28 @@ export class EvidenceController {
       );
     }
   }
+
+  @Get('organizations/:organizationId/evidence/count')
+  @Public()
+  @ApiOperation({ summary: 'Get total evidence file count for an organization' })
+  @ApiResponse({ status: 200, description: 'Returns total evidence file count for organization' })
+  @ApiResponse({ status: 404, description: 'Organization not found' })
+  async getOrganizationEvidenceCount(@Param('organizationId') organizationId: string) {
+    try {
+      const count = await this.evidenceService.getOrganizationEvidenceCount(organizationId);
+
+      return {
+        success: true,
+        count,
+      };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Failed to get organization evidence count',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 } 

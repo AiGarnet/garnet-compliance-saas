@@ -237,6 +237,20 @@ export class EvidenceService {
   }
 
   /**
+   * Get total evidence count for an organization (across all vendors)
+   */
+  async getOrganizationEvidenceCount(organizationId: string): Promise<number> {
+    const query = `
+      SELECT COUNT(ef.*) as count 
+      FROM evidence_files ef
+      INNER JOIN vendors v ON ef.vendor_id = v.vendor_id
+      WHERE v.organization_id = $1
+    `;
+    const result = await this.databaseService.query(query, [organizationId]);
+    return parseInt(result.rows[0].count);
+  }
+
+  /**
    * Resolve vendor ID from UUID or numeric ID
    */
   async resolveVendorId(vendorIdParam: string): Promise<number> {
