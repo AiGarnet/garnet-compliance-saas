@@ -117,6 +117,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      organization_id: user.organization_id, // SECURITY FIX: Include organization_id in JWT
     };
 
     return {
@@ -127,6 +128,7 @@ export class AuthService {
         full_name: user.full_name,
         role: user.role,
         organization: user.organization,
+        organization_id: user.organization_id, // Include organization_id in response
       },
     };
   }

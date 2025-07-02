@@ -49,16 +49,33 @@ export class VendorsController {
   constructor(private readonly vendorsService: VendorsService) {}
 
   @Get()
-  @Public()
-  async getAllVendors(): Promise<ApiResponse<any[]>> {
+  @UseGuards(JwtAuthGuard) // SECURITY FIX: Remove @Public() and require authentication
+  async getAllVendors(
+    @CurrentUser() user?: any
+  ): Promise<ApiResponse<any[]>> {
     try {
-      const vendors = await this.vendorsService.findAll();
+      // SECURITY FIX: Only show vendors from user's organization
+      if (!user?.organization_id) {
+        return {
+          success: false,
+          error: {
+            code: 'MISSING_ORGANIZATION',
+            message: 'User must belong to an organization to access vendors'
+          },
+          meta: {
+            timestamp: new Date().toISOString()
+          }
+        };
+      }
+
+      const vendors = await this.vendorsService.findAllByOrganization(user.organization_id);
       return {
         success: true,
         data: vendors,
         meta: {
           timestamp: new Date().toISOString(),
-          count: vendors.length
+          count: vendors.length,
+          organizationId: user.organization_id
         }
       };
     } catch (error) {
@@ -78,17 +95,37 @@ export class VendorsController {
   }
 
   @Get(':id')
-  @Public()
-  async getVendor(@Param('id') id: string): Promise<ApiResponse<any>> {
+  @UseGuards(JwtAuthGuard) // SECURITY FIX: Remove @Public() and require authentication
+  async getVendor(
+    @Param('id') id: string,
+    @CurrentUser() user?: any
+  ): Promise<ApiResponse<any>> {
     try {
+      // SECURITY FIX: Ensure user belongs to an organization
+      if (!user?.organization_id) {
+        return {
+          success: false,
+          error: {
+            code: 'MISSING_ORGANIZATION',
+            message: 'User must belong to an organization to access vendors'
+          },
+          meta: {
+            timestamp: new Date().toISOString(),
+            vendorId: id
+          }
+        };
+      }
+
       // Check if the ID is a number (vendor_id) or UUID
       const isNumericId = /^\d+$/.test(id);
       
       let vendor;
       if (isNumericId) {
-        vendor = await this.vendorsService.findById(parseInt(id));
+        // SECURITY FIX: Only allow access to vendors from same organization
+        vendor = await this.vendorsService.findById(parseInt(id), user.organization_id);
       } else {
-        vendor = await this.vendorsService.findByUuid(id);
+        // SECURITY FIX: Only allow access to vendors from same organization
+        vendor = await this.vendorsService.findByUuid(id, user.organization_id);
       }
       
       if (!vendor) {
@@ -96,7 +133,7 @@ export class VendorsController {
           success: false,
           error: {
             code: 'VENDOR_NOT_FOUND',
-            message: `Vendor with ID ${id} not found`
+            message: `Vendor with ID ${id} not found or you don't have access to it`
           },
           meta: {
             timestamp: new Date().toISOString(),
@@ -110,7 +147,8 @@ export class VendorsController {
         data: vendor,
         meta: {
           timestamp: new Date().toISOString(),
-          vendorId: id
+          vendorId: id,
+          organizationId: user.organization_id
         }
       };
     } catch (error) {
@@ -131,7 +169,7 @@ export class VendorsController {
   }
 
   @Post()
-  @Public()
+  @UseGuards(JwtAuthGuard) // SECURITY FIX: Remove @Public() and require authentication
   @LogClientCreated()
   async createVendor(
     @Body() createVendorDto: CreateVendorDto,
@@ -139,7 +177,30 @@ export class VendorsController {
     @RequestMeta() requestMeta?: any
   ): Promise<ApiResponse<any>> {
     try {
-      const vendor = await this.vendorsService.create(createVendorDto);
+      // SECURITY FIX: Ensure user belongs to an organization
+      if (!user?.organization_id) {
+        return {
+          success: false,
+          error: {
+            code: 'MISSING_ORGANIZATION',
+            message: 'User must belong to an organization to create vendors'
+          },
+          meta: {
+            timestamp: new Date().toISOString(),
+            operation: 'create',
+            entityType: 'client'
+          }
+        };
+      }
+
+      // SECURITY FIX: Auto-populate organization and user context
+      const vendorData = {
+        ...createVendorDto,
+        organizationId: user.organization_id,
+        createdByUserId: user.id
+      };
+
+      const vendor = await this.vendorsService.create(vendorData);
       return {
         success: true,
         data: vendor,
@@ -147,7 +208,9 @@ export class VendorsController {
           timestamp: new Date().toISOString(),
           operation: 'create',
           entityType: 'client',
-          entityId: vendor.id || vendor.vendorId
+          entityId: vendor.id || vendor.vendorId,
+          organizationId: user.organization_id,
+          createdByUserId: user.id
         }
       };
     } catch (error) {

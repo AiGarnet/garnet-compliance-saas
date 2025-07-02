@@ -9,6 +9,7 @@ export class VendorsService {
     private readonly databaseService: DatabaseService
   ) {}
 
+  // Legacy method - DEPRECATED: Use findAllByOrganization instead
   async findAll(): Promise<Vendor[]> {
     const query = `
       SELECT 
@@ -22,6 +23,8 @@ export class VendorsService {
         description,
         region,
         status,
+        organization_id as "organizationId",
+        created_by_user_id as "createdByUserId",
         created_at as "createdAt",
         updated_at as "updatedAt"
       FROM vendors 
@@ -36,26 +39,77 @@ export class VendorsService {
     }));
   }
 
-  async findByUuid(uuid: string): Promise<Vendor | null> {
+  // NEW: Organization-filtered vendor retrieval
+  async findAllByOrganization(organizationId: string): Promise<Vendor[]> {
     const query = `
       SELECT 
-        vendor_id as "vendorId",
-        uuid,
-        company_name as "companyName",
-        contact_name as "contactName",
-        contact_email as "contactEmail",
-        website,
-        industry,
-        description,
-        region,
-        status,
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM vendors 
-      WHERE uuid = $1
+        v.vendor_id as "vendorId",
+        v.uuid,
+        v.company_name as "companyName",
+        v.contact_name as "contactName",
+        v.contact_email as "contactEmail",
+        v.website,
+        v.industry,
+        v.description,
+        v.region,
+        v.status,
+        v.organization_id as "organizationId",
+        v.created_by_user_id as "createdByUserId",
+        v.created_at as "createdAt",
+        v.updated_at as "updatedAt",
+        o.name as "organizationName",
+        u.email as "createdByEmail",
+        u.full_name as "createdByName"
+      FROM vendors v
+      LEFT JOIN organizations o ON v.organization_id = o.id
+      LEFT JOIN users u ON v.created_by_user_id = u.id
+      WHERE v.organization_id = $1
+      ORDER BY v.created_at DESC
     `;
 
-    const result = await this.databaseService.query(query, [uuid]);
+    const result = await this.databaseService.query(query, [organizationId]);
+    return result.rows.map(row => ({
+      ...row,
+      id: row.vendorId.toString(), // Legacy compatibility
+      name: row.companyName // Legacy compatibility
+    }));
+  }
+
+  async findByUuid(uuid: string, organizationId?: string): Promise<Vendor | null> {
+    let query = `
+      SELECT 
+        v.vendor_id as "vendorId",
+        v.uuid,
+        v.company_name as "companyName",
+        v.contact_name as "contactName",
+        v.contact_email as "contactEmail",
+        v.website,
+        v.industry,
+        v.description,
+        v.region,
+        v.status,
+        v.organization_id as "organizationId",
+        v.created_by_user_id as "createdByUserId",
+        v.created_at as "createdAt",
+        v.updated_at as "updatedAt",
+        o.name as "organizationName",
+        u.email as "createdByEmail",
+        u.full_name as "createdByName"
+      FROM vendors v
+      LEFT JOIN organizations o ON v.organization_id = o.id
+      LEFT JOIN users u ON v.created_by_user_id = u.id
+      WHERE v.uuid = $1
+    `;
+    
+    const params = [uuid];
+    
+    // Add organization filter if provided (for security)
+    if (organizationId) {
+      query += ` AND v.organization_id = $2`;
+      params.push(organizationId);
+    }
+
+    const result = await this.databaseService.query(query, params);
     
     if (result.rows.length === 0) {
       return null;
@@ -69,26 +123,41 @@ export class VendorsService {
     };
   }
 
-  async findById(vendorId: number): Promise<Vendor | null> {
-    const query = `
+  async findById(vendorId: number, organizationId?: string): Promise<Vendor | null> {
+    let query = `
       SELECT 
-        vendor_id as "vendorId",
-        uuid,
-        company_name as "companyName",
-        contact_name as "contactName",
-        contact_email as "contactEmail",
-        website,
-        industry,
-        description,
-        region,
-        status,
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM vendors 
-      WHERE vendor_id = $1
+        v.vendor_id as "vendorId",
+        v.uuid,
+        v.company_name as "companyName",
+        v.contact_name as "contactName",
+        v.contact_email as "contactEmail",
+        v.website,
+        v.industry,
+        v.description,
+        v.region,
+        v.status,
+        v.organization_id as "organizationId",
+        v.created_by_user_id as "createdByUserId",
+        v.created_at as "createdAt",
+        v.updated_at as "updatedAt",
+        o.name as "organizationName",
+        u.email as "createdByEmail",
+        u.full_name as "createdByName"
+      FROM vendors v
+      LEFT JOIN organizations o ON v.organization_id = o.id
+      LEFT JOIN users u ON v.created_by_user_id = u.id
+      WHERE v.vendor_id = $1
     `;
+    
+    const params: any[] = [vendorId];
+    
+    // Add organization filter if provided (for security)
+    if (organizationId) {
+      query += ` AND v.organization_id = $2`;
+      params.push(organizationId);
+    }
 
-    const result = await this.databaseService.query(query, [vendorId]);
+    const result = await this.databaseService.query(query, params);
     
     if (result.rows.length === 0) {
       return null;
@@ -115,16 +184,19 @@ export class VendorsService {
       contactName,
       website,
       industry,
-      description
+      description,
+      organizationId,
+      createdByUserId
     } = createVendorRequest;
 
     const query = `
       INSERT INTO vendors (
         uuid, company_name, region, status,
         contact_name, contact_email, website, industry, description,
+        organization_id, created_by_user_id,
         created_at, updated_at
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW()
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW()
       ) RETURNING 
         vendor_id as "vendorId",
         uuid,
@@ -136,13 +208,16 @@ export class VendorsService {
         description,
         region,
         status,
+        organization_id as "organizationId",
+        created_by_user_id as "createdByUserId",
         created_at as "createdAt",
         updated_at as "updatedAt"
     `;
 
     const values = [
       uuid, companyName, region, status,
-      contactName, contactEmail, website, industry, description
+      contactName, contactEmail, website, industry, description,
+      organizationId, createdByUserId
     ];
 
     const result = await this.databaseService.query(query, values);

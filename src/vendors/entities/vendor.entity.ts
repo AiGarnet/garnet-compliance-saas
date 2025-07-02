@@ -84,6 +84,13 @@ export interface Vendor {
   description?: string;
   hasSuggestions?: boolean; // Flag to indicate if vendor has AI-generated suggestions
   
+  // New organization and user relationship fields
+  organizationId?: string; // Organization this vendor belongs to
+  createdByUserId?: string; // User who created this vendor
+  organizationName?: string; // Organization name (from join)
+  createdByEmail?: string; // Creator email (from join)
+  createdByName?: string; // Creator name (from join)
+  
   // Legacy compatibility fields
   id?: string;
   name?: string;
@@ -101,6 +108,9 @@ export interface CreateVendorRequest {
   website?: string;
   industry?: string;
   description?: string;
+  // Organization and user context for creation
+  organizationId?: string; // Will be auto-populated from authenticated user
+  createdByUserId?: string; // Will be auto-populated from authenticated user
 }
 
 /**
@@ -116,4 +126,5 @@ export interface UpdateVendorRequest {
   website?: string;
   industry?: string;
   description?: string;
+  // Note: organizationId and createdByUserId should not be updatable after creation
 } 
