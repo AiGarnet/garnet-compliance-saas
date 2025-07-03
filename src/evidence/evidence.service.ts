@@ -1,285 +1,212 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { EvidenceFile } from './entities/evidence.entity';
+import { CreateEvidenceFileDto, UpdateEvidenceFileDto } from './dto/evidence.dto';
+import { DigitalOceanSpacesService } from '../common/services/digitalocean-spaces.service';
 import { DatabaseService } from '../database/database.service';
-import { 
-  EvidenceFile, 
-  FileUploadData, 
-  UploadEvidenceRequest, 
-  EvidenceFileResponse, 
-  EvidenceFileContent 
-} from './entities/evidence.entity';
-import { v4 as uuidv4 } from 'uuid';
-import * as fs from 'fs';
-import * as path from 'path';
 
 @Injectable()
 export class EvidenceService {
-  private readonly uploadDir = path.join(process.cwd(), 'uploads', 'evidence');
+  private readonly logger = new Logger(EvidenceService.name);
 
-  constructor(private readonly databaseService: DatabaseService) {
-    // Ensure upload directory exists
-    this.ensureUploadDirectory();
-  }
-
-  /**
-   * Ensure upload directory exists
-   */
-  private ensureUploadDirectory(): void {
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
-    }
-  }
+  constructor(
+    @InjectRepository(EvidenceFile)
+    private evidenceRepository: Repository<EvidenceFile>,
+    private spacesService: DigitalOceanSpacesService,
+    private databaseService: DatabaseService,
+  ) {}
 
   /**
-   * Upload evidence file for a vendor
+   * Upload and create an evidence file
    */
-  async uploadEvidenceFile(request: UploadEvidenceRequest): Promise<EvidenceFile> {
-    const { vendorId, answerId, file, uploadedBy, metadata } = request;
-    
-    // Verify vendor exists
-    const vendorQuery = `SELECT vendor_id FROM vendors WHERE vendor_id = $1`;
-    const vendorResult = await this.databaseService.query(vendorQuery, [vendorId]);
-    
-    if (vendorResult.rows.length === 0) {
-      throw new NotFoundException('Vendor not found');
-    }
-
-    // Generate unique file ID and path
-    const fileId = uuidv4();
-    const fileExtension = path.extname(file.filename);
-    const uniqueFilename = `${fileId}${fileExtension}`;
-    const filePath = path.join(this.uploadDir, uniqueFilename);
-
+  async uploadEvidenceFile(
+    file: Express.Multer.File,
+    vendorId: string,
+    description?: string,
+    category?: string,
+    userId?: string
+  ): Promise<EvidenceFile> {
     try {
-      // Save file to disk
-      fs.writeFileSync(filePath, file.buffer);
+      this.logger.log(`Uploading evidence file for vendor ${vendorId}: ${file.originalname}`);
 
-      // Save file metadata to database
-      const query = `
-        INSERT INTO evidence_files (
-          id, vendor_id, answer_id, filename, original_filename, 
-          mime_type, file_size, file_path, uploaded_by, uploaded_at,
-          metadata, created_at, updated_at
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), $10, NOW(), NOW()
-        ) RETURNING 
-          id,
-          vendor_id as "vendorId",
-          answer_id as "answerId",
-          filename,
-          original_filename as "originalFilename",
-          mime_type as "mimeType",
-          file_size as "fileSize",
-          file_path as "filePath",
-          uploaded_by as "uploadedBy",
-          uploaded_at as "uploadedAt",
-          metadata,
-          created_at as "createdAt",
-          updated_at as "updatedAt"
-      `;
+      // Extract text content from file for AI enhancement
+      const fileContent = await this.extractTextFromFile(file);
 
-      const values = [
-        fileId,
-        vendorId,
-        answerId || null,
-        uniqueFilename,
-        file.filename,
+      // Upload to DigitalOcean Spaces
+      const uploadResult = await this.spacesService.uploadEvidenceFile(
+        file.buffer,
+        file.originalname,
         file.mimetype,
-        file.size,
-        filePath,
-        uploadedBy,
-        metadata || null
-      ];
+        vendorId,
+        description
+      );
 
-      const result = await this.databaseService.query(query, values);
-      return result.rows[0];
+      // Create evidence file record
+      const evidenceFile = this.evidenceRepository.create({
+        vendorId,
+        filename: uploadResult.key.split('/').pop() || file.originalname,
+        originalFilename: file.originalname,
+        fileType: file.mimetype,
+        fileSize: file.size,
+        fileContent,
+        spacesKey: uploadResult.key,
+        spacesUrl: uploadResult.url,
+        description,
+        category,
+        uploadedBy: userId,
+      });
 
+      const savedFile = await this.evidenceRepository.save(evidenceFile);
+      this.logger.log(`Evidence file saved successfully: ${savedFile.id}`);
+
+      return savedFile;
     } catch (error) {
-      // Clean up file if database operation fails
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      this.logger.error(`Failed to upload evidence file: ${error.message}`, error.stack);
+      throw new BadRequestException(`Failed to upload evidence file: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get all evidence files for a vendor
+   */
+  async getVendorEvidenceFiles(vendorId: string): Promise<EvidenceFile[]> {
+    try {
+      const files = await this.evidenceRepository.find({
+        where: { vendorId },
+        order: { createdAt: 'DESC' }
+      });
+
+      this.logger.log(`Found ${files.length} evidence files for vendor ${vendorId}`);
+      return files;
+    } catch (error) {
+      this.logger.error(`Failed to get evidence files: ${error.message}`, error.stack);
+      throw new BadRequestException('Failed to retrieve evidence files');
+    }
+  }
+
+  /**
+   * Get evidence file by ID
+   */
+  async getEvidenceFileById(id: string, vendorId: string): Promise<EvidenceFile> {
+    try {
+      const file = await this.evidenceRepository.findOne({
+        where: { id, vendorId }
+      });
+
+      if (!file) {
+        throw new NotFoundException(`Evidence file with ID ${id} not found`);
       }
-      throw error;
+
+      return file;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      this.logger.error(`Failed to get evidence file: ${error.message}`, error.stack);
+      throw new BadRequestException('Failed to retrieve evidence file');
     }
   }
 
   /**
-   * Get evidence files for a vendor
+   * Update evidence file metadata
    */
-  async getVendorEvidenceFiles(vendorId: number): Promise<EvidenceFileResponse[]> {
-    const query = `
-      SELECT 
-        id,
-        filename,
-        file_size as "fileSize",
-        mime_type as "mimeType",
-        uploaded_at as "uploadedAt",
-        metadata,
-        answer_id as "answerId"
-      FROM evidence_files 
-      WHERE vendor_id = $1
-      ORDER BY uploaded_at DESC
-    `;
-
-    const result = await this.databaseService.query(query, [vendorId]);
-    return result.rows;
-  }
-
-  /**
-   * Get evidence file content for download
-   */
-  async getEvidenceFileContent(evidenceId: string, vendorId: number): Promise<EvidenceFileContent> {
-    const query = `
-      SELECT 
-        id,
-        vendor_id as "vendorId",
-        answer_id as "answerId",
-        filename,
-        original_filename as "originalFilename",
-        mime_type as "mimeType",
-        file_size as "fileSize",
-        file_path as "filePath",
-        uploaded_by as "uploadedBy",
-        uploaded_at as "uploadedAt",
-        metadata,
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM evidence_files 
-      WHERE id = $1 AND vendor_id = $2
-    `;
-
-    const result = await this.databaseService.query(query, [evidenceId, vendorId]);
-    
-    if (result.rows.length === 0) {
-      throw new NotFoundException('Evidence file not found');
+  async updateEvidenceFile(
+    id: string,
+    vendorId: string,
+    updateDto: UpdateEvidenceFileDto
+  ): Promise<EvidenceFile> {
+    try {
+      const file = await this.getEvidenceFileById(id, vendorId);
+      
+      Object.assign(file, updateDto);
+      const updatedFile = await this.evidenceRepository.save(file);
+      
+      this.logger.log(`Evidence file updated successfully: ${id}`);
+      return updatedFile;
+    } catch (error) {
+      this.logger.error(`Failed to update evidence file: ${error.message}`, error.stack);
+      throw new BadRequestException('Failed to update evidence file');
     }
-
-    const file = result.rows[0];
-
-    // Check if file exists on disk
-    if (!fs.existsSync(file.filePath)) {
-      throw new NotFoundException('Evidence file content not found on disk');
-    }
-
-    // Read file content
-    const content = fs.readFileSync(file.filePath);
-
-    return { file, content };
   }
 
   /**
    * Delete evidence file
    */
-  async deleteEvidenceFile(evidenceId: string, vendorId: number): Promise<boolean> {
-    // First get the file info to delete from disk
-    const fileQuery = `
-      SELECT file_path as "filePath"
-      FROM evidence_files 
-      WHERE id = $1 AND vendor_id = $2
-    `;
+  async deleteEvidenceFile(id: string, vendorId: string): Promise<boolean> {
+    try {
+      const file = await this.getEvidenceFileById(id, vendorId);
 
-    const fileResult = await this.databaseService.query(fileQuery, [evidenceId, vendorId]);
-    
-    if (fileResult.rows.length === 0) {
-      return false;
-    }
-
-    const filePath = fileResult.rows[0].filePath;
-
-    // Delete from database
-    const deleteQuery = `DELETE FROM evidence_files WHERE id = $1 AND vendor_id = $2`;
-    const deleteResult = await this.databaseService.query(deleteQuery, [evidenceId, vendorId]);
-
-    if (deleteResult.rowCount > 0) {
-      // Delete file from disk if database deletion was successful
-      if (fs.existsSync(filePath)) {
-        try {
-          fs.unlinkSync(filePath);
-        } catch (error) {
-          console.error('Failed to delete file from disk:', error);
-          // Don't throw error here as database deletion was successful
-        }
+      // Delete from DigitalOcean Spaces
+      if (file.spacesKey) {
+        await this.spacesService.deleteFile(file.spacesKey);
       }
+
+      // Delete from database
+      await this.evidenceRepository.remove(file);
+      
+      this.logger.log(`Evidence file deleted successfully: ${id}`);
       return true;
+    } catch (error) {
+      this.logger.error(`Failed to delete evidence file: ${error.message}`, error.stack);
+      throw new BadRequestException('Failed to delete evidence file');
     }
-
-    return false;
   }
 
   /**
-   * Get evidence files for a specific answer
+   * Get evidence files content for AI enhancement
    */
-  async getAnswerEvidenceFiles(answerId: string): Promise<EvidenceFileResponse[]> {
-    const query = `
-      SELECT 
-        id,
-        filename,
-        file_size as "fileSize",
-        mime_type as "mimeType",
-        uploaded_at as "uploadedAt",
-        metadata,
-        answer_id as "answerId"
-      FROM evidence_files 
-      WHERE answer_id = $1
-      ORDER BY uploaded_at DESC
-    `;
+  async getVendorEvidenceContent(vendorId: string): Promise<string[]> {
+    try {
+      const files = await this.evidenceRepository.find({
+        where: { vendorId },
+        select: ['fileContent']
+      });
 
-    const result = await this.databaseService.query(query, [answerId]);
-    return result.rows;
+      return files
+        .filter(file => file.fileContent && file.fileContent.trim().length > 0)
+        .map(file => file.fileContent);
+    } catch (error) {
+      this.logger.error(`Failed to get evidence content: ${error.message}`, error.stack);
+      return [];
+    }
   }
 
   /**
-   * Get evidence file count for a vendor
+   * Generate signed URL for evidence file download
    */
-  async getVendorEvidenceCount(vendorId: number): Promise<number> {
-    const query = `SELECT COUNT(*) as count FROM evidence_files WHERE vendor_id = $1`;
-    const result = await this.databaseService.query(query, [vendorId]);
-    return parseInt(result.rows[0].count);
-  }
-
-  /**
-   * Get total evidence count for an organization (across all vendors)
-   */
-  async getOrganizationEvidenceCount(organizationId: string): Promise<number> {
-    const query = `
-      SELECT COUNT(ef.*) as count 
-      FROM evidence_files ef
-      INNER JOIN vendors v ON ef.vendor_id = v.vendor_id
-      WHERE v.organization_id = $1
-    `;
-    const result = await this.databaseService.query(query, [organizationId]);
-    return parseInt(result.rows[0].count);
-  }
-
-  /**
-   * Resolve vendor ID from UUID or numeric ID
-   */
-  async resolveVendorId(vendorIdParam: string): Promise<number> {
-    // Check if it's a UUID (contains hyphens and is 36 chars)
-    if (vendorIdParam.includes('-') && vendorIdParam.length === 36) {
-      const query = `SELECT vendor_id as "vendorId" FROM vendors WHERE uuid = $1`;
-      const result = await this.databaseService.query(query, [vendorIdParam]);
+  async generateDownloadUrl(id: string, vendorId: string, expiresIn: number = 3600): Promise<string> {
+    try {
+      const file = await this.getEvidenceFileById(id, vendorId);
       
-      if (result.rows.length === 0) {
-        throw new NotFoundException('Vendor not found');
+      if (!file.spacesKey) {
+        throw new BadRequestException('File not available for download');
       }
+
+      return await this.spacesService.generateSignedUrl(file.spacesKey, expiresIn);
+    } catch (error) {
+      this.logger.error(`Failed to generate download URL: ${error.message}`, error.stack);
+      throw new BadRequestException('Failed to generate download URL');
+    }
+  }
+
+  /**
+   * Extract text content from uploaded file
+   */
+  private async extractTextFromFile(file: Express.Multer.File): Promise<string> {
+    try {
+      // For now, return basic metadata. In the future, implement text extraction for PDFs, docs, etc.
+      const metadata = `File: ${file.originalname}\nType: ${file.mimetype}\nSize: ${file.size} bytes\n`;
       
-      return result.rows[0].vendorId;
+      // TODO: Implement actual text extraction based on file type
+      // - PDF: use pdf-parse or similar
+      // - DOC/DOCX: use mammoth or similar
+      // - TXT: direct text extraction
+      
+      return metadata;
+    } catch (error) {
+      this.logger.warn(`Failed to extract text from file: ${error.message}`);
+      return `File: ${file.originalname}\nType: ${file.mimetype}`;
     }
-    
-    // Try to parse as numeric ID
-    const numericId = parseInt(vendorIdParam);
-    if (isNaN(numericId)) {
-      throw new BadRequestException('Invalid vendor ID format');
-    }
-    
-    // Verify vendor exists
-    const query = `SELECT vendor_id FROM vendors WHERE vendor_id = $1`;
-    const result = await this.databaseService.query(query, [numericId]);
-    
-    if (result.rows.length === 0) {
-      throw new NotFoundException('Vendor not found');
-    }
-    
-    return numericId;
   }
 } 

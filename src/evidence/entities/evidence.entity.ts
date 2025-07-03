@@ -1,21 +1,53 @@
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+
 /**
  * Represents an evidence file in the system
  */
-export interface EvidenceFile {
+@Entity('evidence_files')
+export class EvidenceFile {
+  @PrimaryGeneratedColumn('uuid')
   id: string;
-  vendorId: number;
-  answerId?: string;
-  workId?: string;
+
+  @Column({ name: 'vendor_id', type: 'uuid' })
+  vendorId: string;
+
+  @Column({ length: 255 })
   filename: string;
+
+  @Column({ name: 'original_filename', length: 255 })
   originalFilename: string;
-  mimeType: string;
+
+  @Column({ name: 'file_type', length: 50 })
+  fileType: string;
+
+  @Column({ name: 'file_size', nullable: true })
   fileSize: number;
-  filePath: string;
+
+  @Column({ name: 'file_content', type: 'text', nullable: true })
+  fileContent: string;
+
+  @Column({ name: 'spaces_key', nullable: true })
+  spacesKey: string;
+
+  @Column({ name: 'spaces_url', nullable: true })
+  spacesUrl: string;
+
+  @Column({ nullable: true })
+  description: string;
+
+  @Column({ length: 100, nullable: true })
+  category: string;
+
+  @Column({ name: 'upload_date', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  uploadDate: Date;
+
+  @Column({ name: 'uploaded_by', type: 'uuid', nullable: true })
   uploadedBy: string;
-  uploadedAt: Date;
-  shareToTrustPortal: boolean;
-  metadata?: Record<string, any>;
+
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }
 

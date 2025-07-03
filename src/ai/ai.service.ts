@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../database/database.service';
 import { DigitalOceanSpacesService } from '../common/services/digitalocean-spaces.service';
+import { EvidenceService } from '../evidence/evidence.service';
 import OpenAI from 'openai';
 import { 
   GenerateAnswerRequest, 
@@ -24,6 +25,7 @@ export class AiService {
     private readonly configService: ConfigService,
     private readonly databaseService: DatabaseService,
     private readonly spacesService: DigitalOceanSpacesService,
+    private readonly evidenceService: EvidenceService,
   ) {
     const apiKey = this.configService.get<string>('OPENAI_API_KEY');
     if (!apiKey) {
@@ -51,6 +53,10 @@ export class AiService {
       const relevantData = await this.findRelevantComplianceData(request.question);
       this.logger.debug(`🤖 AI SERVICE: Found ${relevantData.length} relevant compliance data entries`);
       
+      // Load evidence files for enhanced context
+      const evidenceContent = await this.getVendorEvidenceContent(request.vendorId);
+      this.logger.debug(`🤖 AI SERVICE: Found ${evidenceContent.length} evidence files for context enhancement`);
+      
       // Determine if this is a chat mode request
       const isChatMode = request.context?.includes('chatbot') || request.question.toLowerCase().includes('chat');
 
@@ -67,8 +73,8 @@ export class AiService {
         sources = relevantData.map(data => data.name);
       } else {
         this.logger.debug('🤖 AI SERVICE: Using standard OpenAI answer generation');
-        // Generate standard answer
-        answer = await this.generateOpenAIAnswer(request.question, relevantData, request.context);
+        // Generate standard answer with evidence context
+        answer = await this.generateOpenAIAnswer(request.question, relevantData, request.context, evidenceContent);
         confidence = this.calculateConfidence(request.question, relevantData, answer);
         sources = relevantData.map(data => data.name);
       }
@@ -174,6 +180,44 @@ export class AiService {
         timestamp: new Date().toISOString()
       }
     };
+  }
+
+  /**
+   * Get evidence files content for enhanced AI responses
+   */
+  private async getVendorEvidenceContent(vendorId: number | string): Promise<string[]> {
+    try {
+      if (!vendorId) {
+        return [];
+      }
+      
+      // Convert numeric vendor ID to UUID if needed
+      const vendorUuid = typeof vendorId === 'number' ? 
+        await this.resolveVendorUuid(vendorId) : vendorId;
+      
+      if (!vendorUuid) {
+        return [];
+      }
+      
+      return await this.evidenceService.getVendorEvidenceContent(vendorUuid);
+    } catch (error) {
+      this.logger.warn(`Failed to get evidence content for vendor ${vendorId}: ${error.message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Resolve vendor UUID from numeric ID
+   */
+  private async resolveVendorUuid(vendorId: number): Promise<string | null> {
+    try {
+      const query = `SELECT uuid FROM vendors WHERE vendor_id = $1`;
+      const result = await this.databaseService.query(query, [vendorId]);
+      return result.rows.length > 0 ? result.rows[0].uuid : null;
+    } catch (error) {
+      this.logger.warn(`Failed to resolve vendor UUID: ${error.message}`);
+      return null;
+    }
   }
 
   /**
@@ -418,7 +462,8 @@ export class AiService {
   private async generateOpenAIAnswer(
     question: string, 
     relevantData: ComplianceData[], 
-    context?: string
+    context?: string,
+    evidenceContent?: string[]
   ): Promise<string> {
     // Prepare comprehensive compliance context based on Garnet AI research
     let complianceContext = "";
@@ -456,7 +501,17 @@ export class AiService {
       vendorContext += ` Additional context: ${context}`;
     }
     
-    vendorContext += complianceContext + categoryContext;
+    // Add evidence files context if available
+    let evidenceContext = "";
+    if (evidenceContent && evidenceContent.length > 0) {
+      evidenceContext = "\n\nInternal Evidence Files Context:\n";
+      evidenceContent.forEach((content, index) => {
+        evidenceContext += `Evidence ${index + 1}: ${content.substring(0, 300)}...\n`;
+      });
+      evidenceContext += "\nUse this internal evidence to provide more specific and accurate responses about your organization's practices.\n";
+    }
+    
+    vendorContext += complianceContext + categoryContext + evidenceContext;
     
     const prompt = `${vendorContext}
 

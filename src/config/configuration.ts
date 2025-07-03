@@ -58,6 +58,7 @@ export const configuration = () => ({
     folders: {
       checklists: 'checklists/',
       supportingDocs: 'supporting-docs/',
+      evidenceFiles: 'evidence-files/',
     },
   },
 

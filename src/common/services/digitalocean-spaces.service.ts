@@ -20,7 +20,7 @@ export class DigitalOceanSpacesService {
   private readonly bucketName: string;
   private readonly endpoint: string;
   private readonly cdnEndpoint: string;
-  private readonly folders: { checklists: string; supportingDocs: string };
+  private readonly folders: { checklists: string; supportingDocs: string; evidenceFiles: string };
 
   constructor(private configService: ConfigService) {
     const spacesConfig = this.configService.get('digitalOceanSpaces');
@@ -160,6 +160,59 @@ export class DigitalOceanSpacesService {
   }
 
   /**
+   * Upload an evidence file to the evidence-files folder
+   */
+  async uploadEvidenceFile(
+    fileBuffer: Buffer,
+    filename: string,
+    contentType: string,
+    vendorId: string,
+    description?: string
+  ): Promise<UploadResult> {
+    const fileExtension = filename.split('.').pop() || 'bin';
+    const uniqueFilename = `${vendorId}_evidence_${uuidv4()}.${fileExtension}`;
+    const key = `${this.folders.evidenceFiles}${uniqueFilename}`;
+
+    try {
+      this.logger.log(`Uploading evidence file to bucket: ${this.bucketName}, key: ${key}`);
+      
+      const upload = new Upload({
+        client: this.s3Client,
+        params: {
+          Bucket: this.bucketName,
+          Key: key,
+          Body: fileBuffer,
+          ContentType: contentType,
+          ACL: 'private', // Keep evidence files private (internal only)
+          Metadata: {
+            vendorId,
+            originalFilename: filename,
+            uploadType: 'evidence-file',
+            description: description || ''
+          }
+        }
+      });
+
+      const uploadResult = await upload.done();
+
+      const result: UploadResult = {
+        key,
+        url: `https://${this.bucketName}.${this.endpoint.replace('https://', '')}/${key}`,
+        cdnUrl: `${this.cdnEndpoint}/${key}`,
+        size: fileBuffer.length,
+        contentType
+      };
+
+      this.logger.log(`Evidence file uploaded successfully: ${key}`);
+      return result;
+
+    } catch (error) {
+      this.logger.error(`Failed to upload evidence file: ${error.message}`, error.stack);
+      throw new Error(`Failed to upload evidence file: ${error.message}`);
+    }
+  }
+
+  /**
    * Delete a file from DigitalOcean Spaces
    */
   async deleteFile(key: string): Promise<void> {
@@ -229,7 +282,7 @@ export class DigitalOceanSpacesService {
   /**
    * List files in a specific folder
    */
-  async listFiles(folder: 'checklists' | 'supportingDocs', vendorId?: string): Promise<string[]> {
+  async listFiles(folder: 'checklists' | 'supportingDocs' | 'evidenceFiles', vendorId?: string): Promise<string[]> {
     try {
       const folderPath = this.folders[folder];
       const prefix = vendorId ? `${folderPath}${vendorId}_` : folderPath;
