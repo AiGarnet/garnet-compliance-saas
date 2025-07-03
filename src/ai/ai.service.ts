@@ -1580,9 +1580,16 @@ Your documents should be professional, detailed, and ready for immediate use in 
         questionId
       );
 
-      // Step 4: Save to database
+      // Step 4: Resolve vendor UUID for database storage
+      const vendorUuid = await this.resolveVendorUuid(vendorId);
+      if (!vendorUuid) {
+        this.logger.error(`❌ AI SERVICE: Could not resolve vendor UUID for vendor ID ${vendorId}`);
+        throw new BadRequestException(`Invalid vendor ID: ${vendorId}`);
+      }
+
+      // Step 5: Save to database using vendor UUID
       const documentRecord = await this.saveSupportingDocumentToDatabase(
-        vendorId.toString(),
+        vendorUuid,
         questionId,
         filename,
         'text/plain',
