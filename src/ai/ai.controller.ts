@@ -167,4 +167,31 @@ export class AiController {
       );
     }
   }
+
+  @Post('generate-and-save-document')
+  @Public()
+  @ApiOperation({ summary: 'Generate and save a supporting document using AI' })
+  @ApiResponse({ status: 200, description: 'Supporting document generated and saved successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid input or OpenAI not configured' })
+  async generateAndSaveSupportingDocument(@Body() generateDocDto: GenerateSupportingDocumentDto) {
+    try {
+      const result = await this.aiService.generateAndSaveSupportingDocument(
+        generateDocDto.documentTitle,
+        generateDocDto.instructions,
+        generateDocDto.category,
+        generateDocDto.vendorId,
+        generateDocDto.questionId,
+      );
+
+      return result;
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Failed to generate and save supporting document',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 } 

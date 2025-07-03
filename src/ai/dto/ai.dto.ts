@@ -55,6 +55,11 @@ export class GenerateSupportingDocumentDto {
   @IsOptional()
   @IsNumber()
   vendorId?: number;
+
+  @ApiPropertyOptional({ example: 'q123-456-789' })
+  @IsOptional()
+  @IsString()
+  questionId?: string;
 }
 
 export class CreateSuggestionDto {
