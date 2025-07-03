@@ -1227,7 +1227,7 @@ Response Guidelines:
   }
 
   /**
-   * Generate a supporting document using OpenAI
+   * Generate a supporting document using AI with enhanced context
    */
   async generateSupportingDocument(
     title: string,
@@ -1235,7 +1235,7 @@ Response Guidelines:
     category?: string,
     vendorId?: number
   ): Promise<GeneratedSupportingDocument> {
-    this.logger.debug(`🤖 AI SERVICE: Starting generateSupportingDocument for "${title}"`);
+    this.logger.debug(`🤖 AI SERVICE: Starting enhanced generateSupportingDocument for "${title}"`);
     
     if (!this.openai) {
       this.logger.error('❌ AI SERVICE: OpenAI API key not configured');
@@ -1243,63 +1243,50 @@ Response Guidelines:
     }
 
     try {
-      // Build the prompt for document generation
-      let prompt = `Generate a comprehensive, professional supporting document titled "${title}".\n\n`;
-      
-      // Add category context if available
-      if (category) {
-        prompt += `This document falls under the "${category}" category.\n\n`;
-        
-        // Add specialized context based on category
-        if (category.toLowerCase().includes('privacy') || category.toLowerCase().includes('data')) {
-          prompt += `Include sections on data collection, storage, processing, retention, sharing, and deletion practices. Address compliance with relevant regulations like GDPR, CCPA, etc.\n\n`;
-        } else if (category.toLowerCase().includes('security') || category.toLowerCase().includes('cyber')) {
-          prompt += `Include sections on security controls, access management, encryption, incident response, vulnerability management, and compliance with frameworks like ISO 27001, SOC 2, etc.\n\n`;
-        } else if (category.toLowerCase().includes('policy') || category.toLowerCase().includes('procedure')) {
-          prompt += `Structure this as a formal policy document with purpose, scope, responsibilities, procedures, compliance requirements, and review/update processes.\n\n`;
-        }
-      }
-      
-      // Add specific instructions if provided
-      if (instructions) {
-        prompt += `Additional instructions: ${instructions}\n\n`;
-      }
-      
-      // Add general formatting instructions
-      prompt += `Format the document professionally with:
-- A clear title and introduction
-- Well-structured sections with headings
-- Bullet points for clarity where appropriate
-- Numbered lists for procedures or steps
-- A conclusion or summary section
-- References to relevant standards or regulations
-- Version control information
+      // Step 1: Gather vendor context and compliance data
+      const vendorContext = await this.getVendorComplianceContext(vendorId);
+      const questionnaireContext = await this.getVendorQuestionnaireContext(vendorId);
+      const evidenceContext = await this.getVendorEvidenceContent(vendorId);
+      const complianceFrameworks = await this.getRelevantComplianceFrameworks(title, category);
 
-The document should be comprehensive yet concise, using professional language appropriate for compliance purposes.`;
+      // Step 2: Build enhanced prompt with full context
+      const enhancedPrompt = await this.buildEnhancedDocumentPrompt(
+        title, 
+        instructions, 
+        category, 
+        vendorContext,
+        questionnaireContext,
+        evidenceContext,
+        complianceFrameworks
+      );
 
-      this.logger.debug('🤖 AI SERVICE: Sending request to OpenAI for document generation');
+      this.logger.debug('🤖 AI SERVICE: Sending enhanced request to OpenAI for document generation');
+      this.logger.debug(`🤖 AI SERVICE: Vendor context: ${vendorContext ? 'Available' : 'None'}`);
+      this.logger.debug(`🤖 AI SERVICE: Questionnaire context: ${questionnaireContext.length} questions/answers`);
+      this.logger.debug(`🤖 AI SERVICE: Evidence files: ${evidenceContext.length} files`);
       
-      // Call OpenAI with a more capable model for document generation
+      // Step 3: Call OpenAI with enhanced context
       const completion = await this.openai.chat.completions.create({
-        model: "gpt-4o", // Using a more capable model for document generation
+        model: "gpt-4o", // Using GPT-4o for comprehensive document generation
         messages: [
           {
             role: "system",
-            content: "You are an expert compliance document generator. Create professional, comprehensive compliance documents that adhere to industry standards and best practices. Format documents clearly with proper structure, headings, and sections."
+            content: this.buildEnhancedSystemPrompt()
           },
           {
             role: "user",
-            content: prompt
+            content: enhancedPrompt
           }
         ],
-        max_tokens: 4000, // Increased for comprehensive document generation
-        temperature: 0.3, // Low temperature for professional, consistent output
+        max_tokens: 4000,
+        temperature: 0.2, // Low temperature for consistent, factual output
       });
 
       const content = completion.choices[0]?.message?.content || 'Failed to generate document content.';
       
-      // Log success
-      this.logger.debug(`🤖 AI SERVICE: Successfully generated supporting document "${title}"`);
+      // Step 4: Log success with context details
+      this.logger.debug(`🤖 AI SERVICE: Successfully generated enhanced supporting document "${title}"`);
+      this.logger.debug(`🤖 AI SERVICE: Generated content length: ${content.length} characters`);
       
       return {
         title,
@@ -1319,112 +1306,224 @@ The document should be comprehensive yet concise, using professional language ap
   }
 
   /**
-   * Generate and save a supporting document using OpenAI
+   * Get vendor compliance context including company info and industry
    */
-  async generateAndSaveSupportingDocument(
-    title: string,
-    instructions?: string,
-    category?: string,
-    vendorId?: number,
-    questionId?: string
-  ): Promise<{ 
-    success: boolean; 
-    document?: any; 
-    error?: string; 
-    downloadUrl?: string;
-    documentId?: string;
-  }> {
-    this.logger.debug(`🤖 AI SERVICE: Starting generateAndSaveSupportingDocument for "${title}"`);
-    
-    if (!this.openai) {
-      this.logger.error('❌ AI SERVICE: OpenAI API key not configured');
-      throw new BadRequestException('OpenAI API key not configured');
-    }
-
+  private async getVendorComplianceContext(vendorId?: number): Promise<any> {
     if (!vendorId) {
-      this.logger.error('❌ AI SERVICE: Vendor ID is required');
-      throw new BadRequestException('Vendor ID is required');
+      return null;
     }
 
     try {
-      // Step 1: Generate the document content
-      const generatedDoc = await this.generateSupportingDocument(title, instructions, category, vendorId);
+      const query = `
+        SELECT 
+          company_name,
+          industry,
+          region,
+          description,
+          website,
+          contact_email,
+          created_at
+        FROM vendors 
+        WHERE vendor_id = $1
+      `;
       
-      if (!generatedDoc.success) {
-        return {
-          success: false,
-          error: generatedDoc.error || 'Failed to generate document content'
-        };
-      }
-
-      // Step 2: Create a PDF-like text file from the generated content
-      const documentContent = `${generatedDoc.title}\n${'='.repeat(generatedDoc.title.length)}\n\n${generatedDoc.content}`;
-      const documentBuffer = Buffer.from(documentContent, 'utf8');
-      const filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.txt`;
-
-      // Step 3: Upload to DigitalOcean Spaces
-      const uploadResult = await this.spacesService.uploadSupportingDocument(
-        documentBuffer,
-        filename,
-        'text/plain',
-        vendorId.toString(),
-        questionId
-      );
-
-      // Step 4: Save to database
-      const documentRecord = await this.saveSupportingDocumentToDatabase(
-        vendorId.toString(),
-        questionId,
-        filename,
-        'text/plain',
-        documentBuffer.length,
-        uploadResult.key,
-        uploadResult.url
-      );
-
-      this.logger.debug(`🤖 AI SERVICE: Successfully generated and saved supporting document "${title}"`);
-      
-      return {
-        success: true,
-        document: documentRecord,
-        downloadUrl: uploadResult.url,
-        documentId: documentRecord.id
-      };
-
-    } catch (error: any) {
-      this.logger.error(`❌ AI SERVICE: Error generating and saving supporting document: ${error.message}`, error.stack);
-      
-      return {
-        success: false,
-        error: error.message || 'Failed to generate and save supporting document'
-      };
+      const result = await this.databaseService.query(query, [vendorId]);
+      return result.rows.length > 0 ? result.rows[0] : null;
+    } catch (error) {
+      this.logger.warn(`Failed to get vendor context for ${vendorId}: ${error.message}`);
+      return null;
     }
   }
 
+  /**
+   * Get vendor questionnaire context including questions and answers
+   */
+  private async getVendorQuestionnaireContext(vendorId?: number): Promise<Array<{question: string, answer?: string, category?: string}>> {
+    if (!vendorId) {
+      return [];
+    }
 
+    try {
+      // Get questionnaire questions and answers for this vendor
+      const query = `
+        SELECT 
+          cq.question_text,
+          cq.ai_answer,
+          cq.requires_document,
+          cq.document_description,
+          cl.name as checklist_name
+        FROM checklist_questions cq
+        JOIN checklists cl ON cq.checklist_id = cl.id
+        WHERE cl.vendor_id = $1
+        AND cq.ai_answer IS NOT NULL
+        ORDER BY cq.created_at DESC
+        LIMIT 20
+      `;
+      
+      const result = await this.databaseService.query(query, [vendorId]);
+      
+      return result.rows.map(row => ({
+        question: row.question_text,
+        answer: row.ai_answer,
+        category: row.checklist_name,
+        requiresDocument: row.requires_document,
+        documentDescription: row.document_description
+      }));
+    } catch (error) {
+      this.logger.warn(`Failed to get questionnaire context for vendor ${vendorId}: ${error.message}`);
+      return [];
+    }
+  }
 
   /**
-   * Save supporting document to database
+   * Get relevant compliance frameworks based on document title and category
    */
-  private async saveSupportingDocumentToDatabase(
-    vendorId: string,
-    questionId: string | undefined,
-    filename: string,
-    fileType: string,
-    fileSize: number,
-    spacesKey: string,
-    spacesUrl: string
-  ): Promise<any> {
-    const query = `
-      INSERT INTO checklist_supporting_documents 
-      (vendor_id, question_id, filename, file_type, file_size, spaces_key, spaces_url, uploaded_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-      RETURNING *
-    `;
+  private async getRelevantComplianceFrameworks(title: string, category?: string): Promise<ComplianceData[]> {
+    const searchTerms = `${title} ${category || ''}`.toLowerCase();
+    const relevantData = await this.findRelevantComplianceData(searchTerms);
     
-    const values = [vendorId, questionId, filename, fileType, fileSize, spacesKey, spacesUrl];
+    // Return top 5 most relevant frameworks
+    return relevantData.slice(0, 5);
+  }
+
+  /**
+   * Build enhanced document prompt with full context
+   */
+  private async buildEnhancedDocumentPrompt(
+    title: string,
+    instructions?: string,
+    category?: string,
+    vendorContext?: any,
+    questionnaireContext?: Array<{question: string, answer?: string, category?: string}>,
+    evidenceContext?: string[],
+    complianceFrameworks?: ComplianceData[]
+  ): Promise<string> {
+    let prompt = `Generate a comprehensive, professional compliance evidence document titled "${title}".\n\n`;
+
+    // Add vendor context
+    if (vendorContext) {
+      prompt += `COMPANY CONTEXT:\n`;
+      prompt += `- Company: ${vendorContext.company_name}\n`;
+      if (vendorContext.industry) prompt += `- Industry: ${vendorContext.industry}\n`;
+      if (vendorContext.region) prompt += `- Region: ${vendorContext.region}\n`;
+      if (vendorContext.description) prompt += `- Description: ${vendorContext.description}\n`;
+      prompt += `\n`;
+    }
+
+    // Add questionnaire context
+    if (questionnaireContext && questionnaireContext.length > 0) {
+      prompt += `QUESTIONNAIRE CONTEXT:\n`;
+      prompt += `This document should support answers to the following compliance questions:\n\n`;
+      
+      questionnaireContext.slice(0, 10).forEach((item, index) => {
+        prompt += `${index + 1}. Q: ${item.question}\n`;
+        if (item.answer) {
+          prompt += `   A: ${item.answer.substring(0, 200)}${item.answer.length > 200 ? '...' : ''}\n`;
+        }
+        prompt += `\n`;
+      });
+    }
+
+    // Add evidence context
+    if (evidenceContext && evidenceContext.length > 0) {
+      prompt += `EXISTING EVIDENCE FILES:\n`;
+      prompt += `The following evidence files are already available for this company:\n`;
+      evidenceContext.slice(0, 10).forEach((evidence, index) => {
+        prompt += `- ${evidence.substring(0, 100)}${evidence.length > 100 ? '...' : ''}\n`;
+      });
+      prompt += `\nEnsure this new document complements but doesn't duplicate existing evidence.\n\n`;
+    }
+
+    // Add compliance frameworks context
+    if (complianceFrameworks && complianceFrameworks.length > 0) {
+      prompt += `RELEVANT COMPLIANCE FRAMEWORKS:\n`;
+      complianceFrameworks.forEach(framework => {
+        prompt += `- ${framework.name} (${framework.jurisdiction}): ${framework.description}\n`;
+      });
+      prompt += `\n`;
+    }
+
+    // Add category-specific requirements
+    if (category) {
+      prompt += `DOCUMENT CATEGORY: ${category}\n\n`;
+      prompt += this.getCategorySpecificRequirements(category);
+    }
+
+    // Add specific instructions
+    if (instructions) {
+      prompt += `SPECIFIC INSTRUCTIONS:\n${instructions}\n\n`;
+    }
+
+    // Add formatting requirements
+    prompt += `FORMATTING REQUIREMENTS:\n`;
+    prompt += `Create a professional evidence document that includes:\n`;
+    prompt += `1. Executive Summary\n`;
+    prompt += `2. Detailed compliance statement addressing relevant frameworks\n`;
+    prompt += `3. Implementation details with specific controls and procedures\n`;
+    prompt += `4. Evidence of compliance (policies, procedures, technical controls)\n`;
+    prompt += `5. Monitoring and review processes\n`;
+    prompt += `6. Contact information and document control\n\n`;
     
-    const result = await this.databaseService.query(query, values);
-    return result.rows[0];
+    prompt += `The document should be:\n`;
+    prompt += `- Specific to the company and industry context provided\n`;
+    prompt += `- Directly address the compliance questions from the questionnaire\n`;
+    prompt += `- Reference relevant compliance frameworks and standards\n`;
+    prompt += `- Include realistic implementation details\n`;
+    prompt += `- Be ready for compliance audits and reviews\n`;
+    prompt += `- Use professional, precise language appropriate for regulators\n\n`;
+
+    prompt += `Generate a complete, ready-to-use compliance evidence document.`;
+
+    return prompt;
+  }
+
+  /**
+   * Get category-specific requirements for document generation
+   */
+  private getCategorySpecificRequirements(category: string): string {
+    const categoryLower = category.toLowerCase();
+    
+    if (categoryLower.includes('privacy') || categoryLower.includes('data')) {
+      return `For data privacy documents, include:\n- Data mapping and classification\n- Privacy impact assessments\n- Consent management procedures\n- Data retention and deletion policies\n- Breach response procedures\n- International transfer safeguards\n- Subject rights management\n\n`;
+    }
+    
+    if (categoryLower.includes('security') || categoryLower.includes('cyber')) {
+      return `For security documents, include:\n- Security risk assessments\n- Access control policies and procedures\n- Encryption standards and key management\n- Incident response plans\n- Vulnerability management processes\n- Security monitoring and logging\n- Third-party security assessments\n\n`;
+    }
+    
+    if (categoryLower.includes('financial') || categoryLower.includes('aml')) {
+      return `For financial compliance documents, include:\n- Customer due diligence procedures\n- Transaction monitoring systems\n- Beneficial ownership verification\n- Suspicious activity reporting\n- Record keeping requirements\n- Training and awareness programs\n- Independent testing and validation\n\n`;
+    }
+    
+    if (categoryLower.includes('policy') || categoryLower.includes('procedure')) {
+      return `For policy documents, include:\n- Purpose and scope statements\n- Roles and responsibilities\n- Detailed procedures and workflows\n- Compliance monitoring and enforcement\n- Training requirements\n- Review and update processes\n- Exception handling procedures\n\n`;
+    }
+    
+    return `For this document category, include relevant industry-specific requirements and best practices.\n\n`;
+  }
+
+  /**
+   * Build enhanced system prompt for compliance document generation
+   */
+  private buildEnhancedSystemPrompt(): string {
+    return `You are an expert compliance officer and technical writer specializing in creating professional evidence documents for regulatory compliance.
+
+Your expertise includes:
+- Deep knowledge of global compliance frameworks (GDPR, SOX, ISO 27001, SOC 2, NIST, etc.)
+- Industry-specific compliance requirements across financial services, healthcare, technology, and other sectors
+- Technical implementation of compliance controls and procedures
+- Audit preparation and regulatory documentation
+
+When generating documents:
+1. Create realistic, implementable compliance evidence
+2. Use specific technical details appropriate to the company's industry
+3. Reference actual compliance frameworks and standards
+4. Include concrete examples of policies, procedures, and controls
+5. Ensure documents would pass regulatory scrutiny
+6. Make content specific to the company context provided
+7. Address the specific compliance questions from questionnaires
+8. Create comprehensive but focused documentation
+
+Your documents should be professional, detailed, and ready for immediate use in compliance audits and regulatory reviews.`;
   }
 } 
