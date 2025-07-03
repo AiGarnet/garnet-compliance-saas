@@ -1526,4 +1526,112 @@ When generating documents:
 
 Your documents should be professional, detailed, and ready for immediate use in compliance audits and regulatory reviews.`;
   }
+
+  /**
+   * Generate and save a supporting document using OpenAI with enhanced context
+   */
+  async generateAndSaveSupportingDocument(
+    title: string,
+    instructions?: string,
+    category?: string,
+    vendorId?: number,
+    questionId?: string
+  ): Promise<{ 
+    success: boolean; 
+    document?: any; 
+    error?: string; 
+    downloadUrl?: string;
+    documentId?: string;
+  }> {
+    this.logger.debug(`🤖 AI SERVICE: Starting generateAndSaveSupportingDocument for "${title}"`);
+    
+    if (!this.openai) {
+      this.logger.error('❌ AI SERVICE: OpenAI API key not configured');
+      throw new BadRequestException('OpenAI API key not configured');
+    }
+
+    if (!vendorId) {
+      this.logger.error('❌ AI SERVICE: Vendor ID is required');
+      throw new BadRequestException('Vendor ID is required');
+    }
+
+    try {
+      // Step 1: Generate the document content using enhanced context
+      const generatedDoc = await this.generateSupportingDocument(title, instructions, category, vendorId);
+      
+      if (!generatedDoc.success) {
+        return {
+          success: false,
+          error: generatedDoc.error || 'Failed to generate document content'
+        };
+      }
+
+      // Step 2: Create a formatted text file from the generated content
+      const documentContent = `${generatedDoc.title}\n${'='.repeat(generatedDoc.title.length)}\n\n${generatedDoc.content}`;
+      const documentBuffer = Buffer.from(documentContent, 'utf8');
+      const filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.txt`;
+
+      // Step 3: Upload to DigitalOcean Spaces
+      const uploadResult = await this.spacesService.uploadSupportingDocument(
+        documentBuffer,
+        filename,
+        'text/plain',
+        vendorId.toString(),
+        questionId
+      );
+
+      // Step 4: Save to database
+      const documentRecord = await this.saveSupportingDocumentToDatabase(
+        vendorId.toString(),
+        questionId,
+        filename,
+        'text/plain',
+        documentBuffer.length,
+        uploadResult.key,
+        uploadResult.url
+      );
+
+      this.logger.debug(`🤖 AI SERVICE: Successfully generated and saved supporting document "${title}"`);
+      
+      return {
+        success: true,
+        document: documentRecord,
+        downloadUrl: uploadResult.url,
+        documentId: documentRecord.id
+      };
+
+    } catch (error: any) {
+      this.logger.error(`❌ AI SERVICE: Error generating and saving supporting document: ${error.message}`, error.stack);
+      
+      return {
+        success: false,
+        error: error.message || 'Failed to generate and save supporting document'
+      };
+    }
+  }
+
+  /**
+   * Save supporting document to database
+   */
+  private async saveSupportingDocumentToDatabase(
+    vendorId: string,
+    questionId: string | undefined,
+    filename: string,
+    fileType: string,
+    fileSize: number,
+    spacesKey: string,
+    spacesUrl: string
+  ): Promise<any> {
+    const query = `
+      INSERT INTO checklist_supporting_documents 
+      (vendor_id, question_id, filename, file_type, file_size, spaces_key, spaces_url, uploaded_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+      RETURNING *
+    `;
+    
+    const values = [vendorId, questionId, filename, fileType, fileSize, spacesKey, spacesUrl];
+    
+    const result = await this.databaseService.query(query, values);
+    return result.rows[0];
+  }
 } 
