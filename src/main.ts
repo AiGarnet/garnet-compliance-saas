@@ -12,6 +12,14 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   
+  // Check for critical environment variables before starting
+  if (!process.env.JWT_SECRET) {
+    logger.warn('⚠️ JWT_SECRET environment variable not found. Using fallback secret from configuration.');
+    logger.warn('⚠️ For production, set JWT_SECRET in your environment variables!');
+  } else {
+    logger.log('✅ JWT_SECRET environment variable found.');
+  }
+  
   const app = await NestFactory.create(AppModule, {
     logger: ['log', 'error', 'warn', 'debug', 'verbose'],
   });
