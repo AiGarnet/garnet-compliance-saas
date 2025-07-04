@@ -232,7 +232,6 @@ export class VendorsController {
   }
 
   @Put(':id')
-  @Public()
   @LogClientUpdated()
   async updateVendor(
     @Param('id') id: string,
@@ -248,42 +247,87 @@ export class VendorsController {
       let existingVendor;
       
       if (isNumericId) {
-        existingVendor = await this.vendorsService.findById(parseInt(id));
-        if (!existingVendor) {
+        // SECURITY FIX: Only allow access to vendors from same organization
+        if (user?.organization_id) {
+          existingVendor = await this.vendorsService.findById(parseInt(id), user.organization_id);
+          if (!existingVendor) {
+            return {
+              success: false,
+              error: {
+                code: 'VENDOR_NOT_FOUND',
+                message: `Vendor with ID ${id} not found or you don't have access to it`
+              },
+              meta: {
+                timestamp: new Date().toISOString(),
+                vendorId: id,
+                operation: 'update'
+              }
+            };
+          }
+          
+          // SECURITY FIX: Auto-populate organization and user context
+          const vendorData = {
+            ...updateVendorDto,
+            organizationId: user.organization_id,
+            updatedByUserId: user.id
+          };
+          
+          vendor = await this.vendorsService.update(parseInt(id), vendorData);
+        } else {
           return {
             success: false,
             error: {
-              code: 'VENDOR_NOT_FOUND',
-              message: `Vendor with ID ${id} not found`
+              code: 'MISSING_ORGANIZATION',
+              message: 'User must belong to an organization to update vendors'
             },
             meta: {
               timestamp: new Date().toISOString(),
-              operation: 'update',
-              entityType: 'client',
-              entityId: id
+              vendorId: id,
+              operation: 'update'
             }
           };
         }
-        vendor = await this.vendorsService.update(parseInt(id), updateVendorDto);
       } else {
-        // For UUID, we need to find the vendor first to get the numeric ID
-        existingVendor = await this.vendorsService.findByUuid(id);
-        if (!existingVendor) {
+        // SECURITY FIX: Only allow access to vendors from same organization
+        if (user?.organization_id) {
+          existingVendor = await this.vendorsService.findByUuid(id, user.organization_id);
+          if (!existingVendor) {
+            return {
+              success: false,
+              error: {
+                code: 'VENDOR_NOT_FOUND',
+                message: `Vendor with ID ${id} not found or you don't have access to it`
+              },
+              meta: {
+                timestamp: new Date().toISOString(),
+                vendorId: id,
+                operation: 'update'
+              }
+            };
+          }
+          
+          // SECURITY FIX: Auto-populate organization and user context
+          const vendorData = {
+            ...updateVendorDto,
+            organizationId: user.organization_id,
+            updatedByUserId: user.id
+          };
+          
+          vendor = await this.vendorsService.update(existingVendor.vendorId, vendorData);
+        } else {
           return {
             success: false,
             error: {
-              code: 'VENDOR_NOT_FOUND',
-              message: `Vendor with ID ${id} not found`
+              code: 'MISSING_ORGANIZATION',
+              message: 'User must belong to an organization to update vendors'
             },
             meta: {
               timestamp: new Date().toISOString(),
-              operation: 'update',
-              entityType: 'client',
-              entityId: id
+              vendorId: id,
+              operation: 'update'
             }
           };
         }
-        vendor = await this.vendorsService.update(existingVendor.vendorId, updateVendorDto);
       }
       
       return {
@@ -291,11 +335,12 @@ export class VendorsController {
         data: vendor,
         meta: {
           timestamp: new Date().toISOString(),
+          vendorId: id,
           operation: 'update',
           entityType: 'client',
           entityId: vendor.id || vendor.vendorId,
-          previousStatus: existingVendor?.status,
-          newStatus: vendor.status
+          organizationId: user?.organization_id,
+          updatedByUserId: user?.id
         }
       };
     } catch (error) {
@@ -309,9 +354,9 @@ export class VendorsController {
         },
         meta: {
           timestamp: new Date().toISOString(),
+          vendorId: id,
           operation: 'update',
-          entityType: 'client',
-          entityId: id
+          entityType: 'client'
         }
       };
     }

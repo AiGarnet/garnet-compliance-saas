@@ -171,10 +171,15 @@ export class DigitalOceanSpacesService {
   ): Promise<UploadResult> {
     const fileExtension = filename.split('.').pop() || 'bin';
     const uniqueFilename = `${vendorId}_evidence_${uuidv4()}.${fileExtension}`;
+    
+    // Ensure we're using the correct folder path with trailing slash
     const key = `${this.folders.evidenceFiles}${uniqueFilename}`;
 
     try {
       this.logger.log(`Uploading evidence file to bucket: ${this.bucketName}, key: ${key}`);
+      
+      // Log the folder configuration for debugging
+      this.logger.log(`Evidence files folder configuration: "${this.folders.evidenceFiles}"`);
       
       const upload = new Upload({
         client: this.s3Client,

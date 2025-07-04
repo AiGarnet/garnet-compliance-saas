@@ -30,7 +30,6 @@ export class EvidenceController {
   constructor(private readonly evidenceService: EvidenceService) {}
 
   @Post('vendors/:vendorId/evidence')
-  @Public()
   @ApiOperation({ summary: 'Upload evidence file for a vendor' })
   @ApiResponse({ status: 201, description: 'Evidence file uploaded successfully', type: EvidenceFileResponseDto })
   @ApiResponse({ status: 400, description: 'Invalid input or no file uploaded' })
