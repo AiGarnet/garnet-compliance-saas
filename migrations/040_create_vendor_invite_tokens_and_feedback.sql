@@ -1,7 +1,7 @@
 -- Create vendor invite tokens table
 CREATE TABLE IF NOT EXISTS vendor_invite_tokens (
-    id SERIAL PRIMARY KEY,
-    vendor_id INTEGER NOT NULL REFERENCES vendors(id) ON DELETE CASCADE,
+    token_id SERIAL PRIMARY KEY,
+    vendor_id INTEGER NOT NULL REFERENCES vendors(vendor_id) ON DELETE CASCADE,
     token VARCHAR(255) NOT NULL UNIQUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS vendor_invite_tokens (
 
 -- Create enterprise feedback table
 CREATE TABLE IF NOT EXISTS enterprise_feedback (
-    id SERIAL PRIMARY KEY,
-    vendor_id INTEGER NOT NULL REFERENCES vendors(id) ON DELETE CASCADE,
+    feedback_id SERIAL PRIMARY KEY,
+    vendor_id INTEGER NOT NULL REFERENCES vendors(vendor_id) ON DELETE CASCADE,
     enterprise_name VARCHAR(255) NOT NULL,
     feedback_text TEXT NOT NULL,
     rating INTEGER CHECK (rating >= 1 AND rating <= 5),
@@ -24,8 +24,24 @@ CREATE TABLE IF NOT EXISTS enterprise_feedback (
 );
 
 -- Create index for faster token lookups
-CREATE INDEX idx_vendor_invite_tokens_token ON vendor_invite_tokens(token);
-CREATE INDEX idx_vendor_invite_tokens_vendor_id ON vendor_invite_tokens(vendor_id);
+CREATE INDEX IF NOT EXISTS idx_vendor_invite_tokens_token ON vendor_invite_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_vendor_invite_tokens_vendor_id ON vendor_invite_tokens(vendor_id);
 
 -- Create index for faster feedback lookups
-CREATE INDEX idx_enterprise_feedback_vendor_id ON enterprise_feedback(vendor_id); 
+CREATE INDEX IF NOT EXISTS idx_enterprise_feedback_vendor_id ON enterprise_feedback(vendor_id);
+
+-- Create function to update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Create trigger for enterprise_feedback
+DROP TRIGGER IF EXISTS update_enterprise_feedback_updated_at ON enterprise_feedback;
+CREATE TRIGGER update_enterprise_feedback_updated_at
+    BEFORE UPDATE ON enterprise_feedback
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column(); 

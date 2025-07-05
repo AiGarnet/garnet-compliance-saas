@@ -27,6 +27,16 @@ class TrustPortalTokenManager {
   // Generate a new invite token for a vendor
   async generateInviteToken(vendorId) {
     try {
+      // First check if vendor exists
+      const vendorCheck = await this.client.query(
+        'SELECT vendor_id, company_name FROM vendors WHERE vendor_id = $1',
+        [vendorId]
+      );
+
+      if (vendorCheck.rows.length === 0) {
+        throw new Error(`Vendor with ID ${vendorId} not found`);
+      }
+
       // Generate a random token
       const token = crypto.randomBytes(32).toString('hex');
       
@@ -44,13 +54,16 @@ class TrustPortalTokenManager {
       const result = await this.client.query(
         `INSERT INTO vendor_invite_tokens (vendor_id, token, expires_at)
          VALUES ($1, $2, $3)
-         RETURNING *`,
+         RETURNING token_id, token, expires_at, is_active`,
         [vendorId, token, expiresAt]
       );
 
       return {
+        tokenId: result.rows[0].token_id,
         token: result.rows[0].token,
-        expiresAt: result.rows[0].expires_at
+        expiresAt: result.rows[0].expires_at,
+        isActive: result.rows[0].is_active,
+        vendorName: vendorCheck.rows[0].company_name
       };
     } catch (error) {
       console.error('Error generating invite token:', error);
@@ -68,7 +81,7 @@ class TrustPortalTokenManager {
          WHERE token = $1 
          AND is_active = true 
          AND expires_at > CURRENT_TIMESTAMP
-         RETURNING vendor_id, expires_at`,
+         RETURNING token_id, vendor_id, expires_at`,
         [token]
       );
 
@@ -78,7 +91,7 @@ class TrustPortalTokenManager {
 
       // Get vendor details
       const vendorResult = await this.client.query(
-        'SELECT id, name, status FROM vendors WHERE id = $1',
+        'SELECT vendor_id, company_name, status FROM vendors WHERE vendor_id = $1',
         [result.rows[0].vendor_id]
       );
 
@@ -88,8 +101,9 @@ class TrustPortalTokenManager {
 
       return {
         valid: true,
+        tokenId: result.rows[0].token_id,
         vendorId: result.rows[0].vendor_id,
-        vendorName: vendorResult.rows[0].name,
+        vendorName: vendorResult.rows[0].company_name,
         expiresAt: result.rows[0].expires_at
       };
     } catch (error) {
@@ -102,7 +116,8 @@ class TrustPortalTokenManager {
   async getVendorTokens(vendorId) {
     try {
       const result = await this.client.query(
-        `SELECT * FROM vendor_invite_tokens 
+        `SELECT token_id, token, created_at, expires_at, last_accessed_at, is_active 
+         FROM vendor_invite_tokens 
          WHERE vendor_id = $1 
          AND is_active = true 
          ORDER BY created_at DESC`,
@@ -120,7 +135,7 @@ class TrustPortalTokenManager {
   async deactivateToken(token) {
     try {
       const result = await this.client.query(
-        'UPDATE vendor_invite_tokens SET is_active = false WHERE token = $1 RETURNING *',
+        'UPDATE vendor_invite_tokens SET is_active = false WHERE token = $1 RETURNING token_id, token, expires_at',
         [token]
       );
 

@@ -9,8 +9,9 @@ const config = {
 };
 
 class EnterpriseFeedbackManager {
-  constructor() {
+  constructor(options = {}) {
     this.client = new Client(config);
+    this.logActivities = options.logActivities || false;
   }
 
   async connect() {
@@ -26,29 +27,49 @@ class EnterpriseFeedbackManager {
   // Create new feedback
   async createFeedback(data) {
     try {
+      // First check if vendor exists
+      const vendorCheck = await this.client.query(
+        'SELECT vendor_id, company_name FROM vendors WHERE vendor_id = $1',
+        [data.vendorId]
+      );
+
+      if (vendorCheck.rows.length === 0) {
+        throw new Error(`Vendor with ID ${data.vendorId} not found`);
+      }
+
       const result = await this.client.query(
         `INSERT INTO enterprise_feedback 
          (vendor_id, enterprise_name, feedback_text, rating, is_public)
          VALUES ($1, $2, $3, $4, $5)
-         RETURNING *`,
+         RETURNING feedback_id, vendor_id, enterprise_name, feedback_text, rating, created_at, is_public`,
         [data.vendorId, data.enterpriseName, data.feedbackText, data.rating, data.isPublic || false]
       );
 
-      // Create activity log entry
-      await this.client.query(
-        `INSERT INTO activities 
-         (user_id, activity_type, entity_type, entity_id, description)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [
-          null, // no user_id for enterprise feedback
-          'FEEDBACK_CREATED',
-          'VENDOR',
-          data.vendorId,
-          `New feedback received from ${data.enterpriseName}`
-        ]
-      );
+      // Log activity if enabled
+      if (this.logActivities) {
+        try {
+          await this.client.query(
+            `INSERT INTO activities 
+             (user_id, activity_type, entity_type, entity_id, description)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [
+              null, // no user_id for enterprise feedback
+              'FEEDBACK_CREATED',
+              'VENDOR',
+              data.vendorId,
+              `New feedback received from ${data.enterpriseName}`
+            ]
+          );
+        } catch (activityError) {
+          console.warn('Failed to log activity:', activityError);
+          // Don't throw error, just log warning
+        }
+      }
 
-      return result.rows[0];
+      return {
+        ...result.rows[0],
+        vendorName: vendorCheck.rows[0].company_name
+      };
     } catch (error) {
       console.error('Error creating feedback:', error);
       throw error;
@@ -59,10 +80,22 @@ class EnterpriseFeedbackManager {
   async getVendorFeedback(vendorId) {
     try {
       const result = await this.client.query(
-        `SELECT * FROM enterprise_feedback 
-         WHERE vendor_id = $1 
-         AND status = 'active'
-         ORDER BY created_at DESC`,
+        `SELECT 
+           f.feedback_id,
+           f.vendor_id,
+           f.enterprise_name,
+           f.feedback_text,
+           f.rating,
+           f.created_at,
+           f.updated_at,
+           f.status,
+           f.is_public,
+           v.company_name as vendor_name
+         FROM enterprise_feedback f
+         JOIN vendors v ON v.vendor_id = f.vendor_id
+         WHERE f.vendor_id = $1 
+         AND f.status = 'active'
+         ORDER BY f.created_at DESC`,
         [vendorId]
       );
 
@@ -78,15 +111,15 @@ class EnterpriseFeedbackManager {
     try {
       const result = await this.client.query(
         `SELECT 
-           ef.*,
-           v.name as vendor_name,
-           ROUND(AVG(ef.rating) OVER (PARTITION BY ef.vendor_id), 2) as avg_rating,
-           COUNT(*) OVER (PARTITION BY ef.vendor_id) as total_feedback
-         FROM enterprise_feedback ef
-         JOIN vendors v ON v.id = ef.vendor_id
-         WHERE ef.vendor_id = $1 
-         AND ef.status = 'active'
-         ORDER BY ef.created_at DESC`,
+           f.*,
+           v.company_name as vendor_name,
+           ROUND(AVG(f.rating) OVER (PARTITION BY f.vendor_id), 2) as avg_rating,
+           COUNT(*) OVER (PARTITION BY f.vendor_id) as total_feedback
+         FROM enterprise_feedback f
+         JOIN vendors v ON v.vendor_id = f.vendor_id
+         WHERE f.vendor_id = $1 
+         AND f.status = 'active'
+         ORDER BY f.created_at DESC`,
         [vendorId]
       );
 
@@ -109,9 +142,9 @@ class EnterpriseFeedbackManager {
     try {
       const result = await this.client.query(
         `UPDATE enterprise_feedback 
-         SET status = $1, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $2
-         RETURNING *`,
+         SET status = $1
+         WHERE feedback_id = $2
+         RETURNING feedback_id, status, updated_at`,
         [status, feedbackId]
       );
 
@@ -127,9 +160,9 @@ class EnterpriseFeedbackManager {
     try {
       const result = await this.client.query(
         `UPDATE enterprise_feedback 
-         SET is_public = NOT is_public, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $1
-         RETURNING *`,
+         SET is_public = NOT is_public
+         WHERE feedback_id = $1
+         RETURNING feedback_id, is_public, updated_at`,
         [feedbackId]
       );
 
@@ -145,16 +178,18 @@ class EnterpriseFeedbackManager {
     try {
       const result = await this.client.query(
         `SELECT 
-           id,
-           enterprise_name,
-           feedback_text,
-           rating,
-           created_at
-         FROM enterprise_feedback 
-         WHERE vendor_id = $1 
-         AND status = 'active'
-         AND is_public = true
-         ORDER BY created_at DESC`,
+           f.feedback_id,
+           f.enterprise_name,
+           f.feedback_text,
+           f.rating,
+           f.created_at,
+           v.company_name as vendor_name
+         FROM enterprise_feedback f
+         JOIN vendors v ON v.vendor_id = f.vendor_id
+         WHERE f.vendor_id = $1 
+         AND f.status = 'active'
+         AND f.is_public = true
+         ORDER BY f.created_at DESC`,
         [vendorId]
       );
 
@@ -171,7 +206,7 @@ module.exports = EnterpriseFeedbackManager;
 
 // Example usage:
 async function example() {
-  const feedbackManager = new EnterpriseFeedbackManager();
+  const feedbackManager = new EnterpriseFeedbackManager({ logActivities: false });
   
   try {
     await feedbackManager.connect();
@@ -202,4 +237,4 @@ async function example() {
 }
 
 // Uncomment to run example:
-// example().catch(console.error); 
+// example().catch(console.error);
