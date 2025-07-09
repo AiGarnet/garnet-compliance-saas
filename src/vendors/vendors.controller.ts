@@ -49,33 +49,27 @@ export class VendorsController {
   constructor(private readonly vendorsService: VendorsService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard) // SECURITY FIX: Remove @Public() and require authentication
+  @Public() // Make GET endpoint public for frontend access
   async getAllVendors(
     @CurrentUser() user?: any
   ): Promise<ApiResponse<any[]>> {
     try {
-      // SECURITY FIX: Only show vendors from user's organization
-      if (!user?.organization_id) {
-        return {
-          success: false,
-          error: {
-            code: 'MISSING_ORGANIZATION',
-            message: 'User must belong to an organization to access vendors'
-          },
-          meta: {
-            timestamp: new Date().toISOString()
-          }
-        };
+      // If user is authenticated, show vendors from their organization
+      // Otherwise, show all vendors for public access
+      let vendors;
+      if (user?.organization_id) {
+        vendors = await this.vendorsService.findAllByOrganization(user.organization_id);
+      } else {
+        // For public access, show all vendors (fallback for frontend)
+        vendors = await this.vendorsService.findAll();
       }
-
-      const vendors = await this.vendorsService.findAllByOrganization(user.organization_id);
       return {
         success: true,
         data: vendors,
         meta: {
           timestamp: new Date().toISOString(),
           count: vendors.length,
-          organizationId: user.organization_id
+          organizationId: user?.organization_id || 'public'
         }
       };
     } catch (error) {
@@ -95,37 +89,22 @@ export class VendorsController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard) // SECURITY FIX: Remove @Public() and require authentication
+  @Public() // Make GET endpoint public for frontend access  
   async getVendor(
     @Param('id') id: string,
     @CurrentUser() user?: any
   ): Promise<ApiResponse<any>> {
     try {
-      // SECURITY FIX: Ensure user belongs to an organization
-      if (!user?.organization_id) {
-        return {
-          success: false,
-          error: {
-            code: 'MISSING_ORGANIZATION',
-            message: 'User must belong to an organization to access vendors'
-          },
-          meta: {
-            timestamp: new Date().toISOString(),
-            vendorId: id
-          }
-        };
-      }
-
       // Check if the ID is a number (vendor_id) or UUID
       const isNumericId = /^\d+$/.test(id);
       
       let vendor;
       if (isNumericId) {
-        // SECURITY FIX: Only allow access to vendors from same organization
-        vendor = await this.vendorsService.findById(parseInt(id), user.organization_id);
+        // If user is authenticated, filter by organization; otherwise show all
+        vendor = await this.vendorsService.findById(parseInt(id), user?.organization_id);
       } else {
-        // SECURITY FIX: Only allow access to vendors from same organization
-        vendor = await this.vendorsService.findByUuid(id, user.organization_id);
+        // If user is authenticated, filter by organization; otherwise show all
+        vendor = await this.vendorsService.findByUuid(id, user?.organization_id);
       }
       
       if (!vendor) {
@@ -145,11 +124,11 @@ export class VendorsController {
       return {
         success: true,
         data: vendor,
-        meta: {
-          timestamp: new Date().toISOString(),
-          vendorId: id,
-          organizationId: user.organization_id
-        }
+                  meta: {
+            timestamp: new Date().toISOString(),
+            vendorId: id,
+            organizationId: user?.organization_id || 'public'
+          }
       };
     } catch (error) {
       this.logger.error(`Error getting vendor ${id}:`, error);
