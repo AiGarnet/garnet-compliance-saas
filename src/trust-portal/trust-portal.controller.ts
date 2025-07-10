@@ -155,6 +155,7 @@ export class TrustPortalController {
   }
 
   @Delete('items/:id')
+  @Public()
   @ApiOperation({ summary: 'Delete a trust portal item' })
   @ApiResponse({ status: 200, description: 'Trust portal item deleted successfully' })
   @ApiResponse({ status: 404, description: 'Trust portal item not found' })
