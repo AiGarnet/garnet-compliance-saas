@@ -300,7 +300,7 @@ export class VendorsService {
       INNER JOIN vendor_invite_tokens vit ON v.vendor_id = vit.vendor_id
       WHERE vit.token = $1 
         AND vit.expires_at > NOW()
-        AND vit.used = false
+        AND vit.is_active = true
     `;
 
     const result = await this.databaseService.query(query, [token]);
@@ -395,16 +395,16 @@ export class VendorsService {
     expiresAt.setDate(expiresAt.getDate() + 30); // 30 days from now
 
     try {
-      // First, delete any existing token for this vendor (only one active token per vendor)
+      // First, deactivate any existing active tokens for this vendor (only one active token per vendor)
       await this.databaseService.query(
-        'DELETE FROM vendor_invite_tokens WHERE vendor_id = $1',
+        'UPDATE vendor_invite_tokens SET is_active = false WHERE vendor_id = $1 AND is_active = true',
         [vendorId]
       );
 
       // Insert new token
       const insertQuery = `
-        INSERT INTO vendor_invite_tokens (token, vendor_id, expires_at, used, created_at)
-        VALUES ($1, $2, $3, false, NOW())
+        INSERT INTO vendor_invite_tokens (token, vendor_id, expires_at, is_active, created_at)
+        VALUES ($1, $2, $3, true, NOW())
         RETURNING token, expires_at
       `;
 
@@ -429,7 +429,7 @@ export class VendorsService {
   async markInviteTokenAsUsed(token: string): Promise<void> {
     try {
       await this.databaseService.query(
-        'UPDATE vendor_invite_tokens SET used = true WHERE token = $1',
+        'UPDATE vendor_invite_tokens SET is_active = false WHERE token = $1',
         [token]
       );
     } catch (error) {
@@ -444,7 +444,7 @@ export class VendorsService {
         FROM vendor_invite_tokens
         WHERE vendor_id = $1 
           AND expires_at > NOW()
-          AND used = false
+          AND is_active = true
         ORDER BY created_at DESC
         LIMIT 1
       `;
