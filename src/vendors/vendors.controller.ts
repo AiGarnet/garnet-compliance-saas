@@ -455,6 +455,105 @@ export class VendorsController {
     }
   }
 
+  @Post(':id/generate-invite-token')
+  @Public()
+  async generateInviteToken(
+    @Param('id') id: string
+  ): Promise<ApiResponse<any>> {
+    try {
+      // Check if the ID is a number (vendor_id) or UUID
+      const isNumericId = /^\d+$/.test(id);
+      
+      let vendorId: number;
+      
+      if (isNumericId) {
+        const vendor = await this.vendorsService.findById(parseInt(id));
+        if (!vendor) {
+          return {
+            success: false,
+            error: {
+              code: 'VENDOR_NOT_FOUND',
+              message: `Vendor with ID ${id} not found`
+            },
+            meta: {
+              timestamp: new Date().toISOString(),
+              vendorId: id
+            }
+          };
+        }
+        vendorId = parseInt(id);
+      } else {
+        const vendor = await this.vendorsService.findByUuid(id);
+        if (!vendor) {
+          return {
+            success: false,
+            error: {
+              code: 'VENDOR_NOT_FOUND',
+              message: `Vendor with ID ${id} not found`
+            },
+            meta: {
+              timestamp: new Date().toISOString(),
+              vendorId: id
+            }
+          };
+        }
+        vendorId = vendor.vendorId;
+      }
+
+      // Check if there's already an active invite token
+      const existingToken = await this.vendorsService.getActiveInviteToken(vendorId);
+      
+      if (existingToken) {
+        return {
+          success: true,
+          data: {
+            inviteToken: existingToken.token,
+            expiresAt: existingToken.expiresAt,
+            inviteLink: existingToken.inviteLink,
+            message: 'Using existing active invite token'
+          },
+          meta: {
+            timestamp: new Date().toISOString(),
+            vendorId: vendorId,
+            action: 'reuse_existing_token'
+          }
+        };
+      }
+
+      // Generate new invite token
+      const inviteData = await this.vendorsService.generateInviteToken(vendorId);
+      
+      return {
+        success: true,
+        data: {
+          inviteToken: inviteData.token,
+          expiresAt: inviteData.expiresAt,
+          inviteLink: inviteData.inviteLink,
+          message: 'Invite token generated successfully'
+        },
+        meta: {
+          timestamp: new Date().toISOString(),
+          vendorId: vendorId,
+          action: 'generate_new_token'
+        }
+      };
+    } catch (error) {
+      this.logger.error(`Error generating invite token for vendor ${id}:`, error);
+      return {
+        success: false,
+        error: {
+          code: 'GENERATE_INVITE_TOKEN_FAILED',
+          message: 'Failed to generate invite token',
+          details: error.message
+        },
+        meta: {
+          timestamp: new Date().toISOString(),
+          vendorId: id
+        }
+      };
+    }
+  }
+
   @Post(':id/trust-portal/invite')
   async generateInviteLink(
     @Param('id') id: string,
