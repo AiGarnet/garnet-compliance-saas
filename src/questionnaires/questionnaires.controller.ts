@@ -23,8 +23,8 @@ import { Public } from '../common/decorators/public.decorator';
 export class QuestionnairesController {
   constructor(private readonly questionnairesService: QuestionnairesService) {}
 
-  @Public()
   @Post()
+  @Public()
   @ApiOperation({ summary: 'Create a new questionnaire' })
   @ApiResponse({ status: 201, description: 'Questionnaire created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
@@ -56,8 +56,8 @@ export class QuestionnairesController {
     }
   }
 
-  @Public()
   @Get('vendor/:vendorId')
+  @Public()
   @ApiOperation({ summary: 'Get questionnaires for a specific vendor' })
   @ApiResponse({ status: 200, description: 'Returns questionnaires for the vendor' })
   async getQuestionnairesByVendor(@Param('vendorId') vendorId: string) {

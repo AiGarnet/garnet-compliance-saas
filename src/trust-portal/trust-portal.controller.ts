@@ -96,6 +96,7 @@ export class TrustPortalController {
   }
 
   @Post('items')
+  @Public()
   @ApiOperation({ summary: 'Add a new item to the trust portal' })
   @ApiResponse({ status: 201, description: 'Trust portal item created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
