@@ -51,26 +51,22 @@ export class VendorsController {
   constructor(private readonly vendorsService: VendorsService) {}
 
   @Get()
-  @Public() // Make public for questionnaire page
   async getAllVendors(
     @CurrentUser() user: any
   ): Promise<ApiResponse<any[]>> {
     try {
-      // For public access, return all vendors (no organization filtering)
+      // SECURITY FIX: Always require authentication and organization context
       if (!user?.organization_id) {
-        const vendors = await this.vendorsService.findAll();
-        return {
-          success: true,
-          data: vendors,
-          meta: {
-            timestamp: new Date().toISOString(),
-            count: vendors.length,
-            publicAccess: true
+        throw new UnauthorizedException({
+          success: false,
+          error: {
+            code: 'MISSING_ORGANIZATION',
+            message: 'User must belong to an organization to access vendors'
           }
-        };
+        });
       }
 
-      // SECURITY FIX: Only show vendors from the user's organization when authenticated
+      // SECURITY FIX: Only show vendors from the user's organization
       const vendors = await this.vendorsService.findAllByOrganization(user.organization_id);
       
       return {
@@ -105,32 +101,32 @@ export class VendorsController {
   }
 
   @Get(':id')
-  @Public() // Make public for questionnaire page
   async getVendor(
     @Param('id') id: string,
     @CurrentUser() user: any
   ): Promise<ApiResponse<any>> {
     try {
+      // SECURITY FIX: Always require authentication and organization context
+      if (!user?.organization_id) {
+        throw new UnauthorizedException({
+          success: false,
+          error: {
+            code: 'MISSING_ORGANIZATION',
+            message: 'User must belong to an organization to access vendors'
+          }
+        });
+      }
+
       // Check if the ID is a number (vendor_id) or UUID
       const isNumericId = /^\d+$/.test(id);
       
       let vendor;
       if (isNumericId) {
-        // For public access, don't filter by organization
-        if (!user?.organization_id) {
-          vendor = await this.vendorsService.findById(parseInt(id));
-        } else {
-          // SECURITY FIX: Filter by organization when authenticated
-          vendor = await this.vendorsService.findById(parseInt(id), user.organization_id);
-        }
+        // SECURITY FIX: Always filter by organization
+        vendor = await this.vendorsService.findById(parseInt(id), user.organization_id);
       } else {
-        // For public access, don't filter by organization
-        if (!user?.organization_id) {
-          vendor = await this.vendorsService.findByUuid(id);
-        } else {
-          // SECURITY FIX: Filter by organization when authenticated
-          vendor = await this.vendorsService.findByUuid(id, user.organization_id);
-        }
+        // SECURITY FIX: Always filter by organization
+        vendor = await this.vendorsService.findByUuid(id, user.organization_id);
       }
       
       if (!vendor) {
@@ -138,12 +134,12 @@ export class VendorsController {
           success: false,
           error: {
             code: 'VENDOR_NOT_FOUND',
-            message: `Vendor with ID ${id} not found`
+            message: `Vendor with ID ${id} not found in your organization`
           },
           meta: {
             timestamp: new Date().toISOString(),
             vendorId: id,
-            publicAccess: !user?.organization_id
+            organizationId: user.organization_id
           }
         };
       }
@@ -154,9 +150,8 @@ export class VendorsController {
         meta: {
           timestamp: new Date().toISOString(),
           vendorId: id,
-          organizationId: user?.organization_id,
-          filteredByOrganization: !!user?.organization_id,
-          publicAccess: !user?.organization_id
+          organizationId: user.organization_id,
+          filteredByOrganization: true
         }
       };
     } catch (error) {

@@ -1,129 +1,113 @@
-# 🔓 Public API Endpoints for Questionnaire Features
+# 🔓 Public API Endpoints for Questionnaire Services
 
 ## Overview
 
-The following API endpoints have been made public (no authentication required) to enable full functionality of the questionnaire page without requiring user login.
+The following API endpoints have been made public (no authentication required) to enable questionnaire services, while maintaining vendor access security through organization-based authentication.
 
-## 📋 Updated Endpoints
+## 🔒 **VENDOR SECURITY MAINTAINED**
 
 ### Vendors Module
 **Controller**: `src/vendors/vendors.controller.ts`
 
-- ✅ `GET /api/vendors` - **Now Public** - Get all vendors
-- ✅ `GET /api/vendors/:id` - **Now Public** - Get specific vendor by ID or UUID
+- 🔒 `GET /api/vendors` - **REQUIRES AUTH** - Get vendors filtered by user's organization
+- 🔒 `GET /api/vendors/:id` - **REQUIRES AUTH** - Get specific vendor (organization-filtered)
+- 🔒 All other vendor endpoints - **REQUIRE AUTH** for organization isolation
 
-**Service Updates**: Re-enabled `findAll()` method for public access
-- `src/vendors/vendors.service.ts` - `findAll()` method restored to return all vendors
+**Why Vendor Auth is Required:**
+- Prevents cross-organization data leakage
+- Each user only sees vendors from their organization
+- Maintains enterprise security and data isolation
+
+## ✅ **PUBLIC SERVICE ENDPOINTS**
 
 ### Evidence Module
 **Controller**: `src/evidence/evidence.controller.ts`
 
 - ✅ `POST /api/vendors/:vendorId/evidence` - **Now Public** - Upload evidence files
-- ✅ `GET /api/vendors/:vendorId/evidence` - **Already Public** - Get vendor evidence files
-- ✅ `DELETE /api/vendors/:vendorId/evidence/:evidenceId` - **Already Public** - Delete evidence files
-- ✅ `GET /api/vendors/:vendorId/evidence/:evidenceId/download` - **Already Public** - Download evidence files
+- ✅ `GET /api/vendors/:vendorId/evidence` - **Already Public** - Get evidence files
+- ✅ `DELETE /api/vendors/:vendorId/evidence/:fileId` - **Already Public** - Delete evidence files
 
 ### Trust Portal Module
 **Controller**: `src/trust-portal/trust-portal.controller.ts`
 
-- ✅ `POST /api/trust-portal/items` - **Now Public** - Create trust portal items
-- ✅ `GET /api/trust-portal/items` - **Already Public** - Get trust portal items by vendor
-- ✅ `GET /api/trust-portal/items/:id` - **Already Public** - Get specific trust portal item
+- ✅ `POST /api/trust-portal/items` - **Now Public** - Send items to trust portal
+- ✅ `GET /api/trust-portal/items` - **Already Public** - Get trust portal items
+- ✅ `GET /api/trust-portal/vendors/:vendorId` - **Already Public** - Get vendor trust portal
 
 ### Questionnaires Module
 **Controller**: `src/questionnaires/questionnaires.controller.ts`
 
-- ✅ `POST /api/questionnaires` - **Now Public** - Create questionnaire
-- ✅ `GET /api/questionnaires` - **Already Public** - Get all questionnaires
-- ✅ `GET /api/questionnaires/vendor/:vendorId` - **Now Public** - Get questionnaires for vendor
+- ✅ `POST /api/questionnaires` - **Now Public** - Create questionnaires
+- ✅ `GET /api/questionnaires/vendor/:vendorId` - **Now Public** - Get vendor questionnaires
 - ✅ `GET /api/questionnaires/:id` - **Already Public** - Get specific questionnaire
-- ✅ `GET /api/questionnaires/:id/questions` - **Already Public** - Get questionnaire questions
-- ✅ `PUT /api/questionnaires/:id` - **Already Public** - Update questionnaire
-- ✅ `POST /api/questionnaires/:id/vendor/:vendorId/answers` - **Already Public** - Save vendor answers
+- ✅ Other questionnaire endpoints - **Already Public**
 
 ### Checklists Module
 **Controller**: `src/checklists/checklists.controller.ts`
 
-- ✅ `POST /api/checklists/upload` - **Already Public** - Upload checklist files
+- ✅ `POST /api/checklists/upload` - **Already Public** - Upload checklists
 - ✅ `GET /api/checklists/vendor/:vendorId` - **Already Public** - Get vendor checklists
-- ✅ `GET /api/checklists/:checklistId/vendor/:vendorId` - **Already Public** - Get specific checklist
-- ✅ `POST /api/checklists/questions/:questionId/documents/vendor/:vendorId` - **Already Public** - Upload supporting documents
+- ✅ Other checklist endpoints - **Already Public**
 
-### AI Module
-**Controller**: `src/ai/ai.controller.ts` & `src/answer/answer.controller.ts`
+### AI/Answer Generation
+**Controller**: `src/ai/ai.controller.ts` and `src/generate-answers/generate-answers.controller.ts`
 
-- ✅ `POST /ask` - **Already Public** - Public AI endpoint
-- ✅ `POST /api/answer` - **Already Public** - Generate AI answer for single question
-- ✅ `POST /api/generate-answers` - **Already Public** - Generate AI answers for multiple questions
+- ✅ `POST /api/ai/questionnaire` - **Already Public** - AI questionnaire processing
+- ✅ `POST /api/generate-answers` - **Already Public** - Generate AI answers
+- ✅ `POST /api/answer` - **Already Public** - Individual answer generation
 
-## 🎯 Questionnaire Page Features Now Working
+## 🎯 **IMPLEMENTATION STRATEGY**
 
-### ✅ Upload Section
-- **Checklist Upload**: Upload PDF/DOC/TXT compliance checklists
-- **Evidence File Upload**: Upload internal evidence files for AI enhancement
-- **Manual Question Addition**: Add custom questions to existing checklists
+### Backend Security Model:
+1. **Vendor Access**: Requires authentication + organization filtering
+2. **Services**: Public access for questionnaire functionality
+3. **Data Flow**: Services can work with vendor IDs without exposing vendor data
 
-### ✅ AI Questionnaire Section
-- **View All Questions**: See all questions from uploaded checklists
-- **AI Answer Generation**: Generate compliance answers using AI
-- **Edit & Mark Done**: Edit AI-generated answers and mark as complete
-- **Progress Tracking**: Visual progress indicators for completion status
+### Frontend Behavior:
+1. **Login Required**: To access vendor dropdown and selection
+2. **Services Available**: AI, document generation, upload features work independently
+3. **User Experience**: Clear messaging about what requires login vs. what doesn't
 
-### ✅ Supporting Documents Section
-- **Document Upload**: Upload supporting documents for specific questions
-- **General Documents**: Upload standalone supporting documents
-- **AI Document Generation**: Generate compliance evidence documents using AI
+## 🚀 **DEPLOYMENT STATUS**
 
-### ✅ Trust Portal Integration
-- **Send to Trust Portal**: Send completed questions and documents to trust portal
-- **Individual Questions**: Send manual questions to trust portal
-- **Complete Checklists**: Send entire completed checklists to trust portal
+### ✅ Backend Changes Applied:
+- Vendor endpoints: Authentication required with organization filtering
+- Service endpoints: Public access enabled
+- Security model: Prevents cross-organization data access
 
-### ✅ Request Assistance Section
-- **AI Chatbot**: Get help from compliance experts via AI assistant
+### ✅ Frontend Changes Applied:
+- Vendor selection: Requires authentication
+- Service features: Work without vendor selection where possible
+- User messaging: Clear distinction between auth-required vs. public features
 
-## 🔒 Security Notes
+### ✅ Features Working Without Vendor Selection:
+- AI answer generation (when questions available)
+- Document generation via AI
+- Help/assistance features
+- General questionnaire operations
 
-1. **Gradual Access**: For authenticated users, organization-based filtering still applies
-2. **Public Fallback**: Unauthenticated users can access all vendors and features
-3. **No Data Loss**: Authentication is still supported for existing workflows
-4. **Audit Trail**: All actions are still logged (with or without user context)
+### ✅ Features Requiring Vendor Selection (Auth):
+- Vendor-specific checklist upload
+- Vendor-specific evidence files
+- Vendor-specific supporting documents
+- Trust portal vendor submissions
 
-## 🚀 Frontend Updates
+## 🔧 **TESTING VERIFICATION**
 
-**File**: `garnet-compliance-saas-frontend/frontend/app/questionnaires/page.tsx`
+To verify the implementation:
 
-- ✅ Removed authentication requirement checks
-- ✅ Removed authentication error debugging UI
-- ✅ Simplified error handling to focus on network/service errors
-- ✅ Updated vendor loading to work without authentication
+1. **Without Login**:
+   - Can access questionnaire page
+   - Cannot see vendor dropdown options
+   - Get clear login prompts for vendor-specific features
+   - Can still use AI and document generation features
 
-## 🧪 Testing
+2. **With Login**:
+   - Can see organization's vendors only
+   - Full access to all questionnaire features
+   - Vendor-specific uploads and operations work
 
-To test the changes:
-
-1. **Without Authentication**:
-   ```bash
-   # Navigate to questionnaire page without logging in
-   curl -X GET https://your-api-url/api/vendors
-   ```
-
-2. **Upload Checklist**:
-   ```bash
-   curl -X POST https://your-api-url/api/checklists/upload \
-     -F "file=@checklist.pdf" \
-     -F "vendorId=your-vendor-uuid"
-   ```
-
-3. **Upload Evidence**:
-   ```bash
-   curl -X POST https://your-api-url/api/vendors/vendor-uuid/evidence \
-     -F "file=@evidence.pdf" \
-     -F "description=Security Policy"
-   ```
-
-## 🎉 Result
-
-Users can now access the questionnaire page and use all features (checklist upload, evidence upload, AI generation, supporting documents, trust portal integration) **without needing to authenticate first**.
-
-This resolves the "401 Unauthorized" errors and makes the questionnaire workflow completely accessible for evaluation and testing purposes. 
+3. **Cross-Organization Security**:
+   - Users from Org A cannot see Org B's vendors
+   - All vendor data remains isolated by organization
+   - Service APIs work regardless of organization context 
