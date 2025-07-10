@@ -149,6 +149,7 @@ export interface VendorTrustPortalData {
     contactName?: string;
     status?: string;
   };
+  trustPortalItems: TrustPortalItem[];
   sharedDocuments: TrustPortalSharedDocument[];
   vendorWorks: any[];
   questionnaireAnswers: any[];

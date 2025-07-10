@@ -392,8 +392,12 @@ export class TrustPortalService {
       feedbackResult = await this.databaseService.query(feedbackQuery, [vendorId]);
     }
 
+    // Get trust portal items
+    const trustPortalItems = await this.getVendorTrustPortalItems(vendorId);
+
     return {
       vendor: vendorResult.rows[0],
+      trustPortalItems: trustPortalItems,
       sharedDocuments: documentsResult.rows,
       vendorWorks: worksResult.rows,
       questionnaireAnswers: [], // TODO: Implement questionnaire answers
