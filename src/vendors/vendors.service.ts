@@ -414,7 +414,7 @@ export class VendorsService {
         expiresAt
       ]);
 
-      const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/trust-portal/public/${token}`;
+      const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/trust-portal/invite?token=${token}`;
 
       return {
         token: result.rows[0].token,
@@ -456,7 +456,7 @@ export class VendorsService {
       }
 
       const row = result.rows[0];
-      const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/trust-portal/public/${row.token}`;
+      const inviteLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/trust-portal/invite?token=${row.token}`;
 
       return {
         token: row.token,
