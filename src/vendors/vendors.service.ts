@@ -9,34 +9,10 @@ export class VendorsService {
     private readonly databaseService: DatabaseService
   ) {}
 
-  // Legacy method - DEPRECATED: Use findAllByOrganization instead
+  // DEPRECATED: Security risk - should not be used
+  // This method has been disabled to prevent security vulnerabilities
   async findAll(): Promise<Vendor[]> {
-    const query = `
-      SELECT 
-        vendor_id as "vendorId",
-        uuid,
-        company_name as "companyName",
-        contact_name as "contactName",
-        contact_email as "contactEmail",
-        website,
-        industry,
-        description,
-        region,
-        status,
-        organization_id as "organizationId",
-        created_by_user_id as "createdByUserId",
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM vendors 
-      ORDER BY created_at DESC
-    `;
-
-    const result = await this.databaseService.query(query);
-    return result.rows.map(row => ({
-      ...row,
-      id: row.vendorId.toString(), // Legacy compatibility
-      name: row.companyName // Legacy compatibility
-    }));
+    throw new Error('SECURITY_VIOLATION: Use findAllByOrganization() instead to ensure proper data isolation');
   }
 
   // NEW: Organization-filtered vendor retrieval
