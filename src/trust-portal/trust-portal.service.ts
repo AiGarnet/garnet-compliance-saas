@@ -395,6 +395,11 @@ export class TrustPortalService {
     // Get trust portal items
     const trustPortalItems = await this.getVendorTrustPortalItems(vendorId);
 
+    // First, get the vendor's UUID for proper checklist joining
+    const vendorUuidQuery = `SELECT uuid FROM vendors WHERE vendor_id = $1`;
+    const vendorUuidResult = await this.databaseService.query(vendorUuidQuery, [vendorId]);
+    const vendorUuid = vendorUuidResult.rows[0]?.uuid;
+
     // Get questionnaire answers grouped by questionnaire/checklist
     const questionnaireAnswersQuery = `
       SELECT 
@@ -436,7 +441,7 @@ export class TrustPortalService {
         ) as "supportingDocuments"
       FROM vendor_questionnaire_answers vqa
       LEFT JOIN checklist_questions cq ON cq.question_text = vqa.question
-      LEFT JOIN checklists c ON c.id = cq.checklist_id AND c.vendor_id = vqa.vendor_id
+      LEFT JOIN checklists c ON c.id = cq.checklist_id AND c.vendor_id = $2
       LEFT JOIN checklist_supporting_documents csd ON csd.question_id = cq.id
       WHERE vqa.vendor_id = $1 AND vqa.share_to_trust_portal = true
       GROUP BY vqa.id, vqa.vendor_id, vqa.question_id, vqa.question, vqa.answer, 
@@ -447,7 +452,7 @@ export class TrustPortalService {
       ORDER BY c.name, cq.question_order, vqa.created_at DESC
     `;
     
-    const questionnaireAnswersResult = await this.databaseService.query(questionnaireAnswersQuery, [vendorId]);
+    const questionnaireAnswersResult = await this.databaseService.query(questionnaireAnswersQuery, [vendorId, vendorUuid]);
     
     // Group questionnaire answers by checklist
     const checklistsMap = new Map();
