@@ -444,23 +444,30 @@ export class TrustPortalService {
     
     const checklists = Array.from(checklistsMap.values());
 
-    // Get evidence files/documents
-    const evidenceFilesQuery = `
-      SELECT 
-        ef.id,
-        ef.vendor_id as "vendorId",
-        ef.filename,
-        ef.original_filename as "originalFilename",
-        ef.mime_type as "mimeType",
-        ef.file_size as "fileSize",
-        ef.spaces_url as "spacesUrl",
-        ef.uploaded_at as "uploadedAt"
-      FROM evidence_files ef
-      WHERE ef.vendor_id = $1
-      ORDER BY ef.uploaded_at DESC
-    `;
+    // Get evidence files/documents - need to use vendor UUID not vendor_id
+    const vendorUuidQuery = `SELECT uuid FROM vendors WHERE vendor_id = $1`;
+    const vendorUuidResult = await this.databaseService.query(vendorUuidQuery, [vendorId]);
+    const vendorUuid = vendorUuidResult.rows[0]?.uuid;
     
-    const evidenceFilesResult = await this.databaseService.query(evidenceFilesQuery, [vendorId]);
+    let evidenceFilesResult = { rows: [] };
+    if (vendorUuid) {
+      const evidenceFilesQuery = `
+        SELECT 
+          ef.id,
+          ef.vendor_id as "vendorId",
+          ef.filename,
+          ef.original_filename as "originalFilename",
+          ef.file_type as "mimeType",
+          ef.file_size as "fileSize",
+          ef.spaces_url as "spacesUrl",
+          ef.upload_date as "uploadedAt"
+        FROM evidence_files ef
+        WHERE ef.vendor_id = $1
+        ORDER BY ef.upload_date DESC
+      `;
+      
+      evidenceFilesResult = await this.databaseService.query(evidenceFilesQuery, [vendorUuid]);
+    }
 
     return {
       vendor: vendorResult.rows[0],
