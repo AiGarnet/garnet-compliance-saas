@@ -114,5 +114,16 @@
   },
   "engines": {
     "node": ">=16.0.0"
-  }
+  },
+  "main": "check_database.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AiGarnet/garnet-compliance-saas.git"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/AiGarnet/garnet-compliance-saas/issues"
+  },
+  "homepage": "https://github.com/AiGarnet/garnet-compliance-saas#readme"
 }
