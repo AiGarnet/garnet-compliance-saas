@@ -415,9 +415,10 @@ export class TrustPortalService {
     
     const questionnaireAnswersResult = await this.databaseService.query(questionnaireAnswersQuery, [vendorId]);
     
-    // Group questionnaire answers by questionnaire title
+    // Parse checklists from trust portal items (which contain JSON questionnaire data)
     const checklistsMap = new Map();
     
+    // First, add any direct questionnaire answers
     for (const row of questionnaireAnswersResult.rows) {
       const checklistId = row.questionTitle || 'general';
       const checklistName = row.questionTitle || 'General Questions';
@@ -440,6 +441,43 @@ export class TrustPortalService {
         documentDescription: null,
         supportingDocuments: []
       });
+    }
+    
+    // Parse questionnaire data from trust portal items
+    for (const item of trustPortalItems) {
+      if (item.isQuestionnaireAnswer && item.content) {
+        try {
+          const questionnaireData = JSON.parse(item.content);
+          if (questionnaireData.questions && Array.isArray(questionnaireData.questions)) {
+            const checklistId = questionnaireData.checklistId || questionnaireData.checklistName || 'general';
+            const checklistName = questionnaireData.checklistName || 'Compliance Questionnaire';
+            
+            if (!checklistsMap.has(checklistId)) {
+              checklistsMap.set(checklistId, {
+                id: checklistId,
+                name: checklistName,
+                questions: []
+              });
+            }
+            
+            // Add questions from the JSON data
+            questionnaireData.questions.forEach((question: any) => {
+              checklistsMap.get(checklistId).questions.push({
+                id: question.id,
+                questionText: question.question,
+                aiAnswer: question.answer,
+                confidenceScore: question.confidenceScore ? parseFloat(question.confidenceScore) : null,
+                status: question.status || 'completed',
+                requiresDocument: question.requiresDocument || false,
+                documentDescription: question.documentDescription || null,
+                supportingDocuments: []
+              });
+            });
+          }
+        } catch (error) {
+          console.error('Error parsing questionnaire data from trust portal item:', error);
+        }
+      }
     }
     
     const checklists = Array.from(checklistsMap.values());
