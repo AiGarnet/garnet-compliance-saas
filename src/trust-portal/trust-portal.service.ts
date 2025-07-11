@@ -443,7 +443,61 @@ export class TrustPortalService {
       });
     }
     
-    // Parse questionnaire data from trust portal items
+
+    
+    // Get vendor UUID first - needed for evidence files and supporting documents
+    const vendorUuidQuery = `SELECT uuid FROM vendors WHERE vendor_id = $1`;
+    const vendorUuidResult = await this.databaseService.query(vendorUuidQuery, [vendorId]);
+    const vendorUuid = vendorUuidResult.rows[0]?.uuid;
+    
+    // Get supporting documents for the vendor (using UUID)
+    let supportingDocumentsResult = { rows: [] };
+    if (vendorUuid) {
+      const supportingDocsQuery = `
+        SELECT 
+          csd.id,
+          csd.question_id as "questionId",
+          csd.filename,
+          csd.file_type as "fileType",
+          csd.file_size as "fileSize",
+          csd.spaces_url as "spacesUrl",
+          csd.uploaded_at as "uploadedAt",
+          cq.question_text as "questionText"
+        FROM checklist_supporting_documents csd
+        LEFT JOIN checklist_questions cq ON csd.question_id = cq.id
+        WHERE csd.vendor_id = $1
+        ORDER BY csd.uploaded_at DESC
+      `;
+      
+      supportingDocumentsResult = await this.databaseService.query(supportingDocsQuery, [vendorUuid]);
+    }
+
+    // Create a map of question ID to supporting documents and collect general documents
+    const questionDocumentsMap = new Map<string, any[]>();
+    const generalDocuments: any[] = [];
+    
+    supportingDocumentsResult.rows.forEach(doc => {
+      const docInfo = {
+        id: doc.id,
+        filename: doc.filename,
+        fileType: doc.fileType || 'application/octet-stream',
+        spacesUrl: doc.spacesUrl,
+        uploadedAt: doc.uploadedAt
+      };
+      
+      if (doc.questionId) {
+        // Document linked to a specific question
+        if (!questionDocumentsMap.has(doc.questionId)) {
+          questionDocumentsMap.set(doc.questionId, []);
+        }
+        questionDocumentsMap.get(doc.questionId).push(docInfo);
+      } else {
+        // General document not linked to a question
+        generalDocuments.push(docInfo);
+      }
+    });
+
+    // Parse questionnaire data from trust portal items and attach supporting documents
     for (const item of trustPortalItems) {
       if (item.isQuestionnaireAnswer && item.content) {
         try {
@@ -462,6 +516,9 @@ export class TrustPortalService {
             
             // Add questions from the JSON data
             questionnaireData.questions.forEach((question: any) => {
+              // Look for supporting documents for this question
+              const supportingDocs = questionDocumentsMap.get(question.id) || [];
+              
               checklistsMap.get(checklistId).questions.push({
                 id: question.id,
                 questionText: question.question,
@@ -470,7 +527,7 @@ export class TrustPortalService {
                 status: question.status || 'completed',
                 requiresDocument: question.requiresDocument || false,
                 documentDescription: question.documentDescription || null,
-                supportingDocuments: []
+                supportingDocuments: supportingDocs
               });
             });
           }
@@ -479,13 +536,8 @@ export class TrustPortalService {
         }
       }
     }
-    
-    const checklists = Array.from(checklistsMap.values());
 
-    // Get evidence files/documents - need to use vendor UUID not vendor_id
-    const vendorUuidQuery = `SELECT uuid FROM vendors WHERE vendor_id = $1`;
-    const vendorUuidResult = await this.databaseService.query(vendorUuidQuery, [vendorId]);
-    const vendorUuid = vendorUuidResult.rows[0]?.uuid;
+    const checklists = Array.from(checklistsMap.values());
     
     let evidenceFilesResult = { rows: [] };
     if (vendorUuid) {
@@ -517,13 +569,18 @@ export class TrustPortalService {
       feedback: feedbackResult.rows,
       // Frontend expects these specific fields
       checklists: checklists,
-      documents: evidenceFilesResult.rows.map(doc => ({
-        id: doc.id,
-        filename: doc.originalFilename || doc.filename,
-        fileType: doc.mimeType || 'application/octet-stream',
-        spacesUrl: doc.spacesUrl,
-        uploadedAt: doc.uploadedAt
-      }))
+      documents: [
+        // Evidence files
+        ...evidenceFilesResult.rows.map(doc => ({
+          id: doc.id,
+          filename: doc.originalFilename || doc.filename,
+          fileType: doc.mimeType || 'application/octet-stream',
+          spacesUrl: doc.spacesUrl,
+          uploadedAt: doc.uploadedAt
+        })),
+        // General supporting documents (not linked to questions)
+        ...generalDocuments
+      ]
     };
   }
 

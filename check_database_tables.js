@@ -127,46 +127,90 @@ async function checkDatabaseTables() {
     
     // Check for the specific vendor that's causing issues
     console.log('\n🎯 CHECKING SPECIFIC VENDOR:');
-    console.log('-'.repeat(50));
-    const vendorUuid = 'f18eec97-86e9-44c4-80b7-c86461f3efbe';
+    console.log('--------------------------------------------------');
     
-    try {
-      const vendorQuery = `
-        SELECT vendor_id, uuid, company_name, status
-        FROM vendors 
-        WHERE uuid = $1
-      `;
-      const vendorResult = await client.query(vendorQuery, [vendorUuid]);
+    // Check specific vendor (Testing1)
+    const vendorResult = await client.query(
+      "SELECT vendor_id, uuid, company_name, status FROM vendors WHERE company_name = 'Testing1'"
+    );
+    
+    if (vendorResult.rows.length > 0) {
+      const vendor = vendorResult.rows[0];
+      console.log(`✅ Found vendor: ${vendor.company_name} (ID: ${vendor.vendor_id}, UUID: ${vendor.uuid})`);
       
-      if (vendorResult.rows.length > 0) {
-        const vendor = vendorResult.rows[0];
-        console.log(`✅ Found vendor: ${vendor.company_name} (ID: ${vendor.vendor_id}, UUID: ${vendor.uuid})`);
+      // Count questionnaire answers
+      const answersCount = await client.query(
+        'SELECT COUNT(*) as total, COUNT(CASE WHEN share_to_trust_portal = true THEN 1 END) as shared FROM vendor_questionnaire_answers WHERE vendor_id = $1',
+        [vendor.vendor_id]
+      );
+      console.log(`📋 Questionnaire answers: ${answersCount.rows[0].total} total, ${answersCount.rows[0].shared} shared to trust portal`);
+      
+      // Check checklist supporting documents for this vendor using UUID
+      try {
+        const supportingDocsResult = await client.query(
+          `SELECT 
+            csd.id,
+            csd.question_id,
+            csd.filename,
+            csd.file_type,
+            csd.file_size,
+            csd.spaces_url,
+            csd.uploaded_at,
+            cq.question_text
+          FROM checklist_supporting_documents csd
+          LEFT JOIN checklist_questions cq ON csd.question_id = cq.id
+          WHERE csd.vendor_id = $1
+          ORDER BY csd.uploaded_at DESC`,
+          [vendor.uuid]  // Use UUID instead of vendor_id
+        );
         
-        // Check questionnaire answers for this vendor
-        const answersQuery = `
-          SELECT COUNT(*) as count, 
-                 COUNT(*) FILTER (WHERE share_to_trust_portal = true) as shared_count
-          FROM vendor_questionnaire_answers 
-          WHERE vendor_id = $1
-        `;
-        const answersResult = await client.query(answersQuery, [vendor.vendor_id]);
-        console.log(`📋 Questionnaire answers: ${answersResult.rows[0].count} total, ${answersResult.rows[0].shared_count} shared to trust portal`);
+        console.log(`📎 Supporting documents: ${supportingDocsResult.rows.length}`);
+        if (supportingDocsResult.rows.length > 0) {
+          console.log('📄 Supporting documents details:');
+          supportingDocsResult.rows.forEach((doc, index) => {
+            console.log(`  ${index + 1}. ${doc.filename} (${doc.file_type}) - ${doc.file_size} bytes`);
+            console.log(`     Question: ${doc.question_text || 'No question linked'}`);
+            console.log(`     URL: ${doc.spaces_url || 'No URL'}`);
+            console.log(`     Uploaded: ${doc.uploaded_at}`);
+          });
+        }
         
-        // Check evidence files for this vendor
-        const evidenceQuery = `
-          SELECT COUNT(*) as count
+        // Also check evidence files using UUID
+        const evidenceResult = await client.query(
+          `SELECT 
+            id,
+            filename,
+            original_filename,
+            file_type,
+            file_size,
+            spaces_url,
+            upload_date,
+            category,
+            description
           FROM evidence_files 
           WHERE vendor_id = $1
-        `;
-        const evidenceResult = await client.query(evidenceQuery, [vendor.vendor_id]);
-        console.log(`📎 Evidence files: ${evidenceResult.rows[0].count}`);
+          ORDER BY upload_date DESC`,
+          [vendor.uuid]
+        );
         
-      } else {
-        console.log(`❌ Vendor with UUID '${vendorUuid}' not found`);
+        console.log(`📋 Evidence files: ${evidenceResult.rows.length}`);
+        if (evidenceResult.rows.length > 0) {
+          console.log('📄 Evidence files details:');
+          evidenceResult.rows.forEach((doc, index) => {
+            console.log(`  ${index + 1}. ${doc.original_filename} (${doc.file_type}) - ${doc.file_size} bytes`);
+            console.log(`     Category: ${doc.category || 'No category'}`);
+            console.log(`     Description: ${doc.description || 'No description'}`);
+            console.log(`     URL: ${doc.spaces_url || 'No URL'}`);
+            console.log(`     Uploaded: ${doc.upload_date}`);
+          });
+        }
+        
+      } catch (error) {
+        console.log(`❌ Error checking supporting documents: ${error.message}`);
       }
       
-    } catch (error) {
-      console.log('❌ Error checking specific vendor:', error.message);
+    } else {
+      console.log('❌ Vendor Testing1 not found');
     }
 
   } catch (error) {
