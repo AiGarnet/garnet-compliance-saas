@@ -156,4 +156,26 @@ export interface VendorTrustPortalData {
   evidenceFiles: any[];
   feedback: TrustPortalFeedback[];
   inviteToken?: string;
+  // Frontend-specific fields
+  checklists?: Array<{
+    id: string;
+    name: string;
+    questions: Array<{
+      id: string;
+      questionText: string;
+      aiAnswer?: string;
+      confidenceScore?: number;
+      status: string;
+      requiresDocument: boolean;
+      documentDescription?: string;
+      supportingDocuments?: any[];
+    }>;
+  }>;
+  documents?: Array<{
+    id: string;
+    filename: string;
+    fileType: string;
+    spacesUrl?: string;
+    uploadedAt: string;
+  }>;
 } 

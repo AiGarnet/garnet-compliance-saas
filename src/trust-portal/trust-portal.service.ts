@@ -395,14 +395,124 @@ export class TrustPortalService {
     // Get trust portal items
     const trustPortalItems = await this.getVendorTrustPortalItems(vendorId);
 
+    // Get questionnaire answers grouped by questionnaire/checklist
+    const questionnaireAnswersQuery = `
+      SELECT 
+        vqa.id,
+        vqa.vendor_id as "vendorId",
+        vqa.question_id as "questionId",
+        vqa.question,
+        vqa.answer,
+        vqa.status,
+        vqa.question_title as "questionTitle",
+        vqa.share_to_trust_portal as "shareToTrustPortal",
+        vqa.created_at as "createdAt",
+        vqa.updated_at as "updatedAt",
+        -- Get checklist questions with AI answers and supporting documents
+        cq.question_text as "questionText",
+        cq.ai_answer as "aiAnswer",
+        cq.confidence_score as "confidenceScore",
+        cq.requires_document as "requiresDocument",
+        cq.document_description as "documentDescription",
+        c.id as "checklistId",
+        c.name as "checklistName",
+        -- Get supporting documents
+        COALESCE(
+          JSON_AGG(
+            CASE 
+              WHEN csd.id IS NOT NULL THEN
+                JSON_BUILD_OBJECT(
+                  'id', csd.id,
+                  'filename', csd.filename,
+                  'fileType', csd.file_type,
+                  'fileSize', csd.file_size,
+                  'spacesUrl', csd.spaces_url,
+                  'uploadedAt', csd.uploaded_at
+                )
+              ELSE NULL
+            END
+          ) FILTER (WHERE csd.id IS NOT NULL),
+          '[]'
+        ) as "supportingDocuments"
+      FROM vendor_questionnaire_answers vqa
+      LEFT JOIN checklist_questions cq ON cq.question_text = vqa.question
+      LEFT JOIN checklists c ON c.id = cq.checklist_id AND c.vendor_id = vqa.vendor_id
+      LEFT JOIN checklist_supporting_documents csd ON csd.question_id = cq.id
+      WHERE vqa.vendor_id = $1 AND vqa.share_to_trust_portal = true
+      GROUP BY vqa.id, vqa.vendor_id, vqa.question_id, vqa.question, vqa.answer, 
+               vqa.status, vqa.question_title, vqa.share_to_trust_portal, 
+               vqa.created_at, vqa.updated_at, cq.question_text, cq.ai_answer, 
+               cq.confidence_score, cq.requires_document, cq.document_description,
+               c.id, c.name
+      ORDER BY c.name, cq.question_order, vqa.created_at DESC
+    `;
+    
+    const questionnaireAnswersResult = await this.databaseService.query(questionnaireAnswersQuery, [vendorId]);
+    
+    // Group questionnaire answers by checklist
+    const checklistsMap = new Map();
+    
+    for (const row of questionnaireAnswersResult.rows) {
+      const checklistId = row.checklistId || 'general';
+      const checklistName = row.checklistName || row.questionTitle || 'General Questions';
+      
+      if (!checklistsMap.has(checklistId)) {
+        checklistsMap.set(checklistId, {
+          id: checklistId,
+          name: checklistName,
+          questions: []
+        });
+      }
+      
+      checklistsMap.get(checklistId).questions.push({
+        id: row.questionId || row.id,
+        questionText: row.questionText || row.question,
+        aiAnswer: row.aiAnswer || row.answer,
+        confidenceScore: row.confidenceScore,
+        status: row.status,
+        requiresDocument: row.requiresDocument || false,
+        documentDescription: row.documentDescription,
+        supportingDocuments: row.supportingDocuments || []
+      });
+    }
+    
+    const checklists = Array.from(checklistsMap.values());
+
+    // Get evidence files/documents
+    const evidenceFilesQuery = `
+      SELECT 
+        ef.id,
+        ef.vendor_id as "vendorId",
+        ef.filename,
+        ef.original_filename as "originalFilename",
+        ef.mime_type as "mimeType",
+        ef.file_size as "fileSize",
+        ef.spaces_url as "spacesUrl",
+        ef.uploaded_at as "uploadedAt"
+      FROM evidence_files ef
+      WHERE ef.vendor_id = $1
+      ORDER BY ef.uploaded_at DESC
+    `;
+    
+    const evidenceFilesResult = await this.databaseService.query(evidenceFilesQuery, [vendorId]);
+
     return {
       vendor: vendorResult.rows[0],
       trustPortalItems: trustPortalItems,
       sharedDocuments: documentsResult.rows,
       vendorWorks: worksResult.rows,
-      questionnaireAnswers: [], // TODO: Implement questionnaire answers
-      evidenceFiles: [], // TODO: Implement evidence files
-      feedback: feedbackResult.rows
+      questionnaireAnswers: questionnaireAnswersResult.rows,
+      evidenceFiles: evidenceFilesResult.rows,
+      feedback: feedbackResult.rows,
+      // Frontend expects these specific fields
+      checklists: checklists,
+      documents: evidenceFilesResult.rows.map(doc => ({
+        id: doc.id,
+        filename: doc.originalFilename || doc.filename,
+        fileType: doc.mimeType || 'application/octet-stream',
+        spacesUrl: doc.spacesUrl,
+        uploadedAt: doc.uploadedAt
+      }))
     };
   }
 
