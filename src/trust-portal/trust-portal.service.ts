@@ -395,12 +395,7 @@ export class TrustPortalService {
     // Get trust portal items
     const trustPortalItems = await this.getVendorTrustPortalItems(vendorId);
 
-    // First, get the vendor's UUID for proper checklist joining
-    const vendorUuidQuery = `SELECT uuid FROM vendors WHERE vendor_id = $1`;
-    const vendorUuidResult = await this.databaseService.query(vendorUuidQuery, [vendorId]);
-    const vendorUuid = vendorUuidResult.rows[0]?.uuid;
-
-    // Get questionnaire answers grouped by questionnaire/checklist
+    // Get questionnaire answers - simplified query to avoid UUID/integer issues
     const questionnaireAnswersQuery = `
       SELECT 
         vqa.id,
@@ -412,54 +407,20 @@ export class TrustPortalService {
         vqa.question_title as "questionTitle",
         vqa.share_to_trust_portal as "shareToTrustPortal",
         vqa.created_at as "createdAt",
-        vqa.updated_at as "updatedAt",
-        -- Get checklist questions with AI answers and supporting documents
-        cq.question_text as "questionText",
-        cq.ai_answer as "aiAnswer",
-        cq.confidence_score as "confidenceScore",
-        cq.requires_document as "requiresDocument",
-        cq.document_description as "documentDescription",
-        c.id as "checklistId",
-        c.name as "checklistName",
-        -- Get supporting documents
-        COALESCE(
-          JSON_AGG(
-            CASE 
-              WHEN csd.id IS NOT NULL THEN
-                JSON_BUILD_OBJECT(
-                  'id', csd.id,
-                  'filename', csd.filename,
-                  'fileType', csd.file_type,
-                  'fileSize', csd.file_size,
-                  'spacesUrl', csd.spaces_url,
-                  'uploadedAt', csd.uploaded_at
-                )
-              ELSE NULL
-            END
-          ) FILTER (WHERE csd.id IS NOT NULL),
-          '[]'
-        ) as "supportingDocuments"
+        vqa.updated_at as "updatedAt"
       FROM vendor_questionnaire_answers vqa
-      LEFT JOIN checklist_questions cq ON cq.question_text = vqa.question
-      LEFT JOIN checklists c ON c.id = cq.checklist_id AND c.vendor_id = $2
-      LEFT JOIN checklist_supporting_documents csd ON csd.question_id = cq.id
       WHERE vqa.vendor_id = $1 AND vqa.share_to_trust_portal = true
-      GROUP BY vqa.id, vqa.vendor_id, vqa.question_id, vqa.question, vqa.answer, 
-               vqa.status, vqa.question_title, vqa.share_to_trust_portal, 
-               vqa.created_at, vqa.updated_at, cq.question_text, cq.ai_answer, 
-               cq.confidence_score, cq.requires_document, cq.document_description,
-               c.id, c.name
-      ORDER BY c.name, cq.question_order, vqa.created_at DESC
+      ORDER BY vqa.created_at DESC
     `;
     
-    const questionnaireAnswersResult = await this.databaseService.query(questionnaireAnswersQuery, [vendorId, vendorUuid]);
+    const questionnaireAnswersResult = await this.databaseService.query(questionnaireAnswersQuery, [vendorId]);
     
-    // Group questionnaire answers by checklist
+    // Group questionnaire answers by questionnaire title
     const checklistsMap = new Map();
     
     for (const row of questionnaireAnswersResult.rows) {
-      const checklistId = row.checklistId || 'general';
-      const checklistName = row.checklistName || row.questionTitle || 'General Questions';
+      const checklistId = row.questionTitle || 'general';
+      const checklistName = row.questionTitle || 'General Questions';
       
       if (!checklistsMap.has(checklistId)) {
         checklistsMap.set(checklistId, {
@@ -471,13 +432,13 @@ export class TrustPortalService {
       
       checklistsMap.get(checklistId).questions.push({
         id: row.questionId || row.id,
-        questionText: row.questionText || row.question,
-        aiAnswer: row.aiAnswer || row.answer,
-        confidenceScore: row.confidenceScore,
+        questionText: row.question,
+        aiAnswer: row.answer,
+        confidenceScore: null,
         status: row.status,
-        requiresDocument: row.requiresDocument || false,
-        documentDescription: row.documentDescription,
-        supportingDocuments: row.supportingDocuments || []
+        requiresDocument: false,
+        documentDescription: null,
+        supportingDocuments: []
       });
     }
     
