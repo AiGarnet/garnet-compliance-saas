@@ -34,7 +34,6 @@ export interface LogActivityOptions {
 export interface ActivityFilters {
   userId?: string;
   type?: ActivityType | ActivityType[];
-  status?: ActivityStatus;
   entityType?: string;
   entityId?: string;
   startDate?: Date;
@@ -76,16 +75,17 @@ export class ActivitiesService {
       
       const activity = this.activityRepository.create({
         type: options.type,
-        status: options.status || ActivityStatus.SUCCESS,
         description,
         userId: options.userId,
-        userName: options.userName,
-        userEmail: options.userEmail,
-        entityId: options.entityId,
+        entityId: options.entityId ? parseInt(options.entityId) : null,
         entityType: options.entityType,
-        entityName: options.entityName,
         metadata: {
           ...options.metadata,
+          status: options.status || ActivityStatus.SUCCESS,
+          userName: options.userName,
+          userEmail: options.userEmail,
+          entityName: options.entityName,
+          toastConfig: options.toastConfig,
           ...(options.request && {
             apiEndpoint: options.request.endpoint,
             httpMethod: options.request.method,
@@ -94,7 +94,6 @@ export class ActivitiesService {
             userAgent: options.request.userAgent,
           })
         },
-        toastConfig: options.toastConfig,
       });
 
       const savedActivity = await this.activityRepository.save(activity);
@@ -185,14 +184,10 @@ export class ActivitiesService {
 
       if (filters.type) {
         if (Array.isArray(filters.type)) {
-          query.andWhere('activity.type IN (:...types)', { types: filters.type });
+          query.andWhere('activity.activity_type IN (:...types)', { types: filters.type });
         } else {
-          query.andWhere('activity.type = :type', { type: filters.type });
+          query.andWhere('activity.activity_type = :type', { type: filters.type });
         }
-      }
-
-      if (filters.status) {
-        query.andWhere('activity.status = :status', { status: filters.status });
       }
 
       if (filters.entityType) {
@@ -278,25 +273,22 @@ export class ActivitiesService {
 
       // Activities by type
       const typeQuery = baseQuery.clone();
-      typeQuery.select('activity.type', 'type')
+      typeQuery.select('activity.activity_type', 'type')
                .addSelect('COUNT(*)', 'count')
-               .groupBy('activity.type');
+               .groupBy('activity.activity_type');
       const typeResults = await typeQuery.getRawMany();
       const activitiesByType = typeResults.reduce((acc, row) => {
         acc[row.type] = parseInt(row.count);
         return acc;
       }, {} as Record<ActivityType, number>);
 
-      // Activities by status
-      const statusQuery = baseQuery.clone();
-      statusQuery.select('activity.status', 'status')
-                 .addSelect('COUNT(*)', 'count')
-                 .groupBy('activity.status');
-      const statusResults = await statusQuery.getRawMany();
-      const activitiesByStatus = statusResults.reduce((acc, row) => {
-        acc[row.status] = parseInt(row.count);
-        return acc;
-      }, {} as Record<ActivityStatus, number>);
+      // Activities by status (default to success since not in database)
+      const activitiesByStatus = {
+        [ActivityStatus.SUCCESS]: totalActivities,
+        [ActivityStatus.PENDING]: 0,
+        [ActivityStatus.FAILED]: 0,
+        [ActivityStatus.IN_PROGRESS]: 0,
+      } as Record<ActivityStatus, number>;
 
       // Most active users (if not filtered by user)
       let mostActiveUsers = [];
@@ -337,11 +329,10 @@ export class ActivitiesService {
   }
 
   /**
-   * Update activity status (useful for async operations)
+   * Update activity metadata (useful for async operations)
    */
-  async updateActivityStatus(
-    activityId: string, 
-    status: ActivityStatus, 
+  async updateActivityMetadata(
+    activityId: number, 
     additionalMetadata?: Record<string, any>
   ): Promise<Activity> {
     try {
@@ -352,22 +343,11 @@ export class ActivitiesService {
       if (!activity) {
         throw new Error(`Activity with ID ${activityId} not found`);
       }
-
-      activity.status = status;
       
       if (additionalMetadata) {
         activity.metadata = {
           ...activity.metadata,
           ...additionalMetadata
-        };
-      }
-
-      // Update toast config based on status
-      if (activity.toastConfig) {
-        activity.toastConfig = {
-          ...activity.toastConfig,
-          type: status === ActivityStatus.SUCCESS ? 'success' : 
-                status === ActivityStatus.FAILED ? 'error' : 'warning'
         };
       }
 

@@ -92,7 +92,7 @@ export class ActivitiesController {
         const types = type.split(',') as ActivityType[];
         filters.type = types.length === 1 ? types[0] : types;
       }
-      if (status) filters.status = status as ActivityStatus;
+      // Status filter removed since not supported by database structure
       if (entityType) filters.entityType = entityType;
       if (entityId) filters.entityId = entityId;
       if (startDate) filters.startDate = new Date(startDate);
@@ -182,7 +182,7 @@ export class ActivitiesController {
         limit: 1, 
         offset: 0 
       });
-      const activity = activities.find(a => a.id === id);
+      const activity = activities.find(a => a.id === parseInt(id));
 
       if (!activity) {
         return {

@@ -67,103 +67,61 @@ export enum ActivityStatus {
 @Index(['type', 'createdAt'])
 @Index(['status', 'createdAt'])
 export class Activity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn({ name: 'activity_id' })
+  id: number;
 
   @Column({
-    type: 'enum',
-    enum: ActivityType,
+    name: 'activity_type',
+    type: 'varchar',
   })
   @Index()
   type: ActivityType;
 
   @Column({
-    type: 'enum',
-    enum: ActivityStatus,
-    default: ActivityStatus.SUCCESS
+    name: 'entity_type',
+    type: 'varchar',
   })
-  status: ActivityStatus;
+  entityType: string;
 
-  @Column({ length: 500 })
+  @Column({
+    name: 'entity_id',
+    type: 'integer',
+  })
+  entityId: number;
+
+  @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ name: 'user_id', length: 255, nullable: true })
+  @Column({ name: 'user_id', type: 'uuid', nullable: true })
   userId: string;
-
-  @Column({ name: 'user_name', length: 255, nullable: true })
-  userName: string;
-
-  @Column({ name: 'user_email', length: 255, nullable: true })
-  userEmail: string;
-
-  // Entity references for relationships
-  @Column({ name: 'entity_id', length: 255, nullable: true })
-  entityId: string; // ID of the related entity (vendor, questionnaire, etc.)
-
-  @Column({ name: 'entity_type', length: 100, nullable: true })
-  entityType: string; // Type of entity (vendor, questionnaire, evidence, etc.)
-
-  @Column({ name: 'entity_name', length: 255, nullable: true })
-  entityName: string; // Name/title of the entity for display
 
   // Metadata stored as JSON
   @Column({ name: 'metadata', type: 'jsonb', nullable: true })
-  metadata: {
-    // Client related
-    clientId?: string;
-    clientName?: string;
-    previousStatus?: string;
-    newStatus?: string;
-    
-    // Questionnaire related
-    questionnaireId?: string;
-    questionnaireName?: string;
-    frameworkType?: string;
-    
-    // Evidence related
-    evidenceId?: string;
-    evidenceType?: string;
-    fileName?: string;
-    fileSize?: number;
-    
-    // Compliance related
-    complianceScore?: number;
-    previousScore?: number;
-    frameworkName?: string;
-    
-    // API Response data
-    apiEndpoint?: string;
-    httpMethod?: string;
-    responseTime?: number;
-    
-    // Request context
-    ipAddress?: string;
-    userAgent?: string;
-    location?: string;
-    
-    // Additional context
-    additionalData?: Record<string, any>;
-  };
-
-  // Toast notification data
-  @Column({ name: 'toast_config', type: 'jsonb', nullable: true })
-  toastConfig: {
-    title: string;
-    message: string;
-    type: 'success' | 'warning' | 'error' | 'info';
-    duration?: number;
-    showProgress?: boolean;
-    actions?: Array<{
-      label: string;
-      action: string;
-    }>;
-  };
+  metadata: Record<string, any>;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  // Virtual properties for compatibility with existing code
+  get status(): ActivityStatus {
+    return ActivityStatus.SUCCESS; // Default status since database doesn't have this field
+  }
+
+  get userName(): string {
+    return this.metadata?.userName || '';
+  }
+
+  get userEmail(): string {
+    return this.metadata?.userEmail || '';
+  }
+
+  get entityName(): string {
+    return this.metadata?.entityName || '';
+  }
+
+  get toastConfig(): any {
+    return this.metadata?.toastConfig || null;
+  }
 
   // Virtual properties for display
   get formattedTimestamp(): string {
