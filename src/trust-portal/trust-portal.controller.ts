@@ -18,6 +18,7 @@ import {
   CreateTrustPortalItemDto, 
   UpdateTrustPortalItemDto,
   CreateTrustPortalFeedbackDto,
+  CreateVendorFeedbackDto,
   CreateFeedbackResponseDto,
   UpdateFeedbackStatusDto,
   CreateSharedDocumentDto
@@ -297,7 +298,7 @@ export class TrustPortalController {
   @ApiResponse({ status: 201, description: 'Feedback submitted successfully' })
   async createVendorFeedback(
     @Param('vendorId') vendorId: string,
-    @Body() createFeedbackDto: CreateTrustPortalFeedbackDto
+    @Body() createFeedbackDto: CreateVendorFeedbackDto
   ) {
     try {
       // Parse vendor ID and set it in the DTO
@@ -318,10 +319,20 @@ export class TrustPortalController {
         actualVendorId = vendor.vendorId;
       }
       
-      // Override vendorId in the DTO
-      createFeedbackDto.vendorId = actualVendorId;
+      // Create a proper CreateTrustPortalFeedbackDto
+      const feedbackDto: CreateTrustPortalFeedbackDto = {
+        vendorId: actualVendorId,
+        enterpriseContactName: createFeedbackDto.enterpriseContactName,
+        enterpriseContactEmail: createFeedbackDto.enterpriseContactEmail,
+        enterpriseCompanyName: createFeedbackDto.enterpriseCompanyName,
+        feedbackType: createFeedbackDto.feedbackType,
+        subject: createFeedbackDto.subject,
+        message: createFeedbackDto.message,
+        priority: createFeedbackDto.priority,
+        inviteToken: createFeedbackDto.inviteToken
+      };
       
-      const feedback = await this.trustPortalService.createFeedback(createFeedbackDto);
+      const feedback = await this.trustPortalService.createFeedback(feedbackDto);
       return feedback;
     } catch (error: any) {
       if (error instanceof HttpException) {

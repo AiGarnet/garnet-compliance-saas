@@ -178,6 +178,49 @@ export class CreateTrustPortalFeedbackDto {
   inviteToken?: string;
 }
 
+export class CreateVendorFeedbackDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  vendorId?: number; // Optional since it comes from URL parameter
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  enterpriseContactName?: string;
+
+  @ApiProperty()
+  @IsEmail()
+  enterpriseContactEmail: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  enterpriseCompanyName?: string;
+
+  @ApiProperty({ enum: FeedbackType })
+  @IsEnum(FeedbackType)
+  feedbackType: FeedbackType;
+
+  @ApiProperty()
+  @IsString()
+  subject: string;
+
+  @ApiProperty()
+  @IsString()
+  message: string;
+
+  @ApiPropertyOptional({ enum: FeedbackPriority })
+  @IsOptional()
+  @IsEnum(FeedbackPriority)
+  priority?: FeedbackPriority;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  inviteToken?: string;
+}
+
 export class CreateFeedbackResponseDto {
   @ApiProperty()
   @IsNumber()
