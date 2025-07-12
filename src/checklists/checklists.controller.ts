@@ -17,7 +17,8 @@ import {
   BadRequestException,
   Logger,
   NotFoundException,
-  Response
+  Response,
+  HttpException
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -35,6 +36,8 @@ import {
   QuestionResponseDto
 } from './dto/checklist.dto';
 import { Checklist, ChecklistQuestion } from './entities/checklist.entity';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('api/checklists')
 @UseGuards(JwtAuthGuard)
@@ -485,6 +488,37 @@ export class ChecklistsController {
     } catch (error: any) {
       this.logger.error(`Error getting organization supporting documents count for ${organizationId}:`, error);
       throw new BadRequestException(`Failed to get organization supporting documents count: ${error.message}`);
+    }
+  }
+
+  @Get('pending-tasks')
+  @ApiOperation({ summary: 'Get pending tasks analysis for dashboard' })
+  @ApiResponse({ status: 200, description: 'Returns pending tasks for the user\'s organization' })
+  async getPendingTasks(@CurrentUser() user?: any) {
+    try {
+      if (!user?.organization_id) {
+        throw new HttpException('User must belong to an organization', HttpStatus.UNAUTHORIZED);
+      }
+
+      const pendingTasks = await this.checklistsService.getPendingTasks(user.organization_id);
+      
+      return {
+        success: true,
+        data: pendingTasks,
+        meta: {
+          timestamp: new Date().toISOString(),
+          count: pendingTasks.length,
+          organizationId: user.organization_id
+        }
+      };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Failed to fetch pending tasks',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 

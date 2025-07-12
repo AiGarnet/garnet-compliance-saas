@@ -1025,4 +1025,137 @@ export class ChecklistsService {
       throw new BadRequestException('Failed to retrieve organization supporting documents count');
     }
   }
+
+  /**
+   * Get pending tasks analysis for dashboard
+   */
+  async getPendingTasks(organizationId: string): Promise<any[]> {
+    try {
+      const pendingTasks: any[] = [];
+
+      // Get all vendors in the organization
+      const vendorsQuery = `
+        SELECT vendor_id, uuid, company_name 
+        FROM vendors 
+        WHERE organization_id = $1
+      `;
+      const vendorsResult = await this.databaseService.query(vendorsQuery, [organizationId]);
+      const vendors = vendorsResult.rows;
+
+      // Get all checklists in the organization
+      const checklistsQuery = `
+        SELECT c.id, c.vendor_id, c.name, c.question_count, c.extraction_status
+        FROM checklists c
+        INNER JOIN vendors v ON c.vendor_id = v.uuid
+        WHERE v.organization_id = $1
+      `;
+      const checklistsResult = await this.databaseService.query(checklistsQuery, [organizationId]);
+      const checklists = checklistsResult.rows;
+
+      for (const checklist of checklists) {
+        const vendor = vendors.find(v => v.uuid === checklist.vendor_id);
+        if (!vendor) continue;
+
+        // Check if questions are generated for this checklist
+        const questionsQuery = `
+          SELECT 
+            cq.id,
+            cq.question_text,
+            vqa.answer,
+            cq.requires_document,
+            CASE WHEN COUNT(csd.id) > 0 THEN true ELSE false END as has_documents,
+            vqa.share_to_trust_portal
+          FROM checklist_questions cq
+          LEFT JOIN vendor_questionnaire_answers vqa ON cq.id = vqa.question_id
+          LEFT JOIN checklist_supporting_documents csd ON cq.id = csd.question_id
+          WHERE cq.checklist_id = $1
+          GROUP BY cq.id, cq.question_text, vqa.answer, cq.requires_document, vqa.share_to_trust_portal
+        `;
+        const questionsResult = await this.databaseService.query(questionsQuery, [checklist.id]);
+        const questions = questionsResult.rows;
+
+        if (questions.length === 0) {
+          // No questions generated yet
+          pendingTasks.push({
+            id: `question_gen_${checklist.id}_${vendor.vendor_id}`,
+            type: 'question_generation',
+            title: 'Generate Questions',
+            description: `Generate compliance questions for ${vendor.company_name} using ${checklist.name}`,
+            priority: 'high',
+            checklistId: checklist.id,
+            checklistName: checklist.name,
+            vendorId: vendor.vendor_id,
+            vendorName: vendor.company_name,
+            questionsCount: checklist.question_count || 0,
+            estimatedTime: '5-10 minutes'
+          });
+        } else {
+          // Check for unanswered questions
+          const unansweredQuestions = questions.filter(q => !q.answer || q.answer.trim() === '');
+          if (unansweredQuestions.length > 0) {
+            pendingTasks.push({
+              id: `answer_gen_${checklist.id}_${vendor.vendor_id}`,
+              type: 'question_generation',
+              title: 'Generate Answers',
+              description: `Generate AI answers for ${unansweredQuestions.length} unanswered questions for ${vendor.company_name}`,
+              priority: 'medium',
+              checklistId: checklist.id,
+              checklistName: checklist.name,
+              vendorId: vendor.vendor_id,
+              vendorName: vendor.company_name,
+              questionsCount: unansweredQuestions.length,
+              estimatedTime: '10-15 minutes'
+            });
+          }
+
+          // Check for missing supporting documents
+          const questionsNeedingDocs = questions.filter(q => q.requires_document && !q.has_documents);
+          if (questionsNeedingDocs.length > 0) {
+            pendingTasks.push({
+              id: `docs_upload_${checklist.id}_${vendor.vendor_id}`,
+              type: 'document_upload',
+              title: 'Upload Supporting Documents',
+              description: `Upload supporting documents for ${questionsNeedingDocs.length} questions for ${vendor.company_name}`,
+              priority: 'medium',
+              checklistId: checklist.id,
+              checklistName: checklist.name,
+              vendorId: vendor.vendor_id,
+              vendorName: vendor.company_name,
+              missingDocumentsCount: questionsNeedingDocs.length,
+              estimatedTime: '15-30 minutes'
+            });
+          }
+
+          // Check if questionnaire is ready for trust portal sharing
+          const allAnswered = questions.every(q => q.answer && q.answer.trim() !== '');
+          const allDocsUploaded = questions.filter(q => q.requires_document).every(q => q.has_documents);
+          const isSharedToTrustPortal = questions.some(q => q.share_to_trust_portal);
+
+          if (allAnswered && allDocsUploaded && !isSharedToTrustPortal) {
+            pendingTasks.push({
+              id: `trust_portal_${checklist.id}_${vendor.vendor_id}`,
+              type: 'trust_portal_sharing',
+              title: 'Share to Trust Portal',
+              description: `Share completed questionnaire for ${vendor.company_name} to Trust Portal for enterprise access`,
+              priority: 'low',
+              checklistId: checklist.id,
+              checklistName: checklist.name,
+              vendorId: vendor.vendor_id,
+              vendorName: vendor.company_name,
+              questionsCount: questions.length,
+              estimatedTime: '2-5 minutes'
+            });
+          }
+        }
+      }
+
+      // Sort by priority (high -> medium -> low)
+      const priorityOrder = { high: 0, medium: 1, low: 2 };
+      return pendingTasks.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+
+    } catch (error) {
+      this.logger.error(`Failed to get pending tasks: ${error.message}`);
+      throw new BadRequestException('Failed to get pending tasks');
+    }
+  }
 } 
