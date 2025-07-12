@@ -295,16 +295,15 @@ export class ActivitiesService {
       if (!userId) {
         const userQuery = baseQuery.clone();
         userQuery.select('activity.user_id', 'userId')
-                 .addSelect('activity.user_name', 'userName')
                  .addSelect('COUNT(*)', 'count')
                  .where('activity.user_id IS NOT NULL')
-                 .groupBy('activity.user_id, activity.user_name')
+                 .groupBy('activity.user_id')
                  .orderBy('COUNT(*)', 'DESC')
                  .limit(5);
         const userResults = await userQuery.getRawMany();
         mostActiveUsers = userResults.map(row => ({
           userId: row.userId,
-          userName: row.userName,
+          userName: row.userId, // Use userId as userName since userName is in metadata
           activityCount: parseInt(row.count)
         }));
       }
