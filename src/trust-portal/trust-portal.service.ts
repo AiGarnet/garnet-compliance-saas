@@ -682,6 +682,27 @@ export class TrustPortalService {
    * Get all feedback for a user's vendors
    */
   async getAllFeedbackForUser(userId: string): Promise<TrustPortalFeedback[]> {
+    // First, get the user's organization_id
+    const userQuery = `
+      SELECT organization_id
+      FROM users
+      WHERE id = $1
+    `;
+    
+    const userResult = await this.databaseService.query(userQuery, [userId]);
+    
+    if (userResult.rows.length === 0) {
+      throw new Error('User not found');
+    }
+    
+    const userOrganizationId = userResult.rows[0].organization_id;
+    
+    if (!userOrganizationId) {
+      // If user has no organization, return empty array
+      return [];
+    }
+    
+    // Get feedback for all vendors in the user's organization
     const query = `
       SELECT 
         f.id,
@@ -717,14 +738,14 @@ export class TrustPortalService {
       FROM trust_portal_feedback f
       LEFT JOIN trust_portal_feedback_responses r ON f.id = r.feedback_id
       INNER JOIN vendors v ON f.vendor_id = v.vendor_id
-      WHERE v.uuid = $1
+      WHERE v.organization_id = $1
       GROUP BY f.id, f.vendor_id, f.enterprise_contact_name, f.enterprise_contact_email,
                f.enterprise_company_name, f.feedback_type, f.subject, f.message,
                f.status, f.priority, f.invite_token, f.created_at, f.updated_at, v.company_name
       ORDER BY f.created_at DESC
     `;
     
-    const result = await this.databaseService.query(query, [userId]);
+    const result = await this.databaseService.query(query, [userOrganizationId]);
     return result.rows;
   }
 
