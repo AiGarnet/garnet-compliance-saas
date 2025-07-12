@@ -65,7 +65,6 @@ export enum ActivityStatus {
 @Entity('activities')
 @Index(['userId', 'createdAt'])
 @Index(['type', 'createdAt'])
-@Index(['status', 'createdAt'])
 export class Activity {
   @PrimaryGeneratedColumn({ name: 'activity_id' })
   id: number;
