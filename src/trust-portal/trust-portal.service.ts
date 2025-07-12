@@ -302,6 +302,8 @@ export class TrustPortalService {
     const vendorQuery = `
       SELECT 
         vendor_id as "vendorId",
+        vendor_id as "id",
+        uuid,
         company_name as "companyName",
         region,
         industry,
@@ -309,7 +311,9 @@ export class TrustPortalService {
         website,
         contact_email as "contactEmail",
         contact_name as "contactName",
-        status
+        status,
+        created_at as "createdAt",
+        updated_at as "updatedAt"
       FROM vendors 
       WHERE vendor_id = $1
     `;
