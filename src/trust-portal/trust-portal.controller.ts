@@ -291,7 +291,81 @@ export class TrustPortalController {
     }
   }
 
+  @Public()
+  @Post('vendor/:vendorId/feedback')
+  @ApiOperation({ summary: 'Submit feedback for a specific vendor (public access)' })
+  @ApiResponse({ status: 201, description: 'Feedback submitted successfully' })
+  async createVendorFeedback(
+    @Param('vendorId') vendorId: string,
+    @Body() createFeedbackDto: CreateTrustPortalFeedbackDto
+  ) {
+    try {
+      // Parse vendor ID and set it in the DTO
+      const isNumericId = /^\d+$/.test(vendorId);
+      let actualVendorId: number;
+      
+      if (isNumericId) {
+        actualVendorId = parseInt(vendorId);
+      } else {
+        // UUID - need to find the vendor first to get the numeric ID
+        const vendor = await this.vendorsService.findByUuid(vendorId);
+        if (!vendor) {
+          throw new HttpException(
+            `Vendor with ID ${vendorId} not found`,
+            HttpStatus.NOT_FOUND,
+          );
+        }
+        actualVendorId = vendor.vendorId;
+      }
+      
+      // Override vendorId in the DTO
+      createFeedbackDto.vendorId = actualVendorId;
+      
+      const feedback = await this.trustPortalService.createFeedback(createFeedbackDto);
+      return feedback;
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Failed to submit feedback',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Get('feedback')
+  @ApiOperation({ summary: 'Get all feedback for authenticated user\'s vendors' })
+  @ApiResponse({ status: 200, description: 'Returns feedback for all user vendors' })
+  async getAllUserFeedback(@CurrentUser() user?: any) {
+    try {
+      if (!user?.id) {
+        throw new HttpException('User authentication required', HttpStatus.UNAUTHORIZED);
+      }
+
+      const feedback = await this.trustPortalService.getAllFeedbackForUser(user.id);
+      return {
+        success: true,
+        data: feedback,
+        meta: {
+          timestamp: new Date().toISOString(),
+          count: feedback.length,
+          userId: user.id
+        }
+      };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Failed to fetch feedback',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   @Get('vendor/:vendorId/feedback')
+  @Public()
   @ApiOperation({ summary: 'Get feedback for a vendor' })
   @ApiResponse({ status: 200, description: 'Returns feedback for the vendor' })
   async getVendorFeedback(@Param('vendorId') vendorId: string) {

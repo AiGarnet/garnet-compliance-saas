@@ -675,6 +675,56 @@ export class TrustPortalService {
   }
 
   /**
+   * Get all feedback for a user's vendors
+   */
+  async getAllFeedbackForUser(userId: string): Promise<TrustPortalFeedback[]> {
+    const query = `
+      SELECT 
+        f.id,
+        f.vendor_id as "vendorId",
+        f.enterprise_contact_name as "enterpriseContactName",
+        f.enterprise_contact_email as "enterpriseContactEmail",
+        f.enterprise_company_name as "enterpriseCompanyName",
+        f.feedback_type as "feedbackType",
+        f.subject,
+        f.message,
+        f.status,
+        f.priority,
+        f.invite_token as "inviteToken",
+        f.created_at as "createdAt",
+        f.updated_at as "updatedAt",
+        v.company_name as "vendorName",
+        COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'id', r.id,
+              'feedbackId', r.feedback_id,
+              'responderType', r.responder_type,
+              'responderName', r.responder_name,
+              'responderEmail', r.responder_email,
+              'message', r.message,
+              'attachments', r.attachments,
+              'isInternalNote', r.is_internal_note,
+              'createdAt', r.created_at
+            ) ORDER BY r.created_at ASC
+          ) FILTER (WHERE r.id IS NOT NULL),
+          '[]'
+        ) as responses
+      FROM trust_portal_feedback f
+      LEFT JOIN trust_portal_feedback_responses r ON f.id = r.feedback_id
+      INNER JOIN vendors v ON f.vendor_id = v.vendor_id
+      WHERE v.uuid = $1
+      GROUP BY f.id, f.vendor_id, f.enterprise_contact_name, f.enterprise_contact_email,
+               f.enterprise_company_name, f.feedback_type, f.subject, f.message,
+               f.status, f.priority, f.invite_token, f.created_at, f.updated_at, v.company_name
+      ORDER BY f.created_at DESC
+    `;
+    
+    const result = await this.databaseService.query(query, [userId]);
+    return result.rows;
+  }
+
+  /**
    * Add response to feedback
    */
   async addFeedbackResponse(createDto: CreateFeedbackResponseDto): Promise<TrustPortalFeedbackResponse> {
