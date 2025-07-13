@@ -1070,7 +1070,7 @@ export class ChecklistsService {
                CASE WHEN tpi.id IS NOT NULL THEN true ELSE false END as sent_to_trust_portal
         FROM checklist_supporting_documents csd
         INNER JOIN vendors v ON csd.vendor_id = v.uuid
-        LEFT JOIN trust_portal_items tpi ON tpi.content LIKE '%' || csd.id || '%' AND tpi.is_questionnaire_answer = false
+        LEFT JOIN trust_portal_items tpi ON tpi.content LIKE '%' || csd.id::text || '%' AND tpi.is_questionnaire_answer = false
         WHERE v.organization_id = $1 AND csd.question_id IS NULL
         ORDER BY csd.created_at DESC
       `;
@@ -1102,9 +1102,9 @@ export class ChecklistsService {
             CASE WHEN COUNT(csd.id) > 0 THEN true ELSE false END as has_documents,
             CASE WHEN tpi.id IS NOT NULL THEN true ELSE false END as sent_to_trust_portal
           FROM checklist_questions cq
-          LEFT JOIN vendor_questionnaire_answers vqa ON cq.id = vqa.question_id
-          LEFT JOIN checklist_supporting_documents csd ON cq.id = csd.question_id
-          LEFT JOIN trust_portal_items tpi ON tpi.content LIKE '%' || cq.id || '%' AND tpi.is_questionnaire_answer = true
+          LEFT JOIN vendor_questionnaire_answers vqa ON cq.id::text = vqa.question_id
+          LEFT JOIN checklist_supporting_documents csd ON cq.id::text = csd.question_id
+          LEFT JOIN trust_portal_items tpi ON tpi.content LIKE '%' || cq.id::text || '%' AND tpi.is_questionnaire_answer = true
           WHERE cq.checklist_id = $1
           GROUP BY cq.id, cq.question_text, vqa.answer, vqa.status, cq.requires_document, tpi.id
           ORDER BY cq.question_order
