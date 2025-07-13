@@ -37,7 +37,7 @@ import {
 } from './dto/checklist.dto';
 import { Checklist, ChecklistQuestion } from './entities/checklist.entity';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { CurrentUser } from '../common/decorators/log-activity.decorator';
 
 @Controller('api/checklists')
 @UseGuards(JwtAuthGuard)
