@@ -134,6 +134,30 @@ export class UpdateTrustPortalItemDto {
   @IsOptional()
   @IsString()
   questionnaireId?: string;
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @IsBoolean()
+  isFollowUp?: boolean;
+
+  @ApiPropertyOptional({ example: 123 })
+  @IsOptional()
+  @IsNumber()
+  parentSubmissionId?: number;
+
+  @ApiPropertyOptional({ 
+    example: 'follow_up',
+    enum: ['initial', 'follow_up', 'resubmission', 'clarification', 'additional_docs']
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn(['initial', 'follow_up', 'resubmission', 'clarification', 'additional_docs'])
+  followUpType?: string;
+
+  @ApiPropertyOptional({ example: 'Additional documentation requested by enterprise' })
+  @IsOptional()
+  @IsString()
+  followUpReason?: string;
 }
 
 export class CreateTrustPortalFeedbackDto {

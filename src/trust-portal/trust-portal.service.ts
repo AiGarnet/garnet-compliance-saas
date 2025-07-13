@@ -38,11 +38,16 @@ export class TrustPortalService {
         content,
         is_questionnaire_answer as "isQuestionnaireAnswer",
         questionnaire_id as "questionnaireId",
+        is_follow_up as "isFollowUp",
+        parent_submission_id as "parentSubmissionId",
+        follow_up_type as "followUpType",
+        follow_up_reason as "followUpReason",
+        submission_sequence as "submissionSequence",
         created_at as "createdAt",
         updated_at as "updatedAt"
       FROM trust_portal_items
       WHERE vendor_id = $1
-      ORDER BY created_at DESC
+      ORDER BY submission_sequence DESC, created_at DESC
     `;
     
     const result = await this.databaseService.query(query, [vendorId]);
@@ -56,9 +61,10 @@ export class TrustPortalService {
     const query = `
       INSERT INTO trust_portal_items (
         vendor_id, title, description, category, file_url, 
-        file_type, file_size, content, is_questionnaire_answer, questionnaire_id
+        file_type, file_size, content, is_questionnaire_answer, questionnaire_id,
+        is_follow_up, parent_submission_id, follow_up_type, follow_up_reason
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING 
         id,
         vendor_id as "vendorId",
@@ -71,6 +77,10 @@ export class TrustPortalService {
         content,
         is_questionnaire_answer as "isQuestionnaireAnswer",
         questionnaire_id as "questionnaireId",
+        is_follow_up as "isFollowUp",
+        parent_submission_id as "parentSubmissionId",
+        follow_up_type as "followUpType",
+        follow_up_reason as "followUpReason",
         created_at as "createdAt",
         updated_at as "updatedAt"
     `;
@@ -85,7 +95,11 @@ export class TrustPortalService {
       createDto.fileSize || null,
       createDto.content || null,
       createDto.isQuestionnaireAnswer,
-      createDto.questionnaireId || null
+      createDto.questionnaireId || null,
+      createDto.isFollowUp || false,
+      createDto.parentSubmissionId || null,
+      createDto.followUpType || 'initial',
+      createDto.followUpReason || null
     ];
     
     const result = await this.databaseService.query(query, values);

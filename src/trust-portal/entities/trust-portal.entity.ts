@@ -13,6 +13,11 @@ export interface TrustPortalItem {
   content?: string;
   isQuestionnaireAnswer: boolean;
   questionnaireId?: string;
+  isFollowUp?: boolean;
+  parentSubmissionId?: number;
+  followUpType?: string;
+  followUpReason?: string;
+  submissionSequence?: number;
   createdAt: Date;
   updatedAt: Date;
 }
