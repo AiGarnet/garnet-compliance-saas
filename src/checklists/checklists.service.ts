@@ -1042,69 +1042,130 @@ export class ChecklistsService {
       const vendorsResult = await this.databaseService.query(vendorsQuery, [organizationId]);
       const vendors = vendorsResult.rows;
 
-      // Get all checklists in the organization
+      if (vendors.length === 0) {
+        return [{
+          id: 'no_vendors',
+          type: 'setup',
+          title: 'No Vendors Found',
+          description: 'Add vendors to your organization to start managing compliance tasks',
+          priority: 'high',
+          estimatedTime: '5-10 minutes'
+        }];
+      }
+
+      // Get all checklists in the organization (fixed UUID comparison)
       const checklistsQuery = `
-        SELECT c.id, c.vendor_id, c.name, c.question_count, c.extraction_status
+        SELECT c.id, c.vendor_id, c.name, c.question_count, c.extraction_status, v.company_name, v.vendor_id as vendor_numeric_id
         FROM checklists c
         INNER JOIN vendors v ON c.vendor_id = v.uuid
         WHERE v.organization_id = $1
+        ORDER BY c.created_at DESC
       `;
       const checklistsResult = await this.databaseService.query(checklistsQuery, [organizationId]);
       const checklists = checklistsResult.rows;
 
-      for (const checklist of checklists) {
-        const vendor = vendors.find(v => v.uuid === checklist.vendor_id);
-        if (!vendor) continue;
+      // Get standalone supporting documents (not linked to questions)
+      const standaloneDocsQuery = `
+        SELECT csd.id, csd.filename, csd.vendor_id, v.company_name, v.vendor_id as vendor_numeric_id,
+               CASE WHEN tpi.id IS NOT NULL THEN true ELSE false END as sent_to_trust_portal
+        FROM checklist_supporting_documents csd
+        INNER JOIN vendors v ON csd.vendor_id = v.uuid
+        LEFT JOIN trust_portal_items tpi ON tpi.content LIKE '%' || csd.id || '%' AND tpi.is_questionnaire_answer = false
+        WHERE v.organization_id = $1 AND csd.question_id IS NULL
+        ORDER BY csd.created_at DESC
+      `;
+      const standaloneDocsResult = await this.databaseService.query(standaloneDocsQuery, [organizationId]);
+      const standaloneDocs = standaloneDocsResult.rows;
 
+      // If no checklists and no standalone docs
+      if (checklists.length === 0 && standaloneDocs.length === 0) {
+        return [{
+          id: 'no_content',
+          type: 'setup',
+          title: 'No Pending Tasks',
+          description: 'Upload compliance checklists or supporting documents to get started',
+          priority: 'medium',
+          estimatedTime: '10-15 minutes'
+        }];
+      }
+
+      // Process each checklist
+      for (const checklist of checklists) {
         // Check if questions are generated for this checklist
         const questionsQuery = `
           SELECT 
             cq.id,
             cq.question_text,
             vqa.answer,
+            vqa.status,
             cq.requires_document,
             CASE WHEN COUNT(csd.id) > 0 THEN true ELSE false END as has_documents,
-            vqa.share_to_trust_portal
+            CASE WHEN tpi.id IS NOT NULL THEN true ELSE false END as sent_to_trust_portal
           FROM checklist_questions cq
           LEFT JOIN vendor_questionnaire_answers vqa ON cq.id = vqa.question_id
           LEFT JOIN checklist_supporting_documents csd ON cq.id = csd.question_id
+          LEFT JOIN trust_portal_items tpi ON tpi.content LIKE '%' || cq.id || '%' AND tpi.is_questionnaire_answer = true
           WHERE cq.checklist_id = $1
-          GROUP BY cq.id, cq.question_text, vqa.answer, cq.requires_document, vqa.share_to_trust_portal
+          GROUP BY cq.id, cq.question_text, vqa.answer, vqa.status, cq.requires_document, tpi.id
+          ORDER BY cq.question_order
         `;
         const questionsResult = await this.databaseService.query(questionsQuery, [checklist.id]);
         const questions = questionsResult.rows;
 
         if (questions.length === 0) {
-          // No questions generated yet
+          // No questions generated yet - need to generate questions
           pendingTasks.push({
-            id: `question_gen_${checklist.id}_${vendor.vendor_id}`,
+            id: `question_gen_${checklist.id}_${checklist.vendor_numeric_id}`,
             type: 'question_generation',
             title: 'Generate Questions',
-            description: `Generate compliance questions for ${vendor.company_name} using ${checklist.name}`,
+            description: `Generate compliance questions for ${checklist.company_name} using ${checklist.name}`,
             priority: 'high',
             checklistId: checklist.id,
             checklistName: checklist.name,
-            vendorId: vendor.vendor_id,
-            vendorName: vendor.company_name,
+            vendorId: checklist.vendor_numeric_id,
+            vendorName: checklist.company_name,
             questionsCount: checklist.question_count || 0,
-            estimatedTime: '5-10 minutes'
+            estimatedTime: '5-10 minutes',
+            action: 'Generate questions from uploaded checklist'
           });
         } else {
           // Check for unanswered questions
-          const unansweredQuestions = questions.filter(q => !q.answer || q.answer.trim() === '');
+          const unansweredQuestions = questions.filter(q => !q.answer || q.answer.trim() === '' || q.status === 'pending');
           if (unansweredQuestions.length > 0) {
             pendingTasks.push({
-              id: `answer_gen_${checklist.id}_${vendor.vendor_id}`,
-              type: 'question_generation',
-              title: 'Generate Answers',
-              description: `Generate AI answers for ${unansweredQuestions.length} unanswered questions for ${vendor.company_name}`,
+              id: `answer_gen_${checklist.id}_${checklist.vendor_numeric_id}`,
+              type: 'response_generation',
+              title: 'Generate Questionnaire Responses',
+              description: `Generate AI responses for ${unansweredQuestions.length} questions in ${checklist.name} for ${checklist.company_name}`,
+              priority: 'high',
+              checklistId: checklist.id,
+              checklistName: checklist.name,
+              vendorId: checklist.vendor_numeric_id,
+              vendorName: checklist.company_name,
+              questionsCount: unansweredQuestions.length,
+              estimatedTime: '10-15 minutes',
+              action: 'Generate AI responses for questionnaire'
+            });
+          }
+
+          // Check for questions that need to be marked as done
+          const answeredButNotDone = questions.filter(q => 
+            q.answer && q.answer.trim() !== '' && q.status !== 'done'
+          );
+          if (answeredButNotDone.length > 0) {
+            pendingTasks.push({
+              id: `mark_done_${checklist.id}_${checklist.vendor_numeric_id}`,
+              type: 'review_completion',
+              title: 'Review and Mark Questions as Done',
+              description: `Review ${answeredButNotDone.length} answered questions in ${checklist.name} for ${checklist.company_name} and mark them as complete`,
               priority: 'medium',
               checklistId: checklist.id,
               checklistName: checklist.name,
-              vendorId: vendor.vendor_id,
-              vendorName: vendor.company_name,
-              questionsCount: unansweredQuestions.length,
-              estimatedTime: '10-15 minutes'
+              vendorId: checklist.vendor_numeric_id,
+              vendorName: checklist.company_name,
+              questionsCount: answeredButNotDone.length,
+              estimatedTime: '5-10 minutes',
+              action: 'Review responses and mark as done'
             });
           }
 
@@ -1112,41 +1173,90 @@ export class ChecklistsService {
           const questionsNeedingDocs = questions.filter(q => q.requires_document && !q.has_documents);
           if (questionsNeedingDocs.length > 0) {
             pendingTasks.push({
-              id: `docs_upload_${checklist.id}_${vendor.vendor_id}`,
+              id: `docs_upload_${checklist.id}_${checklist.vendor_numeric_id}`,
               type: 'document_upload',
               title: 'Upload Supporting Documents',
-              description: `Upload supporting documents for ${questionsNeedingDocs.length} questions for ${vendor.company_name}`,
+              description: `Upload supporting documents for ${questionsNeedingDocs.length} questions in ${checklist.name} for ${checklist.company_name}`,
               priority: 'medium',
               checklistId: checklist.id,
               checklistName: checklist.name,
-              vendorId: vendor.vendor_id,
-              vendorName: vendor.company_name,
+              vendorId: checklist.vendor_numeric_id,
+              vendorName: checklist.company_name,
               missingDocumentsCount: questionsNeedingDocs.length,
-              estimatedTime: '15-30 minutes'
+              estimatedTime: '15-30 minutes',
+              action: 'Upload required supporting documents'
             });
           }
 
           // Check if questionnaire is ready for trust portal sharing
           const allAnswered = questions.every(q => q.answer && q.answer.trim() !== '');
+          const allDone = questions.every(q => q.status === 'done');
           const allDocsUploaded = questions.filter(q => q.requires_document).every(q => q.has_documents);
-          const isSharedToTrustPortal = questions.some(q => q.share_to_trust_portal);
+          const isSharedToTrustPortal = questions.some(q => q.sent_to_trust_portal);
 
-          if (allAnswered && allDocsUploaded && !isSharedToTrustPortal) {
+          if (allAnswered && allDone && allDocsUploaded && !isSharedToTrustPortal) {
             pendingTasks.push({
-              id: `trust_portal_${checklist.id}_${vendor.vendor_id}`,
+              id: `trust_portal_checklist_${checklist.id}_${checklist.vendor_numeric_id}`,
               type: 'trust_portal_sharing',
-              title: 'Share to Trust Portal',
-              description: `Share completed questionnaire for ${vendor.company_name} to Trust Portal for enterprise access`,
+              title: 'Send Checklist to Trust Portal',
+              description: `Send completed questionnaire ${checklist.name} for ${checklist.company_name} to Trust Portal for enterprise access`,
               priority: 'low',
               checklistId: checklist.id,
               checklistName: checklist.name,
-              vendorId: vendor.vendor_id,
-              vendorName: vendor.company_name,
+              vendorId: checklist.vendor_numeric_id,
+              vendorName: checklist.company_name,
               questionsCount: questions.length,
-              estimatedTime: '2-5 minutes'
+              estimatedTime: '2-5 minutes',
+              action: 'Share completed questionnaire to Trust Portal'
             });
           }
         }
+      }
+
+      // Process standalone supporting documents
+      const unsentStandaloneDocs = standaloneDocs.filter(doc => !doc.sent_to_trust_portal);
+      if (unsentStandaloneDocs.length > 0) {
+        // Group by vendor
+        const docsByVendor = unsentStandaloneDocs.reduce((acc, doc) => {
+          const vendorKey = `${doc.vendor_numeric_id}_${doc.company_name}`;
+          if (!acc[vendorKey]) {
+            acc[vendorKey] = {
+              vendorId: doc.vendor_numeric_id,
+              vendorName: doc.company_name,
+              docs: []
+            };
+          }
+          acc[vendorKey].docs.push(doc);
+          return acc;
+        }, {});
+
+        Object.values(docsByVendor).forEach((vendorGroup: any) => {
+          pendingTasks.push({
+            id: `trust_portal_docs_${vendorGroup.vendorId}`,
+            type: 'trust_portal_document_sharing',
+            title: 'Send Supporting Documents to Trust Portal',
+            description: `Send ${vendorGroup.docs.length} supporting document(s) for ${vendorGroup.vendorName} to Trust Portal`,
+            priority: 'low',
+            vendorId: vendorGroup.vendorId,
+            vendorName: vendorGroup.vendorName,
+            documentsCount: vendorGroup.docs.length,
+            estimatedTime: '3-8 minutes',
+            action: 'Share supporting documents to Trust Portal'
+          });
+        });
+      }
+
+      // If no pending tasks, show a positive message
+      if (pendingTasks.length === 0) {
+        return [{
+          id: 'all_complete',
+          type: 'complete',
+          title: 'All Tasks Complete! 🎉',
+          description: 'Great job! All checklists and documents have been processed and shared to the Trust Portal',
+          priority: 'low',
+          estimatedTime: 'N/A',
+          action: 'Continue monitoring for new submissions'
+        }];
       }
 
       // Sort by priority (high -> medium -> low)
