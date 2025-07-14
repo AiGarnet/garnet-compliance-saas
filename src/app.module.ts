@@ -26,6 +26,7 @@ import { ChecklistsModule } from './checklists/checklists.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { HelpModule } from './help/help.module';
 import { BillingModule } from './billing/billing.module';
+import { AdminModule } from './admin/admin.module';
 
 // Global providers
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -72,6 +73,7 @@ import { AppController } from './app.controller';
     OrganizationsModule,
     HelpModule,
     BillingModule,
+    AdminModule,
   ],
   providers: [
     // Global exception filter
