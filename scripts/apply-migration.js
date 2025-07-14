@@ -18,8 +18,22 @@ async function applyMigration() {
     await client.connect();
     console.log('Connected to database');
 
+    // Get migration file from command line argument
+    const migrationFile = process.argv[2];
+    if (!migrationFile) {
+      throw new Error('Please provide a migration file path as an argument');
+    }
+
     // Read migration file
-    const migrationPath = path.join(__dirname, '..', 'migrations', '040_create_vendor_invite_tokens_and_feedback.sql');
+    const migrationPath = path.isAbsolute(migrationFile) 
+      ? migrationFile 
+      : path.join(__dirname, '..', migrationFile);
+    
+    if (!fs.existsSync(migrationPath)) {
+      throw new Error(`Migration file not found: ${migrationPath}`);
+    }
+
+    console.log(`Applying migration: ${migrationPath}`);
     const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
 
     // Execute migration

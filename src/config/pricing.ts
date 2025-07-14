@@ -50,8 +50,8 @@ export const PRICING_TIERS: PricingTier[] = [
       support: 'Community (knowledge base)',
     },
     stripePriceIds: {
-      monthly: 'price_starter_monthly',
-      annual: 'price_starter_annual',
+      monthly: 'prod_Sfp1VRqDGvVRx7',
+      annual: 'prod_Sfp1ZWsl26QR25',
     },
   },
   {
@@ -82,8 +82,8 @@ export const PRICING_TIERS: PricingTier[] = [
     },
     popular: true,
     stripePriceIds: {
-      monthly: 'price_growth_monthly',
-      annual: 'price_growth_annual',
+      monthly: 'prod_Sfp2fcOpPyqK0Z',
+      annual: 'prod_Sfp2zDuOd8J0nV',
     },
   },
   {
@@ -114,8 +114,8 @@ export const PRICING_TIERS: PricingTier[] = [
       support: 'Priority email + live chat',
     },
     stripePriceIds: {
-      monthly: 'price_scale_monthly',
-      annual: 'price_scale_annual',
+      monthly: 'prod_Sfp3u5vmjT85eF',
+      annual: 'prod_Sfp3XUakNwtOnM',
     },
   },
   {
@@ -148,8 +148,8 @@ export const PRICING_TIERS: PricingTier[] = [
     },
     stripePriceIds: {
       // Enterprise is custom pricing - handled separately
-      monthly: 'price_enterprise_monthly',
-      annual: 'price_enterprise_annual',
+      monthly: 'prod_Sfp4M6qs4B0onm',
+      annual: 'prod_Sfp5HIpH9J8esc',
     },
   },
 ];
