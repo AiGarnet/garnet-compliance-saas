@@ -47,7 +47,7 @@ export class BillingService {
       this.logger.warn('STRIPE_SECRET_KEY not configured - Stripe functionality will be disabled');
     } else {
       this.stripe = new Stripe(stripeSecretKey, {
-        apiVersion: '2024-06-20',
+        apiVersion: '2025-06-30.basil',
       });
       this.logger.log('Stripe initialized successfully');
     }
@@ -257,7 +257,7 @@ export class BillingService {
   }
 
   private async handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
-    const subscriptionId = invoice.subscription as string;
+    const subscriptionId = (invoice as any).subscription as string;
     if (!subscriptionId) return;
 
     if (!this.stripe) {
@@ -274,7 +274,7 @@ export class BillingService {
   }
 
   private async handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
-    const subscriptionId = invoice.subscription as string;
+    const subscriptionId = (invoice as any).subscription as string;
     if (!subscriptionId) return;
 
     if (!this.stripe) {
@@ -341,8 +341,8 @@ export class BillingService {
       stripeSubscription.status,
       planId,
       billingCycle,
-      new Date(stripeSubscription.current_period_start * 1000),
-      new Date(stripeSubscription.current_period_end * 1000),
+      new Date((stripeSubscription as any).current_period_start * 1000),
+      new Date((stripeSubscription as any).current_period_end * 1000),
       new Date(),
       new Date(),
     ];
@@ -362,8 +362,8 @@ export class BillingService {
 
     const values = [
       stripeSubscription.status,
-      new Date(stripeSubscription.current_period_start * 1000),
-      new Date(stripeSubscription.current_period_end * 1000),
+      new Date((stripeSubscription as any).current_period_start * 1000),
+      new Date((stripeSubscription as any).current_period_end * 1000),
       new Date(),
       stripeSubscription.id,
     ];
