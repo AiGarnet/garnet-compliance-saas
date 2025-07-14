@@ -638,35 +638,40 @@ export class AdminService {
       const activityVolumeQuery = `
         SELECT DATE(created_at) as date, COUNT(*) as count
         FROM activities
-        WHERE created_at >= NOW() - INTERVAL '${days} days'
+        WHERE created_at >= NOW() - INTERVAL $1
         GROUP BY DATE(created_at)
         ORDER BY date
       `;
 
-      // Activity type distribution
+      // Activity type distribution  
       const activityTypeQuery = `
-        SELECT type, COUNT(*) as count
+        SELECT activity_type as type, COUNT(*) as count
         FROM activities
-        WHERE created_at >= NOW() - INTERVAL '${days} days'
-        GROUP BY type
+        WHERE created_at >= NOW() - INTERVAL $1
+        GROUP BY activity_type
         ORDER BY count DESC
       `;
 
-      // Most active users
+      // Most active users (using metadata for user info)
       const activeUsersQuery = `
-        SELECT a.user_name, a.user_email, COUNT(*) as activity_count
+        SELECT 
+          metadata->>'userName' as user_name,
+          metadata->>'userEmail' as user_email,
+          COUNT(*) as activity_count
         FROM activities a
-        WHERE a.created_at >= NOW() - INTERVAL '${days} days'
-          AND a.user_name IS NOT NULL
-        GROUP BY a.user_name, a.user_email
+        WHERE a.created_at >= NOW() - INTERVAL $1
+          AND metadata->>'userName' IS NOT NULL
+        GROUP BY metadata->>'userName', metadata->>'userEmail'
         ORDER BY activity_count DESC
         LIMIT 10
       `;
 
+      const intervalValue = `${days} days`;
+
       const [activityVolume, activityTypes, activeUsers] = await Promise.all([
-        this.databaseService.query(activityVolumeQuery),
-        this.databaseService.query(activityTypeQuery),
-        this.databaseService.query(activeUsersQuery),
+        this.databaseService.query(activityVolumeQuery, [intervalValue]),
+        this.databaseService.query(activityTypeQuery, [intervalValue]),
+        this.databaseService.query(activeUsersQuery, [intervalValue]),
       ]);
 
       return {
