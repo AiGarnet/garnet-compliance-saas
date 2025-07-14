@@ -634,6 +634,26 @@ export class AdminService {
 
   async getActivityAnalytics(days: number = 30) {
     try {
+      // First check if activities table exists and has data
+      const tableCheckQuery = `
+        SELECT COUNT(*) as total_count
+        FROM activities
+      `;
+
+      const tableCheck = await this.databaseService.query(tableCheckQuery);
+      const totalActivities = parseInt(tableCheck.rows[0].total_count);
+
+      // If no activities, return empty analytics
+      if (totalActivities === 0) {
+        return {
+          activityVolume: [],
+          activityTypes: [],
+          mostActiveUsers: [],
+          totalActivities: 0,
+          message: 'No activities found in the system'
+        };
+      }
+
       // Activity volume over time
       const activityVolumeQuery = `
         SELECT DATE(created_at) as date, COUNT(*) as count
@@ -655,12 +675,11 @@ export class AdminService {
       // Most active users (using metadata for user info)
       const activeUsersQuery = `
         SELECT 
-          metadata->>'userName' as user_name,
-          metadata->>'userEmail' as user_email,
+          COALESCE(metadata->>'userName', 'Unknown User') as user_name,
+          COALESCE(metadata->>'userEmail', '') as user_email,
           COUNT(*) as activity_count
         FROM activities a
         WHERE a.created_at >= NOW() - INTERVAL $1
-          AND metadata->>'userName' IS NOT NULL
         GROUP BY metadata->>'userName', metadata->>'userEmail'
         ORDER BY activity_count DESC
         LIMIT 10
@@ -675,13 +694,23 @@ export class AdminService {
       ]);
 
       return {
-        activityVolume: activityVolume.rows,
-        activityTypes: activityTypes.rows,
-        mostActiveUsers: activeUsers.rows,
+        activityVolume: activityVolume.rows || [],
+        activityTypes: activityTypes.rows || [],
+        mostActiveUsers: activeUsers.rows || [],
+        totalActivities,
+        daysAnalyzed: days
       };
     } catch (error) {
       this.logger.error('Error getting activity analytics:', error);
-      throw new BadRequestException('Failed to get activity analytics');
+      // Return empty analytics instead of throwing error
+      return {
+        activityVolume: [],
+        activityTypes: [],
+        mostActiveUsers: [],
+        totalActivities: 0,
+        error: 'Failed to fetch activity analytics',
+        details: error.message
+      };
     }
   }
 
