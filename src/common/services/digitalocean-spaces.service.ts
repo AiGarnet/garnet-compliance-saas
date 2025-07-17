@@ -317,4 +317,35 @@ export class DigitalOceanSpacesService {
       throw error;
     }
   }
+
+  /**
+   * Get checklist JSON data from DigitalOcean Spaces
+   */
+  async getChecklistData(key: string): Promise<any> {
+    try {
+      this.logger.log(`Fetching checklist data from bucket with key: ${key}`);
+      
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key
+      });
+
+      const response = await this.s3Client.send(command);
+      
+      // Convert stream to string and parse JSON
+      const chunks = [];
+      for await (const chunk of response.Body as any) {
+        chunks.push(chunk);
+      }
+      const jsonString = Buffer.concat(chunks).toString('utf-8');
+      const checklistData = JSON.parse(jsonString);
+
+      this.logger.log(`Successfully retrieved checklist data from bucket: ${key}`);
+      return checklistData;
+
+    } catch (error) {
+      this.logger.error(`Failed to get checklist data from bucket: ${error.message}`, error.stack);
+      throw new Error(`Failed to get checklist data from bucket: ${error.message}`);
+    }
+  }
 } 

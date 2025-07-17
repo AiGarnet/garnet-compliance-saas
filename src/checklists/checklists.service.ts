@@ -876,6 +876,20 @@ export class ChecklistsService {
       // Get the checklist and its questions
       const checklist = await this.getChecklist(checklistId, vendorId);
       const questions = await this.getChecklistQuestions(checklistId, vendorId);
+      
+      // Fetch complete checklist data from DigitalOcean Spaces bucket
+      let completeChecklistData = null;
+      if (checklist.spacesKey) {
+        try {
+          this.logger.log(`Fetching complete checklist data from bucket: ${checklist.spacesKey}`);
+          completeChecklistData = await this.spacesService.getChecklistData(checklist.spacesKey);
+          this.logger.log(`Successfully fetched complete checklist data from bucket`);
+        } catch (error) {
+          this.logger.warn(`Failed to fetch checklist data from bucket: ${error.message}. Proceeding with database data only.`);
+        }
+      } else {
+        this.logger.warn(`No spacesKey found for checklist ${checklistId}. Proceeding with database data only.`);
+      }
 
       if (questions.length === 0) {
         throw new BadRequestException('No questions found in checklist');
@@ -942,7 +956,16 @@ export class ChecklistsService {
             requiresDocument: q.requiresDocument,
             documentDescription: q.documentDescription,
             confidenceScore: q.confidenceScore
-          }))
+          })),
+          // Include complete checklist data from bucket if available
+          completeChecklistData: completeChecklistData ? {
+            originalChecklist: completeChecklistData.checklist || null,
+            extractedText: completeChecklistData.extractedText || null,
+            metadata: completeChecklistData.metadata || null,
+            allQuestions: completeChecklistData.questions || []
+          } : null,
+          source: 'garnet-compliance-platform',
+          dataCompleteness: completeChecklistData ? 'complete-with-bucket-data' : 'database-only'
         })
       };
 
