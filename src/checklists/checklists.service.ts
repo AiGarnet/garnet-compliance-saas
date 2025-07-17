@@ -874,16 +874,15 @@ export class ChecklistsService {
         throw new BadRequestException('No questions found in checklist');
       }
 
-      // Check if all questions are completed
+      // Check if all questions have AI answers (simplified logic)
       const incompleteQuestions = questions.filter(q => 
-        q.status !== 'completed' || 
         !q.aiAnswer || 
         q.aiAnswer.trim().length === 0
       );
 
       if (incompleteQuestions.length > 0) {
         this.logger.warn(`Found ${incompleteQuestions.length} incomplete questions in checklist ${checklistId}`);
-        throw new BadRequestException(`Cannot send to Trust Portal: ${incompleteQuestions.length} questions are not completed. All questions must have AI answers and be marked as completed.`);
+        throw new BadRequestException(`Cannot send to Trust Portal: ${incompleteQuestions.length} questions don't have AI answers. All questions must have AI generated answers.`);
       }
 
       // Check if questions requiring documents have supporting documents
