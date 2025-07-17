@@ -38,22 +38,49 @@ export class TrustPortalController {
     private readonly vendorsService: VendorsService
   ) {}
 
+  @Public() // Make this endpoint public like vendors
   @Get('vendors')
   @ApiOperation({ summary: 'Get all vendors for trust portal' })
   @ApiResponse({ status: 200, description: 'Returns all vendors for trust portal' })
-  async getVendorsWithTrustPortalItems(@CurrentUser() user?: any) {
+  async getVendorsWithTrustPortalItems(
+    @Query('organization_id') organizationId?: string,
+    @CurrentUser() user?: any
+  ) {
     try {
-      // Get organization ID from authenticated user, if available
-      const organizationId = user?.organization_id;
+      // Determine organization ID from query parameter or authenticated user
+      let targetOrgId = organizationId;
       
-      const vendors = await this.trustPortalService.getAllVendorsForTrustPortal(organizationId);
+      // If no organization_id in query, try to get from authenticated user
+      if (!targetOrgId && user?.organization_id) {
+        targetOrgId = user.organization_id;
+      }
+      
+      // Require organization_id for data isolation (same as vendors endpoint)
+      if (!targetOrgId) {
+        return {
+          success: false,
+          error: {
+            code: 'MISSING_ORGANIZATION_ID',
+            message: 'organization_id parameter is required for trust portal access'
+          },
+          meta: {
+            timestamp: new Date().toISOString(),
+            isPublic: true,
+            authRequired: false
+          }
+        };
+      }
+      
+      const vendors = await this.trustPortalService.getAllVendorsForTrustPortal(targetOrgId);
       return {
         success: true,
         data: vendors,
         meta: {
           timestamp: new Date().toISOString(),
           count: vendors.length,
-          organizationId: organizationId || 'public'
+          organizationId: targetOrgId,
+          filteredByOrganization: true,
+          isPublic: true
         }
       };
     } catch (error: any) {
@@ -62,10 +89,11 @@ export class TrustPortalController {
         error: {
           code: 'FETCH_VENDORS_FAILED',
           message: error.message || 'Failed to fetch vendors',
-          details: error
+          details: error.message
         },
         meta: {
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          isPublic: true
         }
       };
     }
