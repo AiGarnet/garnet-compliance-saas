@@ -43,15 +43,15 @@ export const PRICING_TIERS: PricingTier[] = [
     limits: {
       questionnaires: 2,
       vendors: 1,
-      users: 1,
+      users: 50,
       storage: '0GB', // No permanent storage
       frameworks: ['GDPR'],
       dataRetention: '7 days',
       support: 'Community (knowledge base)',
     },
     stripePriceIds: {
-      monthly: 'prod_Sfp1VRqDGvVRx7',
-      annual: 'prod_Sfp1ZWsl26QR25',
+      monthly: 'price_1RkTN7GCn6F00HoYDpK3meuM',
+      annual: 'price_1RkTNZGCn6F00HoYk0lq4LvE',
     },
   },
   {
@@ -74,7 +74,7 @@ export const PRICING_TIERS: PricingTier[] = [
     limits: {
       questionnaires: 'unlimited',
       vendors: 'unlimited',
-      users: 3,
+      users: 50,
       storage: '5GB',
       frameworks: ['GDPR', 'PDPA', 'SOC 2'],
       dataRetention: '30 days',
@@ -82,8 +82,8 @@ export const PRICING_TIERS: PricingTier[] = [
     },
     popular: true,
     stripePriceIds: {
-      monthly: 'prod_Sfp2fcOpPyqK0Z',
-      annual: 'prod_Sfp2zDuOd8J0nV',
+      monthly: 'price_1RkTOCGCn6F00HoYoEtLd3FO',
+      annual: 'price_1RkTOhGCn6F00HoYmMXNHSZp',
     },
   },
   {
@@ -107,15 +107,15 @@ export const PRICING_TIERS: PricingTier[] = [
     limits: {
       questionnaires: 'unlimited',
       vendors: 'unlimited',
-      users: 6, // founder + 5 sales professionals
+      users: 50,
       storage: '50GB',
       frameworks: ['GDPR', 'PDPA', 'SOC 2', 'AML', 'OFAC', 'FCPA', 'ISO 27001', 'HIPAA', 'PCI DSS', 'Custom'],
       dataRetention: '1 year',
       support: 'Priority email + live chat',
     },
     stripePriceIds: {
-      monthly: 'prod_Sfp3u5vmjT85eF',
-      annual: 'prod_Sfp3XUakNwtOnM',
+      monthly: 'price_1RkTP6GCn6F00HoYVgzc2Byh',
+      annual: 'price_1RkTPdGCn6F00HoYznfbj9C6',
     },
   },
   {
@@ -140,7 +140,7 @@ export const PRICING_TIERS: PricingTier[] = [
     limits: {
       questionnaires: 'unlimited',
       vendors: 'unlimited',
-      users: 'unlimited',
+      users: 50,
       storage: 'Unlimited',
       frameworks: ['All frameworks', 'Custom frameworks'],
       dataRetention: 'Unlimited',
@@ -148,8 +148,8 @@ export const PRICING_TIERS: PricingTier[] = [
     },
     stripePriceIds: {
       // Enterprise is custom pricing - handled separately
-      monthly: 'prod_Sfp4M6qs4B0onm',
-      annual: 'prod_Sfp5HIpH9J8esc',
+      monthly: 'price_1RkTQXGCn6F00HoYS2peeQy2',
+      annual: 'price_1RkTR8GCn6F00HoYhtKtutCX',
     },
   },
 ];

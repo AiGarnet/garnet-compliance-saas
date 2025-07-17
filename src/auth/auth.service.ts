@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -6,9 +6,12 @@ import { DatabaseService } from '../database/database.service';
 import { User, CreateUserRequest, WaitlistSignupRequest, JwtPayload } from './entities/user.entity';
 import { SignupDto, LoginDto, WaitlistSignupDto } from './dto/auth.dto';
 import { OrganizationsService } from '../organizations/organizations.service';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly databaseService: DatabaseService,
     private readonly jwtService: JwtService,
@@ -39,6 +42,14 @@ export class AuthService {
         if (existingOrg) {
           // Organization exists, use it
           organizationId = existingOrg.id;
+          this.logger.log(`User joining existing organization: ${existingOrg.name} (${organizationId})`);
+          
+          // Check if organization has available user slots
+          if (!existingOrg.canAddUsers) {
+            throw new BadRequestException(
+              `Organization "${existingOrg.name}" has reached its user limit of ${existingOrg.maxUsers} users`
+            );
+          }
         } else {
           // Organization doesn't exist, create it
           const newOrganization = await this.organizationsService.createOrganization({
@@ -50,11 +61,26 @@ export class AuthService {
             }
           });
           organizationId = newOrganization.id;
+          this.logger.log(`Created new organization: ${organizationName} (${organizationId})`);
         }
       } catch (error) {
         console.error('Error handling organization during signup:', error);
         // Continue without organization if there's an error
         organizationId = null;
+      }
+    }
+
+    // Auto-assign user to organization based on email domain if no organization specified
+    if (!organizationId && signupDto.email) {
+      try {
+        const autoAssignedOrg = await this.organizationsService.autoAssignUserByDomain(signupDto.email);
+        if (autoAssignedOrg) {
+          organizationId = autoAssignedOrg.id;
+          organizationName = autoAssignedOrg.name;
+          this.logger.log(`Auto-assigned user to organization based on email domain: ${autoAssignedOrg.name}`);
+        }
+      } catch (error) {
+        this.logger.warn('Failed to auto-assign user by domain:', error);
       }
     }
 
@@ -77,6 +103,36 @@ export class AuthService {
 
     const result = await this.databaseService.query(query, values);
     const user = result.rows[0];
+
+    // If user joined an organization, log subscription information
+    if (organizationId) {
+      try {
+        // Check if organization has an active subscription
+        const orgStatusQuery = `
+          SELECT 
+            o.current_subscription_plan,
+            o.current_subscription_status,
+            os.plan_id as active_plan_id,
+            os.status as active_status
+          FROM organizations o
+          LEFT JOIN organization_subscriptions os ON o.id = os.organization_id 
+            AND os.status IN ('active', 'past_due')
+          WHERE o.id = $1
+        `;
+        const orgStatusResult = await this.databaseService.query(orgStatusQuery, [organizationId]);
+        
+        if (orgStatusResult.rows.length > 0) {
+          const orgStatus = orgStatusResult.rows[0];
+          if (orgStatus.active_plan_id) {
+            this.logger.log(`User ${user.email} automatically gained access to organization's ${orgStatus.active_plan_id} subscription`);
+          } else if (orgStatus.current_subscription_plan) {
+            this.logger.log(`User ${user.email} joined organization with ${orgStatus.current_subscription_plan} plan (status: ${orgStatus.current_subscription_status})`);
+          }
+        }
+      } catch (error) {
+        this.logger.warn('Failed to check organization subscription status:', error);
+      }
+    }
 
     const payload: JwtPayload = {
       sub: user.id,
@@ -161,6 +217,14 @@ export class AuthService {
         if (existingOrg) {
           // Organization exists, use it
           organizationId = existingOrg.id;
+          this.logger.log(`User joining existing organization via waitlist: ${existingOrg.name} (${organizationId})`);
+          
+          // Check if organization has available user slots
+          if (!existingOrg.canAddUsers) {
+            throw new BadRequestException(
+              `Organization "${existingOrg.name}" has reached its user limit of ${existingOrg.maxUsers} users`
+            );
+          }
         } else {
           // Organization doesn't exist, create it
           const newOrganization = await this.organizationsService.createOrganization({
@@ -172,11 +236,26 @@ export class AuthService {
             }
           });
           organizationId = newOrganization.id;
+          this.logger.log(`Created new organization via waitlist: ${organizationName} (${organizationId})`);
         }
       } catch (error) {
         console.error('Error handling organization during waitlist signup:', error);
         // Continue without organization if there's an error
         organizationId = null;
+      }
+    }
+
+    // Auto-assign user to organization based on email domain if no organization specified
+    if (!organizationId && waitlistDto.email) {
+      try {
+        const autoAssignedOrg = await this.organizationsService.autoAssignUserByDomain(waitlistDto.email);
+        if (autoAssignedOrg) {
+          organizationId = autoAssignedOrg.id;
+          organizationName = autoAssignedOrg.name;
+          this.logger.log(`Auto-assigned waitlist user to organization based on email domain: ${autoAssignedOrg.name}`);
+        }
+      } catch (error) {
+        this.logger.warn('Failed to auto-assign waitlist user by domain:', error);
       }
     }
 
@@ -209,6 +288,36 @@ export class AuthService {
 
     const result = await this.databaseService.query(query, values);
     const user = result.rows[0];
+
+    // If user joined an organization, log subscription information
+    if (organizationId) {
+      try {
+        // Check if organization has an active subscription
+        const orgStatusQuery = `
+          SELECT 
+            o.current_subscription_plan,
+            o.current_subscription_status,
+            os.plan_id as active_plan_id,
+            os.status as active_status
+          FROM organizations o
+          LEFT JOIN organization_subscriptions os ON o.id = os.organization_id 
+            AND os.status IN ('active', 'past_due')
+          WHERE o.id = $1
+        `;
+        const orgStatusResult = await this.databaseService.query(orgStatusQuery, [organizationId]);
+        
+        if (orgStatusResult.rows.length > 0) {
+          const orgStatus = orgStatusResult.rows[0];
+          if (orgStatus.active_plan_id) {
+            this.logger.log(`Waitlist user ${user.email} automatically gained access to organization's ${orgStatus.active_plan_id} subscription`);
+          } else if (orgStatus.current_subscription_plan) {
+            this.logger.log(`Waitlist user ${user.email} joined organization with ${orgStatus.current_subscription_plan} plan (status: ${orgStatus.current_subscription_status})`);
+          }
+        }
+      } catch (error) {
+        this.logger.warn('Failed to check organization subscription status for waitlist user:', error);
+      }
+    }
 
     // Generate JWT token
     const payload: JwtPayload = {

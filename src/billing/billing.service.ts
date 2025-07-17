@@ -18,6 +18,22 @@ export interface CreatePortalSessionDto {
   returnUrl: string;
 }
 
+export interface OrganizationSubscription {
+  id: string;
+  organizationId: string;
+  stripeCustomerId: string;
+  stripeSubscriptionId: string;
+  stripePriceId: string;
+  status: 'active' | 'canceled' | 'past_due' | 'unpaid' | 'incomplete';
+  planId: string;
+  billingCycle: 'monthly' | 'annual';
+  currentPeriodStart: Date;
+  currentPeriodEnd: Date;
+  createdByUserId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Subscription {
   id: string;
   userId: string;
@@ -55,12 +71,48 @@ export class BillingService {
 
   async createCheckoutSession(dto: CreateCheckoutSessionDto): Promise<Stripe.Checkout.Session> {
     if (!this.stripe) {
+      this.logger.error('Stripe is not configured - missing STRIPE_SECRET_KEY');
       throw new BadRequestException('Stripe is not configured');
     }
 
+    this.logger.log(`Creating checkout session for user ${dto.userId} with price ${dto.priceId}`);
+
     try {
-      // Find or create customer
-      const customer = await this.findOrCreateCustomer(dto.userId, dto.email);
+      // Validate price ID format
+      if (!dto.priceId || !dto.priceId.startsWith('price_')) {
+        this.logger.error(`Invalid price ID format: ${dto.priceId}`);
+        throw new BadRequestException(`Invalid price ID: ${dto.priceId}`);
+      }
+
+      // Get user's organization info
+      const userQuery = `
+        SELECT u.id, u.email, u.organization_id, o.name as organization_name
+        FROM users u 
+        LEFT JOIN organizations o ON u.organization_id = o.id
+        WHERE u.id = $1
+      `;
+      const userResult = await this.databaseService.query(userQuery, [dto.userId]);
+      
+      if (userResult.rows.length === 0) {
+        throw new BadRequestException('User not found');
+      }
+
+      const user = userResult.rows[0];
+      const organizationId = user.organization_id;
+
+      if (!organizationId) {
+        throw new BadRequestException('User must belong to an organization to purchase a subscription');
+      }
+
+      // Check if organization already has an active subscription
+      const existingSubscription = await this.getOrganizationSubscription(organizationId);
+      if (existingSubscription && existingSubscription.status === 'active') {
+        throw new BadRequestException('Organization already has an active subscription');
+      }
+
+      // Find or create customer for the organization
+      const customer = await this.findOrCreateOrganizationCustomer(organizationId, dto.email, user.organization_name);
+      this.logger.log(`Using Stripe customer: ${customer.id} for organization: ${organizationId}`);
 
       const session = await this.stripe.checkout.sessions.create({
         customer: customer.id,
@@ -76,21 +128,35 @@ export class BillingService {
         cancel_url: dto.cancelUrl,
         metadata: {
           userId: dto.userId,
+          organizationId: organizationId,
           billingCycle: dto.billingCycle,
         },
         subscription_data: {
           metadata: {
             userId: dto.userId,
+            organizationId: organizationId,
             billingCycle: dto.billingCycle,
           },
         },
       });
 
-      this.logger.log(`Created checkout session ${session.id} for user ${dto.userId}`);
+      this.logger.log(`Created checkout session ${session.id} for organization ${organizationId}`);
       return session;
     } catch (error) {
-      this.logger.error('Failed to create checkout session', error);
-      throw new BadRequestException('Failed to create checkout session');
+      this.logger.error('Failed to create checkout session', {
+        error: error.message,
+        stack: error.stack,
+        userId: dto.userId,
+        priceId: dto.priceId,
+        billingCycle: dto.billingCycle
+      });
+      
+      // Re-throw with more specific error message
+      if (error.type === 'StripeInvalidRequestError') {
+        throw new BadRequestException(`Stripe error: ${error.message}`);
+      }
+      
+      throw new BadRequestException(`Failed to create checkout session: ${error.message}`);
     }
   }
 
@@ -153,20 +219,77 @@ export class BillingService {
     }
   }
 
-  async getUserSubscription(userId: string): Promise<Subscription | null> {
+  // Organization subscription methods
+  async getOrganizationSubscription(organizationId: string): Promise<OrganizationSubscription | null> {
     try {
       const query = `
-        SELECT * FROM subscriptions 
-        WHERE user_id = $1 AND status IN ('active', 'past_due')
+        SELECT * FROM organization_subscriptions 
+        WHERE organization_id = $1 AND status IN ('active', 'past_due')
         ORDER BY created_at DESC LIMIT 1
       `;
-      const result = await this.databaseService.query(query, [userId]);
+      const result = await this.databaseService.query(query, [organizationId]);
       
       if (result.rows.length === 0) {
         return null;
       }
 
-      return this.mapDbRowToSubscription(result.rows[0]);
+      return this.mapDbRowToOrganizationSubscription(result.rows[0]);
+    } catch (error) {
+      this.logger.error('Failed to get organization subscription', error);
+      throw error;
+    }
+  }
+
+  async getUserSubscription(userId: string): Promise<Subscription | null> {
+    try {
+      // First, try to get user's organization subscription
+      const userQuery = `
+        SELECT u.organization_id, o.name as organization_name
+        FROM users u
+        LEFT JOIN organizations o ON u.organization_id = o.id
+        WHERE u.id = $1
+      `;
+      const userResult = await this.databaseService.query(userQuery, [userId]);
+      
+      if (userResult.rows.length === 0 || !userResult.rows[0].organization_id) {
+        // Fallback to legacy user-level subscription for backwards compatibility
+        const query = `
+          SELECT * FROM subscriptions 
+          WHERE user_id = $1 AND status IN ('active', 'past_due')
+          ORDER BY created_at DESC LIMIT 1
+        `;
+        const result = await this.databaseService.query(query, [userId]);
+        
+        if (result.rows.length === 0) {
+          return null;
+        }
+
+        return this.mapDbRowToSubscription(result.rows[0]);
+      }
+
+      // Get organization subscription
+      const organizationId = userResult.rows[0].organization_id;
+      const orgSubscription = await this.getOrganizationSubscription(organizationId);
+      
+      if (!orgSubscription) {
+        return null;
+      }
+
+      // Convert organization subscription to user subscription format for compatibility
+      return {
+        id: orgSubscription.id,
+        userId: userId,
+        stripeCustomerId: orgSubscription.stripeCustomerId,
+        stripeSubscriptionId: orgSubscription.stripeSubscriptionId,
+        stripePriceId: orgSubscription.stripePriceId,
+        status: orgSubscription.status,
+        planId: orgSubscription.planId,
+        billingCycle: orgSubscription.billingCycle,
+        currentPeriodStart: orgSubscription.currentPeriodStart,
+        currentPeriodEnd: orgSubscription.currentPeriodEnd,
+        createdAt: orgSubscription.createdAt,
+        updatedAt: orgSubscription.updatedAt,
+      };
     } catch (error) {
       this.logger.error('Failed to get user subscription', error);
       throw error;
@@ -230,10 +353,51 @@ export class BillingService {
     return customer;
   }
 
+  private async findOrCreateOrganizationCustomer(organizationId: string, email: string, organizationName: string): Promise<Stripe.Customer> {
+    if (!this.stripe) {
+      throw new BadRequestException('Stripe is not configured');
+    }
+
+    // Check if customer already exists in our database
+    const query = `
+      SELECT stripe_customer_id FROM organization_subscriptions 
+      WHERE organization_id = $1 AND stripe_customer_id IS NOT NULL
+      LIMIT 1
+    `;
+    const result = await this.databaseService.query(query, [organizationId]);
+    
+    if (result.rows.length > 0) {
+      const customerId = result.rows[0].stripe_customer_id;
+      try {
+        return await this.stripe.customers.retrieve(customerId) as Stripe.Customer;
+      } catch (error) {
+        this.logger.warn(`Customer ${customerId} not found in Stripe, creating new one`);
+      }
+    }
+
+    // Create new customer
+    const customer = await this.stripe.customers.create({
+      email,
+      name: organizationName,
+      metadata: {
+        organizationId,
+      },
+    });
+
+    this.logger.log(`Created Stripe customer ${customer.id} for organization ${organizationId}`);
+    return customer;
+  }
+
   private async handleCheckoutSessionCompleted(session: Stripe.Checkout.Session): Promise<void> {
     const userId = session.metadata?.userId;
     if (!userId) {
       this.logger.error('No userId in checkout session metadata');
+      return;
+    }
+
+    const organizationId = session.metadata?.organizationId;
+    if (!organizationId) {
+      this.logger.error('No organizationId in checkout session metadata');
       return;
     }
 
@@ -251,63 +415,173 @@ export class BillingService {
     const stripeSubscription = await this.stripe.subscriptions.retrieve(subscription);
     
     // Save subscription to database
-    await this.saveSubscription(userId, session.customer as string, stripeSubscription);
+    await this.saveSubscription(userId, organizationId, session.customer as string, stripeSubscription);
     
     this.logger.log(`Subscription created for user ${userId}`);
   }
 
   private async handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
     const subscriptionId = (invoice as any).subscription as string;
-    if (!subscriptionId) return;
-
-    if (!this.stripe) {
-      throw new BadRequestException('Stripe is not configured');
+    if (!subscriptionId) {
+      this.logger.warn('Invoice paid but no subscription found');
+      return;
     }
 
-    const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
-    const userId = subscription.metadata?.userId;
-    
-    if (userId) {
-      await this.updateSubscriptionStatus(subscriptionId, 'active');
-      this.logger.log(`Invoice paid for user ${userId}`);
+    try {
+      // Update organization subscription status
+      const query = `
+        UPDATE organization_subscriptions 
+        SET status = 'active', updated_at = CURRENT_TIMESTAMP
+        WHERE stripe_subscription_id = $1
+      `;
+      await this.databaseService.query(query, [subscriptionId]);
+      
+      // Also update organization record
+      const orgQuery = `
+        UPDATE organizations 
+        SET current_subscription_status = 'active'
+        WHERE id IN (
+          SELECT organization_id FROM organization_subscriptions 
+          WHERE stripe_subscription_id = $1
+        )
+      `;
+      await this.databaseService.query(orgQuery, [subscriptionId]);
+      
+      this.logger.log(`Invoice paid for subscription ${subscriptionId}`);
+    } catch (error) {
+      this.logger.error('Failed to handle invoice paid', error);
     }
   }
 
   private async handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
     const subscriptionId = (invoice as any).subscription as string;
-    if (!subscriptionId) return;
-
-    if (!this.stripe) {
-      throw new BadRequestException('Stripe is not configured');
+    if (!subscriptionId) {
+      this.logger.warn('Invoice payment failed but no subscription found');
+      return;
     }
 
-    const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
-    const userId = subscription.metadata?.userId;
-    
-    if (userId) {
-      await this.updateSubscriptionStatus(subscriptionId, 'past_due');
-      this.logger.log(`Payment failed for user ${userId}`);
+    try {
+      // Update organization subscription status
+      const query = `
+        UPDATE organization_subscriptions 
+        SET status = 'past_due', updated_at = CURRENT_TIMESTAMP
+        WHERE stripe_subscription_id = $1
+      `;
+      await this.databaseService.query(query, [subscriptionId]);
+      
+      // Also update organization record
+      const orgQuery = `
+        UPDATE organizations 
+        SET current_subscription_status = 'past_due'
+        WHERE id IN (
+          SELECT organization_id FROM organization_subscriptions 
+          WHERE stripe_subscription_id = $1
+        )
+      `;
+      await this.databaseService.query(orgQuery, [subscriptionId]);
+      
+      this.logger.log(`Invoice payment failed for subscription ${subscriptionId}`);
+    } catch (error) {
+      this.logger.error('Failed to handle invoice payment failed', error);
     }
   }
 
-  private async handleSubscriptionUpdated(subscription: Stripe.Subscription): Promise<void> {
-    const userId = subscription.metadata?.userId;
-    if (!userId) return;
+  private async handleSubscriptionUpdated(stripeSubscription: Stripe.Subscription): Promise<void> {
+    try {
+      const priceId = stripeSubscription.items.data[0]?.price.id;
+      if (!priceId) {
+        this.logger.error('No price ID found in subscription update');
+        return;
+      }
 
-    await this.updateSubscriptionFromStripe(subscription);
-    this.logger.log(`Subscription updated for user ${userId}`);
+      const { planId, billingCycle } = this.getPlanFromPriceId(priceId);
+
+      // Update organization subscription
+      const query = `
+        UPDATE organization_subscriptions 
+        SET 
+          stripe_price_id = $1,
+          status = $2,
+          plan_id = $3,
+          billing_cycle = $4,
+          current_period_start = $5,
+          current_period_end = $6,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE stripe_subscription_id = $7
+      `;
+
+      const values = [
+        priceId,
+        stripeSubscription.status,
+        planId,
+        billingCycle,
+        new Date((stripeSubscription as any).current_period_start * 1000),
+        new Date((stripeSubscription as any).current_period_end * 1000),
+        stripeSubscription.id,
+      ];
+
+      await this.databaseService.query(query, values);
+      
+      // Also update organization record
+      const orgQuery = `
+        UPDATE organizations 
+        SET 
+          current_subscription_plan = $1,
+          current_subscription_status = $2,
+          subscription_expires_at = $3
+        WHERE id IN (
+          SELECT organization_id FROM organization_subscriptions 
+          WHERE stripe_subscription_id = $4
+        )
+      `;
+      
+      const orgValues = [
+        planId,
+        stripeSubscription.status,
+        new Date((stripeSubscription as any).current_period_end * 1000),
+        stripeSubscription.id,
+      ];
+      
+      await this.databaseService.query(orgQuery, orgValues);
+
+      this.logger.log(`Subscription updated: ${stripeSubscription.id}`);
+    } catch (error) {
+      this.logger.error('Failed to handle subscription updated', error);
+    }
   }
 
-  private async handleSubscriptionDeleted(subscription: Stripe.Subscription): Promise<void> {
-    const userId = subscription.metadata?.userId;
-    if (!userId) return;
+  private async handleSubscriptionDeleted(stripeSubscription: Stripe.Subscription): Promise<void> {
+    try {
+      // Update organization subscription status
+      const query = `
+        UPDATE organization_subscriptions 
+        SET status = 'canceled', updated_at = CURRENT_TIMESTAMP
+        WHERE stripe_subscription_id = $1
+      `;
+      await this.databaseService.query(query, [stripeSubscription.id]);
+      
+      // Also update organization record
+      const orgQuery = `
+        UPDATE organizations 
+        SET 
+          current_subscription_status = 'canceled',
+          current_subscription_plan = 'starter'
+        WHERE id IN (
+          SELECT organization_id FROM organization_subscriptions 
+          WHERE stripe_subscription_id = $1
+        )
+      `;
+      await this.databaseService.query(orgQuery, [stripeSubscription.id]);
 
-    await this.updateSubscriptionStatus(subscription.id, 'canceled');
-    this.logger.log(`Subscription deleted for user ${userId}`);
+      this.logger.log(`Subscription deleted: ${stripeSubscription.id}`);
+    } catch (error) {
+      this.logger.error('Failed to handle subscription deleted', error);
+    }
   }
 
   private async saveSubscription(
     userId: string,
+    organizationId: string,
     customerId: string,
     stripeSubscription: Stripe.Subscription,
   ): Promise<void> {
@@ -320,12 +594,12 @@ export class BillingService {
     const { planId, billingCycle } = this.getPlanFromPriceId(priceId);
 
     const query = `
-      INSERT INTO subscriptions (
-        user_id, stripe_customer_id, stripe_subscription_id, stripe_price_id,
+      INSERT INTO organization_subscriptions (
+        organization_id, stripe_customer_id, stripe_subscription_id, stripe_price_id,
         status, plan_id, billing_cycle, current_period_start, current_period_end,
-        created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      ON CONFLICT (user_id, stripe_subscription_id) 
+        created_by_user_id, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      ON CONFLICT (organization_id, stripe_subscription_id) 
       DO UPDATE SET
         status = EXCLUDED.status,
         current_period_start = EXCLUDED.current_period_start,
@@ -334,7 +608,7 @@ export class BillingService {
     `;
 
     const values = [
-      userId,
+      organizationId,
       customerId,
       stripeSubscription.id,
       priceId,
@@ -343,6 +617,7 @@ export class BillingService {
       billingCycle,
       new Date((stripeSubscription as any).current_period_start * 1000),
       new Date((stripeSubscription as any).current_period_end * 1000),
+      userId, // created_by_user_id
       new Date(),
       new Date(),
     ];
@@ -395,6 +670,24 @@ export class BillingService {
     throw new BadRequestException(`Unknown price ID: ${priceId}`);
   }
 
+  private mapDbRowToOrganizationSubscription(row: any): OrganizationSubscription {
+    return {
+      id: row.id,
+      organizationId: row.organization_id,
+      stripeCustomerId: row.stripe_customer_id,
+      stripeSubscriptionId: row.stripe_subscription_id,
+      stripePriceId: row.stripe_price_id,
+      status: row.status,
+      planId: row.plan_id,
+      billingCycle: row.billing_cycle,
+      currentPeriodStart: row.current_period_start,
+      currentPeriodEnd: row.current_period_end,
+      createdByUserId: row.created_by_user_id,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
   private mapDbRowToSubscription(row: any): Subscription {
     return {
       id: row.id,
@@ -410,5 +703,37 @@ export class BillingService {
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
+  }
+
+  // Helper method to check if user has access to a feature based on organization subscription
+  async checkOrganizationFeatureAccess(userId: string, feature: string): Promise<boolean> {
+    try {
+      const userQuery = `
+        SELECT u.organization_id FROM users u WHERE u.id = $1
+      `;
+      const userResult = await this.databaseService.query(userQuery, [userId]);
+      
+      if (userResult.rows.length === 0 || !userResult.rows[0].organization_id) {
+        return false; // User not in organization
+      }
+
+      const organizationId = userResult.rows[0].organization_id;
+      const subscription = await this.getOrganizationSubscription(organizationId);
+      
+      if (!subscription || subscription.status !== 'active') {
+        return feature === 'basic_access'; // Only basic access without subscription
+      }
+
+      const tier = getPricingTierById(subscription.planId);
+      if (!tier) {
+        return false;
+      }
+
+      // Check if the plan includes the requested feature
+      return tier.features.some(f => f.toLowerCase().includes(feature.toLowerCase()));
+    } catch (error) {
+      this.logger.error('Failed to check organization feature access', error);
+      return false;
+    }
   }
 } 

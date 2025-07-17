@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { PRICING_TIERS, getPricingTierById } from '../config/pricing';
+import { Injectable, Logger } from '@nestjs/common';
 import { BillingService } from './billing.service';
+import { getPricingTierById } from '../config/pricing';
+import { DatabaseService } from '../database/database.service';
 
 export interface FeatureAccess {
   hasAccess: boolean;
@@ -10,16 +11,85 @@ export interface FeatureAccess {
 
 @Injectable()
 export class FeatureAccessService {
-  constructor(private readonly billingService: BillingService) {}
+  private readonly logger = new Logger(FeatureAccessService.name);
+
+  constructor(
+    private readonly billingService: BillingService,
+    private readonly databaseService: DatabaseService,
+  ) {}
 
   async checkFeatureAccess(
     userId: string,
     feature: string,
     currentUsage?: number
   ): Promise<FeatureAccess> {
-    // Get user's current subscription
-    const subscription = await this.billingService.getUserSubscription(userId);
-    const planId = subscription?.planId || 'starter';
+    try {
+      // Get user's organization info and check for special access
+      const userQuery = `
+        SELECT u.id, u.email, u.organization_id, u.metadata, o.name as organization_name, o.current_subscription_plan, o.current_subscription_status
+        FROM users u
+        LEFT JOIN organizations o ON u.organization_id = o.id
+        WHERE u.id = $1
+      `;
+      const userResult = await this.databaseService.query(userQuery, [userId]);
+      
+      if (userResult.rows.length === 0) {
+        return {
+          hasAccess: false,
+          reason: 'User not found',
+          upgradeRequired: 'growth'
+        };
+      }
+
+      const user = userResult.rows[0];
+      
+      // Check for special testing accounts that bypass subscription requirements
+      if (user.metadata?.special_access === true || user.metadata?.bypass_subscription === true) {
+        this.logger.log(`Special access granted for testing user: ${user.email}`);
+        return { hasAccess: true, reason: 'Special testing account access' };
+      }
+      
+      // Check for specific testing emails as additional safeguard
+      if (['testing1@garnetai.net', 'testing2@garnetai.net'].includes(user.email)) {
+        this.logger.log(`Special access granted for known testing email: ${user.email}`);
+        return { hasAccess: true, reason: 'Testing account bypass' };
+      }
+      
+      if (!user.organization_id) {
+        // Fallback to individual user subscription for users not in an organization
+        const subscription = await this.billingService.getUserSubscription(userId);
+        const planId = subscription?.planId || 'starter';
+        return this.checkPlanFeatureAccess(planId, feature, currentUsage);
+      }
+
+      // Check organization subscription
+      const organizationId = user.organization_id;
+      const orgSubscription = await this.billingService.getOrganizationSubscription(organizationId);
+      
+      let planId = 'starter'; // Default plan
+      let subscriptionStatus = 'inactive';
+      
+      if (orgSubscription && orgSubscription.status === 'active') {
+        planId = orgSubscription.planId;
+        subscriptionStatus = 'active';
+      } else if (user.current_subscription_plan) {
+        // Use organization's current plan even if subscription is not active (grace period)
+        planId = user.current_subscription_plan;
+        subscriptionStatus = user.current_subscription_status || 'inactive';
+      }
+
+      return this.checkPlanFeatureAccess(planId, feature, currentUsage);
+    } catch (error) {
+      this.logger.error('Failed to check feature access', error);
+      return {
+        hasAccess: false,
+        reason: 'Error checking subscription',
+        upgradeRequired: 'growth'
+      };
+    }
+  }
+
+  private checkPlanFeatureAccess(planId: string, feature: string, currentUsage?: number): FeatureAccess {
     const tier = getPricingTierById(planId);
 
     if (!tier) {
@@ -68,32 +138,52 @@ export class FeatureAccessService {
         }
         return { hasAccess: true };
 
-      case 'advanced_analytics':
-        if (planId === 'starter' || planId === 'growth') {
+      case 'multiple_frameworks':
+        if (planId === 'starter') {
           return {
             hasAccess: false,
-            reason: 'Advanced analytics is only available on Scale and Enterprise plans',
+            reason: 'Multiple compliance frameworks are not available on the Starter plan',
+            upgradeRequired: 'growth'
+          };
+        }
+        return { hasAccess: true };
+
+      case 'advanced_analytics':
+        if (['starter', 'growth'].includes(planId)) {
+          return {
+            hasAccess: false,
+            reason: 'Advanced analytics are only available on Scale and Enterprise plans',
             upgradeRequired: 'scale'
+          };
+        }
+        return { hasAccess: true };
+
+      case 'priority_support':
+        if (['starter'].includes(planId)) {
+          return {
+            hasAccess: false,
+            reason: 'Priority support is not available on the Starter plan',
+            upgradeRequired: 'growth'
           };
         }
         return { hasAccess: true };
 
       case 'api_access':
-        if (planId === 'starter' || planId === 'growth') {
+        if (['starter', 'growth', 'scale'].includes(planId)) {
           return {
             hasAccess: false,
-            reason: 'API access is only available on Scale and Enterprise plans',
-            upgradeRequired: 'scale'
+            reason: 'API access is only available on the Enterprise plan',
+            upgradeRequired: 'enterprise'
           };
         }
         return { hasAccess: true };
 
-      case 'sso_integration':
-        if (planId === 'starter' || planId === 'growth') {
+      case 'white_labeling':
+        if (planId !== 'enterprise') {
           return {
             hasAccess: false,
-            reason: 'SSO integration is only available on Scale and Enterprise plans',
-            upgradeRequired: 'scale'
+            reason: 'White labeling is only available on the Enterprise plan',
+            upgradeRequired: 'enterprise'
           };
         }
         return { hasAccess: true };
@@ -109,58 +199,31 @@ export class FeatureAccessService {
         return { hasAccess: true };
 
       case 'dedicated_support':
-        if (planId === 'starter' || planId === 'growth') {
+        if (planId !== 'enterprise') {
           return {
             hasAccess: false,
-            reason: 'Dedicated support is only available on Scale and Enterprise plans',
-            upgradeRequired: 'scale'
-          };
-        }
-        return { hasAccess: true };
-
-      case 'trust_portal':
-        if (planId === 'starter') {
-          return {
-            hasAccess: false,
-            reason: 'Trust portal is not available on the Starter plan',
-            upgradeRequired: 'growth'
-          };
-        }
-        return { hasAccess: true };
-
-      case 'custom_branding':
-        if (planId === 'starter') {
-          return {
-            hasAccess: false,
-            reason: 'Custom branding is not available on the Starter plan',
-            upgradeRequired: 'growth'
-          };
-        }
-        return { hasAccess: true };
-
-      case 'bulk_operations':
-        if (planId === 'starter' || planId === 'growth') {
-          return {
-            hasAccess: false,
-            reason: 'Bulk operations are only available on Scale and Enterprise plans',
-            upgradeRequired: 'scale'
-          };
-        }
-        return { hasAccess: true };
-
-      case 'priority_support':
-        if (planId === 'starter') {
-          return {
-            hasAccess: false,
-            reason: 'Priority support is not available on the Starter plan',
-            upgradeRequired: 'growth'
+            reason: 'Dedicated support is only available on the Enterprise plan',
+            upgradeRequired: 'enterprise'
           };
         }
         return { hasAccess: true };
 
       default:
-        // For unknown features, allow access for all paid plans
-        return { hasAccess: planId !== 'starter' };
+        // For any other feature, check if it's in the plan's feature list
+        const hasFeature = tier.features.some(f => 
+          f.toLowerCase().includes(feature.toLowerCase())
+        );
+        
+        if (!hasFeature) {
+          return {
+            hasAccess: false,
+            reason: `Feature "${feature}" is not available on the ${tier.name} plan`,
+            upgradeRequired: planId === 'starter' ? 'growth' : 
+                           planId === 'growth' ? 'scale' : 'enterprise'
+          };
+        }
+        
+        return { hasAccess: true };
     }
   }
 
@@ -170,73 +233,202 @@ export class FeatureAccessService {
     users: { current: number; limit: number | 'unlimited'; hasAccess: boolean };
     storage: { current: string; limit: string; hasAccess: boolean };
   }> {
-    const subscription = await this.billingService.getUserSubscription(userId);
-    const planId = subscription?.planId || 'starter';
-    const tier = getPricingTierById(planId);
-
-    if (!tier) {
-      throw new Error('Invalid subscription plan');
-    }
-
-    // TODO: Implement actual usage tracking
-    // For now, return mock data
-    return {
-      questionnaires: {
-        current: 0,
-        limit: tier.limits.questionnaires,
-        hasAccess: true
-      },
-      vendors: {
-        current: 0,
-        limit: tier.limits.vendors,
-        hasAccess: true
-      },
-      users: {
-        current: 1,
-        limit: tier.limits.users,
-        hasAccess: true
-      },
-      storage: {
-        current: '0GB',
-        limit: tier.limits.storage,
-        hasAccess: true
+    try {
+      // Get user's organization info and check for special access
+      const userQuery = `
+        SELECT u.id, u.email, u.organization_id, u.metadata, o.name as organization_name
+        FROM users u
+        LEFT JOIN organizations o ON u.organization_id = o.id
+        WHERE u.id = $1
+      `;
+      const userResult = await this.databaseService.query(userQuery, [userId]);
+      
+      if (userResult.rows.length === 0) {
+        throw new Error('User not found');
       }
+
+      const user = userResult.rows[0];
+      
+      // Check for special testing accounts that bypass subscription requirements
+      if (user.metadata?.special_access === true || user.metadata?.bypass_subscription === true || 
+          ['testing1@garnetai.net', 'testing2@garnetai.net'].includes(user.email)) {
+        
+        this.logger.log(`Special unlimited access granted for testing user: ${user.email}`);
+        
+        return {
+          questionnaires: {
+            current: 0,
+            limit: 'unlimited',
+            hasAccess: true
+          },
+          vendors: {
+            current: 0,
+            limit: 'unlimited',
+            hasAccess: true
+          },
+          users: {
+            current: 1,
+            limit: 'unlimited',
+            hasAccess: true
+          },
+          storage: {
+            current: '0GB',
+            limit: 'Unlimited',
+            hasAccess: true
+          }
+        };
+      }
+      
+      let planId = 'starter';
+      
+      if (userResult.rows.length > 0 && userResult.rows[0].organization_id) {
+        // Get organization subscription
+        const organizationId = userResult.rows[0].organization_id;
+        const orgSubscription = await this.billingService.getOrganizationSubscription(organizationId);
+        
+        if (orgSubscription && orgSubscription.status === 'active') {
+          planId = orgSubscription.planId;
+        }
+      } else {
+        // Fallback to individual subscription
+        const subscription = await this.billingService.getUserSubscription(userId);
+        planId = subscription?.planId || 'starter';
+      }
+
+      const tier = getPricingTierById(planId);
+
+      if (!tier) {
+        throw new Error('Invalid subscription plan');
+      }
+
+      // Get actual usage counts (you would implement these queries based on your data)
+      const currentUsage = await this.getCurrentUsage(userId);
+
+      return {
+        questionnaires: {
+          current: currentUsage.questionnaires,
+          limit: tier.limits.questionnaires,
+          hasAccess: tier.limits.questionnaires === 'unlimited' || 
+                    currentUsage.questionnaires < (tier.limits.questionnaires as number)
+        },
+        vendors: {
+          current: currentUsage.vendors,
+          limit: tier.limits.vendors,
+          hasAccess: tier.limits.vendors === 'unlimited' || 
+                    currentUsage.vendors < (tier.limits.vendors as number)
+        },
+        users: {
+          current: currentUsage.users,
+          limit: tier.limits.users,
+          hasAccess: tier.limits.users === 'unlimited' || 
+                    currentUsage.users < (tier.limits.users as number)
+        },
+        storage: {
+          current: currentUsage.storage,
+          limit: tier.limits.storage,
+          hasAccess: true // Simplified for now
+        }
+      };
+    } catch (error) {
+      this.logger.error('Failed to check user limits', error);
+      throw error;
+    }
+  }
+
+  private async getCurrentUsage(userId: string): Promise<{
+    questionnaires: number;
+    vendors: number;
+    users: number;
+    storage: string;
+  }> {
+    // Get user's organization to check organization-wide usage
+    const userQuery = `
+      SELECT u.organization_id FROM users u WHERE u.id = $1
+    `;
+    const userResult = await this.databaseService.query(userQuery, [userId]);
+    
+    const organizationId = userResult.rows[0]?.organization_id;
+    
+    if (organizationId) {
+      // Get organization-wide usage
+      const usageQuery = `
+        SELECT 
+          COUNT(DISTINCT q.id) as questionnaire_count,
+          COUNT(DISTINCT v.id) as vendor_count,
+          COUNT(DISTINCT u.id) as user_count
+        FROM organizations o
+        LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = true
+        LEFT JOIN questionnaires q ON u.id = q.created_by_user_id
+        LEFT JOIN vendors v ON u.id = v.created_by_user_id
+        WHERE o.id = $1
+        GROUP BY o.id
+      `;
+      
+      const usageResult = await this.databaseService.query(usageQuery, [organizationId]);
+      
+      if (usageResult.rows.length > 0) {
+        const usage = usageResult.rows[0];
+        return {
+          questionnaires: parseInt(usage.questionnaire_count) || 0,
+          vendors: parseInt(usage.vendor_count) || 0,
+          users: parseInt(usage.user_count) || 0,
+          storage: '0GB' // Placeholder
+        };
+      }
+    }
+    
+    // Fallback to individual user usage
+    return {
+      questionnaires: 0,
+      vendors: 0,
+      users: 1,
+      storage: '0GB'
     };
   }
 
-  async getPlanFeatures(planId: string): Promise<string[]> {
-    const tier = getPricingTierById(planId);
-    return tier?.features || [];
-  }
-
-  async getUpgradeRecommendation(userId: string, requiredFeature: string): Promise<{
-    currentPlan: string;
-    recommendedPlan: string;
-    reason: string;
-    features: string[];
+  // Helper method to check organization subscription status
+  async getOrganizationSubscriptionStatus(organizationId: string): Promise<{
+    hasActiveSubscription: boolean;
+    planId: string;
+    status: string;
+    expiresAt?: Date;
+    userCount: number;
+    maxUsers: number;
   }> {
-    const subscription = await this.billingService.getUserSubscription(userId);
-    const currentPlan = subscription?.planId || 'starter';
-    
-    const featureAccess = await this.checkFeatureAccess(userId, requiredFeature);
-    
-    if (featureAccess.hasAccess) {
+    try {
+      const statusQuery = `
+        SELECT * FROM get_organization_subscription_status($1)
+      `;
+      const result = await this.databaseService.query(statusQuery, [organizationId]);
+      
+      if (result.rows.length === 0) {
+        return {
+          hasActiveSubscription: false,
+          planId: 'starter',
+          status: 'inactive',
+          userCount: 0,
+          maxUsers: 10
+        };
+      }
+      
+      const status = result.rows[0];
       return {
-        currentPlan,
-        recommendedPlan: currentPlan,
-        reason: 'Feature already available',
-        features: await this.getPlanFeatures(currentPlan)
+        hasActiveSubscription: status.has_active_subscription,
+        planId: status.plan_id,
+        status: status.status,
+        expiresAt: status.expires_at,
+        userCount: status.user_count,
+        maxUsers: status.max_users
+      };
+    } catch (error) {
+      this.logger.error('Failed to get organization subscription status', error);
+      return {
+        hasActiveSubscription: false,
+        planId: 'starter',
+        status: 'error',
+        userCount: 0,
+        maxUsers: 10
       };
     }
-
-    const recommendedPlan = featureAccess.upgradeRequired || 'growth';
-    const recommendedTier = getPricingTierById(recommendedPlan);
-
-    return {
-      currentPlan,
-      recommendedPlan,
-      reason: featureAccess.reason || 'Upgrade required for this feature',
-      features: recommendedTier?.features || []
-    };
   }
 } 
