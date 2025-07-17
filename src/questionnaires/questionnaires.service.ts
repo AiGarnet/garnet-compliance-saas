@@ -547,6 +547,141 @@ export class QuestionnairesService {
   }
 
   /**
+   * Get a specific vendor answer by question ID
+   */
+  async getVendorAnswer(vendorId: string, questionId: string): Promise<any | null> {
+    try {
+      const query = `
+        SELECT 
+          id,
+          vendor_id as "vendorId",
+          question_id as "questionId",
+          question,
+          answer,
+          status,
+          question_title as "questionTitle",
+          share_to_trust_portal as "shareToTrustPortal",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        FROM vendor_questionnaire_answers 
+        WHERE vendor_id = $1 AND question_id = $2
+      `;
+      
+      const result = await this.databaseService.query(query, [parseInt(vendorId), questionId]);
+      return result.rows.length > 0 ? result.rows[0] : null;
+    } catch (error) {
+      this.logger.error(`Failed to get vendor answer: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new vendor answer
+   */
+  async createVendorAnswer(answerData: {
+    vendor_id: number;
+    question_id: string;
+    question: string;
+    answer: string;
+    status?: string;
+    question_title?: string;
+  }): Promise<any> {
+    try {
+      const query = `
+        INSERT INTO vendor_questionnaire_answers (
+          id, vendor_id, question_id, question, answer, status, question_title, created_at, updated_at
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW()
+        ) RETURNING 
+          id,
+          vendor_id as "vendorId",
+          question_id as "questionId",
+          question,
+          answer,
+          status,
+          question_title as "questionTitle",
+          share_to_trust_portal as "shareToTrustPortal",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+      `;
+      
+      const values = [
+        answerData.vendor_id,
+        answerData.question_id,
+        answerData.question,
+        answerData.answer,
+        answerData.status || 'pending',
+        answerData.question_title || 'Questionnaire'
+      ];
+      
+      const result = await this.databaseService.query(query, values);
+      return result.rows[0];
+    } catch (error) {
+      this.logger.error(`Failed to create vendor answer: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Update a vendor answer
+   */
+  async updateVendorAnswer(vendorId: string, questionId: string, answerData: {
+    question?: string;
+    answer?: string;
+    status?: string;
+    question_title?: string;
+  }): Promise<any | null> {
+    try {
+      const updateFields = [];
+      const values = [];
+      let paramIndex = 1;
+
+      Object.entries(answerData).forEach(([key, value]) => {
+        if (value !== undefined) {
+          if (key === 'question_title') {
+            updateFields.push(`question_title = $${paramIndex}`);
+          } else {
+            updateFields.push(`${key} = $${paramIndex}`);
+          }
+          values.push(value);
+          paramIndex++;
+        }
+      });
+
+      if (updateFields.length === 0) {
+        // Return existing answer if no updates
+        return await this.getVendorAnswer(vendorId, questionId);
+      }
+
+      updateFields.push(`updated_at = NOW()`);
+      values.push(parseInt(vendorId), questionId);
+
+      const query = `
+        UPDATE vendor_questionnaire_answers 
+        SET ${updateFields.join(', ')}
+        WHERE vendor_id = $${paramIndex} AND question_id = $${paramIndex + 1}
+        RETURNING 
+          id,
+          vendor_id as "vendorId",
+          question_id as "questionId",
+          question,
+          answer,
+          status,
+          question_title as "questionTitle",
+          share_to_trust_portal as "shareToTrustPortal",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+      `;
+
+      const result = await this.databaseService.query(query, values);
+      return result.rows.length > 0 ? result.rows[0] : null;
+    } catch (error) {
+      this.logger.error(`Failed to update vendor answer: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
    * Get questionnaires with vendor answers for a specific vendor
    */
   async getQuestionnairesWithAnswersForVendor(vendorId: string): Promise<any[]> {

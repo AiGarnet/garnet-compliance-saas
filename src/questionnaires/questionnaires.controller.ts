@@ -250,6 +250,96 @@ export class QuestionnairesController {
   }
 
   @Public()
+  @Get('vendor/:vendorId/answers/:questionId')
+  @ApiOperation({ summary: 'Get a specific vendor answer by question ID' })
+  @ApiResponse({ status: 200, description: 'Returns the vendor answer' })
+  @ApiResponse({ status: 404, description: 'Answer not found' })
+  async getVendorAnswer(
+    @Param('vendorId') vendorId: string,
+    @Param('questionId') questionId: string
+  ) {
+    try {
+      const answer = await this.questionnairesService.getVendorAnswer(vendorId, questionId);
+      if (!answer) {
+        throw new HttpException('Answer not found', HttpStatus.NOT_FOUND);
+      }
+      return { answer };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Public()
+  @Post('vendor/:vendorId/answers')
+  @ApiOperation({ summary: 'Create a new vendor answer' })
+  @ApiResponse({ status: 201, description: 'Answer created successfully' })
+  async createVendorAnswer(
+    @Param('vendorId') vendorId: string,
+    @Body() answerData: {
+      vendor_id: number;
+      question_id: string;
+      question: string;
+      answer: string;
+      status?: string;
+      question_title?: string;
+    }
+  ) {
+    try {
+      const answer = await this.questionnairesService.createVendorAnswer(answerData);
+      return { 
+        message: 'Answer created successfully',
+        answer 
+      };
+    } catch (error: any) {
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Public()
+  @Put('vendor/:vendorId/answers/:questionId')
+  @ApiOperation({ summary: 'Update a vendor answer' })
+  @ApiResponse({ status: 200, description: 'Answer updated successfully' })
+  @ApiResponse({ status: 404, description: 'Answer not found' })
+  async updateVendorAnswer(
+    @Param('vendorId') vendorId: string,
+    @Param('questionId') questionId: string,
+    @Body() answerData: {
+      question?: string;
+      answer?: string;
+      status?: string;
+      question_title?: string;
+    }
+  ) {
+    try {
+      const answer = await this.questionnairesService.updateVendorAnswer(vendorId, questionId, answerData);
+      if (!answer) {
+        throw new HttpException('Answer not found', HttpStatus.NOT_FOUND);
+      }
+      return { 
+        message: 'Answer updated successfully',
+        answer 
+      };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Internal server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Public()
   @Post(':id/submit')
   @ApiOperation({ summary: 'Submit questionnaire for enterprise review' })
   @ApiResponse({ status: 200, description: 'Questionnaire submitted successfully' })
