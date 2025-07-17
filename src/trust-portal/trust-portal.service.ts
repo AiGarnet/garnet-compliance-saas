@@ -528,7 +528,14 @@ export class TrustPortalService {
               checklistsMap.set(checklistId, {
                 id: checklistId,
                 name: checklistName,
-                questions: []
+                questions: [],
+                // Include complete checklist data from bucket if available
+                completeData: questionnaireData.completeChecklistData || null,
+                extractedText: questionnaireData.completeChecklistData?.extractedText || null,
+                originalChecklist: questionnaireData.completeChecklistData?.originalChecklist || null,
+                metadata: questionnaireData.completeChecklistData?.metadata || null,
+                dataCompleteness: questionnaireData.dataCompleteness || 'database-only',
+                source: questionnaireData.source || 'unknown'
               });
             }
             
@@ -548,6 +555,29 @@ export class TrustPortalService {
                 supportingDocuments: supportingDocs
               });
             });
+            
+            // If we have complete bucket data, also include those questions
+            if (questionnaireData.completeChecklistData?.allQuestions && Array.isArray(questionnaireData.completeChecklistData.allQuestions)) {
+              questionnaireData.completeChecklistData.allQuestions.forEach((bucketQuestion: any) => {
+                // Only add if not already present (avoid duplicates)
+                const existingQuestion = checklistsMap.get(checklistId).questions.find((q: any) => q.id === bucketQuestion.id);
+                if (!existingQuestion) {
+                  const supportingDocs = questionDocumentsMap.get(bucketQuestion.id) || [];
+                  
+                  checklistsMap.get(checklistId).questions.push({
+                    id: bucketQuestion.id,
+                    questionText: bucketQuestion.questionText,
+                    aiAnswer: bucketQuestion.aiAnswer || 'No answer provided',
+                    confidenceScore: bucketQuestion.confidenceScore ? parseFloat(bucketQuestion.confidenceScore) : null,
+                    status: bucketQuestion.status || 'pending',
+                    requiresDocument: bucketQuestion.requiresDocument || false,
+                    documentDescription: bucketQuestion.documentDescription || null,
+                    supportingDocuments: supportingDocs,
+                    isFromBucket: true // Flag to indicate this came from bucket data
+                  });
+                }
+              });
+            }
           }
         } catch (error) {
           console.error('Error parsing questionnaire data from trust portal item:', error);
