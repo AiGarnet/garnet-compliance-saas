@@ -630,4 +630,41 @@ export class TrustPortalController {
       );
     }
   }
+
+  @Get('submissions/recent')
+  @ApiOperation({ summary: 'Get recent trust portal submissions for authenticated user' })
+  @ApiResponse({ status: 200, description: 'Returns recent submissions for user\'s organization' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of recent submissions to return (default: 10)' })
+  async getRecentSubmissions(
+    @CurrentUser() user?: any,
+    @Query('limit') limit?: string
+  ) {
+    try {
+      if (!user?.id) {
+        throw new HttpException('User authentication required', HttpStatus.UNAUTHORIZED);
+      }
+
+      const submissionLimit = limit ? parseInt(limit) : 10;
+      const submissions = await this.trustPortalService.getRecentSubmissions(user.id, submissionLimit);
+      
+      return {
+        success: true,
+        data: submissions,
+        meta: {
+          timestamp: new Date().toISOString(),
+          count: submissions.length,
+          userId: user.id,
+          limit: submissionLimit
+        }
+      };
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Failed to fetch recent submissions',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 } 

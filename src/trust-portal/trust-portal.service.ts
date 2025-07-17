@@ -1109,4 +1109,65 @@ export class TrustPortalService {
       ...invitationData
     };
   }
+
+  /**
+   * Get recent trust portal submissions for user's organization
+   */
+  async getRecentSubmissions(userId: string, limit: number = 10): Promise<TrustPortalItem[]> {
+    // First, get the user's organization_id
+    const userQuery = `
+      SELECT organization_id
+      FROM users
+      WHERE id = $1
+    `;
+    
+    const userResult = await this.databaseService.query(userQuery, [userId]);
+    
+    if (userResult.rows.length === 0) {
+      throw new Error('User not found');
+    }
+    
+    const userOrganizationId = userResult.rows[0].organization_id;
+    
+    if (!userOrganizationId) {
+      // If user has no organization, return empty array
+      return [];
+    }
+    
+    // Get recent trust portal submissions for all vendors in the user's organization
+    const query = `
+      SELECT 
+        tpi.id,
+        tpi.vendor_id as "vendorId",
+        tpi.title,
+        tpi.description,
+        tpi.category,
+        tpi.file_url as "fileUrl",
+        tpi.file_type as "fileType",
+        tpi.file_size as "fileSize",
+        tpi.content,
+        tpi.is_questionnaire_answer as "isQuestionnaireAnswer",
+        tpi.questionnaire_id as "questionnaireId",
+        tpi.is_follow_up as "isFollowUp",
+        tpi.parent_submission_id as "parentSubmissionId",
+        tpi.follow_up_type as "followUpType",
+        tpi.follow_up_reason as "followUpReason",
+        tpi.submission_sequence as "submissionSequence",
+        tpi.created_at as "createdAt",
+        tpi.updated_at as "updatedAt",
+        v.company_name as "vendorName",
+        v.uuid as "vendorUuid"
+      FROM trust_portal_items tpi
+      INNER JOIN vendors v ON tpi.vendor_id = v.vendor_id
+      WHERE v.organization_id = $1
+      ORDER BY tpi.created_at DESC
+      LIMIT $2
+    `;
+    
+    const result = await this.databaseService.query(query, [userOrganizationId, limit]);
+    return result.rows.map(row => ({
+      ...row,
+      vendorName: row.vendorName // Add vendor name for display
+    }));
+  }
 } 
