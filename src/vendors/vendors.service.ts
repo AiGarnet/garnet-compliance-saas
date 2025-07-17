@@ -329,19 +329,27 @@ export class VendorsService {
       // Get trust portal items for this vendor
       const trustPortalQuery = `
         SELECT 
-          item_id as "itemId",
+          id,
           vendor_id as "vendorId",
           title,
           description,
           category,
+          file_url as "fileUrl",
+          file_type as "fileType",
+          file_size as "fileSize",
           content,
-          order_index as "orderIndex",
-          is_active as "isActive",
+          is_questionnaire_answer as "isQuestionnaireAnswer",
+          questionnaire_id as "questionnaireId",
+          is_follow_up as "isFollowUp",
+          parent_submission_id as "parentSubmissionId",
+          follow_up_type as "followUpType",
+          follow_up_reason as "followUpReason",
+          submission_sequence as "submissionSequence",
           created_at as "createdAt",
           updated_at as "updatedAt"
         FROM trust_portal_items
-        WHERE vendor_id = $1 AND is_active = true
-        ORDER BY order_index ASC, created_at DESC
+        WHERE vendor_id = $1
+        ORDER BY submission_sequence DESC, created_at DESC
       `;
 
       const trustPortalResult = await this.databaseService.query(trustPortalQuery, [vendorId]);
