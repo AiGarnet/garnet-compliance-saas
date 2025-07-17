@@ -352,7 +352,14 @@ export class ChecklistsController {
   async sendChecklistToTrustPortal(
     @Param('checklistId', ParseUUIDPipe) checklistId: string,
     @Param('vendorId', ParseUUIDPipe) vendorId: string,
-    @Body() submitData?: { message?: string; title?: string }
+    @Body() submitData?: { 
+      message?: string; 
+      title?: string; 
+      isFollowUp?: boolean; 
+      followUpType?: string; 
+      followUpReason?: string; 
+      parentSubmissionId?: number;
+    }
   ): Promise<{ message: string; trustPortalId: string; itemCount: number }> {
     try {
       const result = await this.checklistsService.sendChecklistToTrustPortal(checklistId, vendorId, submitData);

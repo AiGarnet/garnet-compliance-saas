@@ -943,9 +943,11 @@ export class ChecklistsService {
       const insertQuery = `
         INSERT INTO trust_portal_items (
           vendor_id, title, description, category, content, 
-          is_questionnaire_answer, questionnaire_id, created_at, updated_at
+          is_questionnaire_answer, questionnaire_id, is_follow_up, 
+          follow_up_type, follow_up_reason, parent_submission_id, 
+          created_at, updated_at
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, NOW(), NOW()
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW()
         ) RETURNING id
       `;
 
@@ -956,7 +958,11 @@ export class ChecklistsService {
         trustPortalData.category,
         trustPortalData.content,
         trustPortalData.isQuestionnaireAnswer,
-        trustPortalData.questionnaireId
+        trustPortalData.questionnaireId,
+        submitData?.isFollowUp || false,
+        submitData?.followUpType || 'initial',
+        submitData?.followUpReason || null,
+        submitData?.parentSubmissionId || null
       ]);
 
       const trustPortalId = result.rows[0].id;
