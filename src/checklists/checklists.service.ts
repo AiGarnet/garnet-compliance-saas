@@ -861,7 +861,14 @@ export class ChecklistsService {
   async sendChecklistToTrustPortal(
     checklistId: string, 
     vendorId: string, 
-    submitData?: { message?: string; title?: string }
+    submitData?: { 
+      message?: string; 
+      title?: string; 
+      isFollowUp?: boolean; 
+      followUpType?: string; 
+      followUpReason?: string; 
+      parentSubmissionId?: number;
+    }
   ): Promise<{ trustPortalId: string; itemCount: number }> {
     try {
       this.logger.log(`Starting sendChecklistToTrustPortal for checklist ${checklistId}, vendor ${vendorId}`);
