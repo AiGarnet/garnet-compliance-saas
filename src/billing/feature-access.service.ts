@@ -7,6 +7,7 @@ export interface FeatureAccess {
   hasAccess: boolean;
   reason?: string;
   upgradeRequired?: string;
+  trialExpired?: boolean;
 }
 
 @Injectable()
@@ -24,9 +25,10 @@ export class FeatureAccessService {
     currentUsage?: number
   ): Promise<FeatureAccess> {
     try {
-      // Get user's organization info and check for special access
+      // Get user's organization info, trial status, and check for special access
       const userQuery = `
-        SELECT u.id, u.email, u.organization_id, u.metadata, o.name as organization_name, o.current_subscription_plan, o.current_subscription_status
+        SELECT u.id, u.email, u.organization_id, u.metadata, u.trial_start_date, u.trial_end_date, u.is_on_trial,
+               o.name as organization_name, o.current_subscription_plan, o.current_subscription_status
         FROM users u
         LEFT JOIN organizations o ON u.organization_id = o.id
         WHERE u.id = $1
@@ -53,6 +55,27 @@ export class FeatureAccessService {
       if (['testing1@garnetai.net', 'testing2@garnetai.net'].includes(user.email)) {
         this.logger.log(`Special access granted for known testing email: ${user.email}`);
         return { hasAccess: true, reason: 'Testing account bypass' };
+      }
+
+      // Check for active free trial
+      if (user.is_on_trial && user.trial_end_date) {
+        const now = new Date();
+        const trialEndDate = new Date(user.trial_end_date);
+        
+        if (now <= trialEndDate) {
+          this.logger.log(`Free trial access granted for user: ${user.email} (expires: ${trialEndDate})`);
+          // During trial, user gets starter plan features
+          return this.checkPlanFeatureAccess('starter', feature, currentUsage);
+        } else {
+          this.logger.log(`Free trial expired for user: ${user.email} (expired: ${trialEndDate})`);
+          // Trial expired - deny access and require subscription
+          return {
+            hasAccess: false,
+            reason: 'Your 7-day free trial has expired. Please subscribe to continue using the platform.',
+            upgradeRequired: 'growth',
+            trialExpired: true
+          };
+        }
       }
       
       if (!user.organization_id) {
@@ -234,9 +257,10 @@ export class FeatureAccessService {
     storage: { current: string; limit: string; hasAccess: boolean };
   }> {
     try {
-      // Get user's organization info and check for special access
+      // Get user's organization info, trial status, and check for special access
       const userQuery = `
-        SELECT u.id, u.email, u.organization_id, u.metadata, o.name as organization_name
+        SELECT u.id, u.email, u.organization_id, u.metadata, u.trial_start_date, u.trial_end_date, u.is_on_trial,
+               o.name as organization_name
         FROM users u
         LEFT JOIN organizations o ON u.organization_id = o.id
         WHERE u.id = $1
@@ -277,6 +301,73 @@ export class FeatureAccessService {
             hasAccess: true
           }
         };
+      }
+
+      // Check for active free trial
+      if (user.is_on_trial && user.trial_end_date) {
+        const now = new Date();
+        const trialEndDate = new Date(user.trial_end_date);
+        
+        if (now <= trialEndDate) {
+          this.logger.log(`Free trial limits applied for user: ${user.email} (expires: ${trialEndDate})`);
+          // Use starter plan limits during trial
+          const tier = getPricingTierById('starter');
+          if (!tier) {
+            throw new Error('Starter plan not found');
+          }
+          const currentUsage = await this.getCurrentUsage(userId);
+          
+          return {
+            questionnaires: {
+              current: currentUsage.questionnaires,
+              limit: tier.limits.questionnaires,
+              hasAccess: tier.limits.questionnaires === 'unlimited' || 
+                        currentUsage.questionnaires < (tier.limits.questionnaires as number)
+            },
+            vendors: {
+              current: currentUsage.vendors,
+              limit: tier.limits.vendors,
+              hasAccess: tier.limits.vendors === 'unlimited' || 
+                        currentUsage.vendors < (tier.limits.vendors as number)
+            },
+            users: {
+              current: currentUsage.users,
+              limit: tier.limits.users,
+              hasAccess: tier.limits.users === 'unlimited' || 
+                        currentUsage.users < (tier.limits.users as number)
+            },
+            storage: {
+              current: currentUsage.storage,
+              limit: tier.limits.storage,
+              hasAccess: true
+            }
+          };
+        } else {
+          this.logger.log(`Free trial expired for user: ${user.email} (expired: ${trialEndDate})`);
+          // Trial expired - return zero limits
+          return {
+            questionnaires: {
+              current: 0,
+              limit: 0,
+              hasAccess: false
+            },
+            vendors: {
+              current: 0,
+              limit: 0,
+              hasAccess: false
+            },
+            users: {
+              current: 1,
+              limit: 0,
+              hasAccess: false
+            },
+            storage: {
+              current: '0GB',
+              limit: '0GB',
+              hasAccess: false
+            }
+          };
+        }
       }
       
       let planId = 'starter';
@@ -384,6 +475,87 @@ export class FeatureAccessService {
       users: 1,
       storage: '0GB'
     };
+  }
+
+  // Helper method to automatically expire trials
+  async expireTrialsIfNeeded(): Promise<void> {
+    try {
+      const now = new Date();
+      
+      // Find all users with expired trials
+      const expiredTrialsQuery = `
+        UPDATE users 
+        SET is_on_trial = FALSE, subscription_status = 'inactive'
+        WHERE is_on_trial = TRUE 
+        AND trial_end_date < $1
+        RETURNING email, trial_end_date
+      `;
+      
+      const result = await this.databaseService.query(expiredTrialsQuery, [now]);
+      
+      if (result.rows.length > 0) {
+        this.logger.log(`Expired ${result.rows.length} trial(s)`);
+        result.rows.forEach(user => {
+          this.logger.log(`Trial expired for user: ${user.email} (expired: ${user.trial_end_date})`);
+        });
+      }
+    } catch (error) {
+      this.logger.error('Failed to expire trials', error);
+    }
+  }
+
+  // Helper method to check trial status for a user
+  async checkTrialStatus(userId: string): Promise<{
+    isOnTrial: boolean;
+    trialEndDate?: Date;
+    daysRemaining?: number;
+    isExpired: boolean;
+  }> {
+    try {
+      const userQuery = `
+        SELECT trial_start_date, trial_end_date, is_on_trial
+        FROM users 
+        WHERE id = $1
+      `;
+      
+      const result = await this.databaseService.query(userQuery, [userId]);
+      
+      if (result.rows.length === 0) {
+        return { isOnTrial: false, isExpired: false };
+      }
+      
+      const user = result.rows[0];
+      
+      if (!user.is_on_trial || !user.trial_end_date) {
+        return { isOnTrial: false, isExpired: false };
+      }
+      
+      const now = new Date();
+      const trialEndDate = new Date(user.trial_end_date);
+      const isExpired = now > trialEndDate;
+      
+      if (isExpired) {
+        // Automatically expire the trial
+        await this.databaseService.query(
+          `UPDATE users SET is_on_trial = FALSE, subscription_status = 'inactive' WHERE id = $1`,
+          [userId]
+        );
+        this.logger.log(`Auto-expired trial for user: ${userId}`);
+        return { isOnTrial: false, isExpired: true, trialEndDate };
+      }
+      
+      const daysRemaining = Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      
+      return {
+        isOnTrial: true,
+        trialEndDate,
+        daysRemaining,
+        isExpired: false
+      };
+    } catch (error) {
+      this.logger.error('Failed to check trial status', error);
+      return { isOnTrial: false, isExpired: false };
+    }
   }
 
   // Helper method to check organization subscription status

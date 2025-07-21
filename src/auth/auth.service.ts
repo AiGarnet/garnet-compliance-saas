@@ -84,10 +84,18 @@ export class AuthService {
       }
     }
 
+    // Set up 7-day free trial
+    const trialStartDate = new Date();
+    const trialEndDate = new Date();
+    trialEndDate.setDate(trialStartDate.getDate() + 7); // 7 days from now
+
     const query = `
-      INSERT INTO users (email, password_hash, full_name, role, organization, organization_id, metadata, is_active)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING id, email, full_name, role, organization, organization_id, created_at, updated_at
+      INSERT INTO users (
+        email, password_hash, full_name, role, organization, organization_id, metadata, is_active,
+        trial_start_date, trial_end_date, is_on_trial, subscription_plan, subscription_status
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      RETURNING id, email, full_name, role, organization, organization_id, trial_start_date, trial_end_date, is_on_trial, created_at, updated_at
     `;
 
     const values = [
@@ -99,10 +107,17 @@ export class AuthService {
       organizationId, // New organization_id field
       signupDto.metadata || {},
       true,
+      trialStartDate, // trial_start_date
+      trialEndDate,   // trial_end_date
+      true,           // is_on_trial
+      'starter',      // subscription_plan (starter plan limits during trial)
+      'trial',        // subscription_status
     ];
 
     const result = await this.databaseService.query(query, values);
     const user = result.rows[0];
+
+    this.logger.log(`User ${user.email} signed up with 7-day free trial (expires: ${user.trial_end_date})`);
 
     // If user joined an organization, log subscription information
     if (organizationId) {
@@ -150,6 +165,9 @@ export class AuthService {
         role: user.role,
         organization: user.organization,
         organization_id: user.organization_id,
+        trial_start_date: user.trial_start_date,
+        trial_end_date: user.trial_end_date,
+        is_on_trial: user.is_on_trial,
       },
     };
   }

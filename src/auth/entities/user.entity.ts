@@ -14,6 +14,9 @@ export interface User {
   updated_at: Date;
   source?: string;
   signup_date?: Date;
+  trial_start_date?: Date;
+  trial_end_date?: Date;
+  is_on_trial?: boolean;
 }
 
 export interface CreateUserRequest {

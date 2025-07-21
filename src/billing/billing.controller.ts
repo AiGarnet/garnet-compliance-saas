@@ -17,13 +17,17 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { BillingService, CreateCheckoutSessionDto, CreatePortalSessionDto } from './billing.service';
 import { PRICING_TIERS } from '../config/pricing';
+import { FeatureAccessService } from './feature-access.service';
 
 @ApiTags('Billing')
 @Controller('api/billing')
 export class BillingController {
   private readonly logger = new Logger(BillingController.name);
 
-  constructor(private readonly billingService: BillingService) {}
+  constructor(
+    private readonly billingService: BillingService,
+    private readonly featureAccessService: FeatureAccessService
+  ) {}
 
   @Get('pricing')
   @ApiOperation({ summary: 'Get pricing tiers' })
@@ -115,6 +119,21 @@ export class BillingController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('user-limits')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get user subscription limits and current usage' })
+  @ApiResponse({ status: 200, description: 'User limits retrieved successfully' })
+  async getUserLimits(@Request() req) {
+    const userId = req.user.id;
+    const limits = await this.featureAccessService.checkUserLimits(userId);
+    
+    return {
+      success: true,
+      data: limits,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Delete('subscription')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cancel user subscription' })
@@ -126,6 +145,20 @@ export class BillingController {
     return {
       success: true,
       message: 'Subscription canceled successfully',
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('trial-status')
+  @ApiOperation({ summary: 'Check trial status for authenticated user' })
+  @ApiResponse({ status: 200, description: 'Trial status retrieved successfully' })
+  async getTrialStatus(@Request() req) {
+    const userId = req.user.id;
+    const trialStatus = await this.featureAccessService.checkTrialStatus(userId);
+    
+    return {
+      success: true,
+      data: trialStatus
     };
   }
 
