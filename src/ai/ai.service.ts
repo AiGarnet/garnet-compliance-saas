@@ -1571,32 +1571,61 @@ Your documents should be professional, detailed, and ready for immediate use in 
       const documentBuffer = Buffer.from(documentContent, 'utf8');
       const filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.txt`;
 
-      // Step 3: Upload to DigitalOcean Spaces
-      const uploadResult = await this.spacesService.uploadSupportingDocument(
-        documentBuffer,
-        filename,
-        'text/plain',
-        vendorId.toString(),
-        questionId
-      );
-
-      // Step 4: Resolve vendor UUID for database storage
+      // Step 3: Resolve vendor UUID for operations
       const vendorUuid = await this.resolveVendorUuid(vendorId);
       if (!vendorUuid) {
         this.logger.error(`❌ AI SERVICE: Could not resolve vendor UUID for vendor ID ${vendorId}`);
         throw new BadRequestException(`Invalid vendor ID: ${vendorId}`);
       }
 
-      // Step 5: Save to database using vendor UUID
-      const documentRecord = await this.saveSupportingDocumentToDatabase(
-        vendorUuid,
-        questionId,
-        filename,
-        'text/plain',
-        documentBuffer.length,
-        uploadResult.key,
-        uploadResult.url
-      );
+      // Step 4: Determine document type and upload appropriately
+      let uploadResult;
+      let documentRecord;
+
+      if (questionId) {
+        // This is a supporting document for a specific question
+        uploadResult = await this.spacesService.uploadSupportingDocument(
+          documentBuffer,
+          filename,
+          'text/plain',
+          vendorUuid,
+          questionId
+        );
+
+        // Save to supporting documents table
+        documentRecord = await this.saveSupportingDocumentToDatabase(
+          vendorUuid,
+          questionId,
+          filename,
+          'text/plain',
+          documentBuffer.length,
+          uploadResult.key,
+          uploadResult.url
+        );
+      } else {
+        // This is an evidence file (general compliance document)
+        uploadResult = await this.spacesService.uploadEvidenceFile(
+          documentBuffer,
+          filename,
+          'text/plain',
+          vendorUuid,
+          `AI Generated: ${title}`
+        );
+
+        // Save to evidence files table using the evidence service
+        documentRecord = await this.evidenceService.uploadEvidenceFile(
+          {
+            buffer: documentBuffer,
+            originalname: filename,
+            mimetype: 'text/plain',
+            size: documentBuffer.length
+          } as Express.Multer.File,
+          vendorUuid,
+          `AI Generated: ${title}`,
+          category || 'AI Generated Evidence',
+          'ai-system'
+        );
+      }
 
       this.logger.debug(`🤖 AI SERVICE: Successfully generated and saved supporting document "${title}"`);
       
