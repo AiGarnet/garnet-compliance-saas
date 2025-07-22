@@ -8,6 +8,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { DatabaseModule } from '../database/database.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
+import { EmailService } from '../common/email.service';
 
 @Module({
   imports: [
@@ -40,7 +41,7 @@ import { OrganizationsModule } from '../organizations/organizations.module';
     }),
   ],
   controllers: [AuthController, AuthWaitlistController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, EmailService],
   exports: [AuthService, JwtAuthGuard],
 })
 export class AuthModule {} 

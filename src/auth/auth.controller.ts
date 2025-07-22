@@ -1,7 +1,7 @@
 import { Controller, Post, Get, Body, UseGuards, Request, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { SignupDto, LoginDto, WaitlistSignupDto, AuthResponseDto } from './dto/auth.dto';
+import { SignupDto, LoginDto, WaitlistSignupDto, AuthResponseDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from '../common/decorators/public.decorator';
 
@@ -46,6 +46,33 @@ export class AuthController {
         organization: req.user.organization,
       },
     };
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Request password reset' })
+  @ApiResponse({ status: 200, description: 'Password reset email sent if account exists' })
+  @ApiResponse({ status: 400, description: 'Invalid email format' })
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return await this.authService.requestPasswordReset(forgotPasswordDto);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Reset password with token' })
+  @ApiResponse({ status: 200, description: 'Password successfully reset' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return await this.authService.resetPassword(resetPasswordDto);
+  }
+
+  @Public()
+  @Get('validate-reset-token/:token')
+  @ApiOperation({ summary: 'Validate reset token' })
+  @ApiResponse({ status: 200, description: 'Token validation result' })
+  async validateResetToken(@Request() req) {
+    const token = req.params.token;
+    return await this.authService.validateResetToken(token);
   }
 }
 

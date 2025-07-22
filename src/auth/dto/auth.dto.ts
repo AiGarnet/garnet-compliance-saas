@@ -92,4 +92,23 @@ export class AuthResponseDto {
     role: string;
     organization?: string;
   };
+}
+
+export class ForgotPasswordDto {
+  @ApiProperty({ example: 'john.doe@example.com' })
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty({ example: 'reset-token-from-email' })
+  @IsString()
+  @IsNotEmpty()
+  token: string;
+
+  @ApiProperty({ example: 'NewSecurePassword123!' })
+  @IsString()
+  @MinLength(8)
+  password: string;
 } 

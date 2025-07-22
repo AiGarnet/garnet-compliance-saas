@@ -2,10 +2,12 @@ import { Injectable, UnauthorizedException, ConflictException, BadRequestExcepti
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { DatabaseService } from '../database/database.service';
 import { User, CreateUserRequest, WaitlistSignupRequest, JwtPayload } from './entities/user.entity';
-import { SignupDto, LoginDto, WaitlistSignupDto } from './dto/auth.dto';
+import { SignupDto, LoginDto, WaitlistSignupDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
 import { OrganizationsService } from '../organizations/organizations.service';
+import { EmailService } from '../common/email.service';
 import { Logger } from '@nestjs/common';
 
 @Injectable()
@@ -17,6 +19,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly organizationsService: OrganizationsService,
+    private readonly emailService: EmailService,
   ) {}
 
   async signup(signupDto: SignupDto): Promise<{ access_token: string; user: Partial<User> }> {
@@ -402,6 +405,137 @@ export class AuthService {
     return {
       total: parseInt(totalResult.rows[0].total),
       byRole,
+    };
+  }
+
+  /**
+   * Request password reset - generates secure token and sends email
+   */
+  async requestPasswordReset(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string }> {
+    const user = await this.getUserByEmail(forgotPasswordDto.email);
+    
+    // Always return success message for security (don't reveal if email exists)
+    const successMessage = 'If an account with that email exists, you will receive a password reset email shortly.';
+    
+    if (!user || !user.is_active) {
+      this.logger.warn(`Password reset requested for non-existent or inactive user: ${forgotPasswordDto.email}`);
+      return { message: successMessage };
+    }
+
+    try {
+      // Generate secure random token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      
+      // Set expiration to 1 hour from now
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 1);
+
+      // Clean up any existing tokens for this user (optional - for security)
+      await this.databaseService.query(
+        'UPDATE password_reset_tokens SET used = true WHERE user_id = $1 AND used = false',
+        [user.id]
+      );
+
+      // Store reset token in database
+      const insertTokenQuery = `
+        INSERT INTO password_reset_tokens (user_id, token, expires_at)
+        VALUES ($1, $2, $3)
+        RETURNING id
+      `;
+      
+      await this.databaseService.query(insertTokenQuery, [user.id, resetToken, expiresAt]);
+
+      // Send password reset email
+      await this.emailService.sendPasswordResetEmail(user.email, resetToken, user.full_name);
+
+      this.logger.log(`Password reset token generated for user: ${user.email}`);
+      
+    } catch (error) {
+      this.logger.error('Error generating password reset token:', error);
+      // Still return success message for security
+    }
+
+    return { message: successMessage };
+  }
+
+  /**
+   * Reset password using valid token
+   */
+  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<{ message: string }> {
+    // Find valid, unused token
+    const tokenQuery = `
+      SELECT prt.*, u.email, u.full_name, u.id as user_id
+      FROM password_reset_tokens prt
+      JOIN users u ON prt.user_id = u.id
+      WHERE prt.token = $1 
+        AND prt.used = false 
+        AND prt.expires_at > CURRENT_TIMESTAMP
+        AND u.is_active = true
+    `;
+    
+    const tokenResult = await this.databaseService.query(tokenQuery, [resetPasswordDto.token]);
+    
+    if (tokenResult.rows.length === 0) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    const tokenData = tokenResult.rows[0];
+
+    try {
+      // Hash the new password
+      const hashedPassword = await bcrypt.hash(resetPasswordDto.password, 10);
+
+      // Update user's password
+      const updatePasswordQuery = `
+        UPDATE users 
+        SET password_hash = $1, updated_at = CURRENT_TIMESTAMP
+        WHERE id = $2
+      `;
+      
+      await this.databaseService.query(updatePasswordQuery, [hashedPassword, tokenData.user_id]);
+
+      // Mark token as used
+      await this.databaseService.query(
+        'UPDATE password_reset_tokens SET used = true, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+        [tokenData.id]
+      );
+
+      // Send confirmation email
+      await this.emailService.sendPasswordChangedEmail(tokenData.email, tokenData.full_name);
+
+      this.logger.log(`Password successfully reset for user: ${tokenData.email}`);
+
+      return { message: 'Password has been successfully reset. You can now log in with your new password.' };
+      
+    } catch (error) {
+      this.logger.error('Error resetting password:', error);
+      throw new BadRequestException('Failed to reset password. Please try again.');
+    }
+  }
+
+  /**
+   * Validate reset token (useful for frontend to check if token is valid before showing reset form)
+   */
+  async validateResetToken(token: string): Promise<{ valid: boolean; email?: string }> {
+    const tokenQuery = `
+      SELECT u.email
+      FROM password_reset_tokens prt
+      JOIN users u ON prt.user_id = u.id
+      WHERE prt.token = $1 
+        AND prt.used = false 
+        AND prt.expires_at > CURRENT_TIMESTAMP
+        AND u.is_active = true
+    `;
+    
+    const tokenResult = await this.databaseService.query(tokenQuery, [token]);
+    
+    if (tokenResult.rows.length === 0) {
+      return { valid: false };
+    }
+
+    return { 
+      valid: true, 
+      email: tokenResult.rows[0].email 
     };
   }
 } 
