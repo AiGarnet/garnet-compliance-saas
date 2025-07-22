@@ -13,15 +13,19 @@ import { AiService } from './ai.service';
 import { GenerateAnswerDto, BatchAnswerDto, CreateSuggestionDto, GenerateSupportingDocumentDto } from './dto/ai.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../common/decorators/public.decorator';
+import { DocumentGeneratorService, GenerateDocumentRequest } from './services/document-generator.service';
 
-@ApiTags('ai')
-@Controller('api/ai')
+@ApiTags('AI')
+@Controller('api')
 export class AiController {
-  constructor(private readonly aiService: AiService) {}
+  constructor(
+    private readonly aiService: AiService,
+    private readonly documentGeneratorService: DocumentGeneratorService,
+  ) {}
 
 
 
-  @Post('generate')
+  @Post('ai/generate')
   @Public()
   @ApiOperation({ summary: 'Generate AI answer for frontend compatibility' })
   @ApiResponse({ status: 200, description: 'AI answer generated successfully' })
@@ -46,7 +50,7 @@ export class AiController {
     }
   }
 
-  @Post('ask')
+  @Post('ai/ask')
   @Public()
   @ApiOperation({ summary: 'Generate AI answer for a single question' })
   @ApiResponse({ status: 200, description: 'AI answer generated successfully' })
@@ -71,7 +75,7 @@ export class AiController {
     }
   }
 
-  @Post('batch')
+  @Post('ai/batch')
   @Public()
   @ApiOperation({ summary: 'Generate AI answers for multiple questions' })
   @ApiResponse({ status: 200, description: 'AI answers generated successfully' })
@@ -96,7 +100,7 @@ export class AiController {
     }
   }
 
-  @Post('suggestions')
+  @Post('ai/suggestions')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create AI suggestion for a vendor' })
@@ -142,33 +146,36 @@ export class AiController {
     }
   }
 
-  @Post('generate-document')
-  @Public()
-  @ApiOperation({ summary: 'Generate a supporting document using AI' })
-  @ApiResponse({ status: 200, description: 'Supporting document generated successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid input or OpenAI not configured' })
-  async generateSupportingDocument(@Body() generateDocDto: GenerateSupportingDocumentDto) {
-    try {
-      const result = await this.aiService.generateSupportingDocument(
-        generateDocDto.documentTitle,
-        generateDocDto.instructions,
-        generateDocDto.category,
-        generateDocDto.vendorId,
-      );
-
-      return result;
-    } catch (error: any) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new HttpException(
-        error.message || 'Failed to generate supporting document',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+  @Post('ai/generate-document')
+  @ApiOperation({ summary: 'Generate professional PDF document from template with placeholder replacement' })
+  @ApiResponse({ status: 201, description: 'Document generated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request data' })
+  async generateDocument(@Body() request: GenerateDocumentRequest) {
+    return await this.documentGeneratorService.generateDocument(request);
   }
 
-  @Post('generate-and-save-document')
+  @Post('ai/generate-document-with-ai')
+  @ApiOperation({ summary: 'Generate document using AI with enhanced context and templates' })
+  @ApiResponse({ status: 201, description: 'AI document generated successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid request data' })
+  async generateDocumentWithAI(@Body() body: {
+    title: string;
+    instructions: string;
+    vendorId: number;
+    category?: string;
+    questionId?: string;
+  }) {
+    const { title, instructions, vendorId, category, questionId } = body;
+    return await this.documentGeneratorService.generateDocumentWithAI(
+      title,
+      instructions,
+      vendorId,
+      category,
+      questionId
+    );
+  }
+
+  @Post('ai/generate-and-save-document')
   @Public()
   @ApiOperation({ summary: 'Generate and save a supporting document using AI' })
   @ApiResponse({ status: 200, description: 'Supporting document generated and saved successfully' })
