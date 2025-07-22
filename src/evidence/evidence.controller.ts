@@ -207,4 +207,28 @@ export class EvidenceController {
       );
     }
   }
+
+  @Get('vendors/:vendorId/evidence/:evidenceId/content')
+  @Public()
+  @ApiOperation({ summary: 'Get evidence file content directly' })
+  @ApiParam({ name: 'vendorId', description: 'Vendor UUID' })
+  @ApiParam({ name: 'evidenceId', description: 'Evidence file ID' })
+  @ApiResponse({ status: 200, description: 'File content retrieved successfully' })
+  async getEvidenceFileContent(
+    @Param('vendorId', ParseUUIDPipe) vendorId: string,
+    @Param('evidenceId', ParseUUIDPipe) evidenceId: string,
+  ): Promise<any> {
+    try {
+      const fileContent = await this.evidenceService.getEvidenceFileContent(evidenceId, vendorId);
+      return fileContent;
+    } catch (error: any) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        error.message || 'Failed to get evidence file content',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 } 

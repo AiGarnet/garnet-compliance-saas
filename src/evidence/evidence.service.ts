@@ -191,6 +191,41 @@ export class EvidenceService {
   }
 
   /**
+   * Get evidence file content directly from DigitalOcean Spaces
+   */
+  async getEvidenceFileContent(id: string, vendorId: string): Promise<any> {
+    try {
+      const file = await this.getEvidenceFileById(id, vendorId);
+      
+      if (!file.spacesKey) {
+        throw new BadRequestException('File not available');
+      }
+
+      // Get the file content from DigitalOcean Spaces
+      const fileBuffer = await this.spacesService.getFileContent(file.spacesKey);
+      
+      // For text files, return as plain text
+      if (file.fileType === 'text/plain' || file.originalFilename.toLowerCase().endsWith('.txt')) {
+        return {
+          content: fileBuffer.toString('utf-8'),
+          contentType: 'text/plain',
+          filename: file.originalFilename
+        };
+      }
+      
+      // For other files, return as base64
+      return {
+        content: fileBuffer.toString('base64'),
+        contentType: file.fileType,
+        filename: file.originalFilename
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get evidence file content: ${error.message}`, error.stack);
+      throw new BadRequestException('Failed to retrieve evidence file content');
+    }
+  }
+
+  /**
    * Extract text content from uploaded file
    */
   private async extractTextFromFile(file: Express.Multer.File): Promise<string> {

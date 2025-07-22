@@ -303,6 +303,37 @@ export class DigitalOceanSpacesService {
   }
 
   /**
+   * Get file content from DigitalOcean Spaces
+   */
+  async getFileContent(key: string): Promise<Buffer> {
+    try {
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key
+      });
+
+      const response = await this.s3Client.send(command);
+      
+      if (!response.Body) {
+        throw new Error('No file content received');
+      }
+
+      // Convert the stream to buffer
+      const chunks: any[] = [];
+      const stream = response.Body as any;
+      
+      for await (const chunk of stream) {
+        chunks.push(chunk);
+      }
+      
+      return Buffer.concat(chunks);
+    } catch (error) {
+      this.logger.error(`Failed to get file content: ${error.message}`, error.stack);
+      throw new Error(`Failed to get file content: ${error.message}`);
+    }
+  }
+
+  /**
    * Check if a file exists in DigitalOcean Spaces (throws if not found)
    */
   async getFileMetadata(key: string): Promise<any> {
