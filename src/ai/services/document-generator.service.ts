@@ -344,7 +344,7 @@ export class DocumentGeneratorService {
         INSERT INTO evidence_files 
         (vendor_id, filename, original_filename, file_type, file_size, spaces_key, spaces_url, 
          description, category, upload_date, uploaded_by)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), 'ai-generator')
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NULL)
         RETURNING *
       `;
       

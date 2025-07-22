@@ -1623,7 +1623,7 @@ Your documents should be professional, detailed, and ready for immediate use in 
           vendorUuid,
           `AI Generated: ${title}`,
           category || 'AI Generated Evidence',
-          'ai-system'
+          null // Use null for system-generated files instead of 'ai-system'
         );
       }
 
