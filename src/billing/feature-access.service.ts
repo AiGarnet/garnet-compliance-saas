@@ -441,34 +441,68 @@ export class FeatureAccessService {
     const organizationId = userResult.rows[0]?.organization_id;
     
     if (organizationId) {
-      // Get organization-wide usage
+      // Get organization-wide usage with monthly tracking for questionnaires
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      
       const usageQuery = `
         SELECT 
-          COUNT(DISTINCT q.id) as questionnaire_count,
+          COUNT(DISTINCT CASE 
+            WHEN q.created_at >= $2 THEN q.id 
+            ELSE NULL 
+          END) as questionnaire_count,
           COUNT(DISTINCT v.id) as vendor_count,
           COUNT(DISTINCT u.id) as user_count
         FROM organizations o
         LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = true
         LEFT JOIN questionnaires q ON u.id = q.created_by_user_id
-        LEFT JOIN vendors v ON u.id = v.created_by_user_id
+        LEFT JOIN vendors v ON u.id = v.created_by_user_id AND v.organization_id = o.id
         WHERE o.id = $1
         GROUP BY o.id
       `;
       
-      const usageResult = await this.databaseService.query(usageQuery, [organizationId]);
+      const usageResult = await this.databaseService.query(usageQuery, [organizationId, firstDayOfMonth]);
       
       if (usageResult.rows.length > 0) {
         const usage = usageResult.rows[0];
         return {
-          questionnaires: parseInt(usage.questionnaire_count) || 0,
-          vendors: parseInt(usage.vendor_count) || 0,
+          questionnaires: parseInt(usage.questionnaire_count) || 0, // Monthly count
+          vendors: parseInt(usage.vendor_count) || 0, // Total count
           users: parseInt(usage.user_count) || 0,
           storage: '0GB' // Placeholder
         };
       }
     }
     
-    // Fallback to individual user usage
+    // Fallback to individual user usage (monthly for questionnaires)
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    const individualUsageQuery = `
+      SELECT 
+        COUNT(DISTINCT CASE 
+          WHEN q.created_at >= $2 THEN q.id 
+          ELSE NULL 
+        END) as questionnaire_count,
+        COUNT(DISTINCT v.id) as vendor_count
+      FROM users u
+      LEFT JOIN questionnaires q ON u.id = q.created_by_user_id
+      LEFT JOIN vendors v ON u.id = v.created_by_user_id
+      WHERE u.id = $1
+    `;
+    
+    const individualResult = await this.databaseService.query(individualUsageQuery, [userId, firstDayOfMonth]);
+    
+    if (individualResult.rows.length > 0) {
+      const usage = individualResult.rows[0];
+      return {
+        questionnaires: parseInt(usage.questionnaire_count) || 0, // Monthly count
+        vendors: parseInt(usage.vendor_count) || 0, // Total count
+        users: 1,
+        storage: '0GB'
+      };
+    }
+    
     return {
       questionnaires: 0,
       vendors: 0,

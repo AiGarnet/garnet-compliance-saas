@@ -9,30 +9,59 @@ import {
   HttpStatus,
   HttpException,
   UseGuards,
+  Request,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { QuestionnairesService } from './questionnaires.service';
 import { CreateQuestionnaireDto, UpdateQuestionnaireDto, UpdateQuestionDto, SubmitQuestionnaireDto } from './dto/questionnaire.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../common/decorators/public.decorator';
+import { FeatureAccessService } from '../billing/feature-access.service';
 
 @ApiTags('questionnaires')
 @Controller('api/questionnaires')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class QuestionnairesController {
-  constructor(private readonly questionnairesService: QuestionnairesService) {}
+  constructor(
+    private readonly questionnairesService: QuestionnairesService,
+    private readonly featureAccessService: FeatureAccessService
+  ) {}
 
   @Post()
-  @Public()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create a new questionnaire' })
   @ApiResponse({ status: 201, description: 'Questionnaire created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
-  async createQuestionnaire(@Body() createQuestionnaireDto: CreateQuestionnaireDto) {
+  @ApiResponse({ status: 403, description: 'Feature limit reached - upgrade required' })
+  async createQuestionnaire(@Body() createQuestionnaireDto: CreateQuestionnaireDto, @Request() req) {
     try {
+      // Check if user has access to create questionnaires (starter plan limit: 2/month)
+      if (req.user?.id) {
+        const userLimits = await this.featureAccessService.checkUserLimits(req.user.id);
+        
+        if (!userLimits.questionnaires.hasAccess) {
+          throw new ForbiddenException({
+            success: false,
+            error: {
+              code: 'QUESTIONNAIRE_LIMIT_REACHED',
+              message: `You've reached your limit of ${userLimits.questionnaires.limit} questionnaires per month on your current plan.`,
+              upgradeRequired: 'growth',
+              currentUsage: userLimits.questionnaires.current,
+              limit: userLimits.questionnaires.limit
+            }
+          });
+        }
+      }
+
       const questionnaire = await this.questionnairesService.createQuestionnaire(createQuestionnaireDto);
       return { questionnaire };
     } catch (error: any) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      
       throw new HttpException(
         error.message || 'Internal server error',
         HttpStatus.INTERNAL_SERVER_ERROR,

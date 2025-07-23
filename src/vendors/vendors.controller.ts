@@ -13,7 +13,8 @@ import {
   Logger,
   InternalServerErrorException,
   UseInterceptors,
-  UnauthorizedException
+  UnauthorizedException,
+  ForbiddenException
 } from '@nestjs/common';
 import { VendorsService } from './vendors.service';
 import { CreateVendorDto, UpdateVendorDto } from './dto/vendor.dto';
@@ -28,6 +29,7 @@ import {
   RequestMeta
 } from '../common/decorators/log-activity.decorator';
 import { Public } from '../common/decorators/public.decorator';
+import { FeatureAccessService } from '../billing/feature-access.service';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -48,7 +50,10 @@ export interface ApiResponse<T> {
 export class VendorsController {
   private readonly logger = new Logger(VendorsController.name);
 
-  constructor(private readonly vendorsService: VendorsService) {}
+  constructor(
+    private readonly vendorsService: VendorsService,
+    private readonly featureAccessService: FeatureAccessService
+  ) {}
 
   @Public() // Make this endpoint public
   @Get()
@@ -222,6 +227,22 @@ export class VendorsController {
         });
       }
 
+      // Check if user has access to create vendors (starter plan limit: 1 vendor)
+      const userLimits = await this.featureAccessService.checkUserLimits(user.id);
+      
+      if (!userLimits.vendors.hasAccess) {
+        throw new ForbiddenException({
+          success: false,
+          error: {
+            code: 'VENDOR_LIMIT_REACHED',
+            message: `You've reached your limit of ${userLimits.vendors.limit} vendor${userLimits.vendors.limit === 1 ? '' : 's'} on your current plan. Upgrade to add more vendors.`,
+            upgradeRequired: 'growth',
+            currentUsage: userLimits.vendors.current,
+            limit: userLimits.vendors.limit
+          }
+        });
+      }
+
       // Auto-populate organization and user context
       const vendorData = {
         ...createVendorDto,
@@ -245,7 +266,7 @@ export class VendorsController {
     } catch (error) {
       this.logger.error('Error creating vendor:', error);
       
-      if (error instanceof UnauthorizedException) {
+      if (error instanceof UnauthorizedException || error instanceof ForbiddenException) {
         throw error;
       }
       
