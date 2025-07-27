@@ -6,54 +6,54 @@ const fs = require('fs');
 const BASE_URL = 'https://garnet-compliance-saas-production.up.railway.app'; // Production backend URL
 const API_ENDPOINT = `${BASE_URL}/api/documents/validate`;
 
-// Test data
+// Test data - Updated for enhanced detection system
 const testCases = [
   {
     name: 'High Confidence Document Question',
     questionText: 'Please upload your business license certificate',
-    expectedConfidence: 0.9,
+    expectedConfidence: 0.95, // "upload" is definitive indicator
     expectedRequiresDoc: true
   },
   {
-    name: 'Medium Confidence Document Question', 
+    name: 'Verification Document Question', 
     questionText: 'Provide proof of insurance coverage',
-    expectedConfidence: 0.7,
+    expectedConfidence: 0.80, // "proof" is verification keyword
     expectedRequiresDoc: true
   },
   {
     name: 'Copy Pattern Document Question',
     questionText: 'Submit a copy of your records',
-    expectedConfidence: 0.85, // 'copy of' pattern should trigger high confidence
+    expectedConfidence: 0.80, // "copy of" is verification keyword
     expectedRequiresDoc: true
   },
   {
     name: 'No Document Required',
     questionText: 'What is your company name?',
-    expectedConfidence: 0.2,
+    expectedConfidence: 0.05, // Negative indicator
     expectedRequiresDoc: false
   },
   {
     name: 'Complex Document Question',
     questionText: 'Attach your tax identification document and business registration',
-    expectedConfidence: 0.95,
+    expectedConfidence: 0.95, // "attach" is definitive indicator
     expectedRequiresDoc: true
   },
   {
     name: 'Negative Indicator Question',
     questionText: 'What is your company name and address?',
-    expectedConfidence: 0.05,
+    expectedConfidence: 0.05, // Negative indicator
     expectedRequiresDoc: false
   },
   {
     name: 'Business License Question',
     questionText: 'Please provide your business license',
-    expectedConfidence: 0.85,
+    expectedConfidence: 0.85, // "business license" is business document category
     expectedRequiresDoc: true
   },
   {
     name: 'Certificate Question',
     questionText: 'Upload your certificate of insurance',
-    expectedConfidence: 0.95,
+    expectedConfidence: 0.95, // "upload" is definitive indicator
     expectedRequiresDoc: true
   }
 ];
@@ -113,49 +113,119 @@ Issued by: SafeGuard Insurance Company`
   }
 };
 
-// Utility functions
+// Enhanced utility functions matching the improved backend logic
 function detectDocumentRequirementBasic(questionText) {
-  const text = questionText.toLowerCase();
+  const text = questionText.toLowerCase().trim();
   
-  // High confidence keywords
-  const highConfidenceKeywords = ['upload', 'provide document', 'attach', 'certificate', 'license'];
-  const mediumConfidenceKeywords = ['provide', 'submit', 'proof', 'evidence', 'documentation'];
-  const lowConfidenceKeywords = ['copy', 'scan', 'file', 'record'];
+  // 1. DEFINITIVE DOCUMENT REQUIREMENTS (95% confidence)
+  const definitiveIndicators = [
+    'upload', 'attach', 'submit document', 'provide document', 'send document',
+    'include document', 'enclose document', 'file upload', 'document upload',
+    'please upload', 'must upload', 'required to upload'
+  ];
   
-  for (const keyword of highConfidenceKeywords) {
-    if (text.includes(keyword)) {
+  // 2. COMPLIANCE & CERTIFICATION KEYWORDS (90% confidence)
+  const complianceKeywords = [
+    'certificate', 'certification', 'license', 'permit', 'registration',
+    'approval', 'authorization', 'accreditation', 'compliance document',
+    'regulatory document', 'official document', 'signed document'
+  ];
+  
+  // 3. BUSINESS DOCUMENT CATEGORIES (85% confidence)
+  const businessDocuments = [
+    'business license', 'tax id', 'ein number', 'incorporation documents',
+    'vendor form', 'supplier agreement', 'nda', 'non-disclosure',
+    'w9 form', 'w8 form', 'certificate of insurance', 'bond'
+  ];
+  
+  // 4. VERIFICATION & PROOF KEYWORDS (80% confidence)
+  const verificationKeywords = [
+    'proof', 'evidence', 'verification', 'confirmation', 'validation',
+    'documentation', 'supporting document', 'backup document',
+    'reference document', 'proof of', 'evidence of', 'copy of'
+  ];
+  
+  // Check for definitive indicators first
+  for (const indicator of definitiveIndicators) {
+    if (text.includes(indicator)) {
       return {
         requiresDocument: true,
-        confidenceScore: 0.9,
-        reason: `High confidence - contains keyword: "${keyword}"`
+        confidenceScore: 0.95,
+        reason: `Definitive document requirement: "${indicator}"`
       };
     }
   }
   
-  for (const keyword of mediumConfidenceKeywords) {
+  // Check for compliance keywords
+  for (const keyword of complianceKeywords) {
     if (text.includes(keyword)) {
       return {
         requiresDocument: true,
-        confidenceScore: 0.7,
-        reason: `Medium confidence - contains keyword: "${keyword}"`
+        confidenceScore: 0.90,
+        reason: `Compliance/certification document: "${keyword}"`
       };
     }
   }
   
-  for (const keyword of lowConfidenceKeywords) {
+  // Check for business document categories
+  for (const docType of businessDocuments) {
+    if (text.includes(docType)) {
+      return {
+        requiresDocument: true,
+        confidenceScore: 0.85,
+        reason: `Business document required: "${docType}"`
+      };
+    }
+  }
+  
+  // Check for verification keywords
+  for (const keyword of verificationKeywords) {
     if (text.includes(keyword)) {
       return {
         requiresDocument: true,
-        confidenceScore: 0.5,
-        reason: `Low confidence - contains keyword: "${keyword}"`
+        confidenceScore: 0.80,
+        reason: `Verification document: "${keyword}"`
+      };
+    }
+  }
+  
+  // Advanced pattern matching
+  const documentPatterns = [
+    { pattern: /\b(copy|copies)\s+of\b/, confidence: 0.85, reason: 'Copy requirement pattern' },
+    { pattern: /\bsigned\s+\w+/, confidence: 0.80, reason: 'Signed document pattern' },
+    { pattern: /\bmust\s+(provide|submit|include|attach|upload)/, confidence: 0.90, reason: 'Mandatory document action' },
+    { pattern: /\bplease\s+(send|provide|submit|attach|upload)/, confidence: 0.80, reason: 'Polite document request' }
+  ];
+  
+  for (const { pattern, confidence, reason } of documentPatterns) {
+    if (pattern.test(text)) {
+      return {
+        requiresDocument: true,
+        confidenceScore: confidence,
+        reason: reason
+      };
+    }
+  }
+  
+  // Negative indicators
+  const negativeIndicators = [
+    'what is your', 'company name', 'email address', 'phone number'
+  ];
+  
+  for (const indicator of negativeIndicators) {
+    if (text.includes(indicator)) {
+      return {
+        requiresDocument: false,
+        confidenceScore: 0.05,
+        reason: `Simple information request: "${indicator}"`
       };
     }
   }
   
   return {
     requiresDocument: false,
-    confidenceScore: 0.2,
-    reason: 'No document-related keywords detected'
+    confidenceScore: 0.20,
+    reason: 'No clear document requirement indicators found'
   };
 }
 

@@ -92,7 +92,7 @@ export class DocumentsService {
       const isRelevant = finalScore >= threshold;
 
       // Step 5: Generate comprehensive message
-      const message = this.generateRelevanceMessage(finalScore, isRelevant, keywordAnalysis, aiAnalysis);
+      const message = this.generateRelevanceMessage(finalScore, isRelevant, keywordAnalysis, aiAnalysis, questionText);
 
       return {
         relevanceScore: finalScore,
@@ -292,7 +292,8 @@ export class DocumentsService {
     finalScore: number,
     isRelevant: boolean,
     keywordAnalysis: any,
-    aiAnalysis: any
+    aiAnalysis: any,
+    questionText: string
   ): string {
     if (isRelevant) {
       if (finalScore >= 0.9) {
