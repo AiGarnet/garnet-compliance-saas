@@ -564,52 +564,195 @@ export class ChecklistsService {
     return questions;
   }
 
-  // Basic document requirement detection (enhanced version will use DocumentsService)
+  // Enhanced document requirement detection with comprehensive criteria
   private detectDocumentRequirementBasic(questionText: string): {
     requiresDocument: boolean;
     confidenceScore: number;
     reason: string;
   } {
-    const text = questionText.toLowerCase();
+    const text = questionText.toLowerCase().trim();
     
-    // High confidence keywords
-    const highConfidenceKeywords = [
-      'upload', 'provide document', 'attach', 'submit document',
-      'certificate', 'proof', 'evidence', 'documentation',
-      'copy of', 'scan of', 'file showing'
+    // 1. DEFINITIVE DOCUMENT REQUIREMENTS (95% confidence)
+    const definitiveIndicators = [
+      'upload', 'attach', 'submit document', 'provide document', 'send document',
+      'include document', 'enclose document', 'file upload', 'document upload',
+      'please upload', 'must upload', 'required to upload'
     ];
     
-    // Medium confidence keywords
-    const mediumConfidenceKeywords = [
-      'provide', 'show', 'demonstrate', 'confirm',
-      'policy', 'procedure', 'report', 'audit',
-      'contract', 'agreement', 'license', 'permit'
+    // 2. COMPLIANCE & CERTIFICATION KEYWORDS (90% confidence)
+    const complianceKeywords = [
+      'certificate', 'certification', 'license', 'permit', 'registration',
+      'approval', 'authorization', 'accreditation', 'compliance document',
+      'regulatory document', 'official document', 'signed document',
+      'notarized', 'verified document', 'authenticated'
     ];
-
-    for (const keyword of highConfidenceKeywords) {
-      if (text.includes(keyword)) {
+    
+    // 3. LEGAL & FINANCIAL DOCUMENTS (85% confidence)
+    const legalFinancialKeywords = [
+      'contract', 'agreement', 'policy document', 'insurance policy',
+      'tax document', 'financial statement', 'bank statement', 'audit report',
+      'invoice', 'receipt', 'bill', 'legal document', 'court document',
+      'articles of incorporation', 'bylaws', 'operating agreement'
+    ];
+    
+    // 4. VERIFICATION & PROOF KEYWORDS (80% confidence)
+    const verificationKeywords = [
+      'proof', 'evidence', 'verification', 'confirmation', 'validation',
+      'documentation', 'supporting document', 'backup document',
+      'reference document', 'proof of', 'evidence of', 'copy of'
+    ];
+    
+    // 5. DOCUMENT TYPE IDENTIFIERS (75% confidence)
+    const documentTypes = [
+      'form', 'application', 'report', 'record', 'file', 'copy',
+      'scan', 'scanned', 'pdf', 'image', 'photo', 'screenshot',
+      'printout', 'hard copy', 'soft copy'
+    ];
+    
+    // 6. BUSINESS DOCUMENT CATEGORIES (85% confidence)
+    const businessDocuments = [
+      'business license', 'tax id', 'ein number', 'incorporation documents',
+      'vendor form', 'supplier agreement', 'nda', 'non-disclosure',
+      'w9 form', 'w8 form', 'certificate of insurance', 'bond'
+    ];
+    
+    // 7. ACTION VERBS WITH DOCUMENT CONTEXT (70% confidence)
+    const actionVerbs = ['provide', 'submit', 'supply', 'furnish', 'present', 'show', 'send'];
+    const documentContext = ['copy', 'version', 'document', 'file', 'form', 'certificate'];
+    
+    // Check for definitive indicators first
+    for (const indicator of definitiveIndicators) {
+      if (text.includes(indicator)) {
         return {
           requiresDocument: true,
-          confidenceScore: 0.9,
-          reason: `High confidence - contains keyword: "${keyword}"`
+          confidenceScore: 0.95,
+          reason: `Definitive document requirement: "${indicator}"`
         };
       }
     }
-
-    for (const keyword of mediumConfidenceKeywords) {
+    
+    // Check for compliance keywords
+    for (const keyword of complianceKeywords) {
       if (text.includes(keyword)) {
         return {
           requiresDocument: true,
-          confidenceScore: 0.7,
-          reason: `Medium confidence - contains keyword: "${keyword}"`
+          confidenceScore: 0.90,
+          reason: `Compliance/certification document: "${keyword}"`
         };
       }
     }
-
+    
+    // Check for business document categories
+    for (const docType of businessDocuments) {
+      if (text.includes(docType)) {
+        return {
+          requiresDocument: true,
+          confidenceScore: 0.85,
+          reason: `Business document required: "${docType}"`
+        };
+      }
+    }
+    
+    // Check for legal/financial documents
+    for (const keyword of legalFinancialKeywords) {
+      if (text.includes(keyword)) {
+        return {
+          requiresDocument: true,
+          confidenceScore: 0.85,
+          reason: `Legal/financial document: "${keyword}"`
+        };
+      }
+    }
+    
+    // Check for verification keywords
+    for (const keyword of verificationKeywords) {
+      if (text.includes(keyword)) {
+        return {
+          requiresDocument: true,
+          confidenceScore: 0.80,
+          reason: `Verification document: "${keyword}"`
+        };
+      }
+    }
+    
+    // Check for document types
+    for (const docType of documentTypes) {
+      if (text.includes(docType)) {
+        return {
+          requiresDocument: true,
+          confidenceScore: 0.75,
+          reason: `Document type detected: "${docType}"`
+        };
+      }
+    }
+    
+    // Check for action verbs combined with document context
+    const hasActionVerb = actionVerbs.some(verb => text.includes(verb));
+    const hasDocumentContext = documentContext.some(context => text.includes(context));
+    
+    if (hasActionVerb && hasDocumentContext) {
+      return {
+        requiresDocument: true,
+        confidenceScore: 0.70,
+        reason: 'Action verb with document context'
+      };
+    }
+    
+    // Advanced pattern matching using regex
+    const documentPatterns = [
+      { pattern: /\b(copy|copies)\s+of\b/, confidence: 0.85, reason: 'Copy requirement pattern' },
+      { pattern: /\bsigned\s+\w+/, confidence: 0.80, reason: 'Signed document pattern' },
+      { pattern: /\boriginal\s+\w+/, confidence: 0.75, reason: 'Original document pattern' },
+      { pattern: /\bscanned?\s+\w+/, confidence: 0.80, reason: 'Scanned document pattern' },
+      { pattern: /\bphoto\s+of\b/, confidence: 0.75, reason: 'Photo requirement pattern' },
+      { pattern: /\bmust\s+(provide|submit|include|attach|upload)/, confidence: 0.90, reason: 'Mandatory document action' },
+      { pattern: /\brequired?\s+(document|form|file)/, confidence: 0.85, reason: 'Required document pattern' },
+      { pattern: /\bplease\s+(send|provide|submit|attach|upload)/, confidence: 0.80, reason: 'Polite document request' },
+      { pattern: /\b(attach|include)\s+your/, confidence: 0.85, reason: 'Personal document request' }
+    ];
+    
+    for (const { pattern, confidence, reason } of documentPatterns) {
+      if (pattern.test(text)) {
+        return {
+          requiresDocument: true,
+          confidenceScore: confidence,
+          reason: reason
+        };
+      }
+    }
+    
+    // Negative indicators (things that suggest NO document needed)
+    const negativeIndicators = [
+      'how many', 'what is your', 'when did', 'where is', 'why do',
+      'describe your', 'explain your', 'what are your',
+      'company name', 'email address', 'phone number',
+      'select from', 'choose from', 'yes or no', 'true or false',
+      'do you agree', 'do you confirm'
+    ];
+    
+    for (const indicator of negativeIndicators) {
+      if (text.includes(indicator)) {
+        return {
+          requiresDocument: false,
+          confidenceScore: 0.05,
+          reason: `Simple information request: "${indicator}"`
+        };
+      }
+    }
+    
+    // Check question length and complexity
+    if (text.length < 30 && (text.includes('?') || text.includes('name') || text.includes('number'))) {
+      return {
+        requiresDocument: false,
+        confidenceScore: 0.10,
+        reason: 'Short question likely requesting basic information'
+      };
+    }
+    
     return {
       requiresDocument: false,
-      confidenceScore: 0.1,
-      reason: 'No document-related keywords detected'
+      confidenceScore: 0.20,
+      reason: 'No clear document requirement indicators found'
     };
   }
 

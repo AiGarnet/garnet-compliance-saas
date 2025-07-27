@@ -3,7 +3,7 @@ const FormData = require('form-data');
 const fs = require('fs');
 
 // Configuration
-const BASE_URL = 'http://localhost:3000'; // Update with your actual base URL
+const BASE_URL = 'https://garnet-compliance-saas-production.up.railway.app'; // Production backend URL
 const API_ENDPOINT = `${BASE_URL}/api/documents/validate`;
 
 // Test data
@@ -21,9 +21,9 @@ const testCases = [
     expectedRequiresDoc: true
   },
   {
-    name: 'Low Confidence Document Question',
+    name: 'Copy Pattern Document Question',
     questionText: 'Submit a copy of your records',
-    expectedConfidence: 0.5,
+    expectedConfidence: 0.85, // 'copy of' pattern should trigger high confidence
     expectedRequiresDoc: true
   },
   {
@@ -35,7 +35,25 @@ const testCases = [
   {
     name: 'Complex Document Question',
     questionText: 'Attach your tax identification document and business registration',
-    expectedConfidence: 0.9,
+    expectedConfidence: 0.95,
+    expectedRequiresDoc: true
+  },
+  {
+    name: 'Negative Indicator Question',
+    questionText: 'What is your company name and address?',
+    expectedConfidence: 0.05,
+    expectedRequiresDoc: false
+  },
+  {
+    name: 'Business License Question',
+    questionText: 'Please provide your business license',
+    expectedConfidence: 0.85,
+    expectedRequiresDoc: true
+  },
+  {
+    name: 'Certificate Question',
+    questionText: 'Upload your certificate of insurance',
+    expectedConfidence: 0.95,
     expectedRequiresDoc: true
   }
 ];
@@ -309,7 +327,7 @@ async function runAllTests() {
     }
     
     // Final Results
-    console.log('='*60);
+    console.log('============================================================');
     console.log('📋 FINAL TEST RESULTS:');
     console.log(`   Document Detection Logic: ${detectionPassed ? '✅ PASSED' : '❌ FAILED'}`);
     console.log(`   API Endpoint Health:      ${healthPassed ? '✅ PASSED' : '❌ FAILED'}`);

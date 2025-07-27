@@ -58,7 +58,7 @@ export class DocumentsService {
   }
 
   /**
-   * Check relevance between question and document content
+   * Enhanced document relevance checker with comprehensive analysis
    */
   async checkDocumentRelevance(
     questionText: string,
@@ -66,35 +66,39 @@ export class DocumentsService {
     threshold: number = 0.75
   ): Promise<DocumentRelevanceResponseDto> {
     try {
-      if (!this.openai) {
+      // Step 1: Pre-analysis checks
+      const preAnalysis = this.performPreAnalysisChecks(questionText, documentContent);
+      if (preAnalysis.shouldReject) {
         return {
-          relevanceScore: 0.5,
+          relevanceScore: preAnalysis.score,
           isRelevant: false,
-          message: 'OpenAI API not configured. Manual review required.',
-          extractedContent: documentContent,
+          message: preAnalysis.message,
+          extractedContent: this.truncateContent(documentContent),
           questionText
         };
       }
 
-      // Use OpenAI to analyze relevance
-      const prompt = this.buildRelevancePrompt(questionText, documentContent);
+      // Step 2: Keyword-based relevance analysis
+      const keywordAnalysis = this.performKeywordAnalysis(questionText, documentContent);
       
-      const completion = await this.openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.1,
-        max_tokens: 500
-      });
+      // Step 3: AI-powered analysis (if available)
+      let aiAnalysis = { score: keywordAnalysis.score, message: keywordAnalysis.message };
+      if (this.openai) {
+        aiAnalysis = await this.performAIAnalysis(questionText, documentContent);
+      }
 
-      const response = completion.choices[0].message.content || '';
-      const analysis = this.parseRelevanceResponse(response);
-      
+      // Step 4: Combine analyses for final score
+      const finalScore = this.combineAnalysisResults(keywordAnalysis, aiAnalysis);
+      const isRelevant = finalScore >= threshold;
+
+      // Step 5: Generate comprehensive message
+      const message = this.generateRelevanceMessage(finalScore, isRelevant, keywordAnalysis, aiAnalysis);
+
       return {
-        relevanceScore: analysis.score,
-        isRelevant: analysis.score >= threshold,
-        message: analysis.message,
-        extractedContent: documentContent.length > 500 ? 
-          documentContent.substring(0, 500) + '...' : documentContent,
+        relevanceScore: finalScore,
+        isRelevant,
+        message,
+        extractedContent: this.truncateContent(documentContent),
         questionText
       };
       
@@ -103,8 +107,8 @@ export class DocumentsService {
       return {
         relevanceScore: 0,
         isRelevant: false,
-        message: `Relevance analysis failed: ${error.message}`,
-        extractedContent: documentContent,
+        message: `❌ Document analysis failed due to technical error. Please try again or contact support.`,
+        extractedContent: this.truncateContent(documentContent),
         questionText
       };
     }
@@ -144,6 +148,277 @@ export class DocumentsService {
         requiresSupportingDocument: false,
         confidenceScore: 0,
         reason: `Detection failed: ${error.message}`
+      };
+    }
+  }
+
+  /**
+   * Pre-analysis checks for obvious rejections or acceptances
+   */
+  private performPreAnalysisChecks(questionText: string, documentContent: string): {
+    shouldReject: boolean;
+    score: number;
+    message: string;
+  } {
+    const content = documentContent.toLowerCase();
+    const question = questionText.toLowerCase();
+
+    // Check for empty or too short content
+    if (content.trim().length < 10) {
+      return {
+        shouldReject: true,
+        score: 0.05,
+        message: '❌ Document rejected: File appears to be empty or contains insufficient content. Please upload a valid document with readable content.'
+      };
+    }
+
+    // Check for corrupted or unreadable content
+    const corruptedIndicators = ['extraction failed', 'content extraction not yet supported', 'failed to extract'];
+    if (corruptedIndicators.some(indicator => content.includes(indicator))) {
+      return {
+        shouldReject: true,
+        score: 0.10,
+        message: '❌ Document rejected: Unable to read document content. Please ensure the file is not corrupted and is in a supported format (PDF, DOCX, TXT, or image).'
+      };
+    }
+
+    // Check for placeholder or template content
+    const placeholderIndicators = ['lorem ipsum', '[placeholder]', '[insert text]', 'sample document', 'template document'];
+    if (placeholderIndicators.some(indicator => content.includes(indicator))) {
+      return {
+        shouldReject: true,
+        score: 0.15,
+        message: '❌ Document rejected: This appears to be a template or placeholder document. Please upload your actual, completed document.'
+      };
+    }
+
+    // Check for wrong document type (if question is very specific)
+    const questionTypes = this.identifyQuestionType(question);
+    const documentType = this.identifyDocumentType(content);
+    
+    if (questionTypes.length > 0 && documentType && !questionTypes.includes(documentType)) {
+      const expectedTypes = questionTypes.join(' or ');
+      return {
+        shouldReject: true,
+        score: 0.20,
+        message: `❌ Document rejected: This question requires a ${expectedTypes}, but the uploaded document appears to be a ${documentType}. Please upload the correct document type.`
+      };
+    }
+
+    return { shouldReject: false, score: 0, message: '' };
+  }
+
+  /**
+   * Keyword-based relevance analysis
+   */
+  private performKeywordAnalysis(questionText: string, documentContent: string): {
+    score: number;
+    message: string;
+    matchedKeywords: string[];
+  } {
+    const question = questionText.toLowerCase();
+    const content = documentContent.toLowerCase();
+
+    // Extract key terms from question
+    const questionKeywords = this.extractKeyTerms(question);
+    const documentKeywords = this.extractKeyTerms(content);
+
+    // Calculate keyword overlap
+    const matchedKeywords = questionKeywords.filter(keyword => 
+      documentKeywords.some(docKeyword => 
+        docKeyword.includes(keyword) || keyword.includes(docKeyword)
+      )
+    );
+
+    const keywordScore = matchedKeywords.length / Math.max(questionKeywords.length, 1);
+
+    // Bonus for exact phrase matches
+    const exactMatches = questionKeywords.filter(keyword => content.includes(keyword));
+    const exactMatchBonus = exactMatches.length * 0.1;
+
+    const finalScore = Math.min(keywordScore + exactMatchBonus, 1.0);
+
+    return {
+      score: finalScore,
+      message: `Keyword analysis: ${matchedKeywords.length}/${questionKeywords.length} terms matched`,
+      matchedKeywords
+    };
+  }
+
+  /**
+   * AI-powered relevance analysis
+   */
+  private async performAIAnalysis(questionText: string, documentContent: string): Promise<{
+    score: number;
+    message: string;
+  }> {
+    try {
+      const prompt = this.buildEnhancedRelevancePrompt(questionText, documentContent);
+      
+      const completion = await this.openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.1,
+        max_tokens: 600
+      });
+
+      const response = completion.choices[0].message.content || '';
+      return this.parseEnhancedRelevanceResponse(response);
+      
+    } catch (error) {
+      this.logger.warn(`AI analysis failed: ${error.message}`);
+      return {
+        score: 0.5,
+        message: 'AI analysis unavailable, using keyword-based analysis only'
+      };
+    }
+  }
+
+  /**
+   * Combine keyword and AI analysis results
+   */
+  private combineAnalysisResults(
+    keywordAnalysis: { score: number },
+    aiAnalysis: { score: number }
+  ): number {
+    // Weighted combination: 40% keyword analysis, 60% AI analysis
+    return (keywordAnalysis.score * 0.4) + (aiAnalysis.score * 0.6);
+  }
+
+  /**
+   * Generate comprehensive relevance message
+   */
+  private generateRelevanceMessage(
+    finalScore: number,
+    isRelevant: boolean,
+    keywordAnalysis: any,
+    aiAnalysis: any
+  ): string {
+    if (isRelevant) {
+      if (finalScore >= 0.9) {
+        return `✅ Document accepted: Excellent match! The document strongly corresponds to the question requirements. (Confidence: ${Math.round(finalScore * 100)}%)`;
+      } else if (finalScore >= 0.8) {
+        return `✅ Document accepted: Good match. The document appears to address the question requirements adequately. (Confidence: ${Math.round(finalScore * 100)}%)`;
+      } else {
+        return `✅ Document accepted: Acceptable match. The document seems relevant but may not fully address all aspects of the question. (Confidence: ${Math.round(finalScore * 100)}%)`;
+      }
+    } else {
+      if (finalScore < 0.3) {
+        return `❌ Document rejected: Poor match. The document does not appear to be relevant to the question. Please upload a document that directly addresses: "${questionText.substring(0, 100)}${questionText.length > 100 ? '...' : ''}"`;
+      } else if (finalScore < 0.5) {
+        return `❌ Document rejected: Weak relevance. While there may be some connection, the document doesn't sufficiently address the question requirements. Please review the question and upload a more appropriate document.`;
+      } else {
+        return `❌ Document rejected: Below threshold. The document shows some relevance but doesn't meet the required confidence level (${Math.round(finalScore * 100)}% vs 75% required). Please upload a more specific document.`;
+      }
+    }
+  }
+
+  /**
+   * Identify question type based on keywords
+   */
+  private identifyQuestionType(question: string): string[] {
+    const types: string[] = [];
+    
+    if (question.includes('license') || question.includes('permit')) types.push('license');
+    if (question.includes('certificate') || question.includes('certification')) types.push('certificate');
+    if (question.includes('insurance') || question.includes('policy')) types.push('insurance policy');
+    if (question.includes('contract') || question.includes('agreement')) types.push('contract');
+    if (question.includes('tax') || question.includes('w9') || question.includes('w8')) types.push('tax document');
+    if (question.includes('financial') || question.includes('statement')) types.push('financial statement');
+    if (question.includes('audit') || question.includes('report')) types.push('audit report');
+    
+    return types;
+  }
+
+  /**
+   * Identify document type from content
+   */
+  private identifyDocumentType(content: string): string | null {
+    if (content.includes('license') && content.includes('issued')) return 'license';
+    if (content.includes('certificate') && content.includes('certif')) return 'certificate';
+    if (content.includes('policy') && (content.includes('insurance') || content.includes('coverage'))) return 'insurance policy';
+    if (content.includes('agreement') || content.includes('contract')) return 'contract';
+    if (content.includes('tax') || content.includes('irs') || content.includes('ein')) return 'tax document';
+    if (content.includes('statement') && content.includes('financial')) return 'financial statement';
+    if (content.includes('audit') && content.includes('report')) return 'audit report';
+    
+    return null;
+  }
+
+  /**
+   * Extract key terms from text
+   */
+  private extractKeyTerms(text: string): string[] {
+    // Remove common words and extract meaningful terms
+    const commonWords = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'your', 'you', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should'];
+    
+    return text
+      .split(/\s+/)
+      .map(word => word.replace(/[^\w]/g, '').toLowerCase())
+      .filter(word => word.length > 2 && !commonWords.includes(word))
+      .filter((word, index, arr) => arr.indexOf(word) === index); // Remove duplicates
+  }
+
+  /**
+   * Truncate content for response
+   */
+  private truncateContent(content: string): string {
+    return content.length > 500 ? content.substring(0, 500) + '...' : content;
+  }
+
+  /**
+   * Build enhanced relevance analysis prompt
+   */
+  private buildEnhancedRelevancePrompt(questionText: string, documentContent: string): string {
+    return `
+You are a document relevance analyzer for a vendor onboarding platform. Analyze how well the provided document answers or addresses the given question.
+
+QUESTION: "${questionText}"
+
+DOCUMENT CONTENT: "${documentContent.substring(0, 2000)}"
+
+Evaluate the document based on these criteria:
+1. Content Relevance (40%): Does the document contain information that directly answers the question?
+2. Document Type Match (30%): Is this the type of document typically expected for this question?
+3. Completeness (20%): Does the document provide sufficient detail to satisfy the question requirements?
+4. Authenticity (10%): Does the document appear to be genuine (not a template, sample, or placeholder)?
+
+Provide your analysis in this exact format:
+RELEVANCE_SCORE: [0.0 to 1.0]
+REASONING: [Brief explanation of your assessment]
+RECOMMENDATIONS: [If score < 0.75, suggest what type of document would be better]
+
+Be strict in your evaluation. A score of 0.75+ means the document adequately addresses the question.
+    `;
+  }
+
+  /**
+   * Parse enhanced AI relevance response
+   */
+  private parseEnhancedRelevanceResponse(response: string): { score: number; message: string } {
+    try {
+      const scoreMatch = response.match(/RELEVANCE_SCORE:\s*([0-9.]+)/i);
+      const reasoningMatch = response.match(/REASONING:\s*([^\n]+)/i);
+      const recommendationsMatch = response.match(/RECOMMENDATIONS:\s*([^\n]+)/i);
+
+      const score = scoreMatch ? parseFloat(scoreMatch[1]) : 0.5;
+      const reasoning = reasoningMatch ? reasoningMatch[1].trim() : 'Analysis completed';
+      const recommendations = recommendationsMatch ? recommendationsMatch[1].trim() : '';
+
+      let message = `AI Analysis: ${reasoning}`;
+      if (recommendations && score < 0.75) {
+        message += ` Recommendation: ${recommendations}`;
+      }
+
+      return {
+        score: Math.max(0, Math.min(1, score)),
+        message
+      };
+    } catch (error) {
+      this.logger.warn(`Failed to parse AI response: ${error.message}`);
+      return {
+        score: 0.5,
+        message: 'AI analysis completed with basic parsing'
       };
     }
   }
