@@ -67,6 +67,14 @@ export class CreateQuestionDto {
   @IsOptional()
   @IsString()
   documentDescription?: string;
+
+  @IsOptional()
+  @IsNumber()
+  requiresDocumentConfidenceScore?: number;
+
+  @IsOptional()
+  @IsString()
+  requiresDocumentReason?: string;
 }
 
 export class UpdateQuestionDto {
@@ -144,6 +152,8 @@ export class QuestionResponseDto {
   confidenceScore?: number;
   requiresDocument: boolean;
   documentDescription?: string;
+  requiresDocumentConfidenceScore?: number;
+  requiresDocumentReason?: string;
   createdAt: Date;
   updatedAt: Date;
   supportingDocuments?: SupportingDocumentResponseDto[];
@@ -158,4 +168,17 @@ export class SupportingDocumentResponseDto {
   fileSize?: number;
   filePath?: string;
   uploadedAt: Date;
-} 
+}
+
+export class DocumentValidationRequestDto {
+  @IsUUID()
+  questionId: string;
+}
+
+export class DocumentRelevanceResponseDto {
+  relevanceScore: number;
+  isRelevant: boolean;
+  message: string;
+  extractedContent?: string;
+  questionText?: string;
+}

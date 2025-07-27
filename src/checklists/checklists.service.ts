@@ -109,7 +109,7 @@ export class ChecklistsService {
 
       // Step 2: Extract text and parse questions
       const extractedText = await this.extractTextFromFile(file);
-      const questionDtos = this.parseQuestionsFromText(extractedText);
+      const questionDtos = await this.parseQuestionsFromText(extractedText);
 
       // Step 3: Save questions to database
       const questions = await this.addQuestionsToChecklist(checklist.id, vendorId, questionDtos);
@@ -486,8 +486,8 @@ export class ChecklistsService {
     }
   }
 
-  // Parse questions from extracted text
-  parseQuestionsFromText(text: string): CreateQuestionDto[] {
+  // Parse questions from extracted text with improved document detection
+  async parseQuestionsFromText(text: string, useEnhancedDetection: boolean = false): Promise<CreateQuestionDto[]> {
     if (!text || text.trim().length === 0) {
       this.logger.warn('No text content found in uploaded file for question extraction');
       return [];
@@ -495,13 +495,122 @@ export class ChecklistsService {
 
     const lines = text.split('\n').filter(line => line.trim().length > 0);
     
-    return lines.map((line, index) => ({
-      questionText: line.trim(),
-      questionOrder: index + 1,
-      status: QuestionStatus.PENDING,
-      requiresDocument: Math.random() > 0.7, // Random for demo
-      documentDescription: Math.random() > 0.7 ? this.getRandomDocRequirement() : undefined
-    }));
+    // Process each question with document detection
+    const questions: CreateQuestionDto[] = [];
+    
+    for (let index = 0; index < lines.length; index++) {
+      const line = lines[index].trim();
+      
+      // Use enhanced document detection with basic fallback
+      const docDetection = this.detectDocumentRequirementBasic(line);
+      
+      questions.push({
+        questionText: line,
+        questionOrder: index + 1,
+        status: QuestionStatus.PENDING,
+        requiresDocument: docDetection.requiresDocument,
+        requiresDocumentConfidenceScore: docDetection.confidenceScore,
+        requiresDocumentReason: docDetection.reason,
+        documentDescription: docDetection.requiresDocument ? this.getRandomDocRequirement() : undefined
+      });
+    }
+    
+    return questions;
+  }
+
+  // Enhanced version using DocumentsService - to be called from external services
+  async parseQuestionsWithEnhancedDetection(text: string, documentsService: any): Promise<CreateQuestionDto[]> {
+    if (!text || text.trim().length === 0) {
+      this.logger.warn('No text content found in uploaded file for question extraction');
+      return [];
+    }
+
+    const lines = text.split('\n').filter(line => line.trim().length > 0);
+    const questions: CreateQuestionDto[] = [];
+    
+    for (let index = 0; index < lines.length; index++) {
+      const line = lines[index].trim();
+      
+      try {
+        // Use enhanced AI-powered detection
+        const docDetection = await documentsService.detectDocumentRequirement(line);
+        
+        questions.push({
+          questionText: line,
+          questionOrder: index + 1,
+          status: QuestionStatus.PENDING,
+          requiresDocument: docDetection.requiresSupportingDocument,
+          requiresDocumentConfidenceScore: docDetection.confidenceScore,
+          requiresDocumentReason: docDetection.reason,
+          documentDescription: docDetection.requiresSupportingDocument ? this.getRandomDocRequirement() : undefined
+        });
+      } catch (error) {
+        this.logger.warn(`Enhanced detection failed for question "${line}", falling back to basic detection: ${error.message}`);
+        
+        // Fallback to basic detection
+        const basicDetection = this.detectDocumentRequirementBasic(line);
+        questions.push({
+          questionText: line,
+          questionOrder: index + 1,
+          status: QuestionStatus.PENDING,
+          requiresDocument: basicDetection.requiresDocument,
+          requiresDocumentConfidenceScore: basicDetection.confidenceScore,
+          requiresDocumentReason: basicDetection.reason + ' (enhanced detection failed)',
+          documentDescription: basicDetection.requiresDocument ? this.getRandomDocRequirement() : undefined
+        });
+      }
+    }
+    
+    return questions;
+  }
+
+  // Basic document requirement detection (enhanced version will use DocumentsService)
+  private detectDocumentRequirementBasic(questionText: string): {
+    requiresDocument: boolean;
+    confidenceScore: number;
+    reason: string;
+  } {
+    const text = questionText.toLowerCase();
+    
+    // High confidence keywords
+    const highConfidenceKeywords = [
+      'upload', 'provide document', 'attach', 'submit document',
+      'certificate', 'proof', 'evidence', 'documentation',
+      'copy of', 'scan of', 'file showing'
+    ];
+    
+    // Medium confidence keywords
+    const mediumConfidenceKeywords = [
+      'provide', 'show', 'demonstrate', 'confirm',
+      'policy', 'procedure', 'report', 'audit',
+      'contract', 'agreement', 'license', 'permit'
+    ];
+
+    for (const keyword of highConfidenceKeywords) {
+      if (text.includes(keyword)) {
+        return {
+          requiresDocument: true,
+          confidenceScore: 0.9,
+          reason: `High confidence - contains keyword: "${keyword}"`
+        };
+      }
+    }
+
+    for (const keyword of mediumConfidenceKeywords) {
+      if (text.includes(keyword)) {
+        return {
+          requiresDocument: true,
+          confidenceScore: 0.7,
+          reason: `Medium confidence - contains keyword: "${keyword}"`
+        };
+      }
+    }
+
+    return {
+      requiresDocument: false,
+      confidenceScore: 0.1,
+      reason: 'No document-related keywords detected'
+    };
   }
 
   private getRandomDocRequirement(): string {
@@ -513,6 +622,19 @@ export class ChecklistsService {
       "Provide your business continuity plan"
     ];
     return requirements[Math.floor(Math.random() * requirements.length)];
+  }
+
+  // Get question by ID
+  async getQuestionById(questionId: string): Promise<any> {
+    try {
+      const question = await this.questionRepository.findOne({
+        where: { id: questionId }
+      });
+      return question;
+    } catch (error) {
+      this.logger.error(`Failed to get question ${questionId}: ${error.message}`);
+      throw error;
+    }
   }
 
   // Delete checklist and all associated data (vendor verification)

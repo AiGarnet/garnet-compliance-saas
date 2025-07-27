@@ -83,6 +83,12 @@ export class ChecklistQuestion {
   @Column('text', { name: 'document_description', nullable: true })
   documentDescription: string;
 
+  @Column('decimal', { precision: 3, scale: 2, name: 'requires_document_confidence_score', nullable: true })
+  requiresDocumentConfidenceScore: number;
+
+  @Column('text', { name: 'requires_document_reason', nullable: true })
+  requiresDocumentReason: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

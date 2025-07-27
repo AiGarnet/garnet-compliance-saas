@@ -23,6 +23,7 @@ import { ActivitiesModule } from './activities/activities.module';
 import { AnswerModule } from './answer/answer.module';
 import { GenerateAnswersModule } from './generate-answers/generate-answers.module';
 import { ChecklistsModule } from './checklists/checklists.module';
+import { DocumentsModule } from './documents/documents.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { HelpModule } from './help/help.module';
 import { BillingModule } from './billing/billing.module';
@@ -70,6 +71,7 @@ import { AppController } from './app.controller';
     AnswerModule,
     GenerateAnswersModule,
     ChecklistsModule,
+    DocumentsModule,
     OrganizationsModule,
     HelpModule,
     BillingModule,
