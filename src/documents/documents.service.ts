@@ -2,6 +2,7 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { DocumentRelevanceResponseDto } from '../checklists/dto/checklist.dto';
+import * as pdfParse from 'pdf-parse';
 
 @Injectable()
 export class DocumentsService {
@@ -48,12 +49,21 @@ export class DocumentsService {
         return await this.extractImageContent(file);
       }
       
-      // For unsupported types, return basic file metadata
-      return `Document: ${file.originalname}\nType: ${file.mimetype}\nSize: ${file.size} bytes\nContent extraction not yet supported for this file type.`;
+      // For unsupported types, return informative message with supported formats
+      const supportedFormats = ['PDF', 'TXT', 'JSON', 'DOCX (limited)', 'Images (planned)'];
+      return `Document: ${file.originalname}\nType: ${file.mimetype}\nSize: ${file.size} bytes\n\nThis file type is not currently supported for content extraction.\n\nSupported formats: ${supportedFormats.join(', ')}\n\nPlease convert your document to one of the supported formats and try again.`;
       
     } catch (error) {
       this.logger.error(`Failed to extract content from document: ${error.message}`);
-      return `Document: ${file.originalname}\nContent extraction failed: ${error.message}`;
+      
+      // Provide specific error messages based on file type and error
+      if (file.mimetype === 'application/pdf') {
+        return `PDF Document: ${file.originalname}\nExtraction failed: This PDF could not be processed. The file may be corrupted, password-protected, or contain only images. Please ensure the PDF contains readable text and try again.`;
+      } else if (file.mimetype.includes('word') || file.mimetype.includes('document')) {
+        return `Document: ${file.originalname}\nExtraction failed: Unable to process this document. Please convert to PDF or TXT format and try again.`;
+      } else {
+        return `Document: ${file.originalname}\nExtraction failed: ${error.message}. Please check the file format and try again.`;
+      }
     }
   }
 
@@ -560,9 +570,39 @@ Respond with a JSON object:
   }
 
   private async extractPdfContent(file: Express.Multer.File): Promise<string> {
-    // TODO: Implement PDF parsing with pdf-parse library
-    // For now, return placeholder
-    return `PDF Document: ${file.originalname}\nSize: ${file.size} bytes\n[PDF content extraction will be implemented with pdf-parse library]`;
+    try {
+      this.logger.log(`Extracting content from PDF: ${file.originalname}`);
+      
+      // Use pdf-parse to extract text content from the PDF
+      const pdfData = await pdfParse(file.buffer);
+      
+      if (!pdfData.text || pdfData.text.trim().length === 0) {
+        this.logger.warn(`PDF ${file.originalname} appears to be empty or contains no extractable text`);
+        return `PDF Document: ${file.originalname}\nSize: ${file.size} bytes\nPages: ${pdfData.numpages || 'Unknown'}\n\nThis PDF appears to contain no readable text content. It may be an image-based PDF, encrypted, or corrupted. Please ensure the document contains text and try uploading again.`;
+      }
+      
+      // Clean up the extracted text
+      const cleanedText = pdfData.text
+        .replace(/\r\n/g, '\n')  // Normalize line endings
+        .replace(/\n\s*\n/g, '\n')  // Remove multiple consecutive newlines
+        .trim();
+      
+      this.logger.log(`Successfully extracted ${cleanedText.length} characters from PDF: ${file.originalname}`);
+      
+      return `PDF Document: ${file.originalname}\nSize: ${file.size} bytes\nPages: ${pdfData.numpages || 'Unknown'}\n\nExtracted Content:\n${cleanedText}`;
+      
+    } catch (error) {
+      this.logger.error(`Failed to extract content from PDF ${file.originalname}: ${error.message}`, error.stack);
+      
+      // Provide specific error messages based on the error type
+      if (error.message.includes('Invalid PDF')) {
+        return `PDF Document: ${file.originalname}\nError: This file appears to be corrupted or is not a valid PDF. Please check the file and try uploading again.`;
+      } else if (error.message.includes('Encrypted')) {
+        return `PDF Document: ${file.originalname}\nError: This PDF is password-protected. Please remove the password protection and try uploading again.`;
+      } else {
+        return `PDF Document: ${file.originalname}\nError: Unable to extract content from this PDF. The file may be corrupted, encrypted, or contain only images. Error details: ${error.message}`;
+      }
+    }
   }
 
   private async extractDocxContent(file: Express.Multer.File): Promise<string> {

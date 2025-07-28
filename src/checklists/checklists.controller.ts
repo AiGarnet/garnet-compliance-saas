@@ -335,32 +335,76 @@ export class ChecklistsController {
     @UploadedFile() file: Express.Multer.File,
     @Request() req
   ) {
-    if (!file) {
-      throw new BadRequestException('No file uploaded');
+    try {
+      if (!file) {
+        throw new BadRequestException('No file was uploaded. Please select a file and try again.');
+      }
+
+      // Validate file type
+      const allowedMimeTypes = [
+        'application/pdf',
+        'text/plain',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/jpeg',
+        'image/png',
+        'image/gif'
+      ];
+
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        throw new BadRequestException(
+          `File type "${file.mimetype}" is not supported. Please upload a PDF, TXT, DOC, DOCX, or image file. PDFs provide the best content extraction for compliance validation.`
+        );
+      }
+
+      // Validate file size (50MB max)
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      if (file.size > maxSize) {
+        throw new BadRequestException(
+          `File size (${Math.round(file.size / (1024 * 1024))}MB) exceeds the maximum allowed size of 50MB. Please compress your file or split it into smaller parts.`
+        );
+      }
+
+      // Use the new DigitalOcean Spaces integrated upload method
+      const document = await this.checklistsService.uploadSupportingDocumentFile(
+        file,
+        vendorId,
+        questionId,
+        req.user?.id
+      );
+
+      this.logger.log(`Uploaded supporting document ${document.id} to Spaces for question ${questionId}`);
+
+      return {
+        id: document.id,
+        questionId: document.questionId,
+        vendorId: document.vendorId,
+        filename: document.filename,
+        fileType: document.fileType,
+        fileSize: document.fileSize,
+        filePath: document.filePath,
+        spacesUrl: document.spacesUrl,
+        spacesKey: document.spacesKey,
+        uploadedAt: document.uploadedAt
+      };
+      
+    } catch (error) {
+      this.logger.error(`Failed to upload supporting document: ${error.message}`, error.stack);
+      
+      // Re-throw BadRequestException as-is for client-side handling
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      // Handle other errors with helpful messages
+      if (error.message.includes('storage') || error.message.includes('space')) {
+        throw new BadRequestException('File storage error. Please try again later or contact support if the issue persists.');
+      } else if (error.message.includes('timeout')) {
+        throw new BadRequestException('Upload timeout. Please check your connection and try again with a smaller file.');
+      } else {
+        throw new BadRequestException('Upload failed due to an unexpected error. Please verify your file is valid and try again.');
+      }
     }
-
-    // Use the new DigitalOcean Spaces integrated upload method
-    const document = await this.checklistsService.uploadSupportingDocumentFile(
-      file,
-      vendorId,
-      questionId,
-      req.user?.id
-    );
-
-    this.logger.log(`Uploaded supporting document ${document.id} to Spaces for question ${questionId}`);
-
-    return {
-      id: document.id,
-      questionId: document.questionId,
-      vendorId: document.vendorId,
-      filename: document.filename,
-      fileType: document.fileType,
-      fileSize: document.fileSize,
-      filePath: document.filePath,
-      spacesUrl: document.spacesUrl,
-      spacesKey: document.spacesKey,
-      uploadedAt: document.uploadedAt
-    };
   }
 
   // Get vendor questions (for AI questionnaire section)
