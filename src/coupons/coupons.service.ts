@@ -144,13 +144,9 @@ export class CouponsService {
       try {
         await client.query('BEGIN');
 
-        // Calculate expiration date (if needed for specific coupon types)
-        let expiresAt = null;
-        if (coupon.permissions.testing_access) {
-          // Testing coupons expire in 30 days
-          expiresAt = new Date();
-          expiresAt.setDate(expiresAt.getDate() + 30);
-        }
+        // All applied coupons now expire after 7 days
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
 
         // Create coupon usage record
         const usageQuery = `
@@ -174,7 +170,7 @@ export class CouponsService {
             code: coupon.code,
             permissions: coupon.permissions,
             applied_at: new Date().toISOString(),
-            expires_at: expiresAt?.toISOString() || null,
+            expires_at: expiresAt.toISOString(),
           },
           // Add flags for easy checking in feature access service
           ...(coupon.permissions.full_access && { full_access: true }),
@@ -200,7 +196,7 @@ export class CouponsService {
           success: true,
           message: `Coupon "${coupon.name}" applied successfully! You now have access to all premium features.`,
           coupon: this.formatCouponResponse(coupon),
-          expires_at: expiresAt?.toISOString(),
+          expires_at: expiresAt.toISOString(),
         };
 
       } catch (error) {
