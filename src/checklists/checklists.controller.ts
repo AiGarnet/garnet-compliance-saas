@@ -38,6 +38,7 @@ import {
 import { Checklist, ChecklistQuestion } from './entities/checklist.entity';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators/log-activity.decorator';
+import { ChecklistExtractionStatus } from './dto/checklist.dto';
 
 @Controller('api/checklists')
 @UseGuards(JwtAuthGuard)
@@ -172,6 +173,65 @@ export class ChecklistsController {
     } catch (error) {
       this.logger.error(`Failed to add manual question: ${error.message}`);
       throw new BadRequestException('Failed to add manual question');
+    }
+  }
+
+  // Add standalone manual question to vendor (creates default checklist if needed)
+  @Post('vendor/:vendorId/standalone-question')
+  @Public()
+  async addStandaloneManualQuestion(
+    @Param('vendorId', ParseUUIDPipe) vendorId: string,
+    @Body() createQuestionDto: CreateQuestionDto,
+    @Request() req
+  ): Promise<QuestionResponseDto> {
+    try {
+      // Check if vendor has any existing checklists
+      const existingChecklists = await this.checklistsService.getChecklistsByVendor(vendorId);
+      
+      let checklistId: string;
+      
+      if (existingChecklists.length === 0) {
+        // Create a default checklist for manual questions
+        const defaultChecklist = await this.checklistsService.createChecklist({
+          vendorId,
+          name: 'Manual Questions',
+          fileType: 'application/manual',
+          fileSize: 0,
+          originalFilename: 'manual-questions',
+          extractionStatus: ChecklistExtractionStatus.COMPLETED
+        }, req.user?.id);
+        
+        checklistId = defaultChecklist.id;
+        this.logger.log(`Created default checklist ${checklistId} for vendor ${vendorId}`);
+      } else {
+        // Use the first existing checklist
+        checklistId = existingChecklists[0].id;
+      }
+      
+      // Get current questions count to set proper order
+      const existingQuestions = await this.checklistsService.getChecklistQuestions(checklistId, vendorId);
+      const nextOrder = existingQuestions.length + 1;
+      
+      // Add the manual question
+      const questionData = {
+        ...createQuestionDto,
+        questionOrder: nextOrder,
+        status: QuestionStatus.PENDING
+      };
+      
+      const questions = await this.checklistsService.addQuestionsToChecklist(
+        checklistId,
+        vendorId,
+        [questionData]
+      );
+      
+      const addedQuestion = questions[0];
+      this.logger.log(`Added standalone manual question ${addedQuestion.id} to checklist ${checklistId} for vendor ${vendorId}`);
+      
+      return this.mapToQuestionResponse(addedQuestion);
+    } catch (error) {
+      this.logger.error(`Failed to add standalone manual question: ${error.message}`);
+      throw new BadRequestException('Failed to add standalone manual question');
     }
   }
 
