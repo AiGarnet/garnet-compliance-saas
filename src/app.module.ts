@@ -27,6 +27,7 @@ import { DocumentsModule } from './documents/documents.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { HelpModule } from './help/help.module';
 import { BillingModule } from './billing/billing.module';
+import { CouponsModule } from './coupons/coupons.module';
 import { AdminModule } from './admin/admin.module';
 
 // Global providers
@@ -75,6 +76,7 @@ import { AppController } from './app.controller';
     OrganizationsModule,
     HelpModule,
     BillingModule,
+    CouponsModule,
     AdminModule,
   ],
   providers: [

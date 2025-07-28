@@ -1,7 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { BillingService } from './billing.service';
 import { getPricingTierById } from '../config/pricing';
 import { DatabaseService } from '../database/database.service';
+import { CouponsService } from '../coupons/coupons.service';
 
 export interface FeatureAccess {
   hasAccess: boolean;
@@ -17,6 +18,8 @@ export class FeatureAccessService {
   constructor(
     private readonly billingService: BillingService,
     private readonly databaseService: DatabaseService,
+    @Inject(forwardRef(() => CouponsService))
+    private readonly couponsService: CouponsService,
   ) {}
 
   async checkFeatureAccess(
@@ -44,6 +47,38 @@ export class FeatureAccessService {
       }
 
       const user = userResult.rows[0];
+      
+      // Check for active coupon permissions first
+      const couponPermissions = await this.couponsService.checkUserCouponPermissions(userId);
+      if (couponPermissions) {
+        if (couponPermissions.full_access || couponPermissions.bypass_subscription) {
+          this.logger.log(`Coupon access granted for user: ${user.email}`);
+          return { hasAccess: true, reason: 'Active coupon grants full access' };
+        }
+        
+        // Check specific feature access from coupon
+        if (couponPermissions.features?.includes(feature)) {
+          this.logger.log(`Coupon feature access granted for ${feature} to user: ${user.email}`);
+          return { hasAccess: true, reason: 'Feature access granted by active coupon' };
+        }
+
+        // Check unlimited permissions
+        if (
+          (feature === 'unlimited_questionnaires' && couponPermissions.unlimited_questionnaires) ||
+          (feature === 'unlimited_vendors' && couponPermissions.unlimited_vendors) ||
+          (feature === 'unlimited_users' && couponPermissions.unlimited_users) ||
+          (feature === 'unlimited_storage' && couponPermissions.unlimited_storage) ||
+          (feature === 'unlimited_frameworks' && couponPermissions.unlimited_frameworks)
+        ) {
+          this.logger.log(`Coupon unlimited access granted for ${feature} to user: ${user.email}`);
+          return { hasAccess: true, reason: 'Unlimited access granted by active coupon' };
+        }
+
+        // Check plan override
+        if (couponPermissions.plan_override) {
+          return this.checkPlanFeatureAccess(couponPermissions.plan_override, feature, currentUsage);
+        }
+      }
       
       // Check for special testing accounts that bypass subscription requirements
       if (user.metadata?.special_access === true || user.metadata?.bypass_subscription === true) {
@@ -272,6 +307,35 @@ export class FeatureAccessService {
       }
 
       const user = userResult.rows[0];
+      
+      // Check for active coupon permissions first
+      const couponPermissions = await this.couponsService.checkUserCouponPermissions(userId);
+      if (couponPermissions && (couponPermissions.full_access || couponPermissions.bypass_subscription)) {
+        this.logger.log(`Coupon unlimited access granted for user: ${user.email}`);
+        
+        return {
+          questionnaires: {
+            current: 0,
+            limit: 'unlimited',
+            hasAccess: true
+          },
+          vendors: {
+            current: 0,
+            limit: 'unlimited',
+            hasAccess: true
+          },
+          users: {
+            current: 1,
+            limit: 'unlimited',
+            hasAccess: true
+          },
+          storage: {
+            current: '0GB',
+            limit: 'Unlimited',
+            hasAccess: true
+          }
+        };
+      }
       
       // Check for special testing accounts that bypass subscription requirements
       if (user.metadata?.special_access === true || user.metadata?.bypass_subscription === true || 
