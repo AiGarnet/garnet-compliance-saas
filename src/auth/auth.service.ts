@@ -168,7 +168,7 @@ export class AuthService {
     this.logger.log(`User ${user.email} signed up with 7-day free trial (expires: ${user.trial_end_date})`);
 
     // If a valid coupon was applied, create coupon usage record
-    if (signupDto.couponCode && userMetadata.active_coupon) {
+    if (signupDto.couponCode && couponMetadata && 'active_coupon' in couponMetadata) {
       try {
         await this.couponsService.applyCoupon(
           { code: signupDto.couponCode.trim().toUpperCase() },
