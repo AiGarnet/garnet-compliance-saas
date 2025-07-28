@@ -9,6 +9,7 @@ import { SignupDto, LoginDto, WaitlistSignupDto, ForgotPasswordDto, ResetPasswor
 import { OrganizationsService } from '../organizations/organizations.service';
 import { EmailService } from '../common/email.service';
 import { Logger } from '@nestjs/common';
+import { CouponsService } from '../coupons/coupons.service';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +21,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly organizationsService: OrganizationsService,
     private readonly emailService: EmailService,
+    private readonly couponsService: CouponsService,
   ) {}
 
   async signup(signupDto: SignupDto): Promise<{ access_token: string; user: Partial<User> }> {
@@ -32,6 +34,43 @@ export class AuthService {
     
     let organizationId: string | null = null;
     let organizationName = signupDto.organization;
+    let couponMetadata = {};
+
+    // Validate and apply coupon if provided
+    if (signupDto.couponCode) {
+      try {
+        const couponValidation = await this.couponsService.validateCoupon({ 
+          code: signupDto.couponCode.trim().toUpperCase() 
+        });
+        
+        if (couponValidation.valid && couponValidation.coupon) {
+          // Prepare coupon metadata for user
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + 7); // Coupon benefits expire after 7 days
+          
+          couponMetadata = {
+            active_coupon: {
+              code: couponValidation.coupon.code,
+              permissions: couponValidation.permissions,
+              applied_at: new Date().toISOString(),
+              expires_at: expiresAt.toISOString(),
+            },
+            // Add flags for easy checking in feature access service
+            ...(couponValidation.permissions?.full_access && { full_access: true }),
+            ...(couponValidation.permissions?.bypass_subscription && { bypass_subscription: true }),
+            ...(couponValidation.permissions?.testing_access && { testing_access: true }),
+          };
+          
+          this.logger.log(`Applying coupon ${couponValidation.coupon.code} to new user ${signupDto.email}`);
+        } else {
+          this.logger.warn(`Invalid coupon code provided during signup: ${signupDto.couponCode}`);
+          // Don't throw error, just continue without coupon
+        }
+      } catch (error) {
+        this.logger.error('Error validating coupon during signup:', error);
+        // Don't throw error, just continue without coupon
+      }
+    }
 
     // Auto-create or find organization if organization name is provided
     if (organizationName && organizationName.trim()) {
@@ -92,6 +131,12 @@ export class AuthService {
     const trialEndDate = new Date();
     trialEndDate.setDate(trialStartDate.getDate() + 7); // 7 days from now
 
+    // Merge coupon metadata with any existing metadata
+    const userMetadata = {
+      ...signupDto.metadata,
+      ...couponMetadata,
+    };
+
     const query = `
       INSERT INTO users (
         email, password_hash, full_name, role, organization, organization_id, metadata, is_active,
@@ -108,7 +153,7 @@ export class AuthService {
       signupDto.role,
       organizationName || null, // Keep legacy field for backwards compatibility
       organizationId, // New organization_id field
-      signupDto.metadata || {},
+      userMetadata,
       true,
       trialStartDate, // trial_start_date
       trialEndDate,   // trial_end_date
@@ -121,6 +166,20 @@ export class AuthService {
     const user = result.rows[0];
 
     this.logger.log(`User ${user.email} signed up with 7-day free trial (expires: ${user.trial_end_date})`);
+
+    // If a valid coupon was applied, create coupon usage record
+    if (signupDto.couponCode && userMetadata.active_coupon) {
+      try {
+        await this.couponsService.applyCoupon(
+          { code: signupDto.couponCode.trim().toUpperCase() },
+          user.id
+        );
+        this.logger.log(`Coupon usage recorded for user ${user.id} with code ${signupDto.couponCode}`);
+      } catch (error) {
+        this.logger.error('Failed to create coupon usage record:', error);
+        // Don't fail signup if coupon usage recording fails
+      }
+    }
 
     // If user joined an organization, log subscription information
     if (organizationId) {

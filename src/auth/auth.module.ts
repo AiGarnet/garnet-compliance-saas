@@ -8,12 +8,14 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { DatabaseModule } from '../database/database.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
+import { CouponsModule } from '../coupons/coupons.module';
 import { EmailService } from '../common/email.service';
 
 @Module({
   imports: [
     DatabaseModule,
     OrganizationsModule,
+    CouponsModule,
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

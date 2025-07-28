@@ -27,6 +27,11 @@ export class SignupDto {
   @IsString()
   organization?: string;
 
+  @ApiPropertyOptional({ example: 'SAVE20' })
+  @IsOptional()
+  @IsString()
+  couponCode?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   metadata?: Record<string, any>;
