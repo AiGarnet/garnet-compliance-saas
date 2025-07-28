@@ -54,8 +54,10 @@ export class AiService {
       this.logger.debug(`🤖 AI SERVICE: Found ${relevantData.length} relevant compliance data entries`);
       
       // Load evidence files for enhanced context
-      const evidenceContent = await this.getVendorEvidenceContent(request.vendorId);
-      this.logger.debug(`🤖 AI SERVICE: Found ${evidenceContent.length} evidence files for context enhancement`);
+      const evidenceContent = request.selectedEvidenceFiles && request.selectedEvidenceFiles.length > 0
+        ? await this.getSelectedEvidenceContent(request.selectedEvidenceFiles, request.vendorId)
+        : await this.getVendorEvidenceContent(request.vendorId);
+      this.logger.debug(`AI SERVICE: Found ${evidenceContent.length} evidence files for context enhancement`);
       
       // Determine if this is a chat mode request
       const isChatMode = request.context?.includes('chatbot') || request.question.toLowerCase().includes('chat');
@@ -202,6 +204,51 @@ export class AiService {
       return await this.evidenceService.getVendorEvidenceContent(vendorUuid);
     } catch (error) {
       this.logger.warn(`Failed to get evidence content for vendor ${vendorId}: ${error.message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Get content from selected evidence files for enhanced response generation
+   */
+  private async getSelectedEvidenceContent(selectedFileIds: string[], vendorId: number | string): Promise<string[]> {
+    try {
+      if (!selectedFileIds || selectedFileIds.length === 0) {
+        return [];
+      }
+
+      this.logger.debug(`🤖 AI SERVICE: Loading content from ${selectedFileIds.length} selected evidence files`);
+
+      // Convert numeric vendor ID to UUID if needed
+      const vendorUuid = typeof vendorId === 'number' ? 
+        await this.resolveVendorUuid(vendorId) : vendorId;
+      
+      if (!vendorUuid) {
+        this.logger.warn('Unable to resolve vendor UUID for evidence file access');
+        return [];
+      }
+
+      const evidenceContent: string[] = [];
+      
+      for (const fileId of selectedFileIds) {
+        try {
+          const file = await this.evidenceService.getEvidenceFileById(fileId, vendorUuid);
+          if (file.fileContent && file.fileContent.trim().length > 0) {
+            // Add file metadata for context
+            const fileContext = `\n--- Evidence from ${file.originalFilename} ---\n${file.fileContent}\n--- End of ${file.originalFilename} ---\n`;
+            evidenceContent.push(fileContext);
+            this.logger.debug(`🤖 AI SERVICE: Loaded content from evidence file: ${file.originalFilename}`);
+          }
+        } catch (fileError) {
+          this.logger.warn(`Failed to load evidence file ${fileId}: ${fileError.message}`);
+          // Continue with other files instead of failing completely
+        }
+      }
+
+      this.logger.debug(`🤖 AI SERVICE: Successfully loaded content from ${evidenceContent.length} evidence files`);
+      return evidenceContent;
+    } catch (error) {
+      this.logger.warn(`Failed to load selected evidence content: ${error.message}`);
       return [];
     }
   }

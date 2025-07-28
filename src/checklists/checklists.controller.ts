@@ -201,7 +201,8 @@ export class ChecklistsController {
           const aiResponse = await this.aiService.generateAnswer({
             question: question.questionText,
             context: generateDto.context || 'Security compliance questionnaire',
-            vendorId: parseInt(generateDto.vendorId) // Convert to number if needed
+            vendorId: parseInt(generateDto.vendorId), // Convert to number if needed
+            selectedEvidenceFiles: generateDto.selectedEvidenceFiles
           });
 
           aiAnswers.push({

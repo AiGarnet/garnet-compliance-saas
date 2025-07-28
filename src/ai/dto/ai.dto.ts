@@ -16,6 +16,15 @@ export class GenerateAnswerDto {
   @IsOptional()
   @IsNumber()
   vendorId?: number;
+
+  @ApiPropertyOptional({ 
+    example: ['uuid1', 'uuid2'], 
+    description: 'Array of evidence file IDs to use for enhanced response generation'
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  selectedEvidenceFiles?: string[];
 }
 
 export class BatchAnswerDto {

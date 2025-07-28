@@ -19,6 +19,7 @@ export interface GenerateAnswerRequest {
   question: string;
   context?: string;
   vendorId?: number;
+  selectedEvidenceFiles?: string[]; // Array of evidence file IDs to use for context
 }
 
 /**

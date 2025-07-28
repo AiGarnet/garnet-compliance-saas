@@ -125,6 +125,11 @@ export class GenerateAnswersDto {
   @IsOptional()
   @IsUUID()
   checklistId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  selectedEvidenceFiles?: string[];
 }
 
 export class ChecklistResponseDto {
