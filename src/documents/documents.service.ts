@@ -189,41 +189,24 @@ export class DocumentsService {
   }
 
   /**
-   * Pre-analysis checks for obvious rejections or acceptances
+   * Pre-analysis checks for document quality and basic relevance
    */
-  private performPreAnalysisChecks(questionText: string, documentContent: string): {
+  private performPreAnalysisChecks(question: string, content: string): {
     shouldReject: boolean;
     score: number;
     message: string;
   } {
-    const content = documentContent.toLowerCase();
-    const question = questionText.toLowerCase();
-
-    // Check for empty or too short content
-    if (content.trim().length < 10) {
-      return {
-        shouldReject: true,
-        score: 0.05,
-        message: 'Document rejected: File appears to be empty or contains insufficient content. Please upload a valid document with readable content.'
-      };
-    }
-
-    // Check for corrupted or unreadable content
-    const corruptedIndicators = ['extraction failed', 'content extraction not yet supported', 'failed to extract'];
-    if (corruptedIndicators.some(indicator => content.includes(indicator))) {
-      return {
-        shouldReject: true,
-        score: 0.10,
-        message: '❌ Document rejected: Unable to read document content. Please ensure the file is not corrupted and is in a supported format (PDF, DOCX, TXT, or image).'
-      };
-    }
+    const lowerContent = content.toLowerCase();
+    const lowerQuestion = question.toLowerCase();
 
     // Check for placeholder or template content
     const placeholderIndicators = ['lorem ipsum', '[placeholder]', '[insert text]', 'sample document', 'template document'];
-    if (placeholderIndicators.some(indicator => content.includes(indicator))) {
+    const placeholderFound = placeholderIndicators.find(indicator => lowerContent.includes(indicator));
+    
+    if (placeholderFound) {
       return {
         shouldReject: true,
-        score: 0.15,
+        score: this.calculatePlaceholderScore(content, placeholderFound),
         message: '❌ Document rejected: This appears to be a template or placeholder document. Please upload your actual, completed document.'
       };
     }
@@ -234,14 +217,100 @@ export class DocumentsService {
     
     if (questionTypes.length > 0 && documentType && !questionTypes.includes(documentType)) {
       const expectedTypes = questionTypes.join(' or ');
+      const mismatchScore = this.calculateTypeMismatchScore(questionTypes, documentType, content);
+      
       return {
         shouldReject: true,
-        score: 0.20,
+        score: mismatchScore,
         message: `❌ Document rejected: This question requires a ${expectedTypes}, but the uploaded document appears to be a ${documentType}. Please upload the correct document type.`
       };
     }
 
     return { shouldReject: false, score: 0, message: '' };
+  }
+
+  /**
+   * Calculate score for placeholder/template documents based on content quality
+   */
+  private calculatePlaceholderScore(content: string, placeholderType: string): number {
+    const contentLength = content.length;
+    const wordCount = content.split(/\s+/).length;
+    
+    // Very short placeholder documents get very low scores
+    if (contentLength < 100 || wordCount < 20) {
+      return 0.05;
+    }
+    
+    // Longer documents with some real content but still templates get slightly higher scores
+    if (contentLength > 500 && wordCount > 100) {
+      return 0.15;
+    }
+    
+    // Default for templates/placeholders
+    return 0.10;
+  }
+
+  /**
+   * Calculate score for document type mismatches based on severity
+   */
+  private calculateTypeMismatchScore(expectedTypes: string[], actualType: string, content: string): number {
+    const contentLength = content.length;
+    const hasSubstantialContent = contentLength > 1000;
+    
+    // Check if it's a complete mismatch (e.g., expecting policy but got invoice)
+    const criticalMismatch = this.isCriticalTypeMismatch(expectedTypes, actualType);
+    
+    if (criticalMismatch) {
+      // Even substantial content gets low score if completely wrong type
+      return hasSubstantialContent ? 0.25 : 0.15;
+    }
+    
+    // Partial mismatches (e.g., expecting audit report but got security report)
+    const partialMatch = this.isPartialTypeMatch(expectedTypes, actualType);
+    
+    if (partialMatch) {
+      // These can get better scores if content is substantial
+      return hasSubstantialContent ? 0.45 : 0.30;
+    }
+    
+    // Default mismatch score
+    return hasSubstantialContent ? 0.35 : 0.20;
+  }
+
+  /**
+   * Check if document type mismatch is critical (completely unrelated)
+   */
+  private isCriticalTypeMismatch(expectedTypes: string[], actualType: string): boolean {
+    const criticalMismatches = {
+      'policy': ['invoice', 'receipt', 'certificate', 'license'],
+      'certificate': ['policy', 'invoice', 'report', 'procedure'],
+      'report': ['invoice', 'certificate', 'license'],
+      'procedure': ['invoice', 'certificate', 'license'],
+      'audit': ['invoice', 'certificate', 'license'],
+      'contract': ['invoice', 'certificate', 'policy'],
+    };
+    
+    return expectedTypes.some(expected => 
+      criticalMismatches[expected]?.includes(actualType)
+    );
+  }
+
+  /**
+   * Check if there's a partial match between expected and actual document types
+   */
+  private isPartialTypeMatch(expectedTypes: string[], actualType: string): boolean {
+    const partialMatches = {
+      'policy': ['procedure', 'guideline', 'standard'],
+      'report': ['audit', 'assessment', 'analysis'],
+      'certificate': ['license', 'permit', 'accreditation'],
+      'procedure': ['policy', 'guideline', 'process'],
+    };
+    
+    return expectedTypes.some(expected => 
+      partialMatches[expected]?.includes(actualType) ||
+      actualType.includes(expected) ||
+      expected.includes(actualType)
+    );
   }
 
   /**
