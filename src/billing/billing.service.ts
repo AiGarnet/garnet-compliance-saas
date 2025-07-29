@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { DatabaseService } from '../database/database.service';
 import { PRICING_TIERS, getPricingTierById } from '../config/pricing';
+import { StripeCouponsService } from './stripe-coupons.service';
 
 export interface CreateCheckoutSessionDto {
   priceId: string;
@@ -11,6 +12,7 @@ export interface CreateCheckoutSessionDto {
   billingCycle: 'monthly' | 'annual';
   successUrl: string;
   cancelUrl: string;
+  coupon?: string; // Optional coupon code
 }
 
 export interface CreatePortalSessionDto {
@@ -57,6 +59,7 @@ export class BillingService {
   constructor(
     private readonly configService: ConfigService,
     private readonly databaseService: DatabaseService,
+    private readonly stripeCouponsService: StripeCouponsService,
   ) {
     const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     if (!stripeSecretKey) {
@@ -114,7 +117,8 @@ export class BillingService {
       const customer = await this.findOrCreateOrganizationCustomer(organizationId, dto.email, user.organization_name);
       this.logger.log(`Using Stripe customer: ${customer.id} for organization: ${organizationId}`);
 
-      const session = await this.stripe.checkout.sessions.create({
+      // Prepare checkout session configuration
+      const sessionConfig: Stripe.Checkout.SessionCreateParams = {
         customer: customer.id,
         payment_method_types: ['card'],
         line_items: [
@@ -138,7 +142,27 @@ export class BillingService {
             billingCycle: dto.billingCycle,
           },
         },
-      });
+      };
+
+      // Add coupon if provided
+      if (dto.coupon) {
+        this.logger.log(`Validating Stripe coupon ${dto.coupon}`);
+        
+        // Validate the coupon and get the actual Stripe coupon ID
+        const stripeCouponId = await this.stripeCouponsService.getStripeCouponId(dto.coupon);
+        
+        if (!stripeCouponId) {
+          this.logger.warn(`Invalid or expired Stripe coupon: ${dto.coupon}`);
+          throw new BadRequestException(`Invalid or expired coupon code: ${dto.coupon}`);
+        }
+        
+        this.logger.log(`Applying Stripe coupon ${stripeCouponId} to checkout session`);
+        sessionConfig.discounts = [{
+          coupon: stripeCouponId, // Use the actual Stripe coupon ID
+        }];
+      }
+
+      const session = await this.stripe.checkout.sessions.create(sessionConfig);
 
       this.logger.log(`Created checkout session ${session.id} for organization ${organizationId}`);
       return session;
@@ -414,6 +438,36 @@ export class BillingService {
     // Get subscription details from Stripe
     const stripeSubscription = await this.stripe.subscriptions.retrieve(subscription);
     
+    // Check if a discount was applied and track coupon usage
+    if (stripeSubscription.discounts && stripeSubscription.discounts.length > 0) {
+      // Get the first discount (there should only be one for our use case)
+      const discount = stripeSubscription.discounts[0];
+      
+      // Check if it's a Discount object (not just a string ID)
+      if (typeof discount === 'object' && discount.coupon) {
+        const stripeCouponId = discount.coupon.id;
+        this.logger.log(`Checkout completed with Stripe coupon: ${stripeCouponId}`);
+        
+        // Find the corresponding coupon code in our database and increment usage
+        try {
+          const couponQuery = `
+            SELECT code FROM stripe_coupons 
+            WHERE stripe_coupon_id = $1 AND is_active = true
+          `;
+          const couponResult = await this.databaseService.query(couponQuery, [stripeCouponId]);
+          
+          if (couponResult.rows.length > 0) {
+            const couponCode = couponResult.rows[0].code;
+            await this.stripeCouponsService.incrementCouponUsage(couponCode);
+            this.logger.log(`Incremented usage for Stripe coupon: ${couponCode}`);
+          }
+        } catch (error) {
+          this.logger.error('Failed to track coupon usage', error);
+          // Don't fail the subscription creation if coupon tracking fails
+        }
+      }
+    }
+    
     // Save subscription to database
     await this.saveSubscription(userId, organizationId, session.customer as string, stripeSubscription);
     
@@ -472,7 +526,8 @@ export class BillingService {
       // Also update organization record
       const orgQuery = `
         UPDATE organizations 
-        SET current_subscription_status = 'past_due'
+        SET 
+          current_subscription_status = 'past_due'
         WHERE id IN (
           SELECT organization_id FROM organization_subscriptions 
           WHERE stripe_subscription_id = $1

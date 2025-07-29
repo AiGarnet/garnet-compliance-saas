@@ -49,6 +49,7 @@ export class BillingController {
     billingCycle: 'monthly' | 'annual';
     successUrl: string;
     cancelUrl: string;
+    coupon?: string; // Optional coupon code
   }) {
     const user = req.user;
     
@@ -59,6 +60,7 @@ export class BillingController {
       billingCycle: body.billingCycle,
       successUrl: body.successUrl,
       cancelUrl: body.cancelUrl,
+      coupon: body.coupon, // Pass along the coupon if provided
     };
 
     const session = await this.billingService.createCheckoutSession(dto);
