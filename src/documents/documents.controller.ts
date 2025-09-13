@@ -69,11 +69,11 @@ export class DocumentsController {
         );
       }
 
-      // Validate file size (50MB max)
+      // Validate file size (50MB max - generous limit for multi-sheet Excel files)
       const maxSize = 50 * 1024 * 1024; // 50MB
       if (file.size > maxSize) {
         throw new BadRequestException(
-          `File size (${Math.round(file.size / (1024 * 1024))}MB) exceeds the maximum allowed size of 50MB for validation.`
+          `File size (${Math.round(file.size / (1024 * 1024))}MB) exceeds the maximum allowed size of 50MB for validation. Multi-sheet Excel files are supported, but please ensure your file is optimized.`
         );
       }
 

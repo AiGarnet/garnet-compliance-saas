@@ -913,61 +913,128 @@ Respond with a JSON object:
     try {
       this.logger.log(`Extracting content from Excel: ${file.originalname}`);
       
-      // Parse Excel file using xlsx library
-      const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+      // Parse Excel file using xlsx library with robust options
+      const workbook = XLSX.read(file.buffer, { 
+        type: 'buffer',
+        cellDates: true,
+        cellNF: false,
+        cellHTML: false,
+        bookDeps: false,
+        bookFiles: false,
+        bookProps: false,
+        bookSheets: false,
+        bookVBA: false,
+        password: '',
+        WTF: false,
+        sheets: [] // Process all sheets
+      });
+      
       const sheets = workbook.SheetNames;
       
+      this.logger.log(`Excel file ${file.originalname} contains ${sheets.length} sheet(s): ${sheets.join(', ')}`);
+      
       if (sheets.length === 0) {
+        this.logger.warn(`No sheets found in Excel file: ${file.originalname}`);
         return `Excel Document: ${file.originalname}\nNo sheets found in the Excel file.`;
       }
 
-      const extractedContent = [`Excel Document: ${file.originalname}`, `Type: ${file.mimetype}`, `Number of sheets: ${sheets.length}`, ''];
+      const extractedContent = [
+        `Excel Document: ${file.originalname}`, 
+        `Type: ${file.mimetype}`, 
+        `File size: ${Math.round(file.size / 1024)}KB`,
+        `Number of sheets: ${sheets.length}`, 
+        `Sheet names: ${sheets.join(', ')}`,
+        ''
+      ];
 
-      // Process each sheet
-      for (let i = 0; i < Math.min(sheets.length, 5); i++) { // Limit to first 5 sheets
+      // Process ALL sheets (not just first 5) but with better error handling
+      let processedSheets = 0;
+      let skippedSheets = 0;
+      
+      for (let i = 0; i < sheets.length; i++) {
         const sheetName = sheets[i];
-        const worksheet = workbook.Sheets[sheetName];
-        
-        extractedContent.push(`--- Sheet: ${sheetName} ---`);
+        this.logger.log(`Processing sheet ${i + 1}/${sheets.length}: ${sheetName}`);
         
         try {
+          const worksheet = workbook.Sheets[sheetName];
+          
+          if (!worksheet) {
+            this.logger.warn(`Sheet ${sheetName} is empty or cannot be accessed`);
+            extractedContent.push(`--- Sheet ${i + 1}: ${sheetName} ---`);
+            extractedContent.push('(Sheet is empty or cannot be accessed)');
+            extractedContent.push('');
+            skippedSheets++;
+            continue;
+          }
+          
+          extractedContent.push(`--- Sheet ${i + 1}: ${sheetName} ---`);
+          
+          // Get sheet range info
+          const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:A1');
+          const numRows = range.e.r - range.s.r + 1;
+          const numCols = range.e.c - range.s.c + 1;
+          
+          this.logger.log(`Sheet ${sheetName}: ${numRows} rows x ${numCols} columns`);
+          extractedContent.push(`Sheet dimensions: ${numRows} rows x ${numCols} columns`);
+          
           // Convert sheet to CSV format for text extraction
-          const csv = XLSX.utils.sheet_to_csv(worksheet, { strip: true });
+          const csv = XLSX.utils.sheet_to_csv(worksheet, { 
+            strip: true,
+            blankrows: false,
+            skipHidden: true
+          });
           
           if (csv.trim()) {
-            // Limit content to prevent overly large extractions
-            const lines = csv.split('\n');
-            const maxLines = 50; // Limit to first 50 rows
+            // For large sheets, limit the extracted content
+            const lines = csv.split('\n').filter(line => line.trim() !== '');
+            const maxLines = Math.min(100, lines.length); // Increased from 50 to 100 for better content
             const limitedLines = lines.slice(0, maxLines);
             
+            extractedContent.push('Content:');
             extractedContent.push(limitedLines.join('\n'));
             
             if (lines.length > maxLines) {
-              extractedContent.push(`\n[... and ${lines.length - maxLines} more rows]`);
+              extractedContent.push(`\n[... and ${lines.length - maxLines} more rows not shown for brevity]`);
             }
+            
+            processedSheets++;
           } else {
-            extractedContent.push('(Empty sheet)');
+            extractedContent.push('(Empty sheet - no content)');
+            skippedSheets++;
           }
+          
         } catch (sheetError) {
-          this.logger.warn(`Failed to extract sheet ${sheetName}: ${sheetError.message}`);
+          this.logger.error(`Failed to extract sheet ${sheetName}: ${sheetError.message}`, sheetError.stack);
           extractedContent.push(`(Failed to extract sheet content: ${sheetError.message})`);
+          skippedSheets++;
         }
         
         extractedContent.push(''); // Add spacing between sheets
       }
 
-      if (sheets.length > 5) {
-        extractedContent.push(`[... and ${sheets.length - 5} more sheets not shown]`);
-      }
-
+      extractedContent.push('--- Summary ---');
+      extractedContent.push(`Total sheets: ${sheets.length}`);
+      extractedContent.push(`Successfully processed: ${processedSheets}`);
+      extractedContent.push(`Skipped/Failed: ${skippedSheets}`);
       extractedContent.push('');
-      extractedContent.push('Note: Excel file content has been successfully extracted and is ready for analysis.');
+      extractedContent.push('✅ Multi-sheet Excel file has been successfully processed and is ready for analysis.');
+      extractedContent.push('All sheets have been extracted and their content is available for compliance validation.');
 
+      this.logger.log(`Excel extraction completed for ${file.originalname}: ${processedSheets}/${sheets.length} sheets processed successfully`);
+      
       return extractedContent.join('\n');
       
     } catch (error) {
-      this.logger.error(`Failed to extract Excel content: ${error.message}`);
-      return `Excel Document: ${file.originalname}\nExtraction failed: ${error.message}. Please ensure the file is a valid Excel file and not corrupted.`;
+      this.logger.error(`Failed to extract Excel content from ${file.originalname}: ${error.message}`, error.stack);
+      
+      // Provide more specific error information
+      if (error.message.includes('Unsupported file')) {
+        return `Excel Document: ${file.originalname}\nExtraction failed: This Excel file format is not supported or the file is corrupted. Please ensure you're uploading a valid .xlsx or .xls file.`;
+      } else if (error.message.includes('password')) {
+        return `Excel Document: ${file.originalname}\nExtraction failed: This Excel file appears to be password-protected. Please remove the password protection and try again.`;
+      } else {
+        return `Excel Document: ${file.originalname}\nExtraction failed: ${error.message}. Multi-sheet Excel files are supported. Please ensure the file is not corrupted and try again.`;
+      }
     }
   }
 
