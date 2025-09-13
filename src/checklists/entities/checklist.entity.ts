@@ -11,7 +11,7 @@ export class Checklist {
   @Column('varchar', { length: 255 })
   name: string;
 
-  @Column('varchar', { length: 50, name: 'file_type' })
+  @Column('varchar', { length: 100, name: 'file_type' })
   fileType: string;
 
   @Column('integer', { name: 'file_size', nullable: true })
@@ -117,7 +117,7 @@ export class ChecklistSupportingDocument {
   @Column('varchar', { length: 255 })
   filename: string;
 
-  @Column('varchar', { length: 50, name: 'file_type', nullable: true })
+  @Column('varchar', { length: 100, name: 'file_type', nullable: true })
   fileType: string;
 
   @Column('integer', { name: 'file_size', nullable: true })

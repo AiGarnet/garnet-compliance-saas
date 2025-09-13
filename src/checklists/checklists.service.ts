@@ -86,6 +86,47 @@ export class ChecklistsService {
     }
   }
 
+  // Helper function to map and truncate file types to fit database constraints
+  private mapFileTypeForDatabase(mimetype: string): string {
+    // Map common long MIME types to shorter, more readable names
+    const mimeTypeMap: { [key: string]: string } = {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+      'application/vnd.ms-excel': 'xls',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+      'application/msword': 'doc',
+      'application/pdf': 'pdf',
+      'text/plain': 'txt',
+      'text/csv': 'csv',
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/gif': 'gif',
+    };
+
+    // Check if we have a mapped short name
+    if (mimeTypeMap[mimetype]) {
+      return mimeTypeMap[mimetype];
+    }
+
+    // For unmapped types, extract the main type and truncate to fit database
+    let shortType = mimetype;
+    
+    // Try to extract a meaningful short name from the MIME type
+    if (mimetype.includes('/')) {
+      const parts = mimetype.split('/');
+      const subtype = parts[1];
+      
+      // Remove common prefixes and suffixes to shorten
+      shortType = subtype
+        .replace('vnd.', '')
+        .replace('openxmlformats-officedocument.', '')
+        .replace('application.', '')
+        .replace('microsoft.', '');
+    }
+    
+    // Ensure we don't exceed 50 characters (database constraint)
+    return shortType.substring(0, 50);
+  }
+
   // Upload and process checklist file with DigitalOcean Spaces integration
   async uploadChecklistFile(
     file: Express.Multer.File,
@@ -94,11 +135,15 @@ export class ChecklistsService {
     userId?: string
   ): Promise<{ checklist: Checklist; questions: ChecklistQuestion[] }> {
     try {
-      // Step 1: Create checklist record
+      // Step 1: Create checklist record with properly mapped file type
+      const mappedFileType = this.mapFileTypeForDatabase(file.mimetype);
+      
+      this.logger.log(`Uploading checklist file: ${file.originalname}, MIME: ${file.mimetype}, Mapped type: ${mappedFileType}`);
+      
       const createChecklistDto: CreateChecklistDto = {
         vendorId,
         name: name || file.originalname,
-        fileType: file.mimetype,
+        fileType: mappedFileType,
         fileSize: file.size,
         originalFilename: file.originalname,
         extractionStatus: ChecklistExtractionStatus.EXTRACTING,
@@ -385,10 +430,12 @@ export class ChecklistsService {
       );
 
       // Create document record with Spaces information
+      const mappedFileType = this.mapFileTypeForDatabase(file.mimetype);
+      
       const createDocDto: CreateSupportingDocumentDto = {
         questionId: actualQuestionId, // Use UUID for database
         filename: file.originalname,
-        fileType: file.mimetype,
+        fileType: mappedFileType,
         fileSize: file.size,
         filePath: uploadResult.url, // Store the direct URL for backwards compatibility
       };

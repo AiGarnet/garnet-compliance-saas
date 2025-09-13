@@ -17,6 +17,47 @@ export class EvidenceService {
     private databaseService: DatabaseService,
   ) {}
 
+  // Helper function to map and truncate file types to fit database constraints
+  private mapFileTypeForDatabase(mimetype: string): string {
+    // Map common long MIME types to shorter, more readable names
+    const mimeTypeMap: { [key: string]: string } = {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+      'application/vnd.ms-excel': 'xls',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+      'application/msword': 'doc',
+      'application/pdf': 'pdf',
+      'text/plain': 'txt',
+      'text/csv': 'csv',
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/gif': 'gif',
+    };
+
+    // Check if we have a mapped short name
+    if (mimeTypeMap[mimetype]) {
+      return mimeTypeMap[mimetype];
+    }
+
+    // For unmapped types, extract the main type and truncate to fit database
+    let shortType = mimetype;
+    
+    // Try to extract a meaningful short name from the MIME type
+    if (mimetype.includes('/')) {
+      const parts = mimetype.split('/');
+      const subtype = parts[1];
+      
+      // Remove common prefixes and suffixes to shorten
+      shortType = subtype
+        .replace('vnd.', '')
+        .replace('openxmlformats-officedocument.', '')
+        .replace('application.', '')
+        .replace('microsoft.', '');
+    }
+    
+    // Ensure we don't exceed 100 characters (updated database constraint)
+    return shortType.substring(0, 100);
+  }
+
   /**
    * Upload and create an evidence file
    */
@@ -42,12 +83,15 @@ export class EvidenceService {
         description
       );
 
+      // Map file type to avoid database constraint issues
+      const mappedFileType = this.mapFileTypeForDatabase(file.mimetype);
+      
       // Create evidence file record
       const evidenceFile = this.evidenceRepository.create({
         vendorId,
         filename: uploadResult.key.split('/').pop() || file.originalname,
         originalFilename: file.originalname,
-        fileType: file.mimetype,
+        fileType: mappedFileType,
         fileSize: file.size,
         fileContent,
         spacesKey: uploadResult.key,
