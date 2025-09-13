@@ -231,15 +231,18 @@ export class VendorsController {
       const userLimits = await this.featureAccessService.checkUserLimits(user.id);
       
       if (!userLimits.vendors.hasAccess) {
+        const errorMessage = `You've reached your limit of ${userLimits.vendors.limit} vendor${userLimits.vendors.limit === 1 ? '' : 's'} on your current plan. Upgrade to add more vendors.`;
+        
         throw new ForbiddenException({
-          success: false,
+          message: errorMessage,
           error: {
             code: 'VENDOR_LIMIT_REACHED',
-            message: `You've reached your limit of ${userLimits.vendors.limit} vendor${userLimits.vendors.limit === 1 ? '' : 's'} on your current plan. Upgrade to add more vendors.`,
+            message: errorMessage,
             upgradeRequired: 'growth',
             currentUsage: userLimits.vendors.current,
             limit: userLimits.vendors.limit
-          }
+          },
+          statusCode: 403
         });
       }
 
