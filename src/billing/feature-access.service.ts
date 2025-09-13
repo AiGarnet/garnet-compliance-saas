@@ -520,7 +520,7 @@ export class FeatureAccessService {
         FROM organizations o
         LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = true
         LEFT JOIN questionnaires q ON u.id = q.created_by_user_id
-        LEFT JOIN vendors v ON u.id = v.created_by_user_id AND v.organization_id = o.id
+        LEFT JOIN vendors v ON u.id = v.created_by_user_id
         WHERE o.id = $1
         GROUP BY o.id
       `;
@@ -529,9 +529,14 @@ export class FeatureAccessService {
       
       if (usageResult.rows.length > 0) {
         const usage = usageResult.rows[0];
+        const vendorCount = parseInt(usage.vendor_count) || 0;
+        const questionnaireCount = parseInt(usage.questionnaire_count) || 0;
+        
+        this.logger.log(`Usage for organization ${organizationId}: vendors=${vendorCount}, questionnaires=${questionnaireCount}, users=${usage.user_count}`);
+        
         return {
-          questionnaires: parseInt(usage.questionnaire_count) || 0, // Monthly count
-          vendors: parseInt(usage.vendor_count) || 0, // Total count
+          questionnaires: questionnaireCount, // Monthly count
+          vendors: vendorCount, // Total count
           users: parseInt(usage.user_count) || 0,
           storage: '0GB' // Placeholder
         };
