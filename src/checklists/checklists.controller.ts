@@ -346,6 +346,9 @@ export class ChecklistsController {
         'text/plain',
         'application/msword',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel', // .xls files
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx files
+        'text/csv', // .csv files
         'image/jpeg',
         'image/png',
         'image/gif'
@@ -353,7 +356,7 @@ export class ChecklistsController {
 
       if (!allowedMimeTypes.includes(file.mimetype)) {
         throw new BadRequestException(
-          `File type "${file.mimetype}" is not supported. Please upload a PDF, TXT, DOC, DOCX, or image file. PDFs provide the best content extraction for compliance validation.`
+          `File type "${file.mimetype}" is not supported. Please upload a PDF, TXT, DOC, DOCX, XLS, XLSX, CSV, or image file. PDFs provide the best content extraction for compliance validation.`
         );
       }
 

@@ -67,7 +67,8 @@
     "rxjs": "^7.8.1",
     "stripe": "^18.3.0",
     "typeorm": "^0.3.24",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
@@ -85,6 +86,7 @@
     "@types/pg": "^8.10.2",
     "@types/supertest": "^2.0.12",
     "@types/uuid": "^9.0.8",
+    "@types/xlsx": "^0.0.35",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.42.0",

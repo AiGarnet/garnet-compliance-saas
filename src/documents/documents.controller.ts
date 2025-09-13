@@ -55,6 +55,9 @@ export class DocumentsController {
         'application/json',
         'application/msword',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel', // .xls files
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx files
+        'text/csv', // .csv files
         'image/jpeg',
         'image/png',
         'image/gif'
@@ -62,7 +65,7 @@ export class DocumentsController {
 
       if (!allowedMimeTypes.includes(file.mimetype)) {
         throw new BadRequestException(
-          `File type "${file.mimetype}" cannot be validated. Please upload a PDF, TXT, JSON, DOC, DOCX, or image file. PDFs provide the most accurate validation results.`
+          `File type "${file.mimetype}" cannot be validated. Please upload a PDF, TXT, JSON, DOC, DOCX, XLS, XLSX, CSV, or image file. PDFs provide the most accurate validation results.`
         );
       }
 

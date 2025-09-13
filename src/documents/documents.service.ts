@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { DocumentRelevanceResponseDto } from '../checklists/dto/checklist.dto';
 import * as pdfParse from 'pdf-parse';
+import * as XLSX from 'xlsx';
 
 @Injectable()
 export class DocumentsService {
@@ -73,7 +74,7 @@ export class DocumentsService {
       } else if (file.mimetype.includes('word') || file.mimetype.includes('document')) {
         return `Document: ${file.originalname}\nExtraction failed: Unable to process this document. Please convert to PDF or TXT format and try again.`;
       } else if (file.mimetype.includes('excel') || file.mimetype.includes('spreadsheet') || file.mimetype === 'text/csv') {
-        return `Excel/CSV Document: ${file.originalname}\nExtraction failed: Unable to process this spreadsheet file. Please ensure the file is not corrupted and contains readable data.`;
+        return `Excel/CSV Document: ${file.originalname}\nExtraction failed: ${error.message}. Please ensure the file is not corrupted and contains readable data. For complex spreadsheets, consider converting to CSV format.`;
       } else {
         return `Document: ${file.originalname}\nExtraction failed: ${error.message}. Please check the file format and try again.`;
       }
@@ -912,27 +913,61 @@ Respond with a JSON object:
     try {
       this.logger.log(`Extracting content from Excel: ${file.originalname}`);
       
-      // For now, provide basic Excel file information
-      // TODO: Implement proper Excel parsing with xlsx library
-      const result = [
-        `Excel Document: ${file.originalname}`,
-        `Type: ${file.mimetype}`,
-        `Size: ${file.size} bytes`,
-        '',
-        'Excel file detected. Content extraction for Excel files is supported.',
-        'The file has been successfully uploaded and can be processed by the system.',
-        '',
-        'Note: For best results with automated content analysis, consider:',
-        '- Converting complex spreadsheets to CSV format',
-        '- Using clear headers and consistent data formatting',
-        '- Ensuring text content is readable and well-structured'
-      ];
+      // Parse Excel file using xlsx library
+      const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+      const sheets = workbook.SheetNames;
       
-      return result.join('\n');
+      if (sheets.length === 0) {
+        return `Excel Document: ${file.originalname}\nNo sheets found in the Excel file.`;
+      }
+
+      const extractedContent = [`Excel Document: ${file.originalname}`, `Type: ${file.mimetype}`, `Number of sheets: ${sheets.length}`, ''];
+
+      // Process each sheet
+      for (let i = 0; i < Math.min(sheets.length, 5); i++) { // Limit to first 5 sheets
+        const sheetName = sheets[i];
+        const worksheet = workbook.Sheets[sheetName];
+        
+        extractedContent.push(`--- Sheet: ${sheetName} ---`);
+        
+        try {
+          // Convert sheet to CSV format for text extraction
+          const csv = XLSX.utils.sheet_to_csv(worksheet, { strip: true });
+          
+          if (csv.trim()) {
+            // Limit content to prevent overly large extractions
+            const lines = csv.split('\n');
+            const maxLines = 50; // Limit to first 50 rows
+            const limitedLines = lines.slice(0, maxLines);
+            
+            extractedContent.push(limitedLines.join('\n'));
+            
+            if (lines.length > maxLines) {
+              extractedContent.push(`\n[... and ${lines.length - maxLines} more rows]`);
+            }
+          } else {
+            extractedContent.push('(Empty sheet)');
+          }
+        } catch (sheetError) {
+          this.logger.warn(`Failed to extract sheet ${sheetName}: ${sheetError.message}`);
+          extractedContent.push(`(Failed to extract sheet content: ${sheetError.message})`);
+        }
+        
+        extractedContent.push(''); // Add spacing between sheets
+      }
+
+      if (sheets.length > 5) {
+        extractedContent.push(`[... and ${sheets.length - 5} more sheets not shown]`);
+      }
+
+      extractedContent.push('');
+      extractedContent.push('Note: Excel file content has been successfully extracted and is ready for analysis.');
+
+      return extractedContent.join('\n');
       
     } catch (error) {
       this.logger.error(`Failed to extract Excel content: ${error.message}`);
-      return `Excel Document: ${file.originalname}\nExtraction failed: ${error.message}`;
+      return `Excel Document: ${file.originalname}\nExtraction failed: ${error.message}. Please ensure the file is a valid Excel file and not corrupted.`;
     }
   }
 
