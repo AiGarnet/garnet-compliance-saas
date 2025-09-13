@@ -59,7 +59,7 @@ export const CommonActivityConfigs = {
   CLIENT_CREATED: {
     type: ActivityType.CLIENT_CREATED,
     entityType: 'client',
-    getEntityId: (result: any) => result.data?.id,
+    getEntityId: (result: any) => result.data?.vendorId || result.data?.id,
     getEntityName: (result: any) => result.data?.companyName || result.data?.name,
     getToastConfig: (result: any) => ({
       title: 'Client Created',
@@ -67,12 +67,12 @@ export const CommonActivityConfigs = {
       type: 'success' as const,
       duration: 5000,
       actions: [
-        { label: 'View', action: `view_client_${result.data?.id}` }
+        { label: 'View', action: `view_client_${result.data?.vendorId || result.data?.id}` }
       ]
     }),
     getMetadata: (result: any) => ({
       clientName: result.data?.companyName || result.data?.name,
-      clientId: result.data?.id,
+      clientId: result.data?.vendorId || result.data?.id,
       status: result.data?.status
     })
   },
@@ -80,7 +80,7 @@ export const CommonActivityConfigs = {
   CLIENT_UPDATED: {
     type: ActivityType.CLIENT_UPDATED,
     entityType: 'client',
-    getEntityId: (result: any, req: any) => req.params?.id || result.data?.id,
+    getEntityId: (result: any, req: any) => req.params?.id || result.data?.vendorId || result.data?.id,
     getEntityName: (result: any) => result.data?.companyName || result.data?.name,
     getToastConfig: (result: any) => ({
       title: 'Client Updated',
@@ -88,12 +88,12 @@ export const CommonActivityConfigs = {
       type: 'success' as const,
       duration: 4000,
       actions: [
-        { label: 'View', action: `view_client_${result.data?.id}` }
+        { label: 'View', action: `view_client_${result.data?.vendorId || result.data?.id}` }
       ]
     }),
     getMetadata: (result: any, req: any) => ({
       clientName: result.data?.companyName || result.data?.name,
-      clientId: result.data?.id,
+      clientId: result.data?.vendorId || result.data?.id,
       updatedFields: Object.keys(req.body || {}),
       previousStatus: req.body?.previousStatus,
       newStatus: result.data?.status

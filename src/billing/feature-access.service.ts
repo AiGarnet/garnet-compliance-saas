@@ -512,15 +512,15 @@ export class FeatureAccessService {
       const usageQuery = `
         SELECT 
           COUNT(DISTINCT CASE 
-            WHEN q.created_at >= $2 THEN q.id 
+            WHEN vqa.created_at >= $2 AND vqa.question = '__QUESTIONNAIRE_TITLE__' THEN vqa.vendor_id 
             ELSE NULL 
           END) as questionnaire_count,
-          COUNT(DISTINCT v.id) as vendor_count,
+          COUNT(DISTINCT v.vendor_id) as vendor_count,
           COUNT(DISTINCT u.id) as user_count
         FROM organizations o
         LEFT JOIN users u ON o.id = u.organization_id AND u.is_active = true
-        LEFT JOIN questionnaires q ON u.id = q.created_by_user_id
         LEFT JOIN vendors v ON u.id = v.created_by_user_id
+        LEFT JOIN vendor_questionnaire_answers vqa ON v.vendor_id = vqa.vendor_id
         WHERE o.id = $1
         GROUP BY o.id
       `;
@@ -550,13 +550,13 @@ export class FeatureAccessService {
     const individualUsageQuery = `
       SELECT 
         COUNT(DISTINCT CASE 
-          WHEN q.created_at >= $2 THEN q.id 
+          WHEN vqa.created_at >= $2 AND vqa.question = '__QUESTIONNAIRE_TITLE__' THEN vqa.vendor_id 
           ELSE NULL 
         END) as questionnaire_count,
-        COUNT(DISTINCT v.id) as vendor_count
+        COUNT(DISTINCT v.vendor_id) as vendor_count
       FROM users u
-      LEFT JOIN questionnaires q ON u.id = q.created_by_user_id
       LEFT JOIN vendors v ON u.id = v.created_by_user_id
+      LEFT JOIN vendor_questionnaire_answers vqa ON v.vendor_id = vqa.vendor_id
       WHERE u.id = $1
     `;
     
