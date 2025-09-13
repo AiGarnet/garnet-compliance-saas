@@ -14,6 +14,7 @@ import {
 } from './dto/checklist.dto';
 import { DigitalOceanSpacesService } from '../common/services/digitalocean-spaces.service';
 import { DatabaseService } from '../database/database.service';
+import * as XLSX from 'xlsx';
 
 @Injectable()
 export class ChecklistsService {
@@ -509,11 +510,15 @@ export class ChecklistsService {
   // Extract text content from uploaded file
   async extractTextFromFile(file: Express.Multer.File): Promise<string> {
     try {
-      // For now, convert buffer to string assuming text-based files
-      // TODO: Implement proper parsing for PDF, DOC, DOCX files using libraries
+      this.logger.log(`Extracting text from file: ${file.originalname}, MIME: ${file.mimetype}`);
+      
+      // Handle text files
       if (file.mimetype === 'text/plain' || file.mimetype === 'text/csv') {
         return file.buffer.toString('utf-8');
-      } else if (file.mimetype === 'application/json') {
+      } 
+      
+      // Handle JSON files
+      else if (file.mimetype === 'application/json') {
         const jsonData = JSON.parse(file.buffer.toString('utf-8'));
         // Extract questions from JSON structure
         if (Array.isArray(jsonData)) {
@@ -524,6 +529,12 @@ export class ChecklistsService {
         return JSON.stringify(jsonData, null, 2);
       }
       
+      // Handle Excel files (.xlsx and .xls)
+      else if (file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+               file.mimetype === 'application/vnd.ms-excel') {
+        return await this.extractQuestionsFromExcel(file);
+      }
+      
       // For unsupported file types, return empty string (no questions)
       this.logger.warn(`Unsupported file type for text extraction: ${file.mimetype}`);
       return '';
@@ -531,6 +542,136 @@ export class ChecklistsService {
       this.logger.error(`Failed to extract text from file: ${error.message}`);
       return '';
     }
+  }
+
+  // Extract questions specifically from Excel files
+  private async extractQuestionsFromExcel(file: Express.Multer.File): Promise<string> {
+    try {
+      this.logger.log(`Extracting questions from Excel file: ${file.originalname}`);
+      
+      // Parse Excel file using xlsx library
+      const workbook = XLSX.read(file.buffer, { 
+        type: 'buffer',
+        cellText: true,
+        cellDates: true,
+        raw: false,
+        dense: false,
+        sheetStubs: true
+      });
+      
+      const sheets = workbook.SheetNames;
+      this.logger.log(`Found ${sheets.length} sheet(s) in Excel file: ${sheets.join(', ')}`);
+      
+      const allQuestions: string[] = [];
+      
+      // Process each sheet to extract potential questions
+      for (const sheetName of sheets) {
+        this.logger.log(`Processing sheet: ${sheetName}`);
+        const worksheet = workbook.Sheets[sheetName];
+        
+        if (!worksheet) {
+          this.logger.warn(`Sheet ${sheetName} is empty or cannot be accessed`);
+          continue;
+        }
+        
+        // Convert sheet to array of arrays for easier processing
+        const sheetData = XLSX.utils.sheet_to_json(worksheet, { 
+          header: 1, 
+          defval: '',
+          blankrows: false
+        }) as string[][];
+        
+        // Extract questions from the sheet data
+        const sheetQuestions = this.extractQuestionsFromSheetData(sheetData, sheetName);
+        allQuestions.push(...sheetQuestions);
+      }
+      
+      this.logger.log(`Extracted ${allQuestions.length} potential questions from Excel file`);
+      return allQuestions.join('\n');
+      
+    } catch (error) {
+      this.logger.error(`Failed to extract questions from Excel file: ${error.message}`);
+      throw new Error(`Excel processing failed: ${error.message}`);
+    }
+  }
+
+  // Extract questions from sheet data array
+  private extractQuestionsFromSheetData(sheetData: string[][], sheetName: string): string[] {
+    const questions: string[] = [];
+    
+    this.logger.log(`Processing ${sheetData.length} rows from sheet: ${sheetName}`);
+    
+    for (let rowIndex = 0; rowIndex < sheetData.length; rowIndex++) {
+      const row = sheetData[rowIndex];
+      
+      if (!row || row.length === 0) continue;
+      
+      // Process each cell in the row
+      for (let colIndex = 0; colIndex < row.length; colIndex++) {
+        const cellValue = row[colIndex];
+        
+        if (!cellValue || typeof cellValue !== 'string') continue;
+        
+        const trimmedValue = cellValue.trim();
+        if (trimmedValue.length < 10) continue; // Skip very short text
+        
+        // Check if this looks like a question
+        if (this.isLikelyQuestion(trimmedValue)) {
+          questions.push(trimmedValue);
+          this.logger.log(`Found question in sheet ${sheetName}, row ${rowIndex + 1}, col ${colIndex + 1}: ${trimmedValue.substring(0, 100)}...`);
+        }
+      }
+    }
+    
+    this.logger.log(`Extracted ${questions.length} questions from sheet: ${sheetName}`);
+    return questions;
+  }
+
+  // Determine if a text string is likely a question
+  private isLikelyQuestion(text: string): boolean {
+    const lowerText = text.toLowerCase().trim();
+    
+    // Skip very short or very long text
+    if (lowerText.length < 10 || lowerText.length > 500) {
+      return false;
+    }
+    
+    // Skip if it looks like a header or metadata
+    if (lowerText.match(/^(question|item|#|number|id|title|description|sheet|row|column)/)) {
+      return false;
+    }
+    
+    // Strong indicators of questions
+    const questionIndicators = [
+      // Direct question patterns
+      /\?$/,                                                    // Ends with question mark
+      /^(what|when|where|who|whom|whose|why|how|which|do|does|did|can|could|will|would|should|may|might|is|are|was|were|have|has|had)/,
+      
+      // Compliance/policy question patterns
+      /^(describe|explain|provide|document|list|identify|specify|detail|outline|state)/,
+      /\b(policy|procedure|process|control|requirement|standard|guideline|framework|compliance|audit|security|risk|governance|management)\b/,
+      /\b(implement|maintain|ensure|verify|validate|monitor|review|assess|evaluate|measure|report|document|track)\b/,
+      
+      // Business process patterns
+      /\b(how do you|how does|what is your|what are your|do you have|does your organization|is there a)\b/,
+      /\b(training|certification|approval|authorization|access|backup|recovery|incident|breach|vulnerability)\b/
+    ];
+    
+    // Check for question indicators
+    const hasQuestionIndicator = questionIndicators.some(pattern => pattern.test(lowerText));
+    
+    // Additional quality checks
+    const hasMinimumWords = lowerText.split(/\s+/).length >= 5;
+    const notAllCaps = text !== text.toUpperCase();
+    const hasProperStructure = /[a-zA-Z]/.test(text); // Contains letters
+    
+    const isQuestion = hasQuestionIndicator && hasMinimumWords && notAllCaps && hasProperStructure;
+    
+    if (isQuestion) {
+      this.logger.debug(`Identified as question: ${text.substring(0, 100)}...`);
+    }
+    
+    return isQuestion;
   }
 
   // Parse questions from extracted text with improved document detection
